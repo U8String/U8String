@@ -1,0 +1,130 @@
+using System.Runtime.CompilerServices;
+
+namespace U8Primitives;
+
+public readonly partial struct U8String
+{
+    // TODO: Optimize/deduplicate Concat variants
+    // TODO: Investigate if it is possible fold validation for u8 literals
+    public static U8String Concat(U8String left, U8String right)
+    {
+        if (left.IsEmpty)
+        {
+            return right;
+        }
+
+        if (right.IsEmpty)
+        {
+            return left;
+        }
+
+        var length = left._length + right._length;
+        var value = new byte[length];
+
+        left.AsSpan().CopyTo(value);
+        right.AsSpan().CopyTo(value.AsSpan(left._length));
+
+        return new U8String(value, 0, length);
+    }
+
+    public static U8String Concat(U8String left, ReadOnlySpan<byte> right)
+    {
+        if (right.IsEmpty)
+        {
+            return left;
+        }
+
+        Validate(right);
+        if (left.IsEmpty)
+        {
+            return new U8String(right, skipValidation: true);
+        }
+
+        var length = left.Length + right.Length;
+        var value = new byte[length];
+
+        left.AsSpan().CopyTo(value);
+        right.CopyTo(value.AsSpan(left.Length));
+
+        return new U8String(value, 0, length);
+    }
+
+    public static U8String Concat(ReadOnlySpan<byte> left, U8String right)
+    {
+        if (left.IsEmpty)
+        {
+            return right;
+        }
+
+        Validate(left);
+        if (right.IsEmpty)
+        {
+            return new U8String(left, skipValidation: true);
+        }
+
+        var length = left.Length + right.Length;
+        var value = new byte[length];
+
+        left.CopyTo(value);
+        right.AsSpan().CopyTo(value.AsSpan(left.Length));
+
+        return new U8String(value, 0, length);
+    }
+
+    public static U8String Concat(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+    {
+        Validate(left);
+        if (right.IsEmpty)
+        {
+            return new U8String(left, skipValidation: true);
+        }
+
+        Validate(right);
+        if (left.IsEmpty)
+        {
+            return new U8String(right);
+        }
+
+        var length = left.Length + right.Length;
+        var value = new byte[length];
+
+        left.CopyTo(value);
+        right.CopyTo(value.AsSpan(left.Length));
+
+        return new U8String(value, 0, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Trim()
+    {
+        if (_length is 0 ||
+            !IndexUnsafe(0).IsWhitespace() ||
+            !IndexUnsafe(_length - 1).IsWhitespace())
+        {
+            return this;
+        }
+
+        return TrimCore();
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private U8String TrimCore()
+    {
+        var span = AsSpan();
+        var start = 0;
+        while (start < span.Length && span[start].IsWhitespace())
+        {
+            start++;
+        }
+
+        var end = _length - 1;
+        while (end >= start && span[end].IsWhitespace())
+        {
+            end--;
+        }
+
+        return end - start > 0
+            ? this[start..++end]
+            : default;
+    }
+}
