@@ -22,7 +22,7 @@ public readonly partial struct U8String
         var value = new byte[length];
 
         left.AsSpan().CopyTo(value);
-        right.AsSpan().CopyTo(value.AsSpan(left._length));
+        right.AsSpan().CopyTo(value.AsSpan((int)left._length));
 
         return new U8String(value, 0, length);
     }
@@ -40,7 +40,7 @@ public readonly partial struct U8String
             return new U8String(right, skipValidation: true);
         }
 
-        var length = left.Length + right.Length;
+        var length = (uint)(left.Length + right.Length);
         var value = new byte[length];
 
         left.AsSpan().CopyTo(value);
@@ -62,7 +62,7 @@ public readonly partial struct U8String
             return new U8String(left, skipValidation: true);
         }
 
-        var length = left.Length + right.Length;
+        var length = (uint)(left.Length + right.Length);
         var value = new byte[length];
 
         left.CopyTo(value);
@@ -85,7 +85,7 @@ public readonly partial struct U8String
             return new U8String(right);
         }
 
-        var length = left.Length + right.Length;
+        var length = (uint)(left.Length + right.Length);
         var value = new byte[length];
 
         left.CopyTo(value);
@@ -98,7 +98,7 @@ public readonly partial struct U8String
     public U8String Trim()
     {
         if (_length is 0 ||
-            !IndexUnsafe(0).IsWhitespace() ||
+            !IndexUnsafe((uint)0).IsWhitespace() ||
             !IndexUnsafe(_length - 1).IsWhitespace())
         {
             return this;
@@ -117,7 +117,7 @@ public readonly partial struct U8String
             start++;
         }
 
-        var end = _length - 1;
+        var end = (int)(_length - 1);
         while (end >= start && span[end].IsWhitespace())
         {
             end--;

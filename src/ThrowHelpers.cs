@@ -23,4 +23,10 @@ internal static class ThrowHelpers
     {
         throw new ArgumentOutOfRangeException(paramName);
     }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static T ArgumentOutOfRange<T>(string? paramName = null)
+    {
+        throw new ArgumentOutOfRangeException(paramName);
+    }
 }

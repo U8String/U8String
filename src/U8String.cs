@@ -17,24 +17,34 @@ public readonly partial struct U8String :
 
     private readonly byte[] _value;
 
-    private readonly int _offset;
+    private readonly uint _offset;
 
-    private readonly int _length;
+    private readonly uint _length;
 
-    public int Length => _length;
+    public int Length
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (int)_length;
+    }
 
     public bool IsEmpty => _length is 0;
 
     internal ref byte FirstByte
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), (nint)(uint)_offset);
+        get => ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), _offset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal byte IndexUnsafe(int index)
     {
         return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), (nint)(uint)(_offset + index));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal byte IndexUnsafe(uint index)
+    {
+        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), _offset + index);
     }
 
     public bool IsAscii() => Ascii.IsValid(AsSpan());

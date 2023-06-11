@@ -12,11 +12,11 @@ public readonly partial struct U8String
 
         _value = value.ToArray();
         _offset = 0;
-        _length = _value.Length;
+        _length = (uint)_value.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal U8String(byte[] value, int offset, int length)
+    internal U8String(byte[] value, uint offset, uint length)
     {
         _value = value;
         _offset = offset;
@@ -30,6 +30,6 @@ public readonly partial struct U8String
 
         _value = value.ToArray();
         _offset = 0;
-        _length = value.Length;
+        _length = (uint)value.Length;
     }
 }

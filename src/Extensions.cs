@@ -29,7 +29,7 @@ public static class Extensions
         var bytes = new byte[Encoding.UTF8.GetMaxByteCount(value.Length)];
         var length = Encoding.UTF8.GetBytes(value, bytes);
 
-        return new U8String(bytes, 0, length);
+        return new U8String(bytes, 0, (uint)length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

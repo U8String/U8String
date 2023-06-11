@@ -10,13 +10,13 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
-        return MemoryMarshal.CreateSpan(ref FirstByte, _length);
+        return MemoryMarshal.CreateSpan(ref FirstByte, (int)_length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return _value.AsMemory(_offset, _length);
+        return _value.AsMemory((int)_offset, (int)_length);
     }
 
     public static U8String Parse(string s, IFormatProvider? provider) => Parse(s.AsSpan(), provider);
@@ -38,7 +38,7 @@ public readonly partial struct U8String
         var maxLength = Encoding.UTF8.GetMaxByteCount(s.Length);
 
         var value = new byte[maxLength];
-        var length = Encoding.UTF8.GetBytes(s, value);
+        var length = (uint)Encoding.UTF8.GetBytes(s, value);
 
         result = new U8String(value, 0, length);
         return true;
@@ -63,7 +63,7 @@ public readonly partial struct U8String
         if (length <= utf8Destination.Length)
         {
             AsSpan().CopyTo(utf8Destination);
-            bytesWritten = length;
+            bytesWritten = (int)length;
             return true;
         }
 
@@ -73,7 +73,7 @@ public readonly partial struct U8String
 
     public byte[] ToArray()
     {
-        return _value.AsSpan(_offset, _length).ToArray();
+        return _value.AsSpan((int)_offset, (int)_length).ToArray();
     }
 
     public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
@@ -82,6 +82,6 @@ public readonly partial struct U8String
     {
         return _length is 0
             ? string.Empty
-            : Encoding.UTF8.GetString(_value.AsSpan(_offset, _length));
+            : Encoding.UTF8.GetString(_value.AsSpan((int)_offset, (int)_length));
     }
 }
