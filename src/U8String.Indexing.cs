@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Runtime.InteropServices;
 
 namespace U8Primitives;
 
@@ -12,11 +11,10 @@ public readonly partial struct U8String
         {
             if ((uint)index >= Length)
             {
-                ThrowHelpers.ArgumentOutOfRange(nameof(index));
+                ThrowHelpers.IndexOutOfRange();
             }
 
-            var offset = (nint)(uint)(_offset + index);
-            return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), offset);
+            return IndexUnsafe(index);
         }
     }
 
@@ -25,8 +23,8 @@ public readonly partial struct U8String
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var i = index.GetOffset((int)_length);
-            if (i >= _length)
+            var i = index.GetOffset(Length);
+            if ((uint)i >= _length)
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }

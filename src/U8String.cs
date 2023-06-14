@@ -5,6 +5,7 @@ using System.Text;
 
 namespace U8Primitives;
 
+#pragma warning disable CA1825 // Avoid zero-length array allocations. Why: cctor checks ruin codegen
 public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,
@@ -27,7 +28,11 @@ public readonly partial struct U8String :
         get => (int)_length;
     }
 
-    public bool IsEmpty => _length is 0;
+    public bool IsEmpty
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _length is 0;
+    }
 
     internal ref byte FirstByte
     {
@@ -38,7 +43,7 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal byte IndexUnsafe(int index)
     {
-        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), (nint)(uint)(_offset + index));
+        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value), _offset + (uint)index);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -98,8 +98,8 @@ public readonly partial struct U8String
     public U8String Trim()
     {
         if (_length is 0 ||
-            !IndexUnsafe((uint)0).IsWhitespace() ||
-            !IndexUnsafe(_length - 1).IsWhitespace())
+            (!IndexUnsafe((uint)0).IsWhitespace()
+            && !IndexUnsafe(_length - 1).IsWhitespace()))
         {
             return this;
         }
