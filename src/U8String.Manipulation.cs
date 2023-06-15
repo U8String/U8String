@@ -94,12 +94,35 @@ public readonly partial struct U8String
         return new U8String(value, 0, length);
     }
 
+    public U8String Replace(byte oldValue, byte newValue)
+    {
+        if (IsEmpty)
+        {
+            return this;
+        }
+
+        var current = AsSpan();
+        var firstReplace = current.IndexOf(oldValue);
+        if (firstReplace < 0)
+        {
+            return this;
+        }
+
+        var replaced = new byte[_length];
+        current[firstReplace..].Replace(
+            replaced.AsSpan(firstReplace..),
+            oldValue,
+            newValue);
+
+        return new U8String(replaced, 0, _length);
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Trim()
     {
-        if (_length is 0 ||
-            (!IndexUnsafe((uint)0).IsWhitespace()
-            && !IndexUnsafe(_length - 1).IsWhitespace()))
+        if (IsEmpty || (
+            !IndexUnsafe((uint)0).IsWhitespace() &&
+            !IndexUnsafe(_length - 1).IsWhitespace()))
         {
             return this;
         }
@@ -107,7 +130,6 @@ public readonly partial struct U8String
         return TrimCore();
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     private U8String TrimCore()
     {
         var span = AsSpan();

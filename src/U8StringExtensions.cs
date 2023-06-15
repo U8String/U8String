@@ -6,7 +6,7 @@ using U8Primitives;
 namespace System;
 
 #pragma warning disable CA1305 // Specify IFormatProvider
-public static class Extensions
+public static class U8StringExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsWhitespace(this byte value)
@@ -15,6 +15,7 @@ public static class Extensions
         return value is (byte)' ';
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this string value)
     {
         return U8String.Parse(value);
