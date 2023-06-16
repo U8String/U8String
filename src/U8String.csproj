@@ -1,6 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
+    <PackageId>Pinecone.NET</PackageId>
+    <Authors>neon-sunset</Authors>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/neon-sunset/U8String</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/neon-sunset/U8String</PackageProjectUrl>
+    <PackageTags>Utf8;Utf8String;UTF-8;Unicode</PackageTags>
+    <!-- <PackageReadmeFile>README.md</PackageReadmeFile> -->
+    <Description>[work-in-progress] Highly functional and performant UTF-8 string primitive for C#.</Description>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
