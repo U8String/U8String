@@ -118,6 +118,36 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public (U8String Left, U8String Right) SplitFirst(byte separator)
+    {
+        if (IsEmpty)
+        {
+            return (this, default);
+        }
+
+        var span = AsSpan();
+        var index = span.IndexOf(separator);
+        return index >= 0
+            ? (this[..index], this[(index + 1)..])
+            : (this, default);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public (U8String Left, U8String Right) SplitLast(byte separator)
+    {
+        if (IsEmpty)
+        {
+            return (this, default);
+        }
+
+        var span = AsSpan();
+        var index = span.LastIndexOf(separator);
+        return index >= 0
+            ? (this[..index], this[(index + 1)..])
+            : (this, default);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Trim()
     {
         if (IsEmpty || (

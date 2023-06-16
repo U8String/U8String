@@ -14,6 +14,24 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> AsSpan(int start)
+    {
+        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length)[start..] : default;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> AsSpan(int start, int length)
+    {
+        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length)[start..length] : default;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ReadOnlySpan<byte> AsSpan(Range range)
+    {
+        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length)[range] : default;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
         return !IsEmpty ? _value.AsMemory((int)_offset, (int)_length) : default;

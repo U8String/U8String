@@ -1,5 +1,6 @@
 # TODO
 - [x] Ensure `default(U8String)` is always valid
+- [ ] Optimize AsSpan() overloads
 - [ ] Debugger View and ToString
 - [ ] IList<byte>
 - [ ] Enumeration Views ~~(which one should be default?)~~byte view by default
