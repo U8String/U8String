@@ -2,10 +2,13 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json.Serialization;
+using U8Primitives.Serialization;
 
 namespace U8Primitives;
 
 #pragma warning disable CA1825 // Avoid zero-length array allocations. Why: cctor checks ruin codegen
+[JsonConverter(typeof(U8StringJsonConverter))]
 public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,

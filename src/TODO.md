@@ -1,5 +1,6 @@
 # TODO
 - [x] Ensure `default(U8String)` is always valid
+- [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
 - [ ] Optimize AsSpan() overloads
 - [ ] Debugger View and ToString
 - [ ] IList<byte>
@@ -17,6 +18,7 @@
   - [ ] StartsWith(U8String|Rune|chars|bytes)
   - [ ] EndsWith(U8String|Rune|chars|bytes)
 - [ ] Equality
+- [x] JsonConverter
 - [ ] Consider whether Char8-like byte represntation is needed
 - [ ] (torture) Utf8 Validation
 - [ ] (torture) Utf8 code-point aware indexing (rune and char views?)

@@ -118,7 +118,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (U8String Left, U8String Right) SplitFirst(byte separator)
+    public (U8String Segment, U8String Remainder) SplitFirst(byte separator)
     {
         if (IsEmpty)
         {
@@ -133,7 +133,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (U8String Left, U8String Right) SplitLast(byte separator)
+    public (U8String Segment, U8String Remainder) SplitLast(byte separator)
     {
         if (IsEmpty)
         {

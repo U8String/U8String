@@ -10,25 +10,32 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
-        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length) : default;
+        return !IsEmpty ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length) : default;
     }
 
+    // Codegen for the overloads below would probably be garbage, which is ok for now.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start)
     {
-        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length)[start..] : default;
+        return !IsEmpty
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length)[start..]
+            : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start, int length)
     {
-        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length)[start..length] : default;
+        return !IsEmpty
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length)[start..(start + length)]
+            : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(Range range)
     {
-        return !IsEmpty ? MemoryMarshal.CreateSpan(ref FirstByte, (int)_length)[range] : default;
+        return !IsEmpty
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length)[range]
+            : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
