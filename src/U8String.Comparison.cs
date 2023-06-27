@@ -1,3 +1,4 @@
+using System.IO.Hashing;
 using System.Runtime.CompilerServices;
 
 namespace U8Primitives;
@@ -58,9 +59,6 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override int GetHashCode()
     {
-        // TODO: Sane implementation
-        var hash = new HashCode();
-        hash.AddBytes(AsSpan());
-        return hash.ToHashCode();
+        return (int)XxHash32.HashToUInt32(AsSpan());
     }
 }
