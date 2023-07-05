@@ -23,9 +23,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.IO.Hashing" Version="8.0.0-preview.7.23325.2">
-      <PrivateAssets>all</PrivateAssets>
-    </PackageReference>
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0-preview.7.23325.2" />
   </ItemGroup>
 
 </Project>

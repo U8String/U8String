@@ -147,12 +147,15 @@ public readonly partial struct U8String
             : (this, default);
     }
 
+    /// <summary>
+    /// Warning: Invalid code.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Trim()
     {
         if (IsEmpty || (
-            !IndexUnsafe((uint)0).IsWhitespace() &&
-            !IndexUnsafe(_length - 1).IsWhitespace()))
+            !U8Info.IsWhitespaceSurrogate(FirstByte) &&
+            !U8Info.IsWhitespaceSurrogate(IndexUnsafe(_length - 1))))
         {
             return this;
         }
