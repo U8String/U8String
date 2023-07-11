@@ -1,22 +1,10 @@
 # TODO
+- [ ] U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way
 - [x] Ensure `default(U8String)` is always valid
 - [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
 - [ ] Optimize AsSpan() overloads
 - [ ] Debugger View and ToString
 - [ ] IList<byte>
-- [ ] Enumeration Views ~~(which one should be default?)~~byte view by default
-  - [ ] Runes
-  - [ ] Chars
-  - [ ] Bytes
-- [ ] Manipulation OPs
-  - [ ] Trim(U8String|Rune|chars|bytes)
-  - [ ] Split(U8String|Rune|chars|bytes)
-  - [ ] SplitFirst(U8String|Rune|chars|bytes)
-  - [ ] SplitLast(U8String|Rune|chars|bytes)
-- [ ] Searching
-  - [ ] Contains(U8String|Rune|chars|bytes)
-  - [ ] StartsWith(U8String|Rune|chars|bytes)
-  - [ ] EndsWith(U8String|Rune|chars|bytes)
 - [ ] Equality
 - [x] JsonConverter
 - [ ] Consider whether Char8-like byte represntation is needed

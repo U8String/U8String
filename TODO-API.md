@@ -1,0 +1,51 @@
+# Overloads Policy
+- byte
+- Rune
+- U8String
+- ReadOnlySpan<byte>
+- ReadOnlySpan<char> / string
+
+# Validation Policy
+- ReadOnlySpan<byte>: Always
+- ReadOnlySpan<char>: Never
+- string: Never
+- byte: Always
+- Rune: Never
+- U8String: Conditional, on manipulation
+
+# TODO
+- [ ] IList, IEnumerable
+- [ ] Rune view (IEnumerable, or stateful IList?)
+- [ ] Char view (same as above)
+- [ ] Splitting
+    - [ ] Split (byte, Rune, ROS, U8String)
+    - [ ] SplitFirst (byte, Rune, ROS, U8String)
+    - [ ] SplitLast (byte, Rune, ROS, U8String)
+    - [ ] EnumerateSplit? Should regular split not be eagerly computed?
+    - [ ] EnumerateLines? Lines? (what about line breaks, use system line breaks or special?)
+- [ ] Comparison
+    - [ ] Contains (+case insensitive)
+    - [ ] StartsWith (+case insensitive)
+    - [ ] EndsWith (+case insensitive)
+    - [ ] IndexOf (+case insensitive)
+    - [ ] LastIndexOf (+case insensitive)
+    - [ ] Equals (+case insensitive)
+    - [ ] Equals UTF-16 (+case insensitive)
+- [ ] Manipulation
+    - [ ] Trim
+    - [ ] TrimStart
+    - [ ] TrimEnd
+    - [ ] Replace (ignoreCase?)
+    - [ ] ReplaceLineEndings
+- [ ] IsLatin/IsAlphanumeric?
+- [ ] U8Marshal
+    - [ ] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
+    - [ ] FromAsciiChars
+- [ ] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
+- [ ] DebugView
+----------------
+- [ ] Analyzers
+    - [ ] Replace string literal comparison with UTF-8 one
+- [ ] Source Generators
+    - [ ] Switch map trie generator to work around C# limitations
+- [ ] Interpolation? Accept FormattedString/AdvancedFormat (or how is it called) as input?

@@ -1,5 +1,4 @@
 using System.IO.Hashing;
-using System.Runtime.CompilerServices;
 
 namespace U8Primitives;
 

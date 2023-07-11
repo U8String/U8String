@@ -1,5 +1,3 @@
-using System.Runtime.CompilerServices;
-
 namespace U8Primitives;
 
 public readonly partial struct U8String

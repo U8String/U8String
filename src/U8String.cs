@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Serialization;
+
 using U8Primitives.Serialization;
 
 namespace U8Primitives;
@@ -17,7 +17,7 @@ public readonly partial struct U8String :
     ISpanFormattable,
     IUtf8SpanFormattable
 {
-    public static readonly U8String Empty;
+    public static U8String Empty => default;
 
     private readonly byte[]? _value;
 
