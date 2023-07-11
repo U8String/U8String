@@ -53,9 +53,9 @@ public readonly partial struct U8String
             {
                 var stride = 1;
 
-                if (remaining[idx] == '\r'
+                if (remaining[idx] == (byte)'\r'
                     && (uint)(idx + 1) < (uint)remaining.Length
-                    && remaining[idx + 1] == '\n')
+                    && remaining[idx + 1] == (byte)'\n')
                 {
                     stride = 2;
                 }
