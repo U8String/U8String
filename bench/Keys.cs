@@ -3,8 +3,9 @@ using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 
+[SimpleJob]
 [MemoryDiagnoser]
-[SimpleJob, SimpleJob(RuntimeMoniker.NativeAot80)]
+[DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 public class Keys
 {
     [Params(

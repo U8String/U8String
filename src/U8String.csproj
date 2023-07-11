@@ -5,8 +5,8 @@
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
     <RepositoryUrl>https://github.com/neon-sunset/U8String</RepositoryUrl>
     <PackageProjectUrl>https://github.com/neon-sunset/U8String</PackageProjectUrl>
-    <PackageTags>Utf8;Utf8String;UTF-8;Unicode</PackageTags>
-    <!-- <PackageReadmeFile>README.md</PackageReadmeFile> -->
+    <PackageTags>Utf8;Utf8String;UTF-8;Unicode;String;Primitive;Networking</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>[work-in-progress] Highly functional and performant UTF-8 string primitive for C#.</Description>
   </PropertyGroup>
 
@@ -15,7 +15,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>
-    <IsTrimmable>true</IsTrimmable>
+    <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +23,11 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.IO.Hashing" Version="8.0.0-preview.7.23325.2" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0-*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)../../README.md" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>

@@ -1,0 +1,6 @@
+# configuration file for dotnet-releaser
+[msbuild]
+project = "U8String.sln"
+[github]
+user = "neon-sunset"
+repo = "U8String"

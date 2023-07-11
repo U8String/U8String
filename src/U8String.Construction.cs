@@ -4,7 +4,6 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String(ReadOnlySpan<byte> value)
     {
         if (!value.IsEmpty)
@@ -31,15 +30,20 @@ public readonly partial struct U8String
 
         _value = value.ToArray();
         _offset = 0;
-        _length = (uint)value.Length;
+        _length = (uint)_value.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8String(string value)
+    public U8String(string? value)
     {
-        if (value != null)
+        if (!string.IsNullOrEmpty(value))
         {
             this = Parse(value.AsSpan(), null);
         }
     }
+
+    // Tracks https://github.com/dotnet/runtime/issues/87569
+    public static U8String Create(/*params*/ ReadOnlySpan<byte> items) => new(items);
+
+    public object Clone() => new U8String(AsSpan(), skipValidation: true);
 }

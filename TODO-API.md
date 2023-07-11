@@ -1,26 +1,27 @@
 # Overloads Policy
-- byte
-- Rune
-- U8String
-- ReadOnlySpan<byte>
-- ReadOnlySpan<char> / string
+- `byte`
+- `Rune`
+- `U8String`
+- `ReadOnlySpan<byte>`
+- `ReadOnlySpan<char>` / `string`
 
 # Validation Policy
-- ReadOnlySpan<byte>: Always
-- ReadOnlySpan<char>: Never
-- string: Never
-- byte: Always
-- Rune: Never
-- U8String: Conditional, on manipulation
+- `ReadOnlySpan<byte>`: Always
+- `ReadOnlySpan<char>`: Never
+- `string`: Never
+- `byte`: Always
+- `Rune`: Never
+- `U8String`: Conditional, on manipulation
 
 # TODO
+- [ ] Construction aligned with collection literals initialization syntax and API shape
 - [ ] IList, IEnumerable
 - [ ] Rune view (IEnumerable, or stateful IList?)
 - [ ] Char view (same as above)
 - [ ] Splitting
     - [ ] Split (byte, Rune, ROS, U8String)
-    - [ ] SplitFirst (byte, Rune, ROS, U8String)
-    - [ ] SplitLast (byte, Rune, ROS, U8String)
+    - [x] SplitFirst (byte, Rune, ROS, U8String)
+    - [x] SplitLast (byte, Rune, ROS, U8String)
     - [ ] EnumerateSplit? Should regular split not be eagerly computed?
     - [ ] EnumerateLines? Lines? (what about line breaks, use system line breaks or special?)
 - [ ] Comparison
@@ -32,16 +33,21 @@
     - [ ] Equals (+case insensitive)
     - [ ] Equals UTF-16 (+case insensitive)
 - [ ] Manipulation
-    - [ ] Trim
-    - [ ] TrimStart
-    - [ ] TrimEnd
-    - [ ] Replace (ignoreCase?)
+    - [ ] Trim, TrimStart, TrimEnd
+    - [x] TrimAscii, TrimStartAscii, TrimEndAscii
+    - [x] Replace
     - [ ] ReplaceLineEndings
+    - [ ] SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)
 - [ ] IsLatin/IsAlphanumeric?
+- [ ] `IComparable<U8String>`, `IComparable<U8String?>`
 - [ ] U8Marshal
     - [ ] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
     - [ ] FromAsciiChars
 - [ ] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
+- [ ] U8Constants
+    - [ ] (OS-specific) NewLine
+    - [ ] (OS-specific) PathSeparator
+    - [ ] ReplacementChar
 - [ ] DebugView
 ----------------
 - [ ] Analyzers

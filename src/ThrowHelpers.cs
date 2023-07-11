@@ -6,10 +6,16 @@ namespace System;
 internal static class ThrowHelpers
 {
     [DoesNotReturn, StackTraceHidden]
-    internal static void MalformedUtf8Value()
+    internal static void InvalidUtf8()
     {
         // TODO: Better exception message?
-        throw new ArgumentException("Malformed UTF-8 value.");
+        throw new ArgumentException("The value is not a valid UTF-8 sequence.");
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static void InvalidAscii()
+    {
+        throw new ArgumentException("The value is not a valid ASCII sequence.");
     }
 
     [DoesNotReturn, StackTraceHidden]

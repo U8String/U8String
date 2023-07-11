@@ -1,6 +1,5 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace U8Primitives;
 
@@ -68,10 +67,12 @@ public readonly partial struct U8String
         IFormatProvider? provider,
         [MaybeNullWhen(false)] out U8String result)
     {
-        var maxLength = Encoding.UTF8.GetMaxByteCount(s.Length);
-        var value = new byte[maxLength];
+        // Double traversal becomes the favourable tradeoff at longer lengths,
+        // and at shorter lengths the overhead is negligible.
+        var length = Encoding.UTF8.GetByteCount(s);
+        var value = new byte[length];
 
-        if (Encoding.UTF8.TryGetBytes(s, value, out var length))
+        if (Encoding.UTF8.TryGetBytes(s, value, out var _))
         {
             result = new U8String(value, 0, (uint)length);
             return true;

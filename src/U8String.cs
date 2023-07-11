@@ -1,29 +1,43 @@
-﻿using System.Diagnostics;
-using System.Runtime.InteropServices;
-using System.Text;
+﻿using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
-
+using System.Text.Unicode;
 using U8Primitives.Serialization;
 
 namespace U8Primitives;
 
 #pragma warning disable CA1825 // Avoid zero-length array allocations. Why: cctor checks ruin codegen
+#pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
+/// <summary>
+/// Represents a UTF-8 encoded string.
+/// </summary>
+/// <remarks>
+/// <para>U8String is an immutable value type that represents a UTF-8 encoded string.</para>
+/// <para>It stores the UTF-8 code units in an underlying byte[] buffer, and provides methods
+/// for manipulating and accessing the string content. It can be created from or converted
+/// to a string or a span of bytes, as long as the data is valid or convertible to UTF-8.</para>
+/// <para>U8String provides non-copying substringing and slicing operations, which return a new
+/// U8String that references a portion of the original data. Methods which manipulate the
+/// instances of U8String ensure that the resulting U8String is well-formed and valid UTF-8,
+/// unless otherwise specified. If an operation would produce invalid UTF-8, an exception is thrown.</para>
+/// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
+/// </remarks>
 [JsonConverter(typeof(U8StringJsonConverter))]
 public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,
     IEquatable<byte[]>,
+    ICloneable,
     ISpanParsable<U8String>,
     ISpanFormattable,
     IUtf8SpanFormattable
 {
     public static U8String Empty => default;
 
-    private readonly byte[]? _value;
+    internal readonly byte[]? _value;
 
-    private readonly uint _offset;
+    internal readonly uint _offset;
 
-    private readonly uint _length;
+    internal readonly uint _length;
 
     public int Length
     {
@@ -43,7 +57,8 @@ public readonly partial struct U8String :
     internal ref byte FirstByte
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), _offset);
+        get => ref System.Runtime.CompilerServices.Unsafe.Add(
+            ref MemoryMarshal.GetArrayDataReference(_value!), _offset);
     }
 
     /// <summary>
@@ -52,7 +67,8 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal byte IndexUnsafe(int index)
     {
-        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), _offset + (uint)index);
+        return System.Runtime.CompilerServices.Unsafe.Add(
+            ref MemoryMarshal.GetArrayDataReference(_value!), _offset + (uint)index);
     }
 
     /// <summary>
@@ -61,26 +77,21 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal byte IndexUnsafe(uint index)
     {
-        return Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), _offset + index);
+        return System.Runtime.CompilerServices.Unsafe.Add(
+            ref MemoryMarshal.GetArrayDataReference(_value!), _offset + index);
     }
 
     public bool IsAscii() => Ascii.IsValid(this);
 
-    // TODO: Implement polyfill + wait for Utf8.IsValid to be approved
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static bool IsValid(ReadOnlySpan<byte> _) => true;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsValid(ReadOnlySpan<byte> value) => Utf8.IsValid(value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining), StackTraceHidden]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Validate(ReadOnlySpan<byte> value)
     {
-        if (value.IsEmpty)
-        {
-            return;
-        }
-
         if (!IsValid(value))
         {
-            ThrowHelpers.MalformedUtf8Value();
+            ThrowHelpers.InvalidUtf8();
         }
     }
 }
