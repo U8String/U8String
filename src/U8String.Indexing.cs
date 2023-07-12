@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace U8Primitives;
 
@@ -45,26 +46,32 @@ public readonly partial struct U8String
     /// </exception>
     public U8String this[Range range]
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         // TODO: Not great, not terrible. Try to make it good.
         get
         {
-            var (offset, length) = range.GetOffsetAndLength((int)InnerLength);
-            var result = new U8String(Value, Offset + (uint)offset, (uint)length);
+            var current = this;
+
+            var (currOffset, currLength) = (current.Offset, current.Length);
+            var (offset, length) = range.GetOffsetAndLength(currLength);
 
             // Drop the reference if the result is empty
-            if (result.IsEmpty)
+            if (length is 0)
             {
                 return default;
             }
 
-            if (Rune.DecodeFromUtf8(result, out var _, out var _) is OperationStatus.InvalidData ||
-                Rune.DecodeLastFromUtf8(result, out var _, out var _) is OperationStatus.InvalidData)
+            var value = MemoryMarshal.CreateReadOnlySpan(
+                ref System.Runtime.CompilerServices.Unsafe.Add(ref current.FirstByte, offset), length);
+            // This hurts a lot
+            if (Rune.DecodeFromUtf8(value, out var _, out var _) is OperationStatus.InvalidData ||
+                Rune.DecodeLastFromUtf8(value, out var _, out var _) is OperationStatus.InvalidData)
             {
                 // TODO: Exception message UX
                 ThrowHelpers.InvalidUtf8();
             }
 
-            return result;
+            return new(current.Value, (uint)(currOffset + offset), (uint)length);
         }
     }
 }

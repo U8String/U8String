@@ -30,8 +30,8 @@ public static class U8Marshal
     /// <paramref name="length"/>. <paramref name="length"/> must be less than or equal to
     /// <paramref name="value"/>.Length - <paramref name="offset"/>.
     /// </remarks>
-    public static U8String Create(byte[] value, uint offset, uint length) =>
-        new(value, offset, length);
+    public static U8String Create(byte[] value, int offset, int length) =>
+        new(value, (uint)offset, (uint)length);
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Substring(int)"/> which
@@ -39,8 +39,8 @@ public static class U8Marshal
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
-    public static U8String Substring(U8String value, uint offset) =>
-        new(value.Value, value.Offset + offset, value.InnerLength - offset);
+    public static U8String Substring(U8String value, int offset) =>
+        new(value.Value, value.Offset + (uint)offset, value.InnerLength - (uint)offset);
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Substring(int, int)"/> which
@@ -50,6 +50,19 @@ public static class U8Marshal
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     /// <param name="length">The number of bytes to use from <paramref name="value"/> starting at <paramref name="offset"/>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Substring(U8String value, uint offset, uint length) =>
-        new(value.Value, value.Offset + offset, length);
+    public static U8String Substring(U8String value, int offset, int length) =>
+        new(value.Value, value.Offset + (uint)offset, (uint)length);
+
+    /// <summary>
+    /// Unsafe variant of <see cref="U8String.this[Range]"/> which
+    /// does not perform bounds checking or UTF-8 validation.
+    /// </summary>
+    /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
+    /// <param name="range">The range of the new substring.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Slice(U8String value, Range range)
+    {
+        var (offset, length) = range.GetOffsetAndLength(value.Length);
+        return new(value.Value, value.Offset + (uint)offset, (uint)length);
+    }
 }

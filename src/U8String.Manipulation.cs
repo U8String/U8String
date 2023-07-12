@@ -1,5 +1,7 @@
 using System.Buffers;
 
+using U8Primitives.Unsafe;
+
 namespace U8Primitives;
 
 public readonly partial struct U8String
@@ -129,22 +131,24 @@ public readonly partial struct U8String
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.IndexOf(separator);
         return index >= 0
-            ? (this[..index], this[(index + 1)..])
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + 1))
             : (this, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(Rune separator)
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
@@ -152,51 +156,53 @@ public readonly partial struct U8String
         var separatorBytes = (stackalloc byte[4]);
         var separatorLength = separator.EncodeToUtf8(separatorBytes);
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.IndexOf(separatorBytes[..separatorLength]);
         return index >= 0
-            ? (this[..index], this[(index + separatorLength)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + separatorLength))
+            : (source, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(U8String separator)
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
         if (separator.IsEmpty)
         {
-            return (this, default);
+            return (source, default);
         }
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.IndexOf(separator);
         return index >= 0
-            ? (this[..index], this[(index + 1)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + separator.Length))
+            : (source, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(ReadOnlySpan<byte> separator)
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
         if (separator.IsEmpty)
         {
-            return (this, default);
+            return (source, default);
         }
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.IndexOf(separator);
         return index >= 0
-            ? (this[..index], this[(index + separator.Length)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + separator.Length))
+            : (source, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -208,22 +214,24 @@ public readonly partial struct U8String
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.LastIndexOf(separator);
         return index >= 0
-            ? (this[..index], this[(index + 1)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + 1))
+            : (source, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(Rune separator)
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
@@ -231,51 +239,53 @@ public readonly partial struct U8String
         var separatorBytes = (stackalloc byte[4]);
         var separatorLength = separator.EncodeToUtf8(separatorBytes);
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.LastIndexOf(separatorBytes[..separatorLength]);
         return index >= 0
-            ? (this[..index], this[(index + separatorLength)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + separatorLength))
+            : (source, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(U8String separator)
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
         if (separator.IsEmpty)
         {
-            return (this, default);
+            return (source, default);
         }
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.LastIndexOf(separator);
         return index >= 0
-            ? (this[..index], this[(index + 1)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + separator.Length))
+            : (source, default);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(ReadOnlySpan<byte> separator)
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
         if (separator.IsEmpty)
         {
-            return (this, default);
+            return (source, default);
         }
 
-        var span = AsSpan();
+        var span = source.AsSpan();
         var index = span.LastIndexOf(separator);
         return index >= 0
-            ? (this[..index], this[(index + separator.Length)..])
-            : (this, default);
+            ? (U8Marshal.Substring(source, 0, index), U8Marshal.Substring(source, index + separator.Length))
+            : (source, default);
     }
 
     // [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -321,7 +331,11 @@ public readonly partial struct U8String
     /// are removed from the start and end of the current string.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8String TrimAscii() => this[Ascii.Trim(this)];
+    public U8String TrimAscii()
+    {
+        var source = this;
+        return source[Ascii.Trim(source)];
+    }
 
     /// <summary>
     /// Removes all the leading ASCII white-space characters from the current string.
@@ -331,7 +345,11 @@ public readonly partial struct U8String
     /// are removed from the start of the current string.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8String TrimStartAscii() => this[Ascii.TrimStart(this)];
+    public U8String TrimStartAscii()
+    {
+        var source = this;
+        return source[Ascii.TrimStart(source)];
+    }
 
     /// <summary>
     /// Removes all the trailing ASCII white-space characters from the current string.
@@ -341,7 +359,11 @@ public readonly partial struct U8String
     /// are removed from the end of the current string.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8String TrimEndAscii() => this[Ascii.TrimEnd(this)];
+    public U8String TrimEndAscii()
+    {
+        var source = this;
+        return source[Ascii.TrimEnd(source)];
+    }
 
     /// <summary>
     /// Returns a copy of this ASCII string converted to lower case.
@@ -352,20 +374,21 @@ public readonly partial struct U8String
     /// </exception>
     public U8String ToLowerAscii()
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
-        var source = AsSpan();
-        var destination = new byte[source.Length];
-        var result = Ascii.ToLower(source, destination, out _);
+        var span = source.AsSpan();
+        var destination = new byte[span.Length];
+        var result = Ascii.ToLower(span, destination, out _);
         if (result is OperationStatus.InvalidData)
         {
             ThrowHelpers.InvalidAscii();
         }
 
-        return new U8String(destination, 0, (uint)source.Length);
+        return new U8String(destination, 0, (uint)span.Length);
     }
 
     /// <summary>
@@ -377,20 +400,21 @@ public readonly partial struct U8String
     /// </exception>
     public U8String ToUpperAscii()
     {
-        if (IsEmpty)
+        var source = this;
+        if (source.IsEmpty)
         {
             return default;
         }
 
-        var source = AsSpan();
-        var destination = new byte[source.Length];
-        var result = Ascii.ToUpper(source, destination, out _);
+        var span = source.AsSpan();
+        var destination = new byte[span.Length];
+        var result = Ascii.ToUpper(span, destination, out _);
         if (result is OperationStatus.InvalidData)
         {
             ThrowHelpers.InvalidAscii();
         }
 
-        return new U8String(destination, 0, (uint)source.Length);
+        return new U8String(destination, 0, (uint)span.Length);
     }
 
     // private U8String TrimCore()

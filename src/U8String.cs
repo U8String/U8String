@@ -38,6 +38,8 @@ public readonly partial struct U8String :
     /// </remarks>
     public static U8String Empty => default;
 
+    // TODO: Store max code point length in Range to short-circuit slicing validation?
+    // Or reclaim performance through hand-rolling the validation?
     internal readonly byte[]? Value;
     internal readonly ulong Range;
 
