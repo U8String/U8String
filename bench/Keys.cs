@@ -8,7 +8,12 @@ namespace U8Primitives.Benchmarks;
 [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 public class Keys
 {
-    public string? Value = "hello world";
+    [Params(
+        "test",
+        "тест",
+        "very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string very long string"
+    )]
+    public string? Value;
     public U8String ValueU8;
 
     private readonly HashSet<string> Strings = new();
