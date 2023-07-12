@@ -10,7 +10,7 @@ namespace U8Primitives.Benchmarks;
 public class Enumeration
 {
     private static readonly U8String License = U8Marshal.Create(
-        File.ReadAllBytes("/Users/arseniy/Code/GitHub/U8String/THIRD-PARTY-NOTICES.txt"));
+        File.ReadAllBytes("../THIRD-PARTY-NOTICES.txt"));
 
     private static readonly string LicenseUTF16 = License.ToString();
 
