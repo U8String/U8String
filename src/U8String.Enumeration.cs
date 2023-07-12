@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Collections;
-using U8Primitives.Unsafe;
 
 namespace U8Primitives;
 
@@ -12,12 +11,18 @@ public readonly partial struct U8String
     // [MethodImpl(MethodImplOptions.AggressiveInlining)]
     // public ReadOnlySpan<byte>.Enumerator GetEnumerator() => AsSpan().GetEnumerator();
 
+    /// <summary>
+    /// Returns an enumeration of lines over the provided string.
+    /// </summary>
+    /// <returns>An enumeration of lines.</returns>
     public LineEnumerator Lines => new(this);
 
-    // TODO: Questionable implementation copied from BCL that does not need to keep two copies fo an underlying buffer reference.
-    // Rewrite to an efficient, bounds-check and validation free implementation.
+    /// <summary>
+    /// A struct that enumerates lines over a string.
+    /// </summary>
     public struct LineEnumerator : IEnumerable<U8String>, IEnumerator<U8String>
     {
+        // TODO: Ensure this is aligned with Rust's .lines() implementation, or not?
         private static readonly SearchValues<byte> NewLineChars = SearchValues.Create(U8Constants.NewLineChars);
 
         private readonly byte[]? _value;
@@ -25,6 +30,10 @@ public readonly partial struct U8String
         private (uint Offset, uint Length) _current;
         private bool _isEnumeratorActive;
 
+        /// <summary>
+        /// Creates a new line enumerator over the provided string.
+        /// </summary>
+        /// <param name="value">The string to enumerate over.</param>
         public LineEnumerator(U8String value)
         {
             if (!value.IsEmpty)
@@ -36,13 +45,22 @@ public readonly partial struct U8String
             }
         }
 
+        /// <summary>
+        /// Returns an enumerator over the provided string.
+        /// </summary>
         public readonly LineEnumerator GetEnumerator() => this;
         readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => this;
         readonly IEnumerator IEnumerable.GetEnumerator() => this;
 
+        /// <summary>
+        /// Returns the current line.
+        /// </summary>
         public readonly U8String Current => new(_value, _current.Offset, _current.Length);
         readonly object IEnumerator.Current => new U8String(_value, _current.Offset, _current.Length);
 
+        /// <summary>
+        /// Advances the enumerator to the next line.
+        /// </summary>
         public bool MoveNext()
         {
             if (!_isEnumeratorActive)
@@ -78,11 +96,18 @@ public readonly partial struct U8String
             return true;
         }
 
+        /// <summary>
+        /// Not supported.
+        /// </summary>
+        /// <exception cref="NotSupportedException">Always thrown.</exception>
         public void Reset()
         {
             throw new NotSupportedException();
         }
 
+        /// <summary>
+        /// Not supported, is a no-op.
+        /// </summary>
         public readonly void Dispose() { }
     }
 }

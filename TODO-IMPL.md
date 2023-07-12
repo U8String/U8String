@@ -12,6 +12,7 @@
 - [x] Consider whether Char8-like byte represntation is needed. Solution: not needed, use Rune and Char views.
 - [x] ~~(torture)~~ Utf8 Validation. Solved by https://github.com/dotnet/runtime/issues/502
 - [x] Utf8 code-point aware indexing. 
+- [ ] Reconsider .Unsafe namespace for U8Marshal since some methods are unsafe but .Create(byte[]) simply skips validation
 
 # References
 https://github.com/dotnet/runtime/blob/4f9ae42d861fcb4be2fcd5d3d55d5f227d30e723/src/coreclr/src/System.Private.CoreLib/src/System/Utf8String.cs

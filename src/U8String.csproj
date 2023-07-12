@@ -8,6 +8,7 @@
     <PackageTags>Utf8;Utf8String;UTF-8;Unicode;String;Primitive;Networking</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>[work-in-progress] Highly functional and performant UTF-8 string primitive for C#.</Description>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
 
   <PropertyGroup>
