@@ -28,7 +28,7 @@ public static class U8StringExtensions
 
     public static U8String ToU8String(this ReadOnlySpan<char> value)
     {
-        var bytes = new byte[Encoding.UTF8.GetMaxByteCount(value.Length)];
+        var bytes = new byte[Encoding.UTF8.GetByteCount(value)];
         var length = Encoding.UTF8.GetBytes(value, bytes);
 
         return new U8String(bytes, 0, (uint)length);
@@ -58,6 +58,11 @@ public static class U8StringExtensions
         ReadOnlySpan<char> format,
         IFormatProvider? provider) where T : IUtf8SpanFormattable
     {
+        if (value is U8String u8str)
+        {
+            return u8str;
+        }
+
         var buffer = new byte[32];
 
     Retry:
