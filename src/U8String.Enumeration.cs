@@ -20,15 +20,17 @@ public readonly partial struct U8String
     {
         private static readonly SearchValues<byte> NewLineChars = SearchValues.Create(U8Constants.NewLineChars);
 
-        private U8String _remaining;
-        private U8String _current;
+        private readonly byte[]? _value;
+        private (uint Offset, uint Length) _remaining;
+        private (uint Offset, uint Length) _current;
         private bool _isEnumeratorActive;
 
         public LineEnumerator(U8String value)
         {
             if (!value.IsEmpty)
             {
-                _remaining = value;
+                _value = value._value;
+                _remaining = (value._offset, value._length);
                 _current = default;
                 _isEnumeratorActive = true;
             }
@@ -38,30 +40,31 @@ public readonly partial struct U8String
         readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => this;
         readonly IEnumerator IEnumerable.GetEnumerator() => this;
 
-        public readonly U8String Current => _current;
-        readonly object IEnumerator.Current => _current;
+        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        readonly object IEnumerator.Current => new U8String(_value, _current.Offset, _current.Length);
 
         public bool MoveNext()
         {
             if (!_isEnumeratorActive)
                 return false;
 
-            var remaining = _remaining.AsSpan();
+            var remaining = _value.AsSpan((int)_remaining.Offset, (int)_remaining.Length);
             var idx = remaining.IndexOfAny(NewLineChars);
 
-            if ((uint)idx < (uint)remaining.Length)
+            if ((uint)idx < remaining.Length)
             {
                 var stride = 1;
-
                 if (remaining[idx] == (byte)'\r'
-                    && (uint)(idx + 1) < (uint)remaining.Length
+                    && idx + 1 < remaining.Length
                     && remaining[idx + 1] == (byte)'\n')
                 {
                     stride = 2;
                 }
 
-                _current = U8Marshal.Substring(_remaining, 0, (uint)idx);
-                _remaining = U8Marshal.Substring(_remaining, (uint)(idx + stride));
+                _current = (_remaining.Offset, (uint)idx);
+                _remaining = (
+                    (uint)(_remaining.Offset + idx + stride),
+                    (uint)(_remaining.Length - idx - stride));
             }
             else
             {
