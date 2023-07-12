@@ -5,41 +5,70 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
+    /// <summary>
+    /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/>.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
-        return !IsEmpty ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length) : default;
+        return !IsEmpty ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength) : default;
     }
 
+    ///<summary>
+    /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/> starting at the specified index.
+    /// </summary>
+    /// <param name="start">The index to start at.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="start"/> is less than zero or greater than <see cref="Length"/>.
+    /// </exception>
     // Codegen for the overloads below would probably be garbage, which is ok for now.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start)
     {
         return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length)[start..]
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength)[start..]
             : default;
     }
 
+    ///<summary>
+    /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/>
+    /// starting at the specified index and of the specified length.
+    /// </summary>
+    /// <param name="start">The index to start at.</param>
+    /// <param name="length">The length of the span.</param>
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when either <paramref name="start"/> or <paramref name="length"/> is out of bounds.
+    /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start, int length)
     {
         return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length)[start..(start + length)]
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength)[start..(start + length)]
             : default;
     }
 
+    ///<summary>
+    /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/> sliced by the specified <see cref="System.Range"/>.
+    /// </summary>
+    /// <param name="range">The range to slice <see cref="U8String"/> by.</param>.
+    /// <exception cref="ArgumentOutOfRangeException">
+    /// Thrown when <paramref name="range"/> is out of bounds.
+    /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(Range range)
     {
         return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)_length)[range]
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength)[range]
             : default;
     }
 
+    /// <summary>
+    /// Returns a <see cref="ReadOnlyMemory{T}"/> view of the current <see cref="U8String"/>.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return !IsEmpty ? _value.AsMemory((int)_offset, (int)_length) : default;
+        return !IsEmpty ? Value.AsMemory((int)Offset, (int)InnerLength) : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -98,7 +127,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        var length = _length;
+        var length = InnerLength;
         if (length <= utf8Destination.Length)
         {
             AsSpan().CopyTo(utf8Destination);
@@ -112,11 +141,6 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public byte[] ToArray() => AsSpan().ToArray();
-
-    /// <summary>
-    /// A guard against ToU8String<T> where T : IUtf8SpanFormattable overload.
-    /// </summary>
-    public U8String ToU8String() => this;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ToString(string? format, IFormatProvider? formatProvider) => ToString();

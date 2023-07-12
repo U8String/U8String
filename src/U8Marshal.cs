@@ -40,7 +40,7 @@ public static class U8Marshal
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     public static U8String Substring(U8String value, uint offset) =>
-        new(value._value, value._offset + offset, value._length - offset);
+        new(value.Value, value.Offset + offset, value.InnerLength - offset);
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Substring(int, int)"/> which
@@ -51,5 +51,5 @@ public static class U8Marshal
     /// <param name="length">The number of bytes to use from <paramref name="value"/> starting at <paramref name="offset"/>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Substring(U8String value, uint offset, uint length) =>
-        new(value._value, value._offset + offset, length);
+        new(value.Value, value.Offset + offset, length);
 }

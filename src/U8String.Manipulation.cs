@@ -18,11 +18,11 @@ public readonly partial struct U8String
             return left;
         }
 
-        var length = left._length + right._length;
+        var length = left.InnerLength + right.InnerLength;
         var value = new byte[length];
 
         left.AsSpan().CopyTo(value);
-        right.AsSpan().CopyTo(value.AsSpan((int)left._length));
+        right.AsSpan().CopyTo(value.AsSpan((int)left.InnerLength));
 
         return new U8String(value, 0, length);
     }
@@ -108,7 +108,7 @@ public readonly partial struct U8String
             return this;
         }
 
-        var replaced = new byte[_length].AsSpan();
+        var replaced = new byte[InnerLength].AsSpan();
         current[firstReplace..].Replace(
             replaced[firstReplace..],
             oldValue,

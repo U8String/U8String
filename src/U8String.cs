@@ -5,7 +5,6 @@ using U8Primitives.Serialization;
 
 namespace U8Primitives;
 
-#pragma warning disable CA1825 // Avoid zero-length array allocations. Why: cctor checks ruin codegen
 #pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
 /// <summary>
 /// Represents a UTF-8 encoded string.
@@ -31,24 +30,47 @@ public readonly partial struct U8String :
     ISpanFormattable,
     IUtf8SpanFormattable
 {
+    /// <summary>
+    /// Represents an empty <see cref="U8String"/>.
+    /// </summary>
+    /// <remarks>
+    /// Functionally equivalent to <see langword="default(U8String)"/>.
+    /// </remarks>
     public static U8String Empty => default;
 
-    internal readonly byte[]? _value;
+    internal readonly byte[]? Value;
+    internal readonly ulong Range;
 
-    internal readonly uint _offset;
+    internal uint Offset
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (uint)Range;
+    }
 
-    internal readonly uint _length;
+    internal uint InnerLength
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (uint)(Range >> 32);
+    }
 
+    /// <summary>
+    /// The number of UTF-8 bytes in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>The number of UTF-8 bytes.</returns>
     public int Length
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)_length;
+        get => (int)InnerLength;
     }
 
+    /// <summary>
+    /// Indicates whether the current <see cref="U8String"/> is empty.
+    /// </summary>
+    /// <returns><see langword="true"/> if the current <see cref="U8String"/> is empty; otherwise, <see langword="false"/>.</returns>
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _length is 0;
+        get => InnerLength is 0;
     }
 
     /// <summary>
@@ -58,7 +80,7 @@ public readonly partial struct U8String :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => ref System.Runtime.CompilerServices.Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(_value!), _offset);
+            ref MemoryMarshal.GetArrayDataReference(Value!), Offset);
     }
 
     /// <summary>
@@ -68,7 +90,7 @@ public readonly partial struct U8String :
     internal byte IndexUnsafe(int index)
     {
         return System.Runtime.CompilerServices.Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(_value!), _offset + (uint)index);
+            ref MemoryMarshal.GetArrayDataReference(Value!), Offset + (uint)index);
     }
 
     /// <summary>
@@ -78,11 +100,21 @@ public readonly partial struct U8String :
     internal byte IndexUnsafe(uint index)
     {
         return System.Runtime.CompilerServices.Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(_value!), _offset + index);
+            ref MemoryMarshal.GetArrayDataReference(Value!), Offset + index);
     }
 
+    /// <summary>
+    /// Evaluates whether the current <see cref="U8String"/> contains only ASCII characters.
+    /// </summary>
     public bool IsAscii() => Ascii.IsValid(this);
 
+    /// <summary>
+    /// Validates that the <paramref name="value"/> is a valid UTF-8 byte sequence.
+    /// </summary>
+    /// <param name="value">The <see cref="ReadOnlySpan{T}"/> to validate.</param>
+    /// <returns>
+    /// <see langword="true"/> if the <paramref name="value"/> contains a valid UTF-8 byte sequence; otherwise, <see langword="false"/>.
+    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValid(ReadOnlySpan<byte> value) => Utf8.IsValid(value);
 

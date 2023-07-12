@@ -4,6 +4,7 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
+    /// <inheritdoc />
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override bool Equals(object? obj)
     {
@@ -40,6 +41,12 @@ public readonly partial struct U8String
         return AsSpan().SequenceEqual(other);
     }
 
+    /// <summary>
+    /// Returns a hash code for this instance.
+    /// </summary>
+    /// <remarks>
+    /// The hash code is calculated using the xxHash32 algorithm.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override int GetHashCode()
     {

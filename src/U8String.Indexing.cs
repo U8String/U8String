@@ -24,7 +24,7 @@ public readonly partial struct U8String
         get
         {
             var i = index.GetOffset(Length);
-            if ((uint)i >= _length)
+            if ((uint)i >= InnerLength)
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }
@@ -48,8 +48,8 @@ public readonly partial struct U8String
         // TODO: Not great, not terrible. Try to make it good.
         get
         {
-            var (offset, length) = range.GetOffsetAndLength((int)_length);
-            var result = new U8String(_value, _offset + (uint)offset, (uint)length);
+            var (offset, length) = range.GetOffsetAndLength((int)InnerLength);
+            var result = new U8String(Value, Offset + (uint)offset, (uint)length);
 
             // Drop the reference if the result is empty
             if (result.IsEmpty)
