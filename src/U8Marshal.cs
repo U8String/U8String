@@ -40,7 +40,7 @@ public static class U8Marshal
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     public static U8String Substring(U8String value, int offset) =>
-        new(value.Value, value.Offset + (uint)offset, value.InnerLength - (uint)offset);
+        new(value.Value, value.Offset + (uint)offset, value.LengthInner - (uint)offset);
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Substring(int, int)"/> which
@@ -62,7 +62,20 @@ public static class U8Marshal
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Slice(U8String value, Range range)
     {
-        var (offset, length) = range.GetOffsetAndLength(value.Length);
-        return new(value.Value, value.Offset + (uint)offset, (uint)length);
+        var length = value.Length;
+        var startIndex = range.Start;
+        var start = startIndex.IsFromEnd
+            ? length - startIndex.Value
+            : startIndex.Value;
+
+        var endIndex = range.End;
+        var end = endIndex.IsFromEnd
+            ? length - endIndex.Value
+            : endIndex.Value;
+
+        return new(
+            value.Value,
+            value.Offset + (uint)start,
+            (uint)(end - start));
     }
 }

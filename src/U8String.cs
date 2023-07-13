@@ -49,7 +49,7 @@ public readonly partial struct U8String :
         get => (uint)Range;
     }
 
-    internal uint InnerLength
+    internal uint LengthInner
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (uint)(Range >> 32);
@@ -62,7 +62,7 @@ public readonly partial struct U8String :
     public int Length
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)InnerLength;
+        get => (int)LengthInner;
     }
 
     /// <summary>
@@ -72,7 +72,7 @@ public readonly partial struct U8String :
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => InnerLength is 0;
+        get => LengthInner is 0;
     }
 
     /// <summary>

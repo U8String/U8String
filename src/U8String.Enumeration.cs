@@ -39,7 +39,7 @@ public readonly partial struct U8String
             if (!value.IsEmpty)
             {
                 _value = value.Value;
-                _remaining = (value.Offset, value.InnerLength);
+                _remaining = (value.Offset, value.LengthInner);
                 _current = default;
                 _isEnumeratorActive = true;
             }

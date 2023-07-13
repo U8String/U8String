@@ -25,7 +25,7 @@ public readonly partial struct U8String
         get
         {
             var i = index.GetOffset(Length);
-            if ((uint)i >= InnerLength)
+            if ((uint)i >= LengthInner)
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }

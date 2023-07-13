@@ -11,7 +11,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
-        return !IsEmpty ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength) : default;
+        return !IsEmpty ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length) : default;
     }
 
     ///<summary>
@@ -26,7 +26,7 @@ public readonly partial struct U8String
     public ReadOnlySpan<byte> AsSpan(int start)
     {
         return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength)[start..]
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length)[start..]
             : default;
     }
 
@@ -43,7 +43,7 @@ public readonly partial struct U8String
     public ReadOnlySpan<byte> AsSpan(int start, int length)
     {
         return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength)[start..(start + length)]
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length)[start..(start + length)]
             : default;
     }
 
@@ -58,7 +58,7 @@ public readonly partial struct U8String
     public ReadOnlySpan<byte> AsSpan(Range range)
     {
         return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, (int)InnerLength)[range]
+            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length)[range]
             : default;
     }
 
@@ -68,7 +68,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return !IsEmpty ? Value.AsMemory((int)Offset, (int)InnerLength) : default;
+        return !IsEmpty ? Value.AsMemory((int)Offset, Length) : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -127,7 +127,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        var length = InnerLength;
+        var length = LengthInner;
         if (length <= utf8Destination.Length)
         {
             AsSpan().CopyTo(utf8Destination);
