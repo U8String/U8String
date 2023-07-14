@@ -36,10 +36,10 @@ public class Enumeration
         var res = 0;
         foreach (var line in License.Lines)
         {
-            res += line.Length;
+            res++;
         }
 
-        // ArgumentOutOfRangeException.ThrowIfNotEqual(res, TotalLength);
+        ArgumentOutOfRangeException.ThrowIfNotEqual(res, LineCount);
         return res;
     }
 
@@ -50,9 +50,9 @@ public class Enumeration
     public int LinesUtf16Span()
     {
         var res = 0;
-        foreach (var line in LicenseUTF16.AsSpan().EnumerateLines())
+        foreach (var _ in LicenseUTF16.AsSpan().EnumerateLines())
         {
-            res += line.Length;
+            res++;
         }
 
         return res;

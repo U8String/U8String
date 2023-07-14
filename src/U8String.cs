@@ -40,7 +40,7 @@ public readonly partial struct U8String :
     public static U8String Empty => default;
 
     internal readonly byte[]? Value;
-    internal readonly ulong Inner;
+    private readonly InnerOffsets Inner;
 
     [StructLayout(LayoutKind.Sequential)]
     readonly struct InnerOffsets
@@ -76,7 +76,7 @@ public readonly partial struct U8String :
             // !! However, this only happens in FullOpts and only when reading. !!
             // var inner = Inner;
             // return Unsafe.As<ulong, InnerOffsets>(ref inner).Offset;
-            return Unsafe.BitCast<ulong, InnerOffsets>(Inner).Offset;
+            return Inner.Offset;
         }
     }
 
@@ -94,7 +94,7 @@ public readonly partial struct U8String :
             // !! However, this only happens in FullOpts and only when reading. !!
             // var inner = Inner;
             // return Unsafe.As<ulong, InnerOffsets>(ref inner).Length;
-            return Unsafe.BitCast<ulong, InnerOffsets>(Inner).Length;
+            return Inner.Length;
         }
     }
 
