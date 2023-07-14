@@ -16,14 +16,14 @@
 # TODO
 - [ ] Construction aligned with collection literals initialization syntax and API shape
 - [ ] IList, IEnumerable
-- [ ] Rune view (IEnumerable, or stateful IList?)
-- [ ] Char view (same as above)
+- [ ] Runes view (IEnumerable, or stateful IList?)
+- [ ] Chars view (same as above)
+- [x] Lines view
 - [ ] Splitting
     - [ ] Split (byte, Rune, ROS, U8String)
     - [x] SplitFirst (byte, Rune, ROS, U8String)
     - [x] SplitLast (byte, Rune, ROS, U8String)
     - [ ] EnumerateSplit? Should regular split not be eagerly computed?
-    - [ ] EnumerateLines? Lines? (what about line breaks, use system line breaks or special?)
 - [ ] Comparison
     - [ ] Contains (+case insensitive)
     - [ ] StartsWith (+case insensitive)
@@ -35,14 +35,15 @@
 - [ ] Manipulation
     - [ ] Trim, TrimStart, TrimEnd
     - [x] TrimAscii, TrimStartAscii, TrimEndAscii
-    - [x] Replace
+    - [x] Replace(byte)
+    - [ ] Replace(...)
     - [ ] ReplaceLineEndings
-    - [ ] SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)
+    - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
 - [ ] IsLatin/IsAlphanumeric?
 - [ ] `IComparable<U8String>`, `IComparable<U8String?>`
 - [ ] U8Marshal
-    - [ ] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
-    - [ ] FromAsciiChars
+    - [x] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
+    - [x] ~~FromAsciiChars~~
 - [ ] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
 - [ ] U8Constants
     - [ ] (OS-specific) NewLine

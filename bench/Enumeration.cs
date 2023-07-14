@@ -1,7 +1,6 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
-
-using U8Primitives.Unsafe;
+using U8Primitives.InteropServices;
 
 namespace U8Primitives.Benchmarks;
 
@@ -14,29 +13,52 @@ public class Enumeration
 
     private static readonly string LicenseUTF16 = License.ToString();
 
+    private int LineCount;
+
     private static readonly char[] NewLineChars = "\n\r\f\u0085\u2028\u2029".ToArray();
 
-    [Benchmark(Baseline = true)]
-    public void Lines()
+    [GlobalSetup]
+    public void Setup()
     {
+        var res = 0;
+        foreach (var _ in LicenseUTF16.AsSpan().EnumerateLines())
+        {
+            res++;
+        }
+
+        LineCount = res;
+    }
+
+    // TODO: Submit a bug report to dotnet/runtime because this is completely broken with FullOpts
+    [Benchmark(Baseline = true)]
+    public int Lines()
+    {
+        var res = 0;
         foreach (var line in License.Lines)
         {
-            _ = line;
+            res += line.Length;
         }
+
+        // ArgumentOutOfRangeException.ThrowIfNotEqual(res, TotalLength);
+        return res;
     }
 
     [Benchmark]
-    public int LinesBoxedCount() => License.Lines.Count();
+    public int LinesEnumerable() => License.Lines.Count();
 
     [Benchmark]
-    public void LinesUtf16Span()
+    public int LinesUtf16Span()
     {
+        var res = 0;
         foreach (var line in LicenseUTF16.AsSpan().EnumerateLines())
         {
-            _ = line;
+            res += line.Length;
         }
+
+        return res;
     }
 
+    // Different behavior
     [Benchmark]
     public int LinesUtf16SplitCount() => LicenseUTF16.Split(NewLineChars).Length;
 }

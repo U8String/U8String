@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using U8Primitives.Serialization;
@@ -38,21 +39,45 @@ public readonly partial struct U8String :
     /// </remarks>
     public static U8String Empty => default;
 
-    // TODO: Store max code point length in Range to short-circuit slicing validation?
-    // Or reclaim performance through hand-rolling the validation?
     internal readonly byte[]? Value;
-    internal readonly ulong Range;
+    internal readonly ulong Inner;
 
-    internal uint Offset
+    [StructLayout(LayoutKind.Sequential)]
+    readonly struct InnerOffsets
     {
+        public readonly int Offset;
+        public readonly int Length;
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (uint)Range;
+        public InnerOffsets(int offset, int length)
+        {
+            Debug.Assert((uint)offset <= int.MaxValue);
+            Debug.Assert((uint)length <= int.MaxValue);
+
+            Offset = offset;
+            Length = length;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator ulong(InnerOffsets value)
+        {
+            var inner = value;
+            return Unsafe.As<InnerOffsets, ulong>(ref inner);
+        }
     }
 
-    internal uint LengthInner
+    internal int Offset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (uint)(Range >> 32);
+        get
+        {
+            // !! Unsafe.As incorrectly accesses the first field of the struct  !!
+            // !! regardless of the offset. Most likely this is a compiler bug. !!
+            // !! However, this only happens in FullOpts and only when reading. !!
+            // var inner = Inner;
+            // return Unsafe.As<ulong, InnerOffsets>(ref inner).Offset;
+            return Unsafe.BitCast<ulong, InnerOffsets>(Inner).Offset;
+        }
     }
 
     /// <summary>
@@ -62,7 +87,15 @@ public readonly partial struct U8String :
     public int Length
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (int)LengthInner;
+        get
+        {
+            // !! Unsafe.As incorrectly accesses the first field of the struct  !!
+            // !! regardless of the offset. Most likely this is a compiler bug. !!
+            // !! However, this only happens in FullOpts and only when reading. !!
+            // var inner = Inner;
+            // return Unsafe.As<ulong, InnerOffsets>(ref inner).Length;
+            return Unsafe.BitCast<ulong, InnerOffsets>(Inner).Length;
+        }
     }
 
     /// <summary>
@@ -72,37 +105,43 @@ public readonly partial struct U8String :
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => LengthInner is 0;
+        get => Length is 0;
     }
 
     /// <summary>
     /// Must not be accessed if <see cref="IsEmpty"/> is true.
     /// </summary>
-    internal ref byte FirstByte
+    internal ref byte UnsafeRef
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => ref System.Runtime.CompilerServices.Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), Offset);
+        get => ref Unsafe.Add(
+            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset);
+    }
+
+    internal ReadOnlySpan<byte> UnsafeSpan
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length);
     }
 
     /// <summary>
     /// Must not be accessed if <see cref="IsEmpty"/> is true.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal byte IndexUnsafe(int index)
+    internal ref byte UnsafeRefAdd(int index)
     {
-        return System.Runtime.CompilerServices.Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), Offset + (uint)index);
+        return ref Unsafe.Add(
+            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset + (nint)(uint)index);
     }
 
     /// <summary>
     /// Must not be accessed if <see cref="IsEmpty"/> is true.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal byte IndexUnsafe(uint index)
+    internal ref byte UnsafeRefAdd(uint index)
     {
-        return System.Runtime.CompilerServices.Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), Offset + index);
+        return ref Unsafe.Add(
+            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset + (nint)index);
     }
 
     /// <summary>

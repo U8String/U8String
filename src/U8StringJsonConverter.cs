@@ -20,8 +20,9 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
             var buffer = !readerValue.HasValueSequence
                 ? readerValue.ValueSpan.ToArray()
                 : readerValue.ValueSequence.ToArray();
+            var length = buffer.Length;
 
-            return new U8String(buffer, 0, (uint)buffer.Length);
+            return length > 0 ? new U8String(buffer, 0, length) : default;
         }
 
         return JsonException(readerValue.TokenType);

@@ -26,8 +26,8 @@ public readonly partial struct U8String
         private static readonly SearchValues<byte> NewLineChars = SearchValues.Create(U8Constants.NewLineChars);
 
         private readonly byte[]? _value;
-        private (uint Offset, uint Length) _remaining;
-        private (uint Offset, uint Length) _current;
+        private InnerOffsets _remaining;
+        private InnerOffsets _current;
         private bool _isEnumeratorActive;
 
         /// <summary>
@@ -39,7 +39,7 @@ public readonly partial struct U8String
             if (!value.IsEmpty)
             {
                 _value = value.Value;
-                _remaining = (value.Offset, value.LengthInner);
+                _remaining = new(value.Offset, value.Length);
                 _current = default;
                 _isEnumeratorActive = true;
             }
@@ -63,37 +63,40 @@ public readonly partial struct U8String
         /// </summary>
         public bool MoveNext()
         {
-            if (!_isEnumeratorActive)
-                return false;
-
-            var remaining = _value.AsSpan((int)_remaining.Offset, (int)_remaining.Length);
-            var idx = remaining.IndexOfAny(NewLineChars);
-
-            if ((uint)idx < remaining.Length)
+            if (_isEnumeratorActive)
             {
-                var stride = 1;
-                if (remaining[idx] == (byte)'\r'
-                    && idx + 1 < remaining.Length
-                    && remaining[idx + 1] == (byte)'\n')
+                var remOffsets = _remaining;
+                var remaining = _value!.SliceUnsafe(remOffsets.Offset, remOffsets.Length);
+                var idx = remaining.IndexOfAny(NewLineChars);
+
+                if ((uint)idx < remaining.Length)
                 {
-                    stride = 2;
+                    var stride = 1;
+                    if (remaining[idx] == (byte)'\r'
+                        && idx + 1 < remaining.Length
+                        && remaining[idx + 1] == (byte)'\n')
+                    {
+                        stride = 2;
+                    }
+
+                    _current = new(remOffsets.Offset, idx);
+                    _remaining = new(
+                        remOffsets.Offset + idx + stride,
+                        remOffsets.Length - idx - stride);
+                }
+                else
+                {
+                    // We've reached EOF, but we still need to return 'true' for this final
+                    // iteration so that the caller can query the Current property once more.
+                    _current = _remaining;
+                    _remaining = default;
+                    _isEnumeratorActive = false;
                 }
 
-                _current = (_remaining.Offset, (uint)idx);
-                _remaining = (
-                    (uint)(_remaining.Offset + idx + stride),
-                    (uint)(_remaining.Length - idx - stride));
-            }
-            else
-            {
-                // We've reached EOF, but we still need to return 'true' for this final
-                // iteration so that the caller can query the Current property once more.
-                _current = _remaining;
-                _remaining = default;
-                _isEnumeratorActive = false;
+                return true;
             }
 
-            return true;
+            return false;
         }
 
         /// <summary>

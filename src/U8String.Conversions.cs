@@ -11,7 +11,9 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
-        return !IsEmpty ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length) : default;
+        return Value != null
+            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)
+            : default;
     }
 
     ///<summary>
@@ -25,8 +27,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start)
     {
-        return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length)[start..]
+        return Value != null
+            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)[start..]
             : default;
     }
 
@@ -42,8 +44,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start, int length)
     {
-        return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length)[start..(start + length)]
+        return Value != null
+            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)[start..(start + length)]
             : default;
     }
 
@@ -57,8 +59,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(Range range)
     {
-        return !IsEmpty
-            ? MemoryMarshal.CreateReadOnlySpan(ref FirstByte, Length)[range]
+        return Value != null
+            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)[range]
             : default;
     }
 
@@ -68,7 +70,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return !IsEmpty ? Value.AsMemory((int)Offset, Length) : default;
+        return Value != null ? Value.AsMemory(Offset, Length) : default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -103,7 +105,7 @@ public readonly partial struct U8String
 
         if (Encoding.UTF8.TryGetBytes(s, value, out var _))
         {
-            result = new U8String(value, 0, (uint)length);
+            result = new U8String(value, 0, length);
             return true;
         }
 
@@ -127,11 +129,11 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        var length = LengthInner;
+        var length = Length;
         if (length <= utf8Destination.Length)
         {
             AsSpan().CopyTo(utf8Destination);
-            bytesWritten = (int)length;
+            bytesWritten = length;
             return true;
         }
 

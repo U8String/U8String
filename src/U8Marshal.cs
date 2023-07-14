@@ -1,4 +1,4 @@
-namespace U8Primitives.Unsafe;
+namespace U8Primitives.InteropServices;
 
 /// <summary>
 /// Provides unsafe/unchecked methods for creating and manipulating <see cref="U8String"/> instances.
@@ -14,8 +14,8 @@ public static class U8Marshal
     /// Mutating <paramref name="value"/> after calling this method is undefined behavior
     /// and may result in data corruption.
     /// </remarks>
-    public static U8String Create(byte[] value) =>
-        new(value, 0, (uint)value.Length);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Create(byte[] value) => new(value, 0, value.Length);
 
     /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
@@ -30,31 +30,32 @@ public static class U8Marshal
     /// <paramref name="length"/>. <paramref name="length"/> must be less than or equal to
     /// <paramref name="value"/>.Length - <paramref name="offset"/>.
     /// </remarks>
-    public static U8String Create(byte[] value, int offset, int length) =>
-        new(value, (uint)offset, (uint)length);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Create(byte[] value, int offset, int length) => new(value, offset, length);
 
     /// <summary>
-    /// Unsafe variant of <see cref="U8String.Substring(int)"/> which
+    /// Unsafe variant of <see cref="U8String.Slice(int)"/> which
     /// does not perform bounds checking or UTF-8 validation.
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
-    public static U8String Substring(U8String value, int offset) =>
-        new(value.Value, value.Offset + (uint)offset, value.LengthInner - (uint)offset);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Slice(U8String value, int offset) =>
+        new(value.Value, value.Offset + offset, value.Length - offset);
 
     /// <summary>
-    /// Unsafe variant of <see cref="U8String.Substring(int, int)"/> which
+    /// Unsafe variant of <see cref="U8String.Slice(int, int)"/> which
     /// does not perform bounds checking or UTF-8 validation.
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     /// <param name="length">The number of bytes to use from <paramref name="value"/> starting at <paramref name="offset"/>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Substring(U8String value, int offset, int length) =>
-        new(value.Value, value.Offset + (uint)offset, (uint)length);
+    public static U8String Slice(U8String value, int offset, int length) =>
+        new(value.Value, value.Offset + offset, length);
 
     /// <summary>
-    /// Unsafe variant of <see cref="U8String.this[Range]"/> which
+    /// Unsafe variant of <see cref="U8String.Slice(int, int)"/> which
     /// does not perform bounds checking or UTF-8 validation.
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
@@ -63,19 +64,9 @@ public static class U8Marshal
     public static U8String Slice(U8String value, Range range)
     {
         var length = value.Length;
-        var startIndex = range.Start;
-        var start = startIndex.IsFromEnd
-            ? length - startIndex.Value
-            : startIndex.Value;
+        var start = range.Start.GetOffset(length);
+        var end = range.End.GetOffset(length);
 
-        var endIndex = range.End;
-        var end = endIndex.IsFromEnd
-            ? length - endIndex.Value
-            : endIndex.Value;
-
-        return new(
-            value.Value,
-            value.Offset + (uint)start,
-            (uint)(end - start));
+        return new(value.Value, value.Offset + start, end - start);
     }
 }

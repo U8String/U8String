@@ -81,7 +81,7 @@ public static class U8StringExtensions
         var result = value.TryFormat(buffer, out length, format, provider);
 
         Debug.Assert(result);
-        return new U8String(buffer, 0, (uint)length);
+        return new U8String(buffer, 0, length);
     }
 
     private static U8String FormatUnsized<T>(
@@ -92,7 +92,7 @@ public static class U8StringExtensions
     Retry:
         if (value.TryFormat(buffer, out var length, format, provider))
         {
-            return new U8String(buffer, 0, (uint)length);
+            return new U8String(buffer, 0, length);
         }
 
         // Limits???? Check what CoreLib does

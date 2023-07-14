@@ -3,7 +3,8 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace System;
 
-internal static class ThrowHelpers
+// TODO: Author exception messages
+static class ThrowHelpers
 {
     [DoesNotReturn, StackTraceHidden]
     internal static void InvalidUtf8()
@@ -19,13 +20,25 @@ internal static class ThrowHelpers
     }
 
     [DoesNotReturn, StackTraceHidden]
+    internal static void InvalidSplit()
+    {
+        throw new ArgumentException("The value is not a valid split sequence.");
+    }
+
+    [DoesNotReturn, StackTraceHidden]
     internal static void IndexOutOfRange()
     {
         throw new IndexOutOfRangeException();
     }
 
     [DoesNotReturn, StackTraceHidden]
-    internal static void ArgumentOutOfRange(string? paramName = null)
+    internal static void ArgumentOutOfRange()
+    {
+        throw new ArgumentOutOfRangeException();
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static void ArgumentOutOfRange(string? paramName)
     {
         throw new ArgumentOutOfRangeException(paramName);
     }

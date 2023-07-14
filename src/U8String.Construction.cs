@@ -18,7 +18,7 @@ public readonly partial struct U8String
         {
             Validate(value);
             Value = value.ToArray();
-            Range = 0 | ((ulong)value.Length << 32);
+            Inner = new InnerOffsets(0, value.Length);
         }
     }
 
@@ -55,10 +55,10 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal U8String(byte[]? value, uint offset, uint length)
+    internal U8String(byte[]? value, int offset, int length)
     {
         Value = value;
-        Range = offset | ((ulong)length << 32);
+        Inner = new InnerOffsets(offset, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -67,7 +67,7 @@ public readonly partial struct U8String
         Debug.Assert(skipValidation);
 
         Value = value.ToArray();
-        Range = 0 | ((ulong)value.Length << 32);
+        Inner = new InnerOffsets(0, value.Length);
     }
 
     /// <summary>
