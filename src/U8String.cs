@@ -71,9 +71,7 @@ public readonly partial struct U8String :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            // !! Unsafe.As incorrectly accesses the first field of the struct  !!
-            // !! regardless of the offset. Most likely this is a compiler bug. !!
-            // !! However, this only happens in FullOpts and only when reading. !!
+            // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
             // var inner = Inner;
             // return Unsafe.As<ulong, InnerOffsets>(ref inner).Offset;
             return Inner.Offset;
@@ -89,9 +87,7 @@ public readonly partial struct U8String :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            // !! Unsafe.As incorrectly accesses the first field of the struct  !!
-            // !! regardless of the offset. Most likely this is a compiler bug. !!
-            // !! However, this only happens in FullOpts and only when reading. !!
+            // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
             // var inner = Inner;
             // return Unsafe.As<ulong, InnerOffsets>(ref inner).Length;
             return Inner.Length;
