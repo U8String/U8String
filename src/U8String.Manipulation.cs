@@ -118,7 +118,9 @@ public readonly partial struct U8String
         return default;
     }
 
-    // TODO: Reconsider forceinline on SplitFirst/Last methods.
+    // Selectively inlining some overloads which are expected
+    // to take byte or utf-8 constant literals.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(byte separator)
     {
         if (!Rune.IsValid(separator))
@@ -197,6 +199,7 @@ public readonly partial struct U8String
     // TODO 1: Investigate if checked slicing can be avoided.
     // TODO 2: Write remarks noting that invalid separator is allowed
     // if the final split produces two valid UTF-8 sequences (SplitLast too).
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -221,6 +224,7 @@ public readonly partial struct U8String
         return default;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(byte separator)
     {
         if (!Rune.IsValid(separator))
@@ -293,6 +297,7 @@ public readonly partial struct U8String
         return default;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(ReadOnlySpan<byte> separator)
     {
         var source = this;
