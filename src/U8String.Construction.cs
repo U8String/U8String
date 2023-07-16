@@ -10,7 +10,7 @@ public readonly partial struct U8String
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains invalid UTF-8 data.</exception>
     /// <remarks>
-    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if it is not empty.
+    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the span is not empty.
     /// </remarks>
     public U8String(ReadOnlySpan<byte> value)
     {
@@ -100,6 +100,14 @@ public readonly partial struct U8String
     // Tracks https://github.com/dotnet/runtime/issues/87569
     public static U8String Create(/*params*/ ReadOnlySpan<byte> items) => new(items);
 
+    /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T)"/>
+    public static U8String Create<T>(T value)
+        where T : IUtf8SpanFormattable
+    {
+        // TODO: Invert where the implementation lives?
+        return value.ToU8String();
+    }
+
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, IFormatProvider?)"/>
     public static U8String Create<T>(T value, IFormatProvider? provider = null)
         where T : IUtf8SpanFormattable
@@ -108,5 +116,5 @@ public readonly partial struct U8String
     }
 
     /// <inheritdoc />
-    public object Clone() => new U8String(AsSpan(), skipValidation: true);
+    public object Clone() => new U8String(this, skipValidation: true);
 }

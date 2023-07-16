@@ -31,13 +31,27 @@ public static class U8StringExtensions
     public static U8String ToU8String(this ReadOnlySpan<char> value) => new(value);
 
     /// <summary>
-    /// A short-circuit overload against unintended <see cref="ToU8String{T}(T,IFormatProvider?)"/> on a <see cref="U8String"/>.
+    /// A short-circuit overload against unintended <see cref="ToU8String{T}(T)"/> on a <see cref="U8String"/>.
     /// </summary>
     public static U8String ToU8String(this U8String value) => value;
 
     /// <summary>
-    /// Converts the value to a U8String using the default format and a provider, if specified.
+    /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the default format.
     /// </summary>
+    /// <typeparam name="T">The type of the value to convert.</typeparam>
+    /// <param name="value">The value to convert.</param>
+    /// <returns>U8String representation of the value.</returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String ToU8String<T>(this T value)
+        where T : IUtf8SpanFormattable
+    {
+        return ToU8String(value, default, null);
+    }
+
+    /// <summary>
+    /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the default format and a provider, if specified.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to convert.</typeparam>
     /// <param name="value">The value to convert.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <returns>U8String representation of the value.</returns>
@@ -49,8 +63,9 @@ public static class U8StringExtensions
     }
 
     /// <summary>
-    /// Converts the value to a U8String using the specified format and provider.
+    /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the specified format and provider.
     /// </summary>
+    /// <typeparam name="T">The type of the value to convert.</typeparam>
     /// <param name="value">The value to convert.</param>
     /// <param name="format">The format to use.</param>
     /// <param name="provider">The format provider to use.</param>
