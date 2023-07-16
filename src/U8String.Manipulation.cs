@@ -119,7 +119,6 @@ public readonly partial struct U8String
     }
 
     // TODO: Reconsider forceinline on SplitFirst/Last methods.
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(byte separator)
     {
         if (!Rune.IsValid(separator))
@@ -146,7 +145,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(Rune separator)
     {
         var source = this;
@@ -173,7 +171,6 @@ public readonly partial struct U8String
     // TODO: Reconsider the behavior on empty separator - what do Rust and Go do?
     // Should an empty separator effectively match no bytes which would be at the
     // start of the string, putting source in the remainder? (same with SplitLast and ROS overloads)
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(U8String separator)
     {
         var source = this;
@@ -200,7 +197,6 @@ public readonly partial struct U8String
     // TODO 1: Investigate if checked slicing can be avoided.
     // TODO 2: Write remarks noting that invalid separator is allowed
     // if the final split produces two valid UTF-8 sequences (SplitLast too).
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitFirst(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -225,7 +221,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(byte separator)
     {
         if (!Rune.IsValid(separator))
@@ -252,7 +247,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(Rune separator)
     {
         var source = this;
@@ -276,7 +270,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(U8String separator)
     {
         var source = this;
@@ -300,7 +293,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public (U8String Segment, U8String Remainder) SplitLast(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -344,14 +336,14 @@ public readonly partial struct U8String
         }
 
         var length = source.Length - start;
-        if (length != 0)
+        if (length > 0)
         {
             if (U8Info.IsContinuationByte(in source.UnsafeRefAdd(start)))
             {
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source.Value, start, length);
+            return new(source.Value, source.Offset + start, length);
         }
 
         return default;
@@ -379,7 +371,7 @@ public readonly partial struct U8String
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        if (length != 0)
+        if (length > 0)
         {
             //ref var firstByte = ref source.FirstByte;
             if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) ||

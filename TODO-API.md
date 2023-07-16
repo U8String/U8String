@@ -51,6 +51,10 @@
     - [ ] ReplacementChar
 - [ ] DebugView
 ----------------
+- [ ] Extensions
+    - [ ] System.Net.Http (HttpClient, HttpConetnet, etc.)
+    - [ ] System.IO (File, anything else?)
+    - [ ] Streams? Pipelines?
 - [ ] Analyzers
     - [ ] Replace string literal comparison with UTF-8 one
 - [ ] Source Generators

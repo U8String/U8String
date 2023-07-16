@@ -10,11 +10,13 @@ public readonly partial struct U8String
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains invalid UTF-8 data.</exception>
     /// <remarks>
-    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/>.
+    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if it is not empty.
     /// </remarks>
     public U8String(ReadOnlySpan<byte> value)
     {
-        if (!value.IsEmpty)
+        // Contract:
+        // byte[] Value *must* remain null if the length is 0.
+        if (value.Length > 0)
         {
             Validate(value);
             Value = value.ToArray();
@@ -32,7 +34,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String(ReadOnlySpan<char> value)
     {
-        if (!value.IsEmpty)
+        if (value.Length > 0)
         {
             this = Parse(value, null);
         }
@@ -54,11 +56,25 @@ public readonly partial struct U8String
         }
     }
 
+    /// <summary>
+    /// Direct constructor of <see cref="U8String"/> from a <see cref="byte"/> array.
+    /// </summary>
+    /// <remarks>
+    /// Contract:
+    /// The constructor will *always* drop the referece if the length is 0.
+    /// Consequently, the value *must* remain null if the length is 0.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String(byte[]? value, int offset, int length)
     {
-        Value = value;
-        Inner = new InnerOffsets(offset, length);
+        Debug.Assert((value?.Length ?? 0) >= offset + length);
+
+        // TODO: Deduplicate the length check from the callers.
+        if (length > 0)
+        {
+            Value = value;
+            Inner = new InnerOffsets(offset, length);
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -66,8 +82,11 @@ public readonly partial struct U8String
     {
         Debug.Assert(skipValidation);
 
-        Value = value.ToArray();
-        Inner = new InnerOffsets(0, value.Length);
+        if (value.Length > 0)
+        {
+            Value = value.ToArray();
+            Inner = new InnerOffsets(0, value.Length);
+        }
     }
 
     /// <summary>

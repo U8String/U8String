@@ -31,7 +31,7 @@ public static class U8StringExtensions
     public static U8String ToU8String(this ReadOnlySpan<char> value) => new(value);
 
     /// <summary>
-    /// A short-circuit overload against unintended <see cref="U8StringExtensions.ToU8String{T}(T,IFormatProvider?)"/> on a <see cref="U8String"/>.
+    /// A short-circuit overload against unintended <see cref="ToU8String{T}(T,IFormatProvider?)"/> on a <see cref="U8String"/>.
     /// </summary>
     public static U8String ToU8String(this U8String value) => value;
 
@@ -61,19 +61,19 @@ public static class U8StringExtensions
         ReadOnlySpan<char> format,
         IFormatProvider? provider) where T : IUtf8SpanFormattable
     {
-        if (value is U8String u8str)
+        if (value is not U8String u8str)
         {
-            return u8str;
+            var length = U8Constants.GetFormattedLength<T>();
+            return length != 0
+                ? FormatExact(format, value, provider, length)
+                : FormatUnsized(format, value, provider);
         }
 
-        var length = U8Constants.GetFormattedLength<T>();
-        return length != 0
-            ? FormatExact(format, value, provider, length)
-            : FormatUnsized(format, value, provider);
+        return u8str;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    private static U8String FormatExact<T>(
+    static U8String FormatExact<T>(
         ReadOnlySpan<char> format, T value, IFormatProvider? provider, int length)
             where T : IUtf8SpanFormattable
     {
@@ -84,7 +84,7 @@ public static class U8StringExtensions
         return new U8String(buffer, 0, length);
     }
 
-    private static U8String FormatUnsized<T>(
+    static U8String FormatUnsized<T>(
         ReadOnlySpan<char> format, T value, IFormatProvider? provider)
             where T : IUtf8SpanFormattable
     {

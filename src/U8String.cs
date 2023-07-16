@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
@@ -29,6 +30,7 @@ public readonly partial struct U8String :
     ICloneable,
     ISpanParsable<U8String>,
     ISpanFormattable,
+    IUtf8SpanParsable<U8String>,
     IUtf8SpanFormattable
 {
     /// <summary>
@@ -40,6 +42,7 @@ public readonly partial struct U8String :
     public static U8String Empty => default;
 
     internal readonly byte[]? Value;
+
     private readonly InnerOffsets Inner;
 
     [StructLayout(LayoutKind.Sequential)]
@@ -101,7 +104,7 @@ public readonly partial struct U8String :
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => Length is 0;
+        get => Value is null;
     }
 
     /// <summary>

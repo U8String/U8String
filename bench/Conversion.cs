@@ -1,3 +1,4 @@
+using System.Net;
 using BenchmarkDotNet.Attributes;
 
 namespace U8Primitives.Benchmarks;
@@ -14,6 +15,8 @@ public class Conversion
     private readonly U8String U8String = new("Hello, World!"u8);
     private readonly long Long = 1234567890123456789;
     private readonly double Double = 1234567890.1234567890;
+    private readonly IPAddress IPv4 = IPAddress.Parse("127.0.0.1");
+    private readonly IPAddress IPv6 = IPAddress.Parse("1050:0:0:0:5:600:300c:326b");
 
     [Benchmark]
     public U8String FromDateTime() => Date.ToU8String();
@@ -35,4 +38,10 @@ public class Conversion
 
     [Benchmark]
     public U8String FromDouble() => Double.ToU8String();
+
+    [Benchmark]
+    public U8String FromIPv4() => IPv4.ToU8String();
+
+    [Benchmark]
+    public U8String FromIPv6() => IPv6.ToU8String();
 }

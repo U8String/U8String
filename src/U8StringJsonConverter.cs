@@ -22,7 +22,7 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
                 : readerValue.ValueSequence.ToArray();
             var length = buffer.Length;
 
-            return length > 0 ? new U8String(buffer, 0, length) : default;
+            return new(buffer, 0, length);
         }
 
         return JsonException(readerValue.TokenType);
@@ -36,7 +36,7 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
     }
 
     [DoesNotReturn, StackTraceHidden]
-    private static U8String JsonException(JsonTokenType tokenType)
+    static U8String JsonException(JsonTokenType tokenType)
     {
         throw new JsonException($"Unexpected token type: {tokenType}");
     }
