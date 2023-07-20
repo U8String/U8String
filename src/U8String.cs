@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
+
 using U8Primitives.Serialization;
 
 namespace U8Primitives;
@@ -16,8 +16,8 @@ namespace U8Primitives;
 /// <para>It stores the UTF-8 code units in an underlying byte[] buffer, and provides methods
 /// for manipulating and accessing the string content. It can be created from or converted
 /// to a string or a span of bytes, as long as the data is valid or convertible to UTF-8.</para>
-/// <para>U8String provides non-copying substringing and slicing operations, which return a new
-/// U8String that references a portion of the original data. Methods which manipulate the
+/// <para>U8String provides non-copying slicing operations, which return a new U8String that
+/// references a portion of the original data. Methods which manipulate the
 /// instances of U8String ensure that the resulting U8String is well-formed and valid UTF-8,
 /// unless otherwise specified. If an operation would produce invalid UTF-8, an exception is thrown.</para>
 /// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
@@ -41,9 +41,9 @@ public readonly partial struct U8String :
     /// </remarks>
     public static U8String Empty => default;
 
-    internal readonly byte[]? Value;
+    internal readonly byte[]? _value;
 
-    private readonly InnerOffsets Inner;
+    private readonly InnerOffsets _inner;
 
     [StructLayout(LayoutKind.Sequential)]
     readonly struct InnerOffsets
@@ -61,12 +61,12 @@ public readonly partial struct U8String :
             Length = length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator ulong(InnerOffsets value)
-        {
-            var inner = value;
-            return Unsafe.As<InnerOffsets, ulong>(ref inner);
-        }
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // public static implicit operator ulong(InnerOffsets value)
+        // {
+        //     // var inner = value;
+        //     return Unsafe.BitCast<InnerOffsets, ulong>(value);
+        // }
     }
 
     internal int Offset
@@ -75,9 +75,9 @@ public readonly partial struct U8String :
         get
         {
             // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
-            // var inner = Inner;
-            // return Unsafe.As<ulong, InnerOffsets>(ref inner).Offset;
-            return Inner.Offset;
+            // var inner = _inner;
+            // return Unsafe.BitCast<ulong, InnerOffsets>(_inner).Offset;
+            return _inner.Offset;
         }
     }
 
@@ -91,9 +91,9 @@ public readonly partial struct U8String :
         get
         {
             // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
-            // var inner = Inner;
-            // return Unsafe.As<ulong, InnerOffsets>(ref inner).Length;
-            return Inner.Length;
+            // var inner = _inner;
+            // return Unsafe.BitCast<ulong, InnerOffsets>(_inner).Length;
+            return _inner.Length;
         }
     }
 
@@ -104,7 +104,7 @@ public readonly partial struct U8String :
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => Value is null;
+        get => _value is null;
     }
 
     /// <summary>
@@ -114,7 +114,7 @@ public readonly partial struct U8String :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset);
+            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset);
     }
 
     internal ReadOnlySpan<byte> UnsafeSpan
@@ -130,7 +130,7 @@ public readonly partial struct U8String :
     internal ref byte UnsafeRefAdd(int index)
     {
         return ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset + (nint)(uint)index);
+            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)(uint)index);
     }
 
     /// <summary>
@@ -140,7 +140,7 @@ public readonly partial struct U8String :
     internal ref byte UnsafeRefAdd(uint index)
     {
         return ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset + (nint)index);
+            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)index);
     }
 
     /// <summary>

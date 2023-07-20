@@ -12,7 +12,9 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <!-- We must pay for the sins of Windows ABI. -->
+    <TargetFrameworks>net8.0;net8.0-windows</TargetFrameworks>
+    <DefineConstants Condition="'$(TargetFramework)' == 'net8.0-windows'">WIN_ABI</DefineConstants>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>

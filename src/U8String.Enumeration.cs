@@ -67,7 +67,7 @@ public readonly partial struct U8String
             {
                 if (!value.IsEmpty)
                 {
-                    _value = value.Value;
+                    _value = value._value;
                     _remaining = new(value.Offset, value.Length);
                     _current = default;
                     _isEnumeratorActive = true;
@@ -91,7 +91,7 @@ public readonly partial struct U8String
                     var remaining = _value!.SliceUnsafe(remOffsets.Offset, remOffsets.Length);
                     var idx = remaining.IndexOfAny((byte)'\n', (byte)'\r');
 
-                    if ((uint)idx < remaining.Length)
+                    if ((uint)idx < (uint)remaining.Length)
                     {
                         var stride = 1;
                         if (remaining[idx] == (byte)'\r'

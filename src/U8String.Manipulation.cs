@@ -348,7 +348,7 @@ public readonly partial struct U8String
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source.Value, source.Offset + start, length);
+            return new(source._value, source.Offset + start, length);
         }
 
         return default;
@@ -386,7 +386,7 @@ public readonly partial struct U8String
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source.Value, source.Offset + start, length);
+            return new(source._value, source.Offset + start, length);
         }
 
         return default;

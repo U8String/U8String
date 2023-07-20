@@ -19,8 +19,8 @@ public readonly partial struct U8String
         if (value.Length > 0)
         {
             Validate(value);
-            Value = value.ToArray();
-            Inner = new InnerOffsets(0, value.Length);
+            _value = value.ToArray();
+            _inner = new InnerOffsets(0, value.Length);
         }
     }
 
@@ -72,8 +72,8 @@ public readonly partial struct U8String
         // TODO: Deduplicate the length check from the callers.
         if (length > 0)
         {
-            Value = value;
-            Inner = new InnerOffsets(offset, length);
+            _value = value;
+            _inner = new InnerOffsets(offset, length);
         }
     }
 
@@ -84,8 +84,8 @@ public readonly partial struct U8String
 
         if (value.Length > 0)
         {
-            Value = value.ToArray();
-            Inner = new InnerOffsets(0, value.Length);
+            _value = value.ToArray();
+            _inner = new InnerOffsets(0, value.Length);
         }
     }
 
