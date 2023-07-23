@@ -141,7 +141,7 @@ public readonly partial struct U8String
                     U8Marshal.Slice(source, index + 1));
             }
 
-            return (this, default);
+            return (source, default);
         }
 
         return default;

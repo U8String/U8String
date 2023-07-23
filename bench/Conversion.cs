@@ -12,7 +12,7 @@ public class Conversion
     private readonly TimeSpan Time = TimeSpan.FromHours(24);
     private readonly Guid Guid = Guid.NewGuid();
     private readonly string String = "Hello, World!";
-    private readonly U8String U8String = new("Hello, World!"u8);
+    private readonly U8String U8Str = new("Hello, World!"u8);
     private readonly int Int = 12345678;
     private readonly long Long = 1234567890123456789;
     private readonly double Double = 1234567890.1234567890;
@@ -44,10 +44,10 @@ public class Conversion
     public string FromStringBase() => String.ToString();
 
     [Benchmark]
-    public U8String FromU8String() => U8String.ToU8String<U8String>();
+    public U8String FromU8String() => U8String.Create(U8Str);
 
     [Benchmark]
-    public string FromU8StringBase() => U8String.ToString();
+    public string FromU8StringBase() => U8Str.ToString();
 
     [Benchmark]
     public U8String FromInt() => Int.ToU8String();

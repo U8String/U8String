@@ -3,7 +3,7 @@ using System.Runtime.InteropServices;
 
 namespace U8Primitives;
 
-#pragma warning disable RCS1206 // Simplify conditional expressions. Why: codegen quality.
+#pragma warning disable RCS1206, IDE0057 // Simplify conditional and slice expressions. Why: codegen quality.
 public readonly partial struct U8String
 {
     /// <summary>
