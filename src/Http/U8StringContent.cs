@@ -8,19 +8,19 @@ public sealed class U8StringContent : ByteArrayContent
     const string CharSetType = "utf-8";
 
     public U8StringContent(U8String content)
-        : base(content._value ?? Array.Empty<byte>(), 0, content.Length)
+        : base(content._value ?? Array.Empty<byte>(), content.Offset, content.Length)
     {
         Headers.ContentType = new(DefaultMediaType, CharSetType);
     }
 
     public U8StringContent(U8String content, string? mediaType)
-        : base(content._value ?? Array.Empty<byte>(), 0, content.Length)
+        : base(content._value ?? Array.Empty<byte>(), content.Offset, content.Length)
     {
         Headers.ContentType = new(mediaType ?? DefaultMediaType, CharSetType);
     }
 
     public U8StringContent(U8String content, MediaTypeHeaderValue mediaType)
-        : base(content._value ?? Array.Empty<byte>(), 0, content.Length)
+        : base(content._value ?? Array.Empty<byte>(), content.Offset, content.Length)
     {
         Headers.ContentType = mediaType;
     }
