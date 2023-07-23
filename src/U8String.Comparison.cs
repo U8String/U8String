@@ -47,9 +47,8 @@ public readonly partial struct U8String
     /// <remarks>
     /// The hash code is calculated using the xxHash32 algorithm.
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override int GetHashCode()
     {
-        return (int)XxHash32.HashToUInt32(AsSpan());
+        return (int)XxHash32.HashToUInt32(this);
     }
 }

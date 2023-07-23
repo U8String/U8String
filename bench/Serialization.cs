@@ -13,20 +13,23 @@ public class Serialization
     public record Person(
         string FirstName,
         string LastName,
-        string Email);
+        string Title,
+        string ID);
 
     public record PersonU8(
         U8String FirstName,
         U8String LastName,
-        U8String Email);
+        U8String Title,
+        U8String ID);
 
     private static readonly Person PersonValue = new(
-        "Awooga", "XdddRatsuki", "someexample@scamail.ng");
+        "John", "Doe", "Software Enginer", "123456789");
 
     private static readonly PersonU8 PersonU8Value = new(
-        "Awooga"u8.ToU8String(),
-        "XdddRatsuki"u8.ToU8String(),
-        "someexample@scamail.ng"u8.ToU8String());
+        new U8String("John"u8),
+        new U8String("Doe"u8),
+        new U8String("Software Enginer"u8),
+        new U8String("123456789"u8));
 
     private static readonly byte[] PersonBytes = JsonSerializer
         .SerializeToUtf8Bytes(PersonValue, JsonContext.Default.Person);

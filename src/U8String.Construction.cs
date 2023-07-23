@@ -89,16 +89,12 @@ public readonly partial struct U8String
         }
     }
 
-    /// <summary>
-    /// Creates a new <see cref="U8String"/> from the specified UTF-8 bytes.
-    /// </summary>
-    /// <param name="items">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="items"/> contains invalid UTF-8 data.</exception>
-    /// <remarks>
-    /// The <see cref="U8String"/> will be created by copying the <paramref name="items"/>.
-    /// </remarks>
+    /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
     // Tracks https://github.com/dotnet/runtime/issues/87569
-    public static U8String Create(/*params*/ ReadOnlySpan<byte> items) => new(items);
+    public static U8String Create(/*params*/ ReadOnlySpan<byte> value) => new(value);
+
+    /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
+    public static U8String Create(/*params*/ ReadOnlySpan<char> value) => new(value);
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T)"/>
     public static U8String Create<T>(T value)

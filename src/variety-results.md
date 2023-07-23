@@ -52,3 +52,21 @@
 |  Parse | NativeAOT 8.0 | NativeAOT 8.0 | @msg-(...)live. [74] | 101.52 ns | 0.293 ns | 0.260 ns | 0.0356 |     224 B |
 |  Parse |    DefaultJob |      .NET 8.0 |  @msg(...)ces. [110] | 130.74 ns | 0.981 ns | 0.918 ns | 0.0355 |     224 B |
 |  Parse | NativeAOT 8.0 | NativeAOT 8.0 |  @msg(...)ces. [110] | 101.51 ns | 0.300 ns | 0.280 ns | 0.0356 |     224 B |
+
+### flattened
+| Method |           Job |       Runtime |                UTF16 |      Mean |    Error |   StdDev |   Gen0 | Allocated |
+|------- |-------------- |-------------- |--------------------- |----------:|---------:|---------:|-------:|----------:|
+|  Parse |    DefaultJob |      .NET 8.0 | :blub(...) list [66] |  47.10 ns | 0.430 ns | 0.336 ns | 0.0268 |     168 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 | :blub(...) list [66] |  45.72 ns | 0.372 ns | 0.330 ns | 0.0268 |     168 B |
+|  Parse |    DefaultJob |      .NET 8.0 |  :jtv(...)ers. [100] |  44.44 ns | 0.682 ns | 0.638 ns | 0.0268 |     168 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 |  :jtv(...)ers. [100] |  45.35 ns | 0.065 ns | 0.054 ns | 0.0268 |     168 B |
+|  Parse |    DefaultJob |      .NET 8.0 | :tmi.(...)ailed [52] |  47.58 ns | 0.069 ns | 0.064 ns | 0.0268 |     168 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 | :tmi.(...)ailed [52] |  46.65 ns | 0.458 ns | 0.383 ns | 0.0268 |     168 B |
+|  Parse |    DefaultJob |      .NET 8.0 |  @bad(...)senE [884] | 370.67 ns | 1.365 ns | 1.139 ns | 0.1173 |     736 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 |  @bad(...)senE [884] | 402.65 ns | 0.729 ns | 0.569 ns | 0.1173 |     736 B |
+|  Parse |    DefaultJob |      .NET 8.0 |  @bad(...)Guys [382] | 342.15 ns | 0.766 ns | 0.598 ns | 0.1121 |     704 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 |  @bad(...)Guys [382] | 352.95 ns | 2.757 ns | 2.579 ns | 0.1121 |     704 B |
+|  Parse |    DefaultJob |      .NET 8.0 | @msg-(...)live. [74] |  86.67 ns | 0.749 ns | 0.700 ns | 0.0356 |     224 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 | @msg-(...)live. [74] |  91.07 ns | 1.344 ns | 1.191 ns | 0.0356 |     224 B |
+|  Parse |    DefaultJob |      .NET 8.0 |  @msg(...)ces. [110] |  88.76 ns | 0.765 ns | 0.679 ns | 0.0356 |     224 B |
+|  Parse | NativeAOT 8.0 | NativeAOT 8.0 |  @msg(...)ces. [110] |  88.21 ns | 0.998 ns | 0.933 ns | 0.0356 |     224 B |

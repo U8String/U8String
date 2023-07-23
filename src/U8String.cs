@@ -13,16 +13,17 @@ namespace U8Primitives;
 /// </summary>
 /// <remarks>
 /// <para>U8String is an immutable value type that represents a UTF-8 encoded string.</para>
-/// <para>It stores the UTF-8 code units in an underlying byte[] buffer, and provides methods
+/// <para>It stores UTF-8 code units in the underlying buffer, and provides methods
 /// for manipulating and accessing the string content. It can be created from or converted
-/// to a string or a span of bytes, as long as the data is valid or convertible to UTF-8.</para>
-/// <para>U8String provides non-copying slicing operations, which return a new U8String that
+/// to a string or a span of bytes, as long as the data is valid and convertible to UTF-8.</para>
+/// <para>U8String slicing methods are non-copying and return a new U8String that
 /// references a portion of the original data. Methods which manipulate the
 /// instances of U8String ensure that the resulting U8String is well-formed and valid UTF-8,
-/// unless otherwise specified. If an operation would produce invalid UTF-8, an exception is thrown.</para>
+/// unless specified otherwise. If an operation would produce invalid UTF-8, an exception is thrown.</para>
 /// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
 /// </remarks>
 [JsonConverter(typeof(U8StringJsonConverter))]
+[CollectionBuilder(typeof(U8String), nameof(Create))]
 public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,
