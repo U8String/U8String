@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Text;
 
 using U8Primitives.InteropServices;
 
@@ -118,6 +119,24 @@ public readonly partial struct U8String
         return default;
     }
 
+    /// <inheritdoc />
+    public void CopyTo(byte[] destination, int index)
+    {
+        var source = this;
+        if ((uint)index > (uint)destination.Length)
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(index));
+        }
+
+        if (destination.Length - index < source.Length)
+        {
+            // TODO: EH UX
+            // ThrowHelpers.Argument(nameof(destination), "Destination buffer is too small.");
+        }
+
+        source.UnsafeSpan.CopyTo(destination.AsSpan(index));
+    }
+
     // Selectively inlining some overloads which are expected
     // to take byte or utf-8 constant literals.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -141,7 +160,7 @@ public readonly partial struct U8String
                     U8Marshal.Slice(source, index + 1));
             }
 
-            return (this, default);
+            return (source, default);
         }
 
         return default;
@@ -196,10 +215,10 @@ public readonly partial struct U8String
         return default;
     }
 
-    // TODO 1: Investigate if checked slicing can be avoided.
-    // TODO 2: Write remarks noting that invalid separator is allowed
-    // if the final split produces two valid UTF-8 sequences (SplitLast too).
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // It would be *really nice* to aggressively inline this method
+    // but the way validation is currently implemented does not significantly
+    // benefit from splitting on UTF-8 literals while possibly risking
+    // running out of inlining budget significantly regressing performance everywhere else.
     public (U8String Segment, U8String Remainder) SplitFirst(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -211,10 +230,17 @@ public readonly partial struct U8String
                 var index = span.IndexOf(separator);
                 if (index >= 0)
                 {
-                    // By design: validate both slices.
+                    // Same as with Slice(int, int), this might dereference past the end of the string.
+                    // TODO: Do something about it if it's ever an issue.
+                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) ||
+                        U8Info.IsContinuationByte(source.UnsafeRefAdd(index + separator.Length)))
+                    {
+                        ThrowHelpers.InvalidSplit();
+                    }
+
                     return (
-                        source.Slice(0, index),
-                        source.Slice(index + separator.Length));
+                        U8Marshal.Slice(source, 0, index),
+                        U8Marshal.Slice(source, index + separator.Length));
                 }
             }
 
@@ -307,10 +333,18 @@ public readonly partial struct U8String
             {
                 var span = source.UnsafeSpan;
                 var index = span.LastIndexOf(separator);
-                return index >= 0
-                    // By design: validate both slices.
-                    ? (source.Slice(0, index), source.Slice(index + separator.Length))
-                    : (source, default);
+                if (index >= 0)
+                {
+                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) ||
+                        U8Info.IsContinuationByte(source.UnsafeRefAdd(index + separator.Length)))
+                    {
+                        ThrowHelpers.InvalidSplit();
+                    }
+
+                    return (
+                        U8Marshal.Slice(source, 0, index),
+                        U8Marshal.Slice(source, index + separator.Length));
+                }
             }
 
             return (source, default);
@@ -348,7 +382,7 @@ public readonly partial struct U8String
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source.Value, source.Offset + start, length);
+            return new(source._value, source.Offset + start, length);
         }
 
         return default;
@@ -379,6 +413,10 @@ public readonly partial struct U8String
         if (length > 0)
         {
             //ref var firstByte = ref source.FirstByte;
+            // !! Warning !!
+            // start + length might dereference past the end of the buffer
+            // TODO: Is this ever a problem? Can we make assumptions that would allow us
+            // to skip checking the byte[] length and calculating offset utf8 scalar value start offset?
             if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) ||
                 U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length)))
             {
@@ -386,7 +424,7 @@ public readonly partial struct U8String
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source.Value, source.Offset + start, length);
+            return new(source._value, source.Offset + start, length);
         }
 
         return default;

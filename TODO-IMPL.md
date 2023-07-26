@@ -1,10 +1,12 @@
 # TODO
 - [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime
+- [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
 - [ ] U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way
 - [x] Ensure `default(U8String)` is always valid
+- [ ] Author exception types and messages for malformed UTF-8
 - [ ] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
 - [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
-- [ ] Optimize AsSpan() overloads
+- [x] Optimize AsSpan() overloads
 - [ ] Debugger View and ToString
 - [ ] IList<byte>
 - [ ] Equality

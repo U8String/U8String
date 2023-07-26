@@ -10,7 +10,7 @@ static class ThrowHelpers
     internal static void InvalidUtf8()
     {
         // TODO: Better exception message?
-        throw new ArgumentException("The value is not a valid UTF-8 sequence.");
+        throw new FormatException("The value is not a valid UTF-8 sequence.");
     }
 
     [DoesNotReturn, StackTraceHidden]

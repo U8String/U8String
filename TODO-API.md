@@ -56,7 +56,9 @@
     - [ ] System.IO (File, anything else?)
     - [ ] Streams? Pipelines?
 - [ ] Analyzers
-    - [ ] Replace string literal comparison with UTF-8 one
+    - [ ] Replace string literal comparison with a UTF-8 one
+    - [ ] Replace direct for/foreach over a U8String with U8String.AsSpan()
+    - [ ] Call .Lines instead of .Split((byte)'\n')
 - [ ] Source Generators
     - [ ] Switch map trie generator to work around C# limitations
-- [ ] Interpolation? Accept FormattedString/AdvancedFormat (or how is it called) as input?
+- [ ] Interpolation? Accept CompositeFormat (or how is it called) as input?

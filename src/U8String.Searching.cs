@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace U8Primitives;
 
 public readonly partial struct U8String

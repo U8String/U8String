@@ -1,9 +1,10 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace U8Primitives;
 
-#pragma warning disable RCS1206 // Simplify conditional expressions. Why: codegen quality.
+#pragma warning disable RCS1206, IDE0057 // Simplify conditional and slice expressions. Why: codegen quality.
 public readonly partial struct U8String
 {
     /// <summary>
@@ -12,9 +13,9 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
-        return Value != null
-            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)
-            : default;
+        ref var reference = ref Unsafe.NullRef<byte>();
+        if (_value != null) reference = ref UnsafeRef;
+        return MemoryMarshal.CreateReadOnlySpan(ref reference, Length);
     }
 
     ///<summary>
@@ -28,9 +29,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start)
     {
-        return Value != null
-            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)[start..]
-            : default;
+        return AsSpan().Slice(start);
     }
 
     ///<summary>
@@ -45,24 +44,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan(int start, int length)
     {
-        return Value != null
-            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)[start..(start + length)]
-            : default;
-    }
-
-    ///<summary>
-    /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/> sliced by the specified <see cref="System.Range"/>.
-    /// </summary>
-    /// <param name="range">The range to slice <see cref="U8String"/> by.</param>.
-    /// <exception cref="ArgumentOutOfRangeException">
-    /// Thrown when <paramref name="range"/> is out of bounds.
-    /// </exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ReadOnlySpan<byte> AsSpan(Range range)
-    {
-        return Value != null
-            ? MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length)[range]
-            : default;
+        return AsSpan().Slice(start, length);
     }
 
     /// <summary>
@@ -71,7 +53,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return Value != null ? Value.AsMemory(Offset, Length) : default;
+        return _value != null ? _value.AsMemory(Offset, Length) : default;
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
@@ -184,6 +166,7 @@ public readonly partial struct U8String
     }
 
     /// <inheritdoc />
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryFormat(
         Span<byte> utf8Destination,
         out int bytesWritten,
@@ -214,10 +197,10 @@ public readonly partial struct U8String
     public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
     /// <summary>
-    /// Encodes the current <see cref="U8String"/> into its UTF-16 representation and returns it as <see cref="string"/>.
+    /// Encodes the current <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation.
     /// </summary>
     public override string ToString()
     {
-        return Value != null ? Encoding.UTF8.GetString(this) : "";
+        return _value != null ? Encoding.UTF8.GetString(this) : string.Empty;
     }
 }

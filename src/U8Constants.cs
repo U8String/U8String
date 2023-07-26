@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace U8Primitives;
 
 static class U8Constants

@@ -1,12 +1,11 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 
 [SimpleJob]
 [MemoryDiagnoser]
 [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
-public class Keys
+public class HashSet
 {
     [Params(
         "test",

@@ -41,7 +41,7 @@ public static class U8Marshal
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Slice(U8String value, int offset) =>
-        new(value.Value, value.Offset + offset, value.Length - offset);
+        new(value._value, value.Offset + offset, value.Length - offset);
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int, int)"/> which
@@ -52,7 +52,7 @@ public static class U8Marshal
     /// <param name="length">The number of bytes to use from <paramref name="value"/> starting at <paramref name="offset"/>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Slice(U8String value, int offset, int length) =>
-        new(value.Value, value.Offset + offset, length);
+        new(value._value, value.Offset + offset, length);
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int, int)"/> which
@@ -67,6 +67,6 @@ public static class U8Marshal
         var start = range.Start.GetOffset(length);
         var end = range.End.GetOffset(length);
 
-        return new(value.Value, value.Offset + start, end - start);
+        return new(value._value, value.Offset + start, end - start);
     }
 }

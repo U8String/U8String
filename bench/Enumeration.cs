@@ -17,8 +17,14 @@ public class Enumeration
 
     private static readonly char[] NewLineChars = "\n\r".ToArray();
 
-    [Benchmark(Baseline = true)]
-    public int LinesCount()
+    [Benchmark]
+    public int CountRunes() => ThirdPartyNotices.Runes.Count;
+
+    [Benchmark]
+    public int CountRunesUtf16() => ThirdPartyNoticesU16.EnumerateRunes().Count();
+
+    [Benchmark]
+    public int CountLines()
     {
         var res = 0;
         foreach (var line in ThirdPartyNotices.Lines)
@@ -30,10 +36,10 @@ public class Enumeration
     }
 
     [Benchmark]
-    public int LinesEnumerableCount() => ThirdPartyNotices.Lines.Count();
+    public int CountLinesEnumerable() => ThirdPartyNotices.Lines.Count();
 
     [Benchmark]
-    public int LinesUtf16Count()
+    public int CountLinesUtf16Span()
     {
         var res = 0;
         foreach (var _ in ThirdPartyNoticesU16.AsSpan().EnumerateLines())
@@ -46,5 +52,5 @@ public class Enumeration
 
     // Different behavior
     [Benchmark]
-    public int LinesUtf16SplitCount() => ThirdPartyNoticesU16.Split(NewLineChars).Length;
+    public int CountLinesUtf16Split() => ThirdPartyNoticesU16.Split(NewLineChars).Length;
 }

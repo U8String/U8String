@@ -1,6 +1,6 @@
 ﻿using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using U8Primitives.Serialization;
@@ -13,20 +13,22 @@ namespace U8Primitives;
 /// </summary>
 /// <remarks>
 /// <para>U8String is an immutable value type that represents a UTF-8 encoded string.</para>
-/// <para>It stores the UTF-8 code units in an underlying byte[] buffer, and provides methods
+/// <para>It stores UTF-8 code units in the underlying buffer, and provides methods
 /// for manipulating and accessing the string content. It can be created from or converted
-/// to a string or a span of bytes, as long as the data is valid or convertible to UTF-8.</para>
-/// <para>U8String provides non-copying substringing and slicing operations, which return a new
-/// U8String that references a portion of the original data. Methods which manipulate the
+/// to a string or a span of bytes, as long as the data is valid and convertible to UTF-8.</para>
+/// <para>U8String slicing methods are non-copying and return a new U8String that
+/// references a portion of the original data. Methods which manipulate the
 /// instances of U8String ensure that the resulting U8String is well-formed and valid UTF-8,
-/// unless otherwise specified. If an operation would produce invalid UTF-8, an exception is thrown.</para>
+/// unless specified otherwise. If an operation would produce invalid UTF-8, an exception is thrown.</para>
 /// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
 /// </remarks>
 [JsonConverter(typeof(U8StringJsonConverter))]
+[CollectionBuilder(typeof(U8String), nameof(Create))]
 public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,
     IEquatable<byte[]>,
+    IList<byte>,
     ICloneable,
     ISpanParsable<U8String>,
     ISpanFormattable,
@@ -41,9 +43,9 @@ public readonly partial struct U8String :
     /// </remarks>
     public static U8String Empty => default;
 
-    internal readonly byte[]? Value;
+    internal readonly byte[]? _value;
 
-    private readonly InnerOffsets Inner;
+    private readonly InnerOffsets _inner;
 
     [StructLayout(LayoutKind.Sequential)]
     readonly struct InnerOffsets
@@ -61,24 +63,18 @@ public readonly partial struct U8String :
             Length = length;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static implicit operator ulong(InnerOffsets value)
-        {
-            var inner = value;
-            return Unsafe.As<InnerOffsets, ulong>(ref inner);
-        }
+        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        // public static implicit operator ulong(InnerOffsets value)
+        // {
+        //     // var inner = value;
+        //     return Unsafe.BitCast<InnerOffsets, ulong>(value);
+        // }
     }
 
     internal int Offset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
-            // var inner = Inner;
-            // return Unsafe.As<ulong, InnerOffsets>(ref inner).Offset;
-            return Inner.Offset;
-        }
+        get => _inner.Offset;
     }
 
     /// <summary>
@@ -88,13 +84,7 @@ public readonly partial struct U8String :
     public int Length
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
-            // var inner = Inner;
-            // return Unsafe.As<ulong, InnerOffsets>(ref inner).Length;
-            return Inner.Length;
-        }
+        get => _inner.Length;
     }
 
     /// <summary>
@@ -104,8 +94,14 @@ public readonly partial struct U8String :
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => Value is null;
+        get => _value is null;
     }
+
+    /// <inheritdoc/>
+    int ICollection<byte>.Count => Length;
+
+    /// <inheritdoc/>
+    bool ICollection<byte>.IsReadOnly => true;
 
     /// <summary>
     /// Must not be accessed if <see cref="IsEmpty"/> is true.
@@ -114,7 +110,7 @@ public readonly partial struct U8String :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset);
+            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset);
     }
 
     internal ReadOnlySpan<byte> UnsafeSpan
@@ -130,7 +126,7 @@ public readonly partial struct U8String :
     internal ref byte UnsafeRefAdd(int index)
     {
         return ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset + (nint)(uint)index);
+            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)(uint)index);
     }
 
     /// <summary>
@@ -140,7 +136,7 @@ public readonly partial struct U8String :
     internal ref byte UnsafeRefAdd(uint index)
     {
         return ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(Value!), (nint)(uint)Offset + (nint)index);
+            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)index);
     }
 
     /// <summary>
@@ -166,4 +162,10 @@ public readonly partial struct U8String :
             ThrowHelpers.InvalidUtf8();
         }
     }
+
+    void IList<byte>.Insert(int index, byte item) => throw new NotImplementedException();
+    void IList<byte>.RemoveAt(int index) => throw new NotImplementedException();
+    void ICollection<byte>.Add(byte item) => throw new NotImplementedException();
+    void ICollection<byte>.Clear() => throw new NotImplementedException();
+    bool ICollection<byte>.Remove(byte item) => throw new NotImplementedException();
 }

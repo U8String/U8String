@@ -31,11 +31,6 @@ public static class U8StringExtensions
     public static U8String ToU8String(this ReadOnlySpan<char> value) => new(value);
 
     /// <summary>
-    /// A short-circuit overload against unintended <see cref="ToU8String{T}(T)"/> on a <see cref="U8String"/>.
-    /// </summary>
-    public static U8String ToU8String(this U8String value) => value;
-
-    /// <summary>
     /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the default format.
     /// </summary>
     /// <typeparam name="T">The type of the value to convert.</typeparam>
