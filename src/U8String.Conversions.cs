@@ -1,5 +1,6 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace U8Primitives;
 
@@ -196,7 +197,7 @@ public readonly partial struct U8String
     public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
     /// <summary>
-    /// Encodes the current <see cref="U8String"/> into its UTF-16 representation and returns it as <see cref="string"/>.
+    /// Encodes the current <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation.
     /// </summary>
     public override string ToString()
     {

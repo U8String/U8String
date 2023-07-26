@@ -8,7 +8,7 @@ public readonly partial struct U8String
     /// Creates a new <see cref="U8String"/> from the specified UTF-8 bytes.
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains invalid UTF-8 data.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
     /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the span is not empty.
     /// </remarks>
@@ -16,6 +16,8 @@ public readonly partial struct U8String
     {
         // Contract:
         // byte[] Value *must* remain null if the length is 0.
+        // TODO: Consider null-terminating the string to opportunistically
+        // enable zero-copy interop with native code. Or not?
         if (value.Length > 0)
         {
             Validate(value);
@@ -61,7 +63,7 @@ public readonly partial struct U8String
     /// </summary>
     /// <remarks>
     /// Contract:
-    /// The constructor will *always* drop the referece if the length is 0.
+    /// The constructor will *always* drop the reference if the length is 0.
     /// Consequently, the value *must* remain null if the length is 0.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

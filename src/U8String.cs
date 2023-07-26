@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
-
 using U8Primitives.Serialization;
 
 namespace U8Primitives;
@@ -28,6 +28,7 @@ public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,
     IEquatable<byte[]>,
+    IList<byte>,
     ICloneable,
     ISpanParsable<U8String>,
     ISpanFormattable,
@@ -73,13 +74,7 @@ public readonly partial struct U8String :
     internal int Offset
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
-            // var inner = _inner;
-            // return Unsafe.BitCast<ulong, InnerOffsets>(_inner).Offset;
-            return _inner.Offset;
-        }
+        get => _inner.Offset;
     }
 
     /// <summary>
@@ -89,13 +84,7 @@ public readonly partial struct U8String :
     public int Length
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            // !! Tracking issue https://github.com/dotnet/runtime/issues/88950 !!
-            // var inner = _inner;
-            // return Unsafe.BitCast<ulong, InnerOffsets>(_inner).Length;
-            return _inner.Length;
-        }
+        get => _inner.Length;
     }
 
     /// <summary>
@@ -107,6 +96,12 @@ public readonly partial struct U8String :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value is null;
     }
+
+    /// <inheritdoc/>
+    int ICollection<byte>.Count => Length;
+
+    /// <inheritdoc/>
+    bool ICollection<byte>.IsReadOnly => true;
 
     /// <summary>
     /// Must not be accessed if <see cref="IsEmpty"/> is true.
@@ -167,4 +162,10 @@ public readonly partial struct U8String :
             ThrowHelpers.InvalidUtf8();
         }
     }
+
+    void IList<byte>.Insert(int index, byte item) => throw new NotImplementedException();
+    void IList<byte>.RemoveAt(int index) => throw new NotImplementedException();
+    void ICollection<byte>.Add(byte item) => throw new NotImplementedException();
+    void ICollection<byte>.Clear() => throw new NotImplementedException();
+    bool ICollection<byte>.Remove(byte item) => throw new NotImplementedException();
 }

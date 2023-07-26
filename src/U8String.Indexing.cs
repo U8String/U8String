@@ -27,4 +27,11 @@ public readonly partial struct U8String
             return ref UnsafeRefAdd(index);
         }
     }
+
+    byte IList<byte>.this[int index]
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => this[index];
+        set => throw new NotImplementedException();
+    }
 }
