@@ -69,4 +69,20 @@ public static class U8Marshal
 
         return new(value._value, value.Offset + start, end - start);
     }
+
+    /// <summary>
+    /// Unholy reverse of <see cref="U8String.Slice(int, int)"/> which
+    /// restores the internal <see cref="U8String"/> offsets to the maximum possible
+    /// length of its underlying buffer.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Unslice(U8String value)
+    {
+        if (!value.IsEmpty)
+        {
+            return new(value._value, 0, value._value!.Length);
+        }
+
+        return default;
+    }
 }

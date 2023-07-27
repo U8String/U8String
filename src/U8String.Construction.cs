@@ -69,7 +69,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String(byte[]? value, int offset, int length)
     {
-        Debug.Assert((value?.Length ?? 0) >= offset + length);
+        Debug.Assert(offset >= 0);
+        Debug.Assert(value is null ? length is 0 : length > 0);
 
         // TODO: Deduplicate the length check from the callers.
         if (length > 0)

@@ -13,7 +13,7 @@ public readonly partial struct U8String
         var bytes = (stackalloc byte[4]);
         var length = value.EncodeToUtf8(bytes);
 
-        return AsSpan().IndexOf(bytes[..length]) >= 0;
+        return AsSpan().IndexOf(bytes.SliceUnsafe(0, length)) >= 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -28,7 +28,7 @@ public readonly partial struct U8String
         var bytes = (stackalloc byte[4]);
         var length = value.EncodeToUtf8(bytes);
 
-        return AsSpan().StartsWith(bytes[..length]);
+        return AsSpan().StartsWith(bytes.SliceUnsafe(0, length));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -43,7 +43,7 @@ public readonly partial struct U8String
         var bytes = (stackalloc byte[4]);
         var length = value.EncodeToUtf8(bytes);
 
-        return AsSpan().EndsWith(bytes[..length]);
+        return AsSpan().EndsWith(bytes.SliceUnsafe(0, length));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -61,7 +61,7 @@ public readonly partial struct U8String
         var bytes = (stackalloc byte[4]);
         var length = value.EncodeToUtf8(bytes);
 
-        return AsSpan().IndexOf(bytes[..length]);
+        return AsSpan().IndexOf(bytes.SliceUnsafe(0, length));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -79,7 +79,7 @@ public readonly partial struct U8String
         var bytes = (stackalloc byte[4]);
         var length = value.EncodeToUtf8(bytes);
 
-        return AsSpan().LastIndexOf(bytes[..length]);
+        return AsSpan().LastIndexOf(bytes.SliceUnsafe(0, length));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -101,19 +101,25 @@ public readonly partial struct U8String
             var firstReplace = current.IndexOf(oldValue);
             if (firstReplace < 0)
             {
-                return this;
+                return source;
             }
 
             var replaced = new byte[source.Length];
-            var destination = replaced.SliceUnsafe(
-                firstReplace, source.Length - firstReplace);
+            var destination = replaced.AsSpan();
 
-            current[firstReplace..].Replace(destination, oldValue, newValue);
+            current
+                .SliceUnsafe(0, firstReplace)
+                .CopyTo(destination);
 
-            // Pass to ctor which will perform validation.
-            // Old and new bytes which individually are invalid unicode scalar values are allowed
-            // if the replacement produces a valid UTF-8 sequence.
-            return new U8String(replaced);
+            destination = destination.SliceUnsafe(firstReplace);
+            current
+                .SliceUnsafe(firstReplace)
+                .Replace(destination, oldValue, newValue);
+
+            // Old and new bytes which individually are invalid unicode scalar values
+            // are allowed if the replacement produces a valid UTF-8 sequence.
+            Validate(replaced);
+            return new(replaced, 0, source.Length);
         }
 
         return default;
@@ -140,7 +146,7 @@ public readonly partial struct U8String
     // Selectively inlining some overloads which are expected
     // to take byte or utf-8 constant literals.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (U8String Segment, U8String Remainder) SplitFirst(byte separator)
+    public SplitPair SplitFirst(byte separator)
     {
         if (!Rune.IsValid(separator))
         {
@@ -155,18 +161,16 @@ public readonly partial struct U8String
             var index = span.IndexOf(separator);
             if (index >= 0)
             {
-                return (
-                    U8Marshal.Slice(source, 0, index),
-                    U8Marshal.Slice(source, index + 1));
+                return new(source, index, 1);
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
     }
 
-    public (U8String Segment, U8String Remainder) SplitFirst(Rune separator)
+    public SplitPair SplitFirst(Rune separator)
     {
         var source = this;
         if (!source.IsEmpty)
@@ -175,15 +179,13 @@ public readonly partial struct U8String
             var separatorLength = separator.EncodeToUtf8(separatorBytes);
 
             var span = source.UnsafeSpan;
-            var index = span.IndexOf(separatorBytes[..separatorLength]);
+            var index = span.IndexOf(separatorBytes.SliceUnsafe(0, separatorLength));
             if (index >= 0)
             {
-                return (
-                    U8Marshal.Slice(source, 0, index),
-                    U8Marshal.Slice(source, index + separatorLength));
+                return new(source, index, separatorLength);
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
@@ -192,7 +194,7 @@ public readonly partial struct U8String
     // TODO: Reconsider the behavior on empty separator - what do Rust and Go do?
     // Should an empty separator effectively match no bytes which would be at the
     // start of the string, putting source in the remainder? (same with SplitLast and ROS overloads)
-    public (U8String Segment, U8String Remainder) SplitFirst(U8String separator)
+    public SplitPair SplitFirst(U8String separator)
     {
         var source = this;
         if (!source.IsEmpty)
@@ -203,13 +205,11 @@ public readonly partial struct U8String
                 var index = span.IndexOf(separator.UnsafeSpan);
                 if (index >= 0)
                 {
-                    return (
-                        U8Marshal.Slice(source, 0, index),
-                        U8Marshal.Slice(source, index + separator.Length));
+                    return new(source, index, separator.Length);
                 }
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
@@ -219,7 +219,7 @@ public readonly partial struct U8String
     // but the way validation is currently implemented does not significantly
     // benefit from splitting on UTF-8 literals while possibly risking
     // running out of inlining budget significantly regressing performance everywhere else.
-    public (U8String Segment, U8String Remainder) SplitFirst(ReadOnlySpan<byte> separator)
+    public SplitPair SplitFirst(ReadOnlySpan<byte> separator)
     {
         var source = this;
         if (!source.IsEmpty)
@@ -238,20 +238,18 @@ public readonly partial struct U8String
                         ThrowHelpers.InvalidSplit();
                     }
 
-                    return (
-                        U8Marshal.Slice(source, 0, index),
-                        U8Marshal.Slice(source, index + separator.Length));
+                    return new(source, index, separator.Length);
                 }
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (U8String Segment, U8String Remainder) SplitLast(byte separator)
+    public SplitPair SplitLast(byte separator)
     {
         if (!Rune.IsValid(separator))
         {
@@ -266,18 +264,16 @@ public readonly partial struct U8String
             var index = span.LastIndexOf(separator);
             if (index >= 0)
             {
-                return (
-                    U8Marshal.Slice(source, 0, index),
-                    U8Marshal.Slice(source, index + 1));
+                return new(source, index, 1);
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
     }
 
-    public (U8String Segment, U8String Remainder) SplitLast(Rune separator)
+    public SplitPair SplitLast(Rune separator)
     {
         var source = this;
         if (!source.IsEmpty)
@@ -286,21 +282,19 @@ public readonly partial struct U8String
             var separatorLength = separator.EncodeToUtf8(separatorBytes);
 
             var span = source.UnsafeSpan;
-            var index = span.LastIndexOf(separatorBytes[..separatorLength]);
+            var index = span.LastIndexOf(separatorBytes.SliceUnsafe(0, separatorLength));
             if (index >= 0)
             {
-                return (
-                    U8Marshal.Slice(source, 0, index),
-                    U8Marshal.Slice(source, index + separatorLength));
+                return new(source, index, separatorLength);
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
     }
 
-    public (U8String Segment, U8String Remainder) SplitLast(U8String separator)
+    public SplitPair SplitLast(U8String separator)
     {
         var source = this;
         if (!source.IsEmpty)
@@ -311,20 +305,18 @@ public readonly partial struct U8String
                 var index = span.LastIndexOf(separator.UnsafeSpan);
                 if (index >= 0)
                 {
-                    return (
-                        U8Marshal.Slice(source, 0, index),
-                        U8Marshal.Slice(source, index + separator.Length));
+                    return new(source, index, separator.Length);
                 }
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (U8String Segment, U8String Remainder) SplitLast(ReadOnlySpan<byte> separator)
+    public SplitPair SplitLast(ReadOnlySpan<byte> separator)
     {
         var source = this;
         if (!source.IsEmpty)
@@ -341,13 +333,11 @@ public readonly partial struct U8String
                         ThrowHelpers.InvalidSplit();
                     }
 
-                    return (
-                        U8Marshal.Slice(source, 0, index),
-                        U8Marshal.Slice(source, index + separator.Length));
+                    return new(source, index, separator.Length);
                 }
             }
 
-            return (source, default);
+            return SplitPair.NotFound(source);
         }
 
         return default;
@@ -533,5 +523,51 @@ public readonly partial struct U8String
         }
 
         return default;
+    }
+
+    public readonly record struct SplitPair
+    {
+        readonly U8String _value;
+        readonly int _index;
+        readonly int _separator;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal SplitPair(U8String value, int index, int separator)
+        {
+            _value = value;
+            _index = index;
+            _separator = separator;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static SplitPair NotFound(U8String value)
+        {
+            return new(value, value.Length, 0);
+        }
+
+        public U8String Segment
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => U8Marshal.Slice(_value, 0, _index);
+        }
+
+        public U8String Remainder
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => U8Marshal.Slice(_value, _index + _separator);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void Deconstruct(out U8String segment, out U8String remainder)
+        {
+            segment = Segment;
+            remainder = Remainder;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static implicit operator (U8String, U8String)(SplitPair value)
+        {
+            return (value.Segment, value.Remainder);
+        }
     }
 }

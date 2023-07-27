@@ -13,6 +13,7 @@ public readonly partial struct U8String
     // Bad codegen still :(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(this);
+
     IEnumerator<byte> IEnumerable<byte>.GetEnumerator() => new Enumerator(this);
     IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
 
@@ -34,7 +35,6 @@ public readonly partial struct U8String
 
         // Still cheaper than MemoryMarshal clever variants
         public readonly byte Current => _value![_offset + _index];
-        readonly object IEnumerator.Current => Current;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() => ++_index < _length;
@@ -56,7 +56,8 @@ public readonly partial struct U8String
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset() => _index = -1;
 
-        public readonly void Dispose() { }
+        readonly object IEnumerator.Current => Current;
+        readonly void IDisposable.Dispose() { }
     }
 
     public RuneCollection Runes => new(this);
@@ -82,7 +83,7 @@ public readonly partial struct U8String
         }
 
         /// <summary>
-        /// The number of <see cref="Rune"/>s in the current <see cref="U8String"/>.
+        /// The number of Runes (unicode scalar values) in the current <see cref="U8String"/>.
         /// </summary>
         /// <returns>The number of <see cref="Rune"/>s.</returns>
         public int Count
@@ -129,18 +130,9 @@ public readonly partial struct U8String
                 .Contains(item);
         }
 
-        public void CopyTo(Rune[] destination, int index)
+        public readonly void CopyTo(Rune[] destination, int index)
         {
-            ArgumentOutOfRangeException.ThrowIfNegative(index);
-
-            if ((uint)index > (uint)destination.Length)
-            {
-                ThrowHelpers.ArgumentOutOfRange(nameof(index));
-            }
-
-            ArgumentOutOfRangeException.ThrowIfLessThan(
-                destination.Length - index, Count);
-
+            // TODO: Consistency and correctness? Implement single-pass vectorized conversion?
             foreach (var rune in this)
             {
                 destination[index++] = rune;
@@ -149,6 +141,7 @@ public readonly partial struct U8String
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Enumerator GetEnumerator() => new(_value, _offset, _length);
+
         readonly IEnumerator<Rune> IEnumerable<Rune>.GetEnumerator() => GetEnumerator();
         readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
@@ -176,20 +169,21 @@ public readonly partial struct U8String
             }
 
             public Rune Current { get; private set; }
-            readonly object IEnumerator.Current => Current;
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public bool MoveNext()
             {
-                // TODO: Optimize for codegen, this one will be very slow
+                // TODO: Optimize for codegen, this one isn't great
                 var index = _index;
-                if (index < _length && Rune.DecodeFromUtf8(
-                    _value!.SliceUnsafe(_offset + index, _length - index),
-                    out var rune,
-                    out var consumed) is OperationStatus.Done)
+                if (index < _length)
                 {
-                    _index = index + consumed;
+                    Rune.DecodeFromUtf8(
+                        _value!.SliceUnsafe(_offset + index, _length - index),
+                        out var rune,
+                        out var consumed);
+
                     Current = rune;
+                    _index = index + consumed;
                     return true;
                 }
 
@@ -199,7 +193,8 @@ public readonly partial struct U8String
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Reset() => _index = -1;
 
-            public readonly void Dispose() { }
+            readonly object IEnumerator.Current => Current;
+            readonly void IDisposable.Dispose() { }
         }
 
         readonly void ICollection<Rune>.Add(Rune item) => throw new NotImplementedException();
@@ -208,10 +203,13 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Returns an enumeration of lines over the provided string.
+    /// Returns an collection of lines over the provided string.
     /// </summary>
-    /// <returns>An enumeration of lines.</returns>
-    public LineEnumerable Lines
+    /// <remarks>
+    /// The collection is lazily evaluated and is allocation-free.
+    /// </remarks>
+    /// <returns>A collection of lines.</returns>
+    public LineCollection Lines
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(this);
@@ -220,18 +218,55 @@ public readonly partial struct U8String
     /// <summary>
     /// An enumeration of lines over a string.
     /// </summary>
-    public readonly struct LineEnumerable : IEnumerable<U8String>
+    public struct LineCollection : ICollection<U8String>
     {
         readonly U8String _value;
+        int _count;
 
         /// <summary>
         /// Creates a new line enumeration over the provided string.
         /// </summary>
         /// <param name="value">The string to enumerate over.</param>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public LineEnumerable(U8String value)
+        public LineCollection(U8String value)
         {
             _value = value;
+        }
+
+        public int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                var count = _count;
+                if (count is 0)
+                {
+                    return count;
+                }
+                return _count = Count(_value);
+
+                [MethodImpl(MethodImplOptions.NoInlining)]
+                static int Count(ReadOnlySpan<byte> value)
+                {
+                    return value.Count((byte)'\n') + 1;
+                }
+            }
+        }
+
+        public readonly bool IsReadOnly => true;
+
+        public readonly bool Contains(U8String item)
+        {
+            return !item.Contains((byte)'\n') && _value.Contains(item);
+        }
+
+        public readonly void CopyTo(U8String[] destination, int index)
+        {
+            // TODO: Consistency and correctness?
+            foreach (var line in this)
+            {
+                destination[index++] = line;
+            }
         }
 
         /// <summary>
@@ -239,8 +274,13 @@ public readonly partial struct U8String
         /// </summary>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly Enumerator GetEnumerator() => new(_value);
+
         readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
         readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+        readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+        readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
+        readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 
         /// <summary>
         /// A struct that enumerates lines over a string.
@@ -317,19 +357,8 @@ public readonly partial struct U8String
                 return false;
             }
 
-            /// <summary>
-            /// Not supported.
-            /// </summary>
-            /// <exception cref="NotSupportedException">Always thrown.</exception>
-            public void Reset()
-            {
-                throw new NotSupportedException();
-            }
-
-            /// <summary>
-            /// Not supported, is a no-op.
-            /// </summary>
-            public readonly void Dispose() { }
+            readonly void IEnumerator.Reset() => throw new NotSupportedException();
+            readonly void IDisposable.Dispose() { }
         }
     }
 }

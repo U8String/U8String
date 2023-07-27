@@ -21,10 +21,37 @@ public class Enumeration
     public int CountRunes() => ThirdPartyNotices.Runes.Count;
 
     [Benchmark]
+    public int CountRunesForeach()
+    {
+        var res = 0;
+        foreach (var _ in ThirdPartyNotices.Runes)
+        {
+            res++;
+        }
+
+        return res;
+    }
+
+    [Benchmark]
+    public int CountRunesUtf16Span()
+    {
+        var res = 0;
+        foreach (var _ in ThirdPartyNoticesU16.AsSpan().EnumerateRunes())
+        {
+            res++;
+        }
+
+        return res;
+    }
+
+    [Benchmark]
     public int CountRunesUtf16() => ThirdPartyNoticesU16.EnumerateRunes().Count();
 
     [Benchmark]
-    public int CountLines()
+    public int CountLines() => ThirdPartyNotices.Lines.Count;
+
+    [Benchmark]
+    public int CountLinesForeach()
     {
         var res = 0;
         foreach (var line in ThirdPartyNotices.Lines)
@@ -34,9 +61,6 @@ public class Enumeration
 
         return res;
     }
-
-    [Benchmark]
-    public int CountLinesEnumerable() => ThirdPartyNotices.Lines.Count();
 
     [Benchmark]
     public int CountLinesUtf16Span()
