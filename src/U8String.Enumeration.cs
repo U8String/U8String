@@ -203,7 +203,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Returns an collection of lines over the provided string.
+    /// Returns a collection of lines over the provided string.
     /// </summary>
     /// <remarks>
     /// The collection is lazily evaluated and is allocation-free.
@@ -239,17 +239,14 @@ public readonly partial struct U8String
             get
             {
                 var count = _count;
-                if (count is 0)
+                if (count != 0)
                 {
                     return count;
                 }
-                return _count = Count(_value);
 
-                [MethodImpl(MethodImplOptions.NoInlining)]
-                static int Count(ReadOnlySpan<byte> value)
-                {
-                    return value.Count((byte)'\n') + 1;
-                }
+                return _count = _value
+                    .AsSpan()
+                    .Count((byte)'\n') + 1;
             }
         }
 
@@ -291,8 +288,10 @@ public readonly partial struct U8String
             // private static readonly SearchValues<byte> NewLine = SearchValues.Create("\r\n"u8);
 
             private readonly byte[]? _value;
-            private InnerOffsets _remaining;
-            private InnerOffsets _current;
+            private int _remainingOffset;
+            private int _remainingLength;
+            private int _currentOffset;
+            private int _currentLength;
             private bool _isEnumeratorActive;
 
             /// <summary>
@@ -303,9 +302,9 @@ public readonly partial struct U8String
             {
                 if (!value.IsEmpty)
                 {
-                    _value = value._value;
-                    _remaining = new(value.Offset, value.Length);
-                    _current = default;
+                    (_value, _remainingOffset, _remainingLength) = (
+                        value._value, value.Offset, value.Length);
+                    (_currentOffset, _currentLength) = (0, 0);
                     _isEnumeratorActive = true;
                 }
             }
@@ -313,8 +312,8 @@ public readonly partial struct U8String
             /// <summary>
             /// Returns the current line.
             /// </summary>
-            public readonly U8String Current => new(_value, _current.Offset, _current.Length);
-            readonly object IEnumerator.Current => new U8String(_value, _current.Offset, _current.Length);
+            public readonly U8String Current => new(_value, _currentOffset, _currentLength);
+            readonly object IEnumerator.Current => new U8String(_value, _currentOffset, _currentLength);
 
             /// <summary>
             /// Advances the enumerator to the next line.
@@ -323,31 +322,29 @@ public readonly partial struct U8String
             {
                 if (_isEnumeratorActive)
                 {
-                    var remOffsets = _remaining;
-                    var remaining = _value!.SliceUnsafe(remOffsets.Offset, remOffsets.Length);
-                    var idx = remaining.IndexOfAny((byte)'\n', (byte)'\r');
+                    var (remainingOffset, remainingLength) = (_remainingOffset, _remainingLength);
+                    var remaining = _value!.SliceUnsafe(remainingOffset, remainingLength);
+                    var idx = remaining.IndexOf((byte)'\n');
 
                     if ((uint)idx < (uint)remaining.Length)
                     {
                         var stride = 1;
-                        if (remaining[idx] == (byte)'\r'
-                            && idx + 1 < remaining.Length
-                            && remaining[idx + 1] == (byte)'\n')
+                        if (idx > 0 && remaining[idx - 1] is (byte)'\r')
                         {
                             stride = 2;
                         }
 
-                        _current = new(remOffsets.Offset, idx);
-                        _remaining = new(
-                            remOffsets.Offset + idx + stride,
-                            remOffsets.Length - idx - stride);
+                        (_currentOffset, _currentLength) = (remainingOffset, idx);
+                        (_remainingOffset, _remainingLength) = (
+                            remainingOffset + idx + stride,
+                            remainingLength - idx - stride);
                     }
                     else
                     {
                         // We've reached EOF, but we still need to return 'true' for this final
                         // iteration so that the caller can query the Current property once more.
-                        _current = _remaining;
-                        _remaining = default;
+                        (_currentLength, _currentOffset) = (_remainingOffset, _remainingLength);
+                        (_remainingOffset, _remainingLength) = (0, 0);
                         _isEnumeratorActive = false;
                     }
 
