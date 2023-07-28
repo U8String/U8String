@@ -343,7 +343,7 @@ public readonly partial struct U8String
                     {
                         // We've reached EOF, but we still need to return 'true' for this final
                         // iteration so that the caller can query the Current property once more.
-                        (_currentLength, _currentOffset) = (_remainingOffset, _remainingLength);
+                        (_currentOffset, _currentLength) = (remainingOffset, remainingLength);
                         (_remainingOffset, _remainingLength) = (0, 0);
                         _isEnumeratorActive = false;
                     }

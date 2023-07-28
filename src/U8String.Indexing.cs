@@ -19,12 +19,7 @@ public readonly partial struct U8String
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if ((nint)(uint)index >= (nint)(uint)Length)
-            {
-                ThrowHelpers.ArgumentOutOfRange();
-            }
-
-            return ref UnsafeRefAdd(index);
+            return ref UnsafeSpan[index];
         }
     }
 
