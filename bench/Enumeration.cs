@@ -1,21 +1,30 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
-using U8Primitives.InteropServices;
 
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+[DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
+// [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Enumeration
 {
-    private static readonly U8String ThirdPartyNotices = new HttpClient()
-        .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
-        .GetAwaiter()
-        .GetResult();
+    [Params(100, 1000, 10000)]
+    public int Length;
 
-    private static readonly string ThirdPartyNoticesU16 = ThirdPartyNotices.ToString();
+    U8String ThirdPartyNotices;
 
-    private static readonly char[] NewLineChars = "\n\r".ToArray();
+    string? ThirdPartyNoticesU16;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        var notices = new HttpClient()
+            .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
+            .GetAwaiter()
+            .GetResult();
+
+        ThirdPartyNotices = notices[..Length];
+        ThirdPartyNoticesU16 = notices[..Length].ToString();
+    }
 
     [Benchmark]
     public int CountRunes() => ThirdPartyNotices.Runes.Count;
@@ -45,7 +54,7 @@ public class Enumeration
     }
 
     [Benchmark]
-    public int CountRunesUtf16() => ThirdPartyNoticesU16.EnumerateRunes().Count();
+    public int CountRunesUtf16() => ThirdPartyNoticesU16!.EnumerateRunes().Count();
 
     [Benchmark]
     public int CountLines() => ThirdPartyNotices.Lines.Count;
@@ -76,5 +85,5 @@ public class Enumeration
 
     // Different behavior
     [Benchmark]
-    public int CountLinesUtf16Split() => ThirdPartyNoticesU16.Split(NewLineChars).Length;
+    public int CountLinesUtf16Split() => ThirdPartyNoticesU16!.Split('\n').Length;
 }

@@ -60,13 +60,51 @@ public readonly partial struct U8String
         readonly void IDisposable.Dispose() { }
     }
 
-    public RuneCollection Runes => new(this);
+    /// <summary>
+    /// Returns a collection of runes over the provided string.
+    /// </summary>
+    /// <remarks>
+    /// The collection is lazily evaluated and is allocation-free.
+    /// </remarks>
+    /// <returns>A collection of runes.</returns>
+    public RuneCollection Runes
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(this);
+    }
 
+    /// <summary>
+    /// Returns a collection of lines over the provided string.
+    /// </summary>
+    /// <remarks>
+    /// The collection is lazily evaluated and is allocation-free.
+    /// </remarks>
+    /// <returns>A collection of lines.</returns>
+    public LineCollection Lines
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(this);
+    }
+
+    /// <summary>
+    /// A collections of chars in a provided <see cref="U8String"/>.
+    /// </summary>
+    public struct CharCollection : ICollection<char>
+    {
+        // TODO
+    }
+
+    /// <summary>
+    /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
+    /// </summary>
     public struct RuneCollection : ICollection<Rune>
     {
         readonly byte[]? _value;
         readonly int _offset;
         readonly int _length;
+
+        // If we bring up non-ascii counting to ascii level, we might not need this
+        // similar to LineCollection.
         int _count;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -85,7 +123,6 @@ public readonly partial struct U8String
         /// <summary>
         /// The number of Runes (unicode scalar values) in the current <see cref="U8String"/>.
         /// </summary>
-        /// <returns>The number of <see cref="Rune"/>s.</returns>
         public int Count
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -203,24 +240,14 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Returns a collection of lines over the provided string.
-    /// </summary>
-    /// <remarks>
-    /// The collection is lazily evaluated and is allocation-free.
-    /// </remarks>
-    /// <returns>A collection of lines.</returns>
-    public LineCollection Lines
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(this);
-    }
-
-    /// <summary>
-    /// An enumeration of lines over a string.
+    /// A collection of lines in a provided <see cref="U8String"/>.
     /// </summary>
     public struct LineCollection : ICollection<U8String>
     {
         readonly U8String _value;
+
+        // We might not need this. Although counting is O(n), the absolute performance
+        // is very good, and on AVX2/512 - it's basically instantenous.
         int _count;
 
         /// <summary>
@@ -233,6 +260,9 @@ public readonly partial struct U8String
             _value = value;
         }
 
+        /// <summary>
+        /// The number of lines in the current <see cref="U8String"/>.
+        /// </summary>
         public int Count
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
