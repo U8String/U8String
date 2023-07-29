@@ -3,11 +3,10 @@ using BenchmarkDotNet.Attributes;
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 // [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Enumeration
 {
-    [Params(100, 1000, 10000)]
+    [Params(100, 1000, 100000)]
     public int Length;
 
     U8String ThirdPartyNotices;
@@ -21,6 +20,8 @@ public class Enumeration
             .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
             .GetAwaiter()
             .GetResult();
+
+        notices += notices;
 
         ThirdPartyNotices = notices[..Length];
         ThirdPartyNoticesU16 = notices[..Length].ToString();

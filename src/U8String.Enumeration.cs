@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Collections;
 using System.Diagnostics;
-using U8Primitives.Internals;
+using System.Text;
 
 using Rune = System.Text.Rune;
 
@@ -91,7 +91,82 @@ public readonly partial struct U8String
     /// </summary>
     public struct CharCollection : ICollection<char>
     {
-        // TODO
+        readonly U8String _value;
+
+        int _count;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public CharCollection(U8String value)
+        {
+            if (!value.IsEmpty)
+            {
+                _value = value;
+                _count = -1;
+            }
+        }
+
+        /// <summary>
+        /// The number of chars in the current <see cref="U8String"/>.
+        /// </summary>
+        public int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                // Somehow the codegen here is underwhelming
+                var count = _count;
+                if (count >= 0)
+                {
+                    return count;
+                }
+                return _count = Count(_value.UnsafeSpan);
+
+                static int Count(ReadOnlySpan<byte> value)
+                {
+                    Debug.Assert(!value.IsEmpty);
+
+                    // TODO: Is this any different from RuneCollection.Count?
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
+        public readonly bool Contains(char item) => _value.Contains(item);
+
+        public readonly void CopyTo(char[] destination, int index)
+        {
+            if (!_value.IsEmpty)
+            {
+                Encoding.UTF8.GetChars(_value.UnsafeSpan, destination.AsSpan(index));
+            }
+        }
+
+        readonly bool ICollection<char>.IsReadOnly => throw new NotImplementedException();
+
+        void ICollection<char>.Add(char item)
+        {
+            throw new NotImplementedException();
+        }
+
+        void ICollection<char>.Clear()
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator<char> IEnumerable<char>.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            throw new NotImplementedException();
+        }
+
+        bool ICollection<char>.Remove(char item)
+        {
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>
@@ -140,7 +215,7 @@ public readonly partial struct U8String
                 {
                     Debug.Assert(!value.IsEmpty);
 
-                    var runeCount = (int)(nint)Ascii.GetIndexOfFirstNonAsciiByte(value);
+                    var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
 
                     // TODO: Optimize after porting/copying Utf8Utility from dotnet/runtime
                     value = value.Slice(runeCount);
@@ -158,9 +233,6 @@ public readonly partial struct U8String
             }
         }
 
-        public readonly bool IsReadOnly => true;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly bool Contains(Rune item)
         {
             return new U8String(_value, _offset, _length)
@@ -229,11 +301,12 @@ public readonly partial struct U8String
 
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             public void Reset() => _index = -1;
-
+            
             readonly object IEnumerator.Current => Current;
             readonly void IDisposable.Dispose() { }
         }
 
+        readonly bool ICollection<Rune>.IsReadOnly => true;
         readonly void ICollection<Rune>.Add(Rune item) => throw new NotImplementedException();
         readonly void ICollection<Rune>.Clear() => throw new NotImplementedException();
         readonly bool ICollection<Rune>.Remove(Rune item) => throw new NotImplementedException();
@@ -280,8 +353,6 @@ public readonly partial struct U8String
             }
         }
 
-        public readonly bool IsReadOnly => true;
-
         public readonly bool Contains(U8String item)
         {
             return !item.Contains((byte)'\n') && _value.Contains(item);
@@ -305,6 +376,7 @@ public readonly partial struct U8String
         readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
         readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
+        readonly bool ICollection<U8String>.IsReadOnly => true;
         readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
         readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
         readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();

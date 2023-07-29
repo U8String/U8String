@@ -3,7 +3,7 @@
 using System.Diagnostics;
 using System.Numerics;
 
-namespace U8Primitives.Internals;
+namespace U8Primitives.Polyfills.Text;
 
 #pragma warning disable IDE0007 // Use implicit type. Why: Source format.
 internal static partial class Ascii

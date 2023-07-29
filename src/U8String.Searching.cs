@@ -8,12 +8,13 @@ public readonly partial struct U8String
     public bool Contains(byte value) => AsSpan().Contains(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly bool Contains(char item) => char.IsAscii(item)
+        ? Contains((byte)item)
+        : Contains(new Rune(item));
+
     public bool Contains(Rune value)
     {
-        var bytes = (stackalloc byte[4]);
-        var length = value.EncodeToUtf8(bytes);
-
-        return AsSpan().IndexOf(bytes.SliceUnsafe(0, length)) >= 0;
+        return AsSpan().IndexOf(value.ToUtf8Unsafe(out _)) >= 0;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -23,12 +24,20 @@ public readonly partial struct U8String
     public bool Contains(ReadOnlySpan<byte> value) => AsSpan().IndexOf(value) >= 0;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool StartsWith(byte value)
+    {
+        var span = AsSpan();
+        return span.Length > 0 && span[0] == value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool StartsWith(char value) => char.IsAscii(value)
+        ? StartsWith((byte)value)
+        : StartsWith(new Rune(value));
+
     public bool StartsWith(Rune value)
     {
-        var bytes = (stackalloc byte[4]);
-        var length = value.EncodeToUtf8(bytes);
-
-        return AsSpan().StartsWith(bytes.SliceUnsafe(0, length));
+        return AsSpan().StartsWith(value.ToUtf8Unsafe(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -38,12 +47,20 @@ public readonly partial struct U8String
     public bool StartsWith(ReadOnlySpan<byte> value) => AsSpan().StartsWith(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool EndsWith(byte value)
+    {
+        var span = AsSpan();
+        return span.Length > 0 && span[^1] == value;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool EndsWith(char value) => char.IsAscii(value)
+        ? EndsWith((byte)value)
+        : EndsWith(new Rune(value));
+
     public bool EndsWith(Rune value)
     {
-        var bytes = (stackalloc byte[4]);
-        var length = value.EncodeToUtf8(bytes);
-
-        return AsSpan().EndsWith(bytes.SliceUnsafe(0, length));
+        return AsSpan().EndsWith(value.ToUtf8Unsafe(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -55,13 +72,9 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf(byte value) => AsSpan().IndexOf(value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf(Rune value)
     {
-        var bytes = (stackalloc byte[4]);
-        var length = value.EncodeToUtf8(bytes);
-
-        return AsSpan().IndexOf(bytes.SliceUnsafe(0, length));
+        return AsSpan().IndexOf(value.ToUtf8Unsafe(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -76,10 +89,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf(Rune value)
     {
-        var bytes = (stackalloc byte[4]);
-        var length = value.EncodeToUtf8(bytes);
-
-        return AsSpan().LastIndexOf(bytes.SliceUnsafe(0, length));
+        return AsSpan().LastIndexOf(value.ToUtf8Unsafe(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

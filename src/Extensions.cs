@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace U8Primitives;
 
@@ -9,6 +10,20 @@ static class Extensions
     {
         var (start, end) = Unsafe.As<Range, (int, int)>(ref value);
         return start == end;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Span<byte> AsBytes<T>(this ref T value)
+        where T : unmanaged
+    {
+        return new Span<T>(ref value).AsBytes();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Span<byte> AsBytes<T>(this Span<T> value)
+        where T : unmanaged
+    {
+        return MemoryMarshal.Cast<T, byte>(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
