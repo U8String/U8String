@@ -26,6 +26,6 @@ static class U8Constants
         _ when typeof(T) == typeof(DateTimeOffset) => 39,
         _ when typeof(T) == typeof(TimeSpan) => 24,
         _ when typeof(T) == typeof(Guid) => 36,
-        _ => 0,
+        _ => 32,
     };
 }
