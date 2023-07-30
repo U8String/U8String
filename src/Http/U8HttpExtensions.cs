@@ -9,18 +9,21 @@ public static class U8HttpExtensions
 {
     // TODO: Consider using "validating stream" to interrupt the request as soon as invalid UTF-8 is detected. Or not?
     /// <inheritdoc cref="GetU8StringAsync(HttpClient, Uri?, CancellationToken)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<U8String> GetU8StringAsync(this HttpClient client, string? requestUri)
     {
         return client.GetU8StringAsync(CreateUri(requestUri));
     }
 
     /// <inheritdoc cref="GetU8StringAsync(HttpClient, Uri?, CancellationToken)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<U8String> GetU8StringAsync(this HttpClient client, Uri? requestUri)
     {
         return client.GetU8StringAsync(requestUri, CancellationToken.None);
     }
 
     /// <inheritdoc cref="GetU8StringAsync(HttpClient, Uri?, CancellationToken)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<U8String> GetU8StringAsync(
         this HttpClient client, string? requestUri, CancellationToken cancellationToken)
     {
@@ -47,6 +50,7 @@ public static class U8HttpExtensions
     }
 
     /// <inheritdoc cref="ReadAsU8StringAsync(HttpContent, CancellationToken)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<U8String> ReadAsU8StringAsync(this HttpContent content)
     {
         return content.ReadAsU8StringAsync(CancellationToken.None);

@@ -148,7 +148,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitFirst(byte separator)
     {
-        if (!Rune.IsValid(separator))
+        if (!U8Info.IsAsciiByte(separator))
         {
             // TODO: EH UX
             ThrowHelpers.ArgumentOutOfRange();
@@ -170,19 +170,23 @@ public readonly partial struct U8String
         return default;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SplitPair SplitFirst(char separator) => char.IsAscii(separator)
+        ? SplitFirst((byte)separator)
+        : SplitFirst(new Rune(separator));
+
     public SplitPair SplitFirst(Rune separator)
     {
         var source = this;
         if (!source.IsEmpty)
         {
-            var separatorBytes = (stackalloc byte[4]);
-            var separatorLength = separator.EncodeToUtf8(separatorBytes);
+            var separatorBytes = separator.ToUtf8Unsafe(out _);
 
             var span = source.UnsafeSpan;
-            var index = span.IndexOf(separatorBytes.SliceUnsafe(0, separatorLength));
+            var index = span.IndexOf(separatorBytes);
             if (index >= 0)
             {
-                return new(source, index, separatorLength);
+                return new(source, index, separatorBytes.Length);
             }
 
             return SplitPair.NotFound(source);
@@ -249,9 +253,14 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SplitPair SplitLast(char separator) => char.IsAscii(separator)
+        ? SplitLast((byte)separator)
+        : SplitLast(new Rune(separator));
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(byte separator)
     {
-        if (!Rune.IsValid(separator))
+        if (!U8Info.IsAsciiByte(separator))
         {
             // TODO: EH UX
             ThrowHelpers.ArgumentOutOfRange();
@@ -278,14 +287,13 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            var separatorBytes = (stackalloc byte[4]);
-            var separatorLength = separator.EncodeToUtf8(separatorBytes);
+            var separatorBytes = separator.ToUtf8Unsafe(out _);
 
             var span = source.UnsafeSpan;
-            var index = span.LastIndexOf(separatorBytes.SliceUnsafe(0, separatorLength));
+            var index = span.LastIndexOf(separatorBytes);
             if (index >= 0)
             {
-                return new(source, index, separatorLength);
+                return new(source, index, separatorBytes.Length);
             }
 
             return SplitPair.NotFound(source);
@@ -402,13 +410,10 @@ public readonly partial struct U8String
 
         if (length > 0)
         {
-            //ref var firstByte = ref source.FirstByte;
-            // !! Warning !!
-            // start + length might dereference past the end of the buffer
-            // TODO: Is this ever a problem? Can we make assumptions that would allow us
-            // to skip checking the byte[] length and calculating offset utf8 scalar value start offset?
-            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) ||
-                U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length)))
+            // TODO: Reconsider the check if U8String ever becomes opportunistically null-terminated
+            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start))
+                || (length < source.Length &&
+                    U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
                 // TODO: Exception message UX
                 ThrowHelpers.InvalidSplit();

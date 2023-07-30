@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -91,6 +92,7 @@ public readonly partial struct U8String :
     /// Indicates whether the current <see cref="U8String"/> is empty.
     /// </summary>
     /// <returns><see langword="true"/> if the current <see cref="U8String"/> is empty; otherwise, <see langword="false"/>.</returns>
+    [MemberNotNullWhen(false, nameof(_value))]
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

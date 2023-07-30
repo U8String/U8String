@@ -6,7 +6,7 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Runtime.Intrinsics.X86;
 
-namespace U8Primitives.Internals;
+namespace U8Primitives.Polyfills.Text;
 
 #pragma warning disable IDE0007 // Use implicit type. Why: Source format.
 internal static partial class Ascii

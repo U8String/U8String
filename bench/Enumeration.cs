@@ -1,27 +1,58 @@
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
-using U8Primitives.InteropServices;
 
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+// [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Enumeration
 {
-    private static readonly U8String ThirdPartyNotices = new HttpClient()
-        .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
-        .GetAwaiter()
-        .GetResult();
+    [Params(100, 1000, 100000)]
+    public int Length;
 
-    private static readonly string ThirdPartyNoticesU16 = ThirdPartyNotices.ToString();
+    U8String ThirdPartyNotices;
 
-    private static readonly char[] NewLineChars = "\n\r".ToArray();
+    string? ThirdPartyNoticesU16;
+
+    [GlobalSetup]
+    public void Setup()
+    {
+        var notices = new HttpClient()
+            .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
+            .GetAwaiter()
+            .GetResult();
+
+        notices += notices;
+
+        ThirdPartyNotices = notices[..Length];
+        ThirdPartyNoticesU16 = notices[..Length].ToString();
+    }
+
+    [Benchmark]
+    public int CountChars() => ThirdPartyNotices.Chars.Count;
+
+    [Benchmark]
+    public int EnumerateChars()
+    {
+        var res = 0;
+        foreach (var _ in ThirdPartyNotices.Chars)
+        {
+            res++;
+        }
+
+        return res;
+    }
+
+    [Benchmark]
+    public char[] CollectChars() => ThirdPartyNotices.Chars.ToArray();
 
     [Benchmark]
     public int CountRunes() => ThirdPartyNotices.Runes.Count;
 
     [Benchmark]
-    public int CountRunesForeach()
+    public int CountRunesUtf16() => ThirdPartyNoticesU16!.EnumerateRunes().Count();
+
+    [Benchmark]
+    public int EnumerateRunes()
     {
         var res = 0;
         foreach (var _ in ThirdPartyNotices.Runes)
@@ -33,7 +64,7 @@ public class Enumeration
     }
 
     [Benchmark]
-    public int CountRunesUtf16Span()
+    public int EnumerateRunesUtf16Span()
     {
         var res = 0;
         foreach (var _ in ThirdPartyNoticesU16.AsSpan().EnumerateRunes())
@@ -45,13 +76,20 @@ public class Enumeration
     }
 
     [Benchmark]
-    public int CountRunesUtf16() => ThirdPartyNoticesU16.EnumerateRunes().Count();
+    public Rune[] CollectRunes() => ThirdPartyNotices.Runes.ToArray();
+
+    [Benchmark]
+    public Rune[] CollectRunesUtf16() => ThirdPartyNoticesU16!.EnumerateRunes().ToArray();
 
     [Benchmark]
     public int CountLines() => ThirdPartyNotices.Lines.Count;
 
+    // Different behavior
     [Benchmark]
-    public int CountLinesForeach()
+    public int CountLinesUtf16Split() => ThirdPartyNoticesU16!.Split('\n').Length;
+
+    [Benchmark]
+    public int EnumerateLines()
     {
         var res = 0;
         foreach (var line in ThirdPartyNotices.Lines)
@@ -63,7 +101,7 @@ public class Enumeration
     }
 
     [Benchmark]
-    public int CountLinesUtf16Span()
+    public int EnumerateLinesUtf16Span()
     {
         var res = 0;
         foreach (var _ in ThirdPartyNoticesU16.AsSpan().EnumerateLines())
@@ -74,7 +112,9 @@ public class Enumeration
         return res;
     }
 
-    // Different behavior
     [Benchmark]
-    public int CountLinesUtf16Split() => ThirdPartyNoticesU16.Split(NewLineChars).Length;
+    public U8String[] CollectLines() => ThirdPartyNotices.Lines.ToArray();
+
+    [Benchmark]
+    public string[] CollectLinesUtf16Split() => ThirdPartyNoticesU16!.Split('\n');
 }

@@ -2,7 +2,7 @@
 // See THIRD-PARTY-NOTICES.txt in the root of this repository for terms.
 using System.Runtime.InteropServices;
 
-namespace U8Primitives.Internals;
+namespace U8Primitives.Polyfills.Text;
 
 #pragma warning disable IDE0007 // Use implicit type. Why: Source format.
 internal static partial class Ascii

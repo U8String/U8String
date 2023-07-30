@@ -8,4 +8,10 @@ static class U8Info
     {
         return (sbyte)value < -64;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool IsAsciiByte(in byte value)
+    {
+        return value <= 0x7F;
+    }
 }

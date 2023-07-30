@@ -36,7 +36,6 @@ public static class U8StringExtensions
     /// <typeparam name="T">The type of the value to convert.</typeparam>
     /// <param name="value">The value to convert.</param>
     /// <returns>U8String representation of the value.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String<T>(this T value)
         where T : IUtf8SpanFormattable
     {
@@ -50,7 +49,6 @@ public static class U8StringExtensions
     /// <param name="value">The value to convert.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <returns>U8String representation of the value.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String<T>(this T value, IFormatProvider? provider = null)
         where T : IUtf8SpanFormattable
     {
@@ -74,31 +72,41 @@ public static class U8StringExtensions
         if (value is not U8String u8str)
         {
             var length = U8Constants.GetFormattedLength<T>();
-            return length != 0
-                ? FormatExact(format, value, provider, length)
+            return  FormatExact(format, value, provider, length, out var result)
+                ? result
                 : FormatUnsized(format, value, provider);
         }
 
         return u8str;
     }
 
+    // TODO: Move impls off U8StringExtensions and change strategy into
+    // FormatExact (for Ts of exact max length, with other calls optimized away) -> FormatOpporunistic -> FormatUnsized
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static U8String FormatExact<T>(
-        ReadOnlySpan<char> format, T value, IFormatProvider? provider, int length)
-            where T : IUtf8SpanFormattable
+    static bool FormatExact<T>(
+        ReadOnlySpan<char> format,
+        T value,
+        IFormatProvider? provider,
+        int length,
+        out U8String result) where T : IUtf8SpanFormattable
     {
+        result = default;
         var buffer = new byte[length];
-        var result = value.TryFormat(buffer, out length, format, provider);
+        var success = value.TryFormat(buffer, out length, format, provider);
+        if (success)
+        {
+            result = new(buffer, 0, length);
+        }
 
-        Debug.Assert(result);
-        return new U8String(buffer, 0, length);
+        return success;
     }
 
     static U8String FormatUnsized<T>(
         ReadOnlySpan<char> format, T value, IFormatProvider? provider)
             where T : IUtf8SpanFormattable
     {
-        var buffer = new byte[32];
+        // TODO: Additional length-resolving heuristics or a stack-allocated into arraypool buffer
+        var buffer = new byte[64];
     Retry:
         if (value.TryFormat(buffer, out var length, format, provider))
         {
