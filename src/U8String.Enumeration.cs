@@ -15,7 +15,7 @@ public readonly partial struct U8String
     /// Returns a collection of <see cref="char"/>s over the provided string.
     /// </summary>
     /// <remarks>
-    /// This is a lazily-evaulated allocation-free collection.
+    /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
     public CharCollection Chars
     {
@@ -27,7 +27,7 @@ public readonly partial struct U8String
     /// Returns a collection of <see cref="Rune"/>s over the provided string.
     /// </summary>
     /// <remarks>
-    /// This is a lazily-evaulated allocation-free collection.
+    /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
     public RuneCollection Runes
     {
@@ -39,7 +39,7 @@ public readonly partial struct U8String
     /// Returns a collection of lines over the provided string.
     /// </summary>
     /// <remarks>
-    /// This is a lazily-evaulated allocation-free collection.
+    /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
     public LineCollection Lines
     {
