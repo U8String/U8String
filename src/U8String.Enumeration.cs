@@ -98,7 +98,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// A collections of chars in a provided <see cref="U8String"/>.
+    /// A collection of chars in a provided <see cref="U8String"/>.
     /// </summary>
     public struct CharCollection : ICollection<char>
     {
@@ -214,15 +214,13 @@ public readonly partial struct U8String
                             _currentCharPair = (uint)rune.Value;
                             return true;
                         }
-                        else
-                        {
-                            // I wonder if this just explodes on BigEndian
-                            var runeValue = (uint)rune.Value;
-                            var highSurrogate = (char)((runeValue + ((0xD800u - 0x40u) << 10)) >> 10);
-                            var lowSurrogate = (char)((runeValue & 0x3FFu) + 0xDC00u);
-                            _currentCharPair = highSurrogate + ((uint)lowSurrogate << 16);
-                            return true;
-                        }
+
+                        // I wonder if this just explodes on BigEndian
+                        var runeValue = (uint)rune.Value;
+                        var highSurrogate = (char)((runeValue + ((0xD800u - 0x40u) << 10)) >> 10);
+                        var lowSurrogate = (char)((runeValue & 0x3FFu) + 0xDC00u);
+                        _currentCharPair = highSurrogate + ((uint)lowSurrogate << 16);
+                        return true;
                     }
 
                     return false;
