@@ -697,8 +697,12 @@ public readonly partial struct U8String
                             return separator switch
                             {
                                 byte b => value.Count(b),
-                                char c => value.Count(new Rune(c).ToUtf8Unsafe(out _)),
-                                Rune r => value.Count(r.ToUtf8Unsafe(out _)),
+                                char c => char.IsAscii(c)
+                                    ? value.Count((byte)c)
+                                    : value.Count(new Rune(c).ToUtf8Unsafe(out _)),
+                                Rune r => r.IsAscii
+                                    ? value.Count((byte)r.Value)
+                                    : value.Count(r.ToUtf8Unsafe(out _)),
                                 U8String str => value.Count(str),
                                 _ => ThrowHelpers.ArgumentOutOfRange<int>(nameof(separator))
                             };
