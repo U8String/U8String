@@ -16,14 +16,18 @@
 # TODO
 - [ ] Construction aligned with collection literals initialization syntax and API shape
 - [x] IList, IEnumerable
+- [ ] Comparison
+    - [x] OrdinalU8Comparer
+    - [ ] OrdinalIgnoreCaseU8Comparer
+    - [ ] UnicodeNormalizedU8Comparer (all normalization forms)
 - [x] Runes view (IEnumerable, or stateful IList?)
 - [x] Chars view (same as above)
 - [x] Lines view
 - [ ] Splitting
-    - [ ] Split (byte, Rune, ROS, U8String)
-    - [x] SplitFirst (byte, Rune, ROS, U8String)
-    - [x] SplitLast (byte, Rune, ROS, U8String)
-    - [ ] EnumerateSplit? Should regular split not be eagerly computed?
+    - [ ] Split (byte, Rune, ROS, U8String) + U8SplitOptions (None, IgnoreCase, UnicodeNormalized)
+    - [x] SplitFirst (byte, char, Rune, ROS, U8String)
+    - [x] SplitLast (byte, char, Rune, ROS, U8String)
+    - [x] ~~EnumerateSplit? Should regular split not be eagerly computed?~~
 - [ ] Comparison
     - [ ] Contains (+case insensitive)
     - [ ] StartsWith (+case insensitive)

@@ -99,7 +99,9 @@ internal static partial class Ascii
         // pmovmskb which we know are optimized, and (b) we can avoid downclocking the processor while
         // this method is running.
 
-        if (Vector512.IsHardwareAccelerated || Vector256.IsHardwareAccelerated)
+        if (Vector512.IsHardwareAccelerated ||
+            Vector256.IsHardwareAccelerated ||
+            Vector128.IsHardwareAccelerated)
         {
             return GetIndexOfFirstNonAsciiByte_Vector(pBuffer, bufferLength);
         }

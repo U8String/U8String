@@ -28,7 +28,10 @@ namespace U8Primitives;
 public readonly partial struct U8String :
     IEquatable<U8String>,
     IEquatable<U8String?>,
-    IEquatable<byte[]>,
+    IEquatable<byte[]?>,
+    IComparable<U8String>,
+    IComparable<U8String?>,
+    IComparable<byte[]?>,
     IList<byte>,
     ICloneable,
     ISpanParsable<U8String>,
@@ -142,17 +145,20 @@ public readonly partial struct U8String :
     }
 
     /// <summary>
-    /// Evaluates whether the current <see cref="U8String"/> contains only ASCII characters.
+    /// Evaluates if the current <see cref="U8String"/> contains only ASCII characters.
     /// </summary>
     public bool IsAscii() => Ascii.IsValid(this);
+
+    /// <summary>
+    /// Evaluates if the current <see cref="U8String"/> is normalized to the specified
+    /// Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
+    /// </summary>
+    public bool IsNormalized(NormalizationForm form = NormalizationForm.FormC) => throw new NotImplementedException();
 
     /// <summary>
     /// Validates that the <paramref name="value"/> is a valid UTF-8 byte sequence.
     /// </summary>
     /// <param name="value">The <see cref="ReadOnlySpan{T}"/> to validate.</param>
-    /// <returns>
-    /// <see langword="true"/> if the <paramref name="value"/> contains a valid UTF-8 byte sequence; otherwise, <see langword="false"/>.
-    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValid(ReadOnlySpan<byte> value) => Utf8.IsValid(value);
 
@@ -163,6 +169,13 @@ public readonly partial struct U8String :
         {
             ThrowHelpers.InvalidUtf8();
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool ValidateSlice(ReadOnlySpan<byte> value, int offset, int length)
+    {
+        // TODO: Another method which requires like 10 iterations to achieve good codegen.
+        throw new NotImplementedException();
     }
 
     void IList<byte>.Insert(int index, byte item) => throw new NotImplementedException();

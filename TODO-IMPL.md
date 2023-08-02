@@ -1,14 +1,22 @@
 # TODO
 - [ ] Contribute https://github.com/dotnet/csharplang/issues/6161 specification work
+- [ ] Contribute ArraySortHelper.cs optimizations to make it able specialize on struct TComparers
 - [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime if applicable
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
-- [ ] U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way
+- [ ] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64
+- [ ] Refactor and generalize large chunks into separate utility classes 
+- [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
+- [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
 - [x] Ensure `default(U8String)` is always valid
 - [ ] Author exception types and messages for malformed UTF-8
+- [ ] Author documentation
 - [x] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
 - [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
 - [x] Optimize AsSpan() overloads
+- [ ] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do
 - [ ] Debugger View and ToString
+- [ ] Complete Rune counting vectorization
+- [ ] Complete char counting vectorization (does counting non-continuation bytes is sufficient to be compliant with to-Chars conversion?)
 - [x] IList<byte>
 - [ ] Equality
 - [x] Replace checked slicing with unchecked once implemented where applicable

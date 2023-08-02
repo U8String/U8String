@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using U8Primitives.InteropServices;
@@ -90,6 +91,15 @@ public readonly partial struct U8String
         }
 
         return default;
+    }
+
+    /// <summary>
+    /// Normalizes current <see cref="U8String"/> to the specified Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
+    /// </summary>
+    /// <returns>A new <see cref="U8String"/> normalized to the specified form.</returns>
+    public U8String Normalize(NormalizationForm form = NormalizationForm.FormC)
+    {
+        throw new NotImplementedException();
     }
 
     public U8String Replace(byte oldValue, byte newValue)
@@ -351,6 +361,72 @@ public readonly partial struct U8String
         return default;
     }
 
+    public SplitCollection<byte> Split(byte separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<byte>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<char> Split(char separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<char>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<Rune> Split(Rune separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<Rune>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<U8String> Split(U8String separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<U8String>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<byte[]> Split(ReadOnlySpan<byte> separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        if (!IsValid(separator))
+        {
+            // TODO: EH UX
+            ThrowHelpers.InvalidSplit();
+        }
+
+        var split = default(SplitCollection<byte[]>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator.ToArray(), options);
+        }
+
+        return split;
+    }
+
     /// <summary>
     /// Retrieves a substring from this instance. The substring starts at a specified
     /// character position and continues to the end of the string.
@@ -573,6 +649,88 @@ public readonly partial struct U8String
         public static implicit operator (U8String, U8String)(SplitPair value)
         {
             return (value.Segment, value.Remainder);
+        }
+    }
+
+    // TODO: Is struct okay here? It is expected get boxed only once or twice per split
+    public struct SplitCollection<TSeparator> // : ICollection<U8String>
+    {
+        readonly U8String _value;
+        readonly TSeparator? _separator;
+        readonly U8SplitOptions _options;
+        int _count;
+
+        // TODO: Move value.IsEmpty -> count = 0 check here
+        internal SplitCollection(
+            U8String value,
+            TSeparator? separator,
+            U8SplitOptions options,
+            int count = -1)
+        {
+            _value = value;
+            _separator = separator;
+            _options = options;
+            _count = count;
+        }
+
+        public int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                var count = _count;
+                if (count >= 0)
+                {
+                    return count;
+                }
+                return _count = Count(_value, _separator, _options);
+
+                static int Count(
+                    ReadOnlySpan<byte> value,
+                    TSeparator? separator,
+                    U8SplitOptions options)
+                {
+                    if (options is U8SplitOptions.None)
+                    {
+                        if (typeof(TSeparator).IsValueType)
+                        {
+                            return separator switch
+                            {
+                                byte b => value.Count(b),
+                                char c => value.Count(new Rune(c).ToUtf8Unsafe(out _)),
+                                Rune r => value.Count(r.ToUtf8Unsafe(out _)),
+                                U8String str => value.Count(str),
+                                _ => ThrowHelpers.ArgumentOutOfRange<int>(nameof(separator))
+                            };
+                        }
+                        else
+                        {
+                            return value.Count(Unsafe.As<TSeparator?, byte[]>(ref separator));
+                        }
+                    }
+
+                    return CountSlow(value, separator, options);
+                }
+
+                static int CountSlow(
+                    ReadOnlySpan<byte> value,
+                    TSeparator? separator,
+                    U8SplitOptions options)
+                {
+                    var needle = separator.ToUtf8Span(out _);
+                    throw new NotImplementedException();
+                }
+            }
+        }
+
+        public bool Contains(U8String item)
+        {
+            var separator = _separator;
+            var isItemInvalid = separator is byte b
+                ? item.Contains(b)
+                : item.Contains(separator.ToUtf8Span(out _));
+
+            return !isItemInvalid && _value.Contains(item);
         }
     }
 }
