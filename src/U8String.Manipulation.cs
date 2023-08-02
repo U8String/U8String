@@ -190,7 +190,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            var separatorBytes = separator.ToUtf8Unsafe(out _);
+            var separatorBytes = separator.ToUtf8(out _);
 
             var span = source.UnsafeSpan;
             var index = span.IndexOf(separatorBytes);
@@ -297,7 +297,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            var separatorBytes = separator.ToUtf8Unsafe(out _);
+            var separatorBytes = separator.ToUtf8(out _);
 
             var span = source.UnsafeSpan;
             var index = span.LastIndexOf(separatorBytes);
@@ -692,37 +692,10 @@ public readonly partial struct U8String
                 {
                     if (options is U8SplitOptions.None)
                     {
-                        if (typeof(TSeparator).IsValueType)
-                        {
-                            return separator switch
-                            {
-                                byte b => value.Count(b),
-                                char c => char.IsAscii(c)
-                                    ? value.Count((byte)c)
-                                    : value.Count(new Rune(c).ToUtf8Unsafe(out _)),
-                                Rune r => r.IsAscii
-                                    ? value.Count((byte)r.Value)
-                                    : value.Count(r.ToUtf8Unsafe(out _)),
-                                U8String str => value.Count(str),
-                                _ => ThrowHelpers.ArgumentOutOfRange<int>(nameof(separator))
-                            };
-                        }
-                        else
-                        {
-                            return value.Count(Unsafe.As<TSeparator?, byte[]>(ref separator));
-                        }
+                        return U8Shared.CountSegments(value, separator);
                     }
 
-                    return CountSlow(value, separator, options);
-                }
-
-                static int CountSlow(
-                    ReadOnlySpan<byte> value,
-                    TSeparator? separator,
-                    U8SplitOptions options)
-                {
-                    var needle = separator.ToUtf8Span(out _);
-                    throw new NotImplementedException();
+                    return U8Shared.CountSegments(value, separator, options);
                 }
             }
         }
@@ -730,9 +703,7 @@ public readonly partial struct U8String
         public bool Contains(U8String item)
         {
             var separator = _separator;
-            var isItemInvalid = separator is byte b
-                ? item.Contains(b)
-                : item.Contains(separator.ToUtf8Span(out _));
+            var isItemInvalid = U8Shared.Contains(item, separator);
 
             return !isItemInvalid && _value.Contains(item);
         }
