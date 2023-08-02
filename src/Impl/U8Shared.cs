@@ -61,8 +61,7 @@ static class U8Shared
 
                 char c => char.IsAscii(c)
                     ? value.Count((byte)c)
-                    : Rune.TryCreate(c, out var r)
-                        ? value.Count(r.ToUtf8(out _)) : 0,
+                    : value.Count(c.NonAsciiToUtf8(out _)),
 
                 Rune r => r.IsAscii
                     ? value.Count((byte)r.Value)
