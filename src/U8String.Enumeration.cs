@@ -415,9 +415,9 @@ public readonly partial struct U8String
                     return count;
                 }
 
-                return _count = _value
-                    .AsSpan()
-                    .Count((byte)'\n') + 1;
+                // Matches the behavior of string.Split('\n').Length for "hello\n"
+                // TODO: Should we break consistency and not count the very last segment if it is empty?
+                return _count = _value.AsSpan().Count((byte)'\n') + 1;
             }
         }
 

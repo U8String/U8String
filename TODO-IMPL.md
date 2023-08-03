@@ -4,7 +4,7 @@
 - [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime if applicable
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
 - [ ] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64
-- [ ] Refactor and generalize large chunks into separate utility classes 
+- [ ] Refactor and generalize large chunks into separate utility classes
 - [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
 - [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
 - [x] Ensure `default(U8String)` is always valid

@@ -484,21 +484,21 @@ public readonly partial struct U8String
             ThrowHelpers.ArgumentOutOfRange();
         }
 
+        var result = default(U8String);
         if (length > 0)
         {
-            // TODO: Reconsider the check if U8String ever becomes opportunistically null-terminated
-            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start))
-                || (length < source.Length &&
-                    U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
+            // TODO: Is there really no way to get rid of length < source.Length when checking the last+1 byte?
+            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
+                length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
                 // TODO: Exception message UX
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source._value, source.Offset + start, length);
+            result = new(source._value, source.Offset + start, length);
         }
 
-        return default;
+        return result;
     }
 
     /// <summary>
@@ -656,7 +656,7 @@ public readonly partial struct U8String
     public struct SplitCollection<TSeparator> // : ICollection<U8String>
     {
         readonly U8String _value;
-        readonly TSeparator? _separator;
+        readonly TSeparator? _separator; // Maybe just box the separator to allow a union-like behavior?
         readonly U8SplitOptions _options;
         int _count;
 
@@ -683,7 +683,10 @@ public readonly partial struct U8String
                 {
                     return count;
                 }
-                return _count = Count(_value, _separator, _options);
+
+                // Matches the behavior of string.Split('\n').Length for "hello\n"
+                // TODO: Should we break consistency and not count the very last segment if it is empty?
+                return _count = Count(_value, _separator, _options) + 1;
 
                 static int Count(
                     ReadOnlySpan<byte> value,

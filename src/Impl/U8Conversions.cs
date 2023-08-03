@@ -92,41 +92,6 @@ static class U8Conversions
         }
     }
 
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    // internal static ReadOnlySpan<byte> ToUtf8<T>(this T value, [UnscopedRef] out uint _)
-    // {
-    //     _ = default;
-    //     if (typeof(T).IsValueType)
-    //     {
-    //         var bytes = _.AsBytes();
-    //         var length = 0;
-    //         if (value is byte b)
-    //         {
-    //             bytes[0] = b;
-    //             length = 1;
-    //         }
-    //         else if (value is char c)
-    //         {
-    //             length = new Rune(c).ToUtf8(bytes);
-    //         }
-    //         else if (value is Rune r)
-    //         {
-    //             length = r.ToUtf8(bytes);
-    //         }
-    //         else
-    //         {
-    //             ThrowHelpers.ArgumentOutOfRange();
-    //         }
-
-    //         return bytes.SliceUnsafe(0, length);
-    //     }
-    //     else
-    //     {
-    //         Debug.Assert(value is byte[]);
-    //         return Unsafe.As<T, byte[]>(ref value!);
-    //     }
-    // }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static unsafe ReadOnlySpan<byte> NonAsciiToUtf8(this char value, [UnscopedRef] out uint _)
     {
