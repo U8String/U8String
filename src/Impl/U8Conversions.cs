@@ -36,10 +36,10 @@ static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ref T Offset<T>(this ref T value, nint offset)
+    internal static ref T Offset<T>(this ref T value, int offset)
         where T : unmanaged
     {
-        return ref Unsafe.Add(ref value, offset);
+        return ref Unsafe.Add(ref value, (nint)(uint)offset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

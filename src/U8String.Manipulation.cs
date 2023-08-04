@@ -153,9 +153,6 @@ public readonly partial struct U8String
         source.UnsafeSpan.CopyTo(destination.AsSpan(index));
     }
 
-    // Selectively inlining some overloads which are expected
-    // to take byte or utf-8 constant literals.
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitFirst(byte separator)
     {
         if (!U8Info.IsAsciiByte(separator))
@@ -180,7 +177,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitFirst(char separator) => char.IsAscii(separator)
         ? SplitFirst((byte)separator)
         : SplitFirst(new Rune(separator));
@@ -205,9 +201,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    // TODO: Reconsider the behavior on empty separator - what do Rust and Go do?
-    // Should an empty separator effectively match no bytes which would be at the
-    // start of the string, putting source in the remainder? (same with SplitLast and ROS overloads)
     public SplitPair SplitFirst(U8String separator)
     {
         var source = this;
@@ -262,12 +255,10 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(char separator) => char.IsAscii(separator)
         ? SplitLast((byte)separator)
         : SplitLast(new Rune(separator));
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(byte separator)
     {
         if (!U8Info.IsAsciiByte(separator))
@@ -333,7 +324,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -606,6 +596,7 @@ public readonly partial struct U8String
         return default;
     }
 
+    // TODO: Consider un-nesting the type and naming it U8SplitPair (consider that for other projections too)
     public readonly record struct SplitPair
     {
         readonly U8String _value;

@@ -498,16 +498,16 @@ public readonly partial struct U8String
 
                     if ((uint)idx < (uint)remaining.Length)
                     {
-                        var stride = 1;
-                        if (idx > 0 && remaining[idx - 1] is (byte)'\r')
+                        var cutoff = idx;
+                        if (idx > 0 && remaining.AsRef().Offset(idx - 1) is (byte)'\r')
                         {
-                            stride = 2;
+                            cutoff--;
                         }
 
-                        (_currentOffset, _currentLength) = (remainingOffset, idx);
+                        (_currentOffset, _currentLength) = (remainingOffset, cutoff);
                         (_remainingOffset, _remainingLength) = (
-                            remainingOffset + idx + stride,
-                            remainingLength - idx - stride);
+                            remainingOffset + idx + 1,
+                            remainingLength - idx - 1);
                     }
                     else
                     {

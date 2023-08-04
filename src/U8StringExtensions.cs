@@ -16,6 +16,10 @@ public static class U8StringExtensions
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String ToU8String(this byte[] value) => new(value);
+
+    /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this Span<byte> value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
