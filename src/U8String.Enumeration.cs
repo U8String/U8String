@@ -15,7 +15,7 @@ public readonly partial struct U8String
     /// Returns a collection of <see cref="char"/>s over the provided string.
     /// </summary>
     /// <remarks>
-    /// This is a lazily-evaulated allocation-free collection.
+    /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
     public CharCollection Chars
     {
@@ -27,7 +27,7 @@ public readonly partial struct U8String
     /// Returns a collection of <see cref="Rune"/>s over the provided string.
     /// </summary>
     /// <remarks>
-    /// This is a lazily-evaulated allocation-free collection.
+    /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
     public RuneCollection Runes
     {
@@ -39,7 +39,7 @@ public readonly partial struct U8String
     /// Returns a collection of lines over the provided string.
     /// </summary>
     /// <remarks>
-    /// This is a lazily-evaulated allocation-free collection.
+    /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
     public LineCollection Lines
     {
@@ -98,7 +98,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// A collections of chars in a provided <see cref="U8String"/>.
+    /// A collection of chars in a provided <see cref="U8String"/>.
     /// </summary>
     public struct CharCollection : ICollection<char>
     {
@@ -214,15 +214,13 @@ public readonly partial struct U8String
                             _currentCharPair = (uint)rune.Value;
                             return true;
                         }
-                        else
-                        {
-                            // I wonder if this just explodes on BigEndian
-                            var runeValue = (uint)rune.Value;
-                            var highSurrogate = (char)((runeValue + ((0xD800u - 0x40u) << 10)) >> 10);
-                            var lowSurrogate = (char)((runeValue & 0x3FFu) + 0xDC00u);
-                            _currentCharPair = highSurrogate + ((uint)lowSurrogate << 16);
-                            return true;
-                        }
+
+                        // I wonder if this just explodes on BigEndian
+                        var runeValue = (uint)rune.Value;
+                        var highSurrogate = (char)((runeValue + ((0xD800u - 0x40u) << 10)) >> 10);
+                        var lowSurrogate = (char)((runeValue & 0x3FFu) + 0xDC00u);
+                        _currentCharPair = highSurrogate + ((uint)lowSurrogate << 16);
+                        return true;
                     }
 
                     return false;
@@ -417,9 +415,9 @@ public readonly partial struct U8String
                     return count;
                 }
 
-                return _count = _value
-                    .AsSpan()
-                    .Count((byte)'\n') + 1;
+                // Matches the behavior of string.Split('\n').Length for "hello\n"
+                // TODO: Should we break consistency and not count the very last segment if it is empty?
+                return _count = _value.AsSpan().Count((byte)'\n') + 1;
             }
         }
 
@@ -500,16 +498,16 @@ public readonly partial struct U8String
 
                     if ((uint)idx < (uint)remaining.Length)
                     {
-                        var stride = 1;
-                        if (idx > 0 && remaining[idx - 1] is (byte)'\r')
+                        var cutoff = idx;
+                        if (idx > 0 && remaining.AsRef().Offset(idx - 1) is (byte)'\r')
                         {
-                            stride = 2;
+                            cutoff--;
                         }
 
-                        (_currentOffset, _currentLength) = (remainingOffset, idx);
+                        (_currentOffset, _currentLength) = (remainingOffset, cutoff);
                         (_remainingOffset, _remainingLength) = (
-                            remainingOffset + idx + stride,
-                            remainingLength - idx - stride);
+                            remainingOffset + idx + 1,
+                            remainingLength - idx - 1);
                     }
                     else
                     {

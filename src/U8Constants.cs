@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 
 namespace U8Primitives;
@@ -6,6 +7,8 @@ static class U8Constants
 {
     internal static ReadOnlySpan<byte> NewLineChars => "\r\n\f\u0085\u2028\u2029"u8;
     internal static ReadOnlySpan<byte> NewLineCharsExceptLF => "\r\f\u0085\u2028\u2029"u8;
+
+    internal static long DefaultHashSeed { get; } = (long)GenerateSeed();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int GetFormattedLength<T>() => typeof(T) switch
@@ -28,4 +31,11 @@ static class U8Constants
         _ when typeof(T) == typeof(Guid) => 36,
         _ => 32,
     };
+
+    private static ulong GenerateSeed()
+    {
+        var seed = 0ul;
+        RandomNumberGenerator.Fill(seed.AsBytes());
+        return seed;
+    }
 }

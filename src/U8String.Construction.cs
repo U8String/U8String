@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace U8Primitives;
 
@@ -10,7 +12,7 @@ public readonly partial struct U8String
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
-    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the span is not empty.
+    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
     /// </remarks>
     public U8String(ReadOnlySpan<byte> value)
     {
@@ -23,6 +25,25 @@ public readonly partial struct U8String
             Validate(value);
             _value = value.ToArray();
             _inner = new InnerOffsets(0, value.Length);
+        }
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified <see cref="ImmutableArray{T}"/> of <see cref="byte"/>s.
+    /// </summary>
+    /// <param name="value">The <see cref="ImmutableArray{T}"/> of <see cref="byte"/>s to create the <see cref="U8String"/> from.</param>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by taking a reference to the <paramref name="value"/> bytes without copying if the length is greater than 0.
+    /// </remarks>
+    public U8String(ImmutableArray<byte> value)
+    {
+        var bytes = ImmutableCollectionsMarshal.AsArray(value);
+        if (bytes?.Length > 0)
+        {
+            Validate(bytes);
+            _value = bytes;
+            _inner = new InnerOffsets(0, bytes.Length);
         }
     }
 
@@ -95,6 +116,12 @@ public readonly partial struct U8String
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
     // Tracks https://github.com/dotnet/runtime/issues/87569
     public static U8String Create(/*params*/ ReadOnlySpan<byte> value) => new(value);
+
+    /// <inheritdoc cref="U8String(ImmutableArray{byte})"/>
+    public static U8String Create(ImmutableArray<byte> value) => new(value);
+
+    /// <inheritdoc cref="U8String(string)"/>
+    public static U8String Create(string value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
     public static U8String Create(/*params*/ ReadOnlySpan<char> value) => new(value);

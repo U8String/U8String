@@ -15,15 +15,19 @@
 
 # TODO
 - [ ] Construction aligned with collection literals initialization syntax and API shape
-- [ ] IList, IEnumerable
-- [ ] Runes view (IEnumerable, or stateful IList?)
-- [ ] Chars view (same as above)
+- [x] IList, IEnumerable
+- [ ] Comparison
+    - [x] OrdinalU8Comparer
+    - [ ] OrdinalIgnoreCaseU8Comparer
+    - [ ] UnicodeNormalizedU8Comparer (all normalization forms)
+- [x] Runes view (IEnumerable, or stateful IList?)
+- [x] Chars view (same as above)
 - [x] Lines view
 - [ ] Splitting
-    - [ ] Split (byte, Rune, ROS, U8String)
-    - [x] SplitFirst (byte, Rune, ROS, U8String)
-    - [x] SplitLast (byte, Rune, ROS, U8String)
-    - [ ] EnumerateSplit? Should regular split not be eagerly computed?
+    - [ ] Split (byte, Rune, ROS, U8String) + U8SplitOptions (None, IgnoreCase, UnicodeNormalized)
+    - [x] SplitFirst (byte, char, Rune, ROS, U8String)
+    - [x] SplitLast (byte, char, Rune, ROS, U8String)
+    - [x] ~~EnumerateSplit? Should regular split not be eagerly computed?~~
 - [ ] Comparison
     - [ ] Contains (+case insensitive)
     - [ ] StartsWith (+case insensitive)
@@ -41,10 +45,10 @@
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
 - [ ] IsLatin/IsAlphanumeric?
 - [ ] `IComparable<U8String>`, `IComparable<U8String?>`
-- [ ] U8Marshal
+- [x] U8Marshal
     - [x] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
     - [x] ~~FromAsciiChars~~
-- [ ] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
+- [x] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
 - [ ] U8Constants
     - [ ] (OS-specific) NewLine
     - [ ] (OS-specific) PathSeparator
@@ -52,7 +56,7 @@
 - [ ] DebugView
 ----------------
 - [ ] Extensions
-    - [ ] System.Net.Http (HttpClient, HttpConetnet, etc.)
+    - [ ] System.Net.Http (HttpClient, HttpContent, etc.)
     - [ ] System.IO (File, anything else?)
     - [ ] Streams? Pipelines?
 - [ ] Analyzers

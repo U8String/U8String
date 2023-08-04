@@ -3,29 +3,8 @@ using System.Text;
 
 namespace U8Primitives;
 
-static class Extensions
+static class U8Slicing
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsEmpty(this Range value)
-    {
-        var (start, end) = Unsafe.As<Range, (int, int)>(ref value);
-        return start == end;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Span<byte> AsBytes<T>(this ref T value)
-        where T : unmanaged
-    {
-        return new Span<T>(ref value).AsBytes();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Span<byte> AsBytes<T>(this Span<T> value)
-        where T : unmanaged
-    {
-        return MemoryMarshal.Cast<T, byte>(value);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this T[] value, int start)
         where T : unmanaged

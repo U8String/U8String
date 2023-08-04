@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using U8Primitives.InteropServices;
@@ -92,6 +93,15 @@ public readonly partial struct U8String
         return default;
     }
 
+    /// <summary>
+    /// Normalizes current <see cref="U8String"/> to the specified Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
+    /// </summary>
+    /// <returns>A new <see cref="U8String"/> normalized to the specified form.</returns>
+    public U8String Normalize(NormalizationForm form = NormalizationForm.FormC)
+    {
+        throw new NotImplementedException();
+    }
+
     public U8String Replace(byte oldValue, byte newValue)
     {
         var source = this;
@@ -143,9 +153,6 @@ public readonly partial struct U8String
         source.UnsafeSpan.CopyTo(destination.AsSpan(index));
     }
 
-    // Selectively inlining some overloads which are expected
-    // to take byte or utf-8 constant literals.
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitFirst(byte separator)
     {
         if (!U8Info.IsAsciiByte(separator))
@@ -170,7 +177,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitFirst(char separator) => char.IsAscii(separator)
         ? SplitFirst((byte)separator)
         : SplitFirst(new Rune(separator));
@@ -180,7 +186,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            var separatorBytes = separator.ToUtf8Unsafe(out _);
+            var separatorBytes = separator.ToUtf8(out _);
 
             var span = source.UnsafeSpan;
             var index = span.IndexOf(separatorBytes);
@@ -195,9 +201,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    // TODO: Reconsider the behavior on empty separator - what do Rust and Go do?
-    // Should an empty separator effectively match no bytes which would be at the
-    // start of the string, putting source in the remainder? (same with SplitLast and ROS overloads)
     public SplitPair SplitFirst(U8String separator)
     {
         var source = this;
@@ -252,12 +255,10 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(char separator) => char.IsAscii(separator)
         ? SplitLast((byte)separator)
         : SplitLast(new Rune(separator));
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(byte separator)
     {
         if (!U8Info.IsAsciiByte(separator))
@@ -287,7 +288,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            var separatorBytes = separator.ToUtf8Unsafe(out _);
+            var separatorBytes = separator.ToUtf8(out _);
 
             var span = source.UnsafeSpan;
             var index = span.LastIndexOf(separatorBytes);
@@ -323,7 +324,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SplitPair SplitLast(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -349,6 +349,72 @@ public readonly partial struct U8String
         }
 
         return default;
+    }
+
+    public SplitCollection<byte> Split(byte separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<byte>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<char> Split(char separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<char>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<Rune> Split(Rune separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<Rune>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<U8String> Split(U8String separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        var split = default(SplitCollection<U8String>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator, options);
+        }
+
+        return split;
+    }
+
+    public SplitCollection<byte[]> Split(ReadOnlySpan<byte> separator, U8SplitOptions options = U8SplitOptions.None)
+    {
+        if (!IsValid(separator))
+        {
+            // TODO: EH UX
+            ThrowHelpers.InvalidSplit();
+        }
+
+        var split = default(SplitCollection<byte[]>);
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            split = new(source, separator.ToArray(), options);
+        }
+
+        return split;
     }
 
     /// <summary>
@@ -408,21 +474,21 @@ public readonly partial struct U8String
             ThrowHelpers.ArgumentOutOfRange();
         }
 
+        var result = default(U8String);
         if (length > 0)
         {
-            // TODO: Reconsider the check if U8String ever becomes opportunistically null-terminated
-            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start))
-                || (length < source.Length &&
-                    U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
+            // TODO: Is there really no way to get rid of length < source.Length when checking the last+1 byte?
+            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
+                length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
                 // TODO: Exception message UX
                 ThrowHelpers.InvalidSplit();
             }
 
-            return new(source._value, source.Offset + start, length);
+            result = new(source._value, source.Offset + start, length);
         }
 
-        return default;
+        return result;
     }
 
     /// <summary>
@@ -530,6 +596,7 @@ public readonly partial struct U8String
         return default;
     }
 
+    // TODO: Consider un-nesting the type and naming it U8SplitPair (consider that for other projections too)
     public readonly record struct SplitPair
     {
         readonly U8String _value;
@@ -573,6 +640,66 @@ public readonly partial struct U8String
         public static implicit operator (U8String, U8String)(SplitPair value)
         {
             return (value.Segment, value.Remainder);
+        }
+    }
+
+    // TODO: Is struct okay here? It is expected get boxed only once or twice per split
+    public struct SplitCollection<TSeparator> // : ICollection<U8String>
+    {
+        readonly U8String _value;
+        readonly TSeparator? _separator; // Maybe just box the separator to allow a union-like behavior?
+        readonly U8SplitOptions _options;
+        int _count;
+
+        // TODO: Move value.IsEmpty -> count = 0 check here
+        internal SplitCollection(
+            U8String value,
+            TSeparator? separator,
+            U8SplitOptions options,
+            int count = -1)
+        {
+            _value = value;
+            _separator = separator;
+            _options = options;
+            _count = count;
+        }
+
+        public int Count
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                var count = _count;
+                if (count >= 0)
+                {
+                    return count;
+                }
+
+                // Matches the behavior of string.Split('\n').Length for "hello\n"
+                // TODO: Should we break consistency and not count the very last segment if it is empty?
+                return _count = Count(_value, _separator, _options) + 1;
+
+                static int Count(
+                    ReadOnlySpan<byte> value,
+                    TSeparator? separator,
+                    U8SplitOptions options)
+                {
+                    if (options is U8SplitOptions.None)
+                    {
+                        return U8Shared.CountSegments(value, separator);
+                    }
+
+                    return U8Shared.CountSegments(value, separator, options);
+                }
+            }
+        }
+
+        public bool Contains(U8String item)
+        {
+            var separator = _separator;
+            var isItemInvalid = U8Shared.Contains(item, separator);
+
+            return !isItemInvalid && _value.Contains(item);
         }
     }
 }

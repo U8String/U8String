@@ -1,9 +1,12 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
+[ShortRunJob]
+// [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+// [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 public class Splitting
 {
     [Params(
@@ -21,7 +24,13 @@ public class Splitting
     }
 
     [Benchmark]
-    public U8String SplitFirst() => Value.SplitFirst((byte)',').Segment;
+    public int SplitCount() => Value.Split(',').Count;
+
+    [Benchmark]
+    public int SplitSeqCount() => Value.Split(", "u8).Count;
+
+    [Benchmark]
+    public U8String SplitFirst() => Value.SplitFirst(',').Segment;
 
     [Benchmark]
     public string SplitFirstUtf16() => ValueUtf16!.Split(',')[0];

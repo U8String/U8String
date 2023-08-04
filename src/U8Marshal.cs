@@ -34,6 +34,30 @@ public static class U8Marshal
     public static U8String Create(byte[] value, int offset, int length) => new(value, offset, length);
 
     /// <summary>
+    /// Creates a new <see cref="U8String.SplitPair"/> representing a split of the given <paramref name="value"/>
+    /// without performing bounds checking or UTF-8 validation.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String.SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
+    {
+        return new(value, offset, separatorLength);
+    }
+
+    /// <summary>
+    /// Returns a reference to the first byte of the given <see cref="U8String"/>.
+    /// </summary>
+    /// <exception cref="NullReferenceException"><paramref name="value"/> is <see cref="U8String.Empty"/>.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ref readonly byte GetReference(U8String value) => ref value.UnsafeRef;
+
+    /// <summary>
+    /// Returns a <see cref="ReadOnlySpan{T}"/> of the UTF-8 bytes in the given <paramref name="value"/>.
+    /// </summary>
+    /// <exception cref="NullReferenceException"><paramref name="value"/> is <see cref="U8String.Empty"/>.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static ReadOnlySpan<byte> GetSpan(U8String value) => value.UnsafeSpan;
+
+    /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int)"/> which
     /// does not perform bounds checking or UTF-8 validation.
     /// </summary>

@@ -4,24 +4,15 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Contains(byte value) => AsSpan().Contains(value);
+    public bool Contains(byte value) => U8Shared.Contains(this, value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly bool Contains(char item) => char.IsAscii(item)
-        ? Contains((byte)item)
-        : Contains(new Rune(item));
+    public readonly bool Contains(char value) => U8Shared.Contains(this, value);
 
-    public bool Contains(Rune value)
-    {
-        return AsSpan().IndexOf(value.ToUtf8Unsafe(out _)) >= 0;
-    }
+    public bool Contains(Rune value) => U8Shared.Contains(this, value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Contains(U8String value) => AsSpan().IndexOf(value) >= 0;
+    public bool Contains(U8String value) => U8Shared.Contains(this, value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Contains(ReadOnlySpan<byte> value) => AsSpan().IndexOf(value) >= 0;
+    public bool Contains(ReadOnlySpan<byte> value) => U8Shared.Contains(this, value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(byte value)
@@ -37,7 +28,7 @@ public readonly partial struct U8String
 
     public bool StartsWith(Rune value)
     {
-        return AsSpan().StartsWith(value.ToUtf8Unsafe(out _));
+        return AsSpan().StartsWith(value.ToUtf8(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -60,7 +51,7 @@ public readonly partial struct U8String
 
     public bool EndsWith(Rune value)
     {
-        return AsSpan().EndsWith(value.ToUtf8Unsafe(out _));
+        return AsSpan().EndsWith(value.ToUtf8(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -74,7 +65,7 @@ public readonly partial struct U8String
 
     public int IndexOf(Rune value)
     {
-        return AsSpan().IndexOf(value.ToUtf8Unsafe(out _));
+        return AsSpan().IndexOf(value.ToUtf8(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -89,7 +80,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf(Rune value)
     {
-        return AsSpan().LastIndexOf(value.ToUtf8Unsafe(out _));
+        return AsSpan().LastIndexOf(value.ToUtf8(out _));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

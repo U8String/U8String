@@ -1,14 +1,25 @@
 # TODO
-- [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime
+- [ ] Contribute https://github.com/dotnet/csharplang/issues/6161 specification work
+- [ ] Contribute ArraySortHelper.cs optimizations to make it able specialize on struct TComparers
+- [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime if applicable
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
-- [ ] U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way
+- [x] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64 Preliminary: yes, it is a bug, 40% perf is left on the table for ARM64. https://github.com/dotnet/runtime/issues/89924
+- [ ] Refactor and generalize large chunks into separate utility classes
+- [ ] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs)
+- [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
+- [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
 - [x] Ensure `default(U8String)` is always valid
+- [ ] Decide how to guard (or declare UB) methods that accept chars against surrogates
 - [ ] Author exception types and messages for malformed UTF-8
-- [ ] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
+- [ ] Author documentation
+- [x] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
 - [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
 - [x] Optimize AsSpan() overloads
+- [ ] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do
 - [ ] Debugger View and ToString
-- [ ] IList<byte>
+- [ ] Complete Rune counting vectorization
+- [ ] Complete char counting vectorization (does counting non-continuation bytes is sufficient to be compliant with to-Chars conversion?)
+- [x] IList<byte>
 - [ ] Equality
 - [x] Replace checked slicing with unchecked once implemented where applicable
 - [x] JsonConverter
@@ -16,7 +27,7 @@
 - [x] ~~(torture)~~ Utf8 Validation. Solved by https://github.com/dotnet/runtime/issues/502
 - [x] Utf8 code-point aware indexing. 
 - [x] Reconsider .Unsafe namespace for U8Marshal since some methods are unsafe but .Create(byte[]) simply skips validation
-- [ ] Investigate why `Unsafe.As` breaks accessing `InnerOffsets` but `Unsafe.BitCast` doesn't + track https://github.com/dotnet/runtime/pull/85562
+- [x] Investigate why `Unsafe.As` breaks accessing `InnerOffsets` but `Unsafe.BitCast` doesn't + track https://github.com/dotnet/runtime/pull/85562
 
 # References
 https://github.com/dotnet/runtime/blob/4f9ae42d861fcb4be2fcd5d3d55d5f227d30e723/src/coreclr/src/System.Private.CoreLib/src/System/Utf8String.cs

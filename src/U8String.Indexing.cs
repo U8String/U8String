@@ -19,6 +19,8 @@ public readonly partial struct U8String
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
+            // This will throw NRE on empty, there is nothing we can do about it
+            // without sacrificing codegen quality.
             return ref UnsafeSpan[index];
         }
     }
