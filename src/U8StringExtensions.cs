@@ -76,7 +76,7 @@ public static class U8StringExtensions
         if (value is not U8String u8str)
         {
             var length = U8Constants.GetFormattedLength<T>();
-            return  FormatExact(format, value, provider, length, out var result)
+            return FormatExact(format, value, provider, length, out var result)
                 ? result
                 : FormatUnsized(format, value, provider);
         }
