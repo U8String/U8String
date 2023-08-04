@@ -1,13 +1,16 @@
+using System.Text;
+
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-// [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+[ShortRunJob]
 public class Enumeration
 {
-    [Params(100, 1000, 100000)]
-    public int Length;
+    // [Params(100, 1000, 100000)]
+    public const int Length = 1000;
 
     U8String ThirdPartyNotices;
 
@@ -19,11 +22,14 @@ public class Enumeration
         var notices = new HttpClient()
             .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
             .GetAwaiter()
-            .GetResult();
+            .GetResult()[..Length];
 
-        notices += notices;
+        while (notices.Length < 1_000_000)
+        {
+            notices += notices;
+        }
 
-        ThirdPartyNotices = notices[..Length];
+        ThirdPartyNotices = notices;
         ThirdPartyNoticesU16 = notices[..Length].ToString();
     }
 
@@ -83,6 +89,9 @@ public class Enumeration
 
     [Benchmark]
     public int CountLines() => ThirdPartyNotices.Lines.Count;
+
+    [Benchmark]
+    public int CountLinesSplit() => ThirdPartyNotices.Split('\n').Count;
 
     // Different behavior
     [Benchmark]

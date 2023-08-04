@@ -1,7 +1,5 @@
 using System.IO.Hashing;
-
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 

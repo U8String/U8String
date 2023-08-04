@@ -2,10 +2,10 @@ using BenchmarkDotNet.Attributes;
 
 namespace U8Primitives.Benchmarks;
 
-[SimpleJob]
+[ShortRunJob]
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
-public class HashSet
+// [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
+public class Dictionary
 {
     [Params(
         "test",
@@ -15,38 +15,38 @@ public class HashSet
     public string? Value;
     public U8String ValueU8;
 
-    private readonly HashSet<string> Strings = new();
-    private readonly HashSet<U8String> U8Strings = new();
+    private readonly Dictionary<string, string?> Strings = new();
+    private readonly Dictionary<U8String, U8String> U8Strings = new();
 
     [GlobalSetup]
     public void Setup()
     {
         ValueU8 = Value!.ToU8String();
-        Strings.Add(Value!.AsSpan().ToString());
-        U8Strings.Add(ValueU8.AsSpan().ToU8String());
+        Strings[Value!.AsSpan().ToString()] = Value;
+        U8Strings[ValueU8.AsSpan().ToU8String()] = ValueU8;
     }
 
     [Benchmark(Baseline = true)]
-    public bool GetString()
+    public string? GetString()
     {
-        return Strings.Contains(Value!);
+        return Strings[Value!];
     }
 
     [Benchmark]
-    public bool GetU8String()
+    public U8String GetU8String()
     {
-        return U8Strings.Contains(ValueU8);
+        return U8Strings[ValueU8];
     }
 
     [Benchmark]
     public void SetString()
     {
-        Strings.Add(Value!);
+        Strings[Value!] = Value;
     }
 
     [Benchmark]
     public void SetU8String()
     {
-        U8Strings.Add(ValueU8);
+        U8Strings[ValueU8] = ValueU8;
     }
 }
