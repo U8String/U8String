@@ -50,7 +50,12 @@ public readonly partial struct U8String
 
     public bool Equals(U8String other)
     {
-        return AsSpan().SequenceEqual(other);
+        var deref = this;
+        var same = ReferenceEquals(deref._value, other._value)
+            && deref.Offset == other.Offset
+            && deref.Length == other.Length;
+
+        return same || deref.UnsafeSpan.SequenceEqual(other.UnsafeSpan);
     }
 
     public bool Equals(U8String other, U8Comparison comparisonType)
@@ -59,6 +64,10 @@ public readonly partial struct U8String
         {
             U8Comparison.Ordinal => U8Comparer.Ordinal.Equals(this, other),
             U8Comparison.OrdinalIgnoreCase => throw new NotImplementedException(),
+            U8Comparison.NormalizationFormC => throw new NotImplementedException(),
+            U8Comparison.NormalizationFormD => throw new NotImplementedException(),
+            U8Comparison.NormalizationFormKC => throw new NotImplementedException(),
+            U8Comparison.NormalizationFormKD => throw new NotImplementedException(),
             _ => ThrowHelpers.ArgumentOutOfRange<bool>(nameof(comparisonType)),
         };
     }

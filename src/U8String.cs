@@ -51,7 +51,7 @@ public readonly partial struct U8String :
 
     private readonly InnerOffsets _inner;
 
-    [StructLayout(LayoutKind.Sequential)]
+    [StructLayout(LayoutKind.Auto)]
     readonly struct InnerOffsets
     {
         public readonly int Offset;
