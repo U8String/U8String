@@ -1,59 +1,59 @@
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 
-[ShortRunJob]
+[SimpleJob, SimpleJob(RuntimeMoniker.NativeAot80)]
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(maxDepth: 4, exportCombinedDisassemblyReport: true)]
+// [DisassemblyDiagnoser(maxDepth: 4, exportCombinedDisassemblyReport: true)]
 public class Sorting
 {
-    static readonly string[] Strings = new[]
-    {
-        "test",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse",
-        "Привіт, Всесвіт!",
-        "hello",
-        "goodbye",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse potenti. Maecenas feugiat"
-    };
+    public int Length = 1_000_000;
 
-    static readonly U8String[] U8Strings = new[]
-    {
-        new U8String(Strings[0]),
-        new U8String(Strings[1]),
-        new U8String(Strings[2]),
-        new U8String(Strings[3]),
-        new U8String(Strings[4]),
-        new U8String(Strings[5])
-    };
+    U8String[] Strings = null!;
+    string[] Utf16Strings = null!;
 
-    [Benchmark]
-    public void Sort()
+    [GlobalSetup]
+    public void Setup()
     {
-        Array.Sort(U8Strings);
+        Strings = (0..Length).Select(i => i.ToU8String()).ToArray();
+        Utf16Strings = (0..Length).Select(i => $"{i}").ToArray();
+    }
+
+    [IterationCleanup]
+    public void Cleanup()
+    {
+        Random.Shared.Shuffle(Strings);
+        Random.Shared.Shuffle(Utf16Strings);
     }
 
     [Benchmark]
-    public void SortUtf16()
+    public void Sort()
     {
         Array.Sort(Strings);
     }
 
     [Benchmark]
+    public void SortUtf16()
+    {
+        Array.Sort(Utf16Strings);
+    }
+
+    [Benchmark]
     public void SortSpecialized()
     {
-        Array.Sort(U8Strings, U8Comparer.Ordinal);
+        Array.Sort(Strings, U8Comparer.Ordinal);
     }
 
     [Benchmark]
     public void SortSpecializedUtf16()
     {
-        Array.Sort(Strings, StringComparer.Ordinal);
+        Array.Sort(Utf16Strings, StringComparer.Ordinal);
     }
 
     [Benchmark]
-    public U8String[] SortCollect() => U8Strings.Order().ToArray();
+    public U8String[] SortCollect() => Strings.Order().ToArray();
 
     [Benchmark]
-    public string[] SortCollectUtf16() => Strings.Order().ToArray();
+    public string[] SortCollectUtf16() => Utf16Strings.Order().ToArray();
 }
