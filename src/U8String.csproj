@@ -16,7 +16,8 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <WarningsAsErrors>nullable</WarningsAsErrors>
-    <IsAotCompatible>true</IsAotCompatible>
+    <!-- This pulls in a dependency on an ILC??? -->
+    <!-- <IsAotCompatible>true</IsAotCompatible> -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- The docs will be written after tests and stabilization. -->
