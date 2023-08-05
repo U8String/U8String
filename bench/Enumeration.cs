@@ -6,11 +6,11 @@ using BenchmarkDotNet.Jobs;
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-[ShortRunJob]
+[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Enumeration
 {
-    // [Params(100, 1000, 100000)]
-    public const int Length = 1000;
+    [Params(100, 1000, 10000)]
+    public int Length;
 
     U8String ThirdPartyNotices;
 
@@ -22,14 +22,9 @@ public class Enumeration
         var notices = new HttpClient()
             .GetU8StringAsync("https://raw.githubusercontent.com/dotnet/runtime/main/THIRD-PARTY-NOTICES.TXT")
             .GetAwaiter()
-            .GetResult()[..Length];
+            .GetResult();
 
-        while (notices.Length < 1_000_000)
-        {
-            notices += notices;
-        }
-
-        ThirdPartyNotices = notices;
+        ThirdPartyNotices = notices[..Length];
         ThirdPartyNoticesU16 = notices[..Length].ToString();
     }
 
