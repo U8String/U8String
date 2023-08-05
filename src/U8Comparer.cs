@@ -66,7 +66,7 @@ public readonly struct U8OrdinalComparer :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String x, U8String y)
     {
-        return x.AsSpan().SequenceEqual(y);
+        return x.Equals(y);
     }
 
     public bool Equals(U8String? x, U8String? y)
