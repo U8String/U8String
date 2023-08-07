@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -219,79 +220,34 @@ public readonly partial struct U8String
         return default;
     }
 
-    public U8Split Split(byte separator)
+    public U8Split<byte> Split(byte separator)
     {
-        var split = default(U8Split);
-        var source = this;
-        if (!source.IsEmpty)
+        if (!U8Info.IsAsciiByte(separator))
         {
-            split = new(source, separator, 1);
+            ThrowHelpers.ArgumentOutOfRange();
         }
 
-        return split;
+        return new(this, separator);
     }
 
-    public U8Split Split(char separator)
+    public U8Split<char> Split(char separator)
     {
-        uint value;
-        byte length;
-        if (char.IsAscii(separator))
+        if (char.IsSurrogate(separator))
         {
-            value = separator;
-            length = 1;
-        }
-        else
-        {
-            length = (byte)(uint)separator.NonAsciiToUtf8(out value).Length;
+            ThrowHelpers.ArgumentOutOfRange();
         }
 
-        var split = default(U8Split);
-        var source = this;
-        if (!source.IsEmpty)
-        {
-            split = new(source, value, length);
-        }
-
-        return split;
+        return new(this, separator);
     }
 
-    public U8Split Split(Rune separator)
+    public U8Split<Rune> Split(Rune separator) => new(this, separator);
+
+    public U8Split Split(U8String separator)
     {
-        uint value;
-        byte length;
-        if (separator.IsAscii)
-        {
-            value = (uint)separator.Value;
-            length = 1;
-        }
-        else
-        {
-            length = (byte)(uint)separator.NonAsciiToUtf8(out value).Length;
-        }
-
-        var split = default(U8Split);
-        var source = this;
-        if (!source.IsEmpty)
-        {
-            split = new(source, value, length);
-        }
-
-        return split;
+        return !separator.IsEmpty ? new(this, separator) : default;
     }
 
-    public U8Split<U8String> Split(U8String separator, U8SplitOptions options = U8SplitOptions.None)
-    {
-        var split = default(U8Split<U8String>);
-        var source = this;
-        if (!source.IsEmpty)
-        {
-            split = new(source, separator, options);
-        }
-
-        return split;
-    }
-
-    public U8Split<byte[]> Split(ReadOnlySpan<byte> separator, U8SplitOptions options = U8SplitOptions.None)
+    public U8Split<byte[]> Split(byte[] separator)
     {
         if (!IsValid(separator))
         {
@@ -301,9 +257,9 @@ public readonly partial struct U8String
 
         var split = default(U8Split<byte[]>);
         var source = this;
-        if (!source.IsEmpty)
+        if (!source.IsEmpty && separator is not null)
         {
-            split = new(source, separator.ToArray(), options);
+            split = new(source, separator);
         }
 
         return split;
@@ -363,27 +319,20 @@ internal interface IU8Split<TEnumerator>
 }
 
 [StructLayout(LayoutKind.Auto)]
-public readonly struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumerator>
+public struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumerator>
 {
     readonly U8String _value;
-    readonly uint _separatorValue;
-    readonly byte _separatorLength;
+    readonly U8String _separator;
+    int _count;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal U8Split(U8String value, uint separatorValue, byte separatorLength)
+    // TODO: Move value.IsEmpty -> count = 0 check here
+    internal U8Split(U8String value, U8String separator)
     {
-        _value = value;
-        _separatorValue = separatorValue;
-        _separatorLength = separatorLength;
-    }
-
-    [UnscopedRef] // TODO: Is this UB?
-    public readonly ReadOnlySpan<byte> Separator
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
+        if (!value.IsEmpty)
         {
-            return U8Splitting.CreateSeparator(in _separatorValue, _separatorLength);
+            _value = value;
+            _separator = separator;
+            _count = -1;
         }
     }
 
@@ -392,48 +341,62 @@ public readonly struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumera
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var value = _value;
-            if (value.IsEmpty)
+            var count = _count;
+            if (count >= 0)
             {
-                return 0;
+                return count;
             }
 
-            return U8Searching.Count(value.UnsafeSpan, Separator) + 1;
+            // Matches the behavior of string.Split('\n').Length for "hello\n"
+            // TODO: Should we break consistency and not count the very last segment if it is empty?
+            return _count = Count(_value.UnsafeSpan, _separator) + 1;
+
+            static int Count(ReadOnlySpan<byte> value, ReadOnlySpan<byte> separator)
+            {
+                return U8Searching.Count(value, separator);
+            }
         }
     }
 
     public readonly bool Contains(U8String item)
     {
-        var overlaps = U8Searching.Contains(item, Separator);
+        var separator = _separator;
+        var overlaps = U8Searching.Contains(item, separator);
 
         return !overlaps && _value.Contains(item);
     }
 
-    public readonly void CopyTo(U8String[] destination, int index)
+    public void CopyTo(U8String[] array, int index)
     {
-        // TODO: Optimize
-        // This one is "Tier 0", "Tier 1" would be double-pass with count into split ranges,
-        // and "Tier 3" will be a single-pass open-coded loop
-        foreach (var line in this)
+        if ((uint)Count > (uint)array.Length - (uint)index)
         {
-            destination[index++] = line;
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        ref var ptr = ref MemoryMarshal.GetArrayDataReference(array);
+        foreach (var segment in this)
+        {
+            ptr.Offset(index++) = segment;
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Deconstruct(out U8String first, out U8String second)
+    public readonly void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Split, Enumerator>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Split, Enumerator>(out first, out second, out third);
     }
 
+    /// <summary>
+    /// Returns a <see cref="Enumerator"/> over the provided string.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value, _separatorValue, _separatorLength);
+    public readonly Enumerator GetEnumerator() => new(_value, _separator);
 
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -443,20 +406,15 @@ public readonly struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumera
     public struct Enumerator : IEnumerator<U8String>
     {
         readonly byte[]? _value;
-        readonly uint _separatorValue;
-        readonly byte _separatorLength;
+        readonly U8String _separator;
         U8Range _current;
         U8Range _remaining;
 
-        internal Enumerator(U8String value, uint separatorValue, byte separatorLength)
+        internal Enumerator(U8String value, U8String separator)
         {
-            if (!value.IsEmpty)
-            {
-                _value = value._value;
-                _separatorValue = separatorValue;
-                _separatorLength = separatorLength;
-                _remaining = value._inner;
-            }
+            _value = value._value;
+            _separator = separator;
+            _remaining = value._inner;
         }
 
         public readonly U8String Current => new(_value, _current.Offset, _current.Length);
@@ -468,9 +426,8 @@ public readonly struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumera
             if (remaining.Length > 0)
             {
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var separator = U8Splitting.CreateSeparator(in _separatorValue, _separatorLength);
-
-                var index = U8Searching.IndexOf(value, separator);
+                var separator = _separator;
+                var index = value.IndexOf(separator.UnsafeSpan);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);
@@ -508,21 +465,18 @@ public readonly struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumera
 public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSeparator>.Enumerator>
 {
     readonly U8String _value;
-    readonly TSeparator? _separator; // Maybe just box the separator to allow a union-like behavior?
-    readonly U8SplitOptions _options;
+    readonly TSeparator? _separator;
     int _count;
 
     // TODO: Move value.IsEmpty -> count = 0 check here
-    internal U8Split(
-        U8String value,
-        TSeparator? separator,
-        U8SplitOptions options,
-        int count = -1)
+    internal U8Split(U8String value, TSeparator? separator)
     {
-        _value = value;
-        _separator = separator;
-        _options = options;
-        _count = count;
+        if (!value.IsEmpty)
+        {
+            _value = value;
+            _separator = separator;
+            _count = -1;
+        }
     }
 
     public int Count
@@ -538,19 +492,11 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
 
             // Matches the behavior of string.Split('\n').Length for "hello\n"
             // TODO: Should we break consistency and not count the very last segment if it is empty?
-            return _count = Count(_value, _separator, _options) + 1;
+            return _count = Count(_value, _separator) + 1;
 
-            static int Count(
-                ReadOnlySpan<byte> value,
-                TSeparator? separator,
-                U8SplitOptions options)
+            static int Count(ReadOnlySpan<byte> value, TSeparator? separator)
             {
-                if (options is U8SplitOptions.None)
-                {
-                    return U8Searching.Count(value, separator);
-                }
-
-                return U8Searching.Count(value, separator, options);
+                return U8Searching.Count(value, separator);
             }
         }
     }
@@ -563,14 +509,17 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
         return !overlaps && _value.Contains(item);
     }
 
-    public readonly void CopyTo(U8String[] destination, int index)
+    public void CopyTo(U8String[] array, int index)
     {
-        // TODO: Optimize
-        // This one is "Tier 0", "Tier 1" would be double-pass with count into split ranges,
-        // and "Tier 3" will be a single-pass open-coded loop
-        foreach (var line in this)
+        if ((uint)Count > (uint)array.Length - (uint)index)
         {
-            destination[index++] = line;
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        ref var ptr = ref MemoryMarshal.GetArrayDataReference(array);
+        foreach (var segment in this)
+        {
+            ptr.Offset(index++) = segment;
         }
     }
 
@@ -590,7 +539,7 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
     /// Returns a <see cref="Enumerator"/> over the provided string.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
+    public readonly Enumerator GetEnumerator() => new(_value, _separator);
 
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -601,22 +550,16 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
     {
         readonly byte[]? _value;
         readonly TSeparator? _separator;
-        readonly U8SplitOptions _options;
+        readonly U8Size _separatorSize;
         U8Range _current;
         U8Range _remaining;
 
-        internal Enumerator(
-            U8String value,
-            TSeparator? separator,
-            U8SplitOptions options)
+        internal Enumerator(U8String value, TSeparator? separator)
         {
-            if (!value.IsEmpty)
-            {
-                _value = value._value;
-                _separator = separator;
-                _options = options;
-                _remaining = value._inner;
-            }
+            _value = value._value;
+            _separator = separator;
+            _separatorSize = U8Info.GetSize(separator);
+            _remaining = value._inner;
         }
 
         public readonly U8String Current => new(_value, _current.Offset, _current.Length);
@@ -627,15 +570,15 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
             var remaining = _remaining;
             if (remaining.Length > 0)
             {
+                var size = _separatorSize;
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var separator = U8Conversions.ToUtf8(_separator, out var _);
-                var index = U8Searching.IndexOf(value, separator);
+                var index = U8Searching.IndexOf(value, _separator, size);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);
                     _remaining = new(
-                        remaining.Offset + index + separator.Length,
-                        remaining.Length - index - separator.Length);
+                        remaining.Offset + index + (int)size,
+                        remaining.Length - index - (int)size);
                 }
                 else
                 {

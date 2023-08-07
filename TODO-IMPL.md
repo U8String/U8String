@@ -10,6 +10,7 @@
 - [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
 - [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
 - [x] Ensure `default(U8String)` is always valid
+- [ ] Implement packed count of codepoints (both charcount and match count)
 - [ ] Decide how to guard (or declare UB) methods that accept chars against surrogates
 - [ ] Author exception types and messages for malformed UTF-8
 - [ ] Author documentation
