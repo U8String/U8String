@@ -9,10 +9,11 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentOutOfRangeException">
     /// Thrown when <paramref name="index"/> is less than zero or greater than or equal to <see cref="Length"/>.
     /// </exception>
+    /// <exception cref="NullReferenceException">Thrown when <see cref="Length"/> is zero.</exception>
     /// <returns>The <see cref="byte"/> at the specified index.</returns>
     /// <remarks>
-    /// Consider using <see cref="AsSpan()"/> instead when iterating over the contents of a <see cref="U8String"/>
-    /// because <see cref="ReadOnlySpan{T}"/> is a priveleged type in the runtime and has better performance.
+    /// Consider using <see cref="AsSpan()"/> instead when iterating over the contents of <see cref="U8String"/>
+    /// for best indexing performance.
     /// </remarks>
     public ref readonly byte this[int index]
     {
@@ -25,6 +26,7 @@ public readonly partial struct U8String
         }
     }
 
+    /// <inheritdoc cref="this[int]"/>
     byte IList<byte>.this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

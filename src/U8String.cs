@@ -6,9 +6,25 @@ using System.Text.Json.Serialization;
 using System.Text.Unicode;
 using U8Primitives.Serialization;
 
+#pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
 namespace U8Primitives;
 
-#pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
+internal readonly struct U8Range
+{
+    internal readonly int Offset;
+    internal readonly int Length;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8Range(int offset, int length)
+    {
+        Debug.Assert((uint)offset <= int.MaxValue);
+        Debug.Assert((uint)length <= int.MaxValue);
+
+        Offset = offset;
+        Length = length;
+    }
+}
+
 /// <summary>
 /// Represents a UTF-8 encoded string.
 /// </summary>
@@ -23,6 +39,7 @@ namespace U8Primitives;
 /// unless specified otherwise. If an operation would produce invalid UTF-8, an exception is thrown.</para>
 /// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
 /// </remarks>
+[DebuggerDisplay("{ToString()}")]
 [JsonConverter(typeof(U8StringJsonConverter))]
 [CollectionBuilder(typeof(U8String), nameof(Create))]
 public readonly partial struct U8String :
@@ -48,32 +65,7 @@ public readonly partial struct U8String :
     public static U8String Empty => default;
 
     internal readonly byte[]? _value;
-
-    private readonly InnerOffsets _inner;
-
-    [StructLayout(LayoutKind.Auto)]
-    readonly struct InnerOffsets
-    {
-        public readonly int Offset;
-        public readonly int Length;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public InnerOffsets(int offset, int length)
-        {
-            Debug.Assert((uint)offset <= int.MaxValue);
-            Debug.Assert((uint)length <= int.MaxValue);
-
-            Offset = offset;
-            Length = length;
-        }
-
-        // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        // public static implicit operator ulong(InnerOffsets value)
-        // {
-        //     // var inner = value;
-        //     return Unsafe.BitCast<InnerOffsets, ulong>(value);
-        // }
-    }
+    internal readonly U8Range _inner;
 
     internal int Offset
     {

@@ -34,11 +34,11 @@ public static class U8Marshal
     public static U8String Create(byte[] value, int offset, int length) => new(value, offset, length);
 
     /// <summary>
-    /// Creates a new <see cref="U8String.SplitPair"/> representing a split of the given <paramref name="value"/>
+    /// Creates a new <see cref="SplitPair"/> representing a split of the given <paramref name="value"/>
     /// without performing bounds checking or UTF-8 validation.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String.SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
+    public static SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
     {
         return new(value, offset, separatorLength);
     }
@@ -96,8 +96,8 @@ public static class U8Marshal
 
     /// <summary>
     /// Unholy reverse of <see cref="U8String.Slice(int, int)"/> which
-    /// restores the internal <see cref="U8String"/> offsets to the maximum possible
-    /// length of its underlying buffer.
+    /// restores internal offsets of the provided <see cref="U8String"/>
+    /// to the maximum possible length of its underlying buffer.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Unslice(U8String value)

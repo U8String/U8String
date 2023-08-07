@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 namespace System;
 
 // TODO: Author exception messages
-static class ThrowHelpers
+internal static class ThrowHelpers
 {
     [DoesNotReturn, StackTraceHidden]
     internal static void InvalidUtf8()

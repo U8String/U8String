@@ -24,7 +24,7 @@ public readonly partial struct U8String
         {
             Validate(value);
             _value = value.ToArray();
-            _inner = new InnerOffsets(0, value.Length);
+            _inner = new U8Range(0, value.Length);
         }
     }
 
@@ -34,7 +34,7 @@ public readonly partial struct U8String
     /// <param name="value">The <see cref="ImmutableArray{T}"/> of <see cref="byte"/>s to create the <see cref="U8String"/> from.</param>
     /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
-    /// The <see cref="U8String"/> will be created by taking a reference to the <paramref name="value"/> bytes without copying if the length is greater than 0.
+    /// The <see cref="U8String"/> will be created by taking the underlying reference from the <paramref name="value"/> without copying if the length is greater than 0.
     /// </remarks>
     public U8String(ImmutableArray<byte> value)
     {
@@ -43,7 +43,7 @@ public readonly partial struct U8String
         {
             Validate(bytes);
             _value = bytes;
-            _inner = new InnerOffsets(0, bytes.Length);
+            _inner = new U8Range(0, bytes.Length);
         }
     }
 
@@ -94,11 +94,11 @@ public readonly partial struct U8String
         if (length > 0)
         {
             _value = value;
-            _inner = new InnerOffsets(offset, length);
+            _inner = new U8Range(offset, length);
         }
 
         Debug.Assert(Offset >= 0);
-        Debug.Assert(_value is null ? Length is 0 : Length > 0);
+        Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -109,7 +109,7 @@ public readonly partial struct U8String
         if (value.Length > 0)
         {
             _value = value.ToArray();
-            _inner = new InnerOffsets(0, value.Length);
+            _inner = new U8Range(0, value.Length);
         }
     }
 

@@ -27,17 +27,26 @@ public class Splitting
     public int SplitCount() => Value.Split(',').Count;
 
     [Benchmark]
+    public int SpanUtf16Count() => ValueUtf16!.AsSpan().Count(',');
+
+    [Benchmark]
     public int SplitSeqCount() => Value.Split(", "u8).Count;
 
     [Benchmark]
     public U8String SplitFirst() => Value.SplitFirst(',').Segment;
 
     [Benchmark]
-    public string SplitFirstUtf16() => ValueUtf16!.Split(',')[0];
-
-    [Benchmark]
     public U8String SplitFirstSeq() => Value.SplitFirst(", "u8).Segment;
 
     [Benchmark]
-    public string SplitFirstSeqUtf16() => ValueUtf16!.Split(", ")[0];
+    public U8String[] SplitCollect() => Value.Split(',').ToArray();
+
+    [Benchmark]
+    public string[] SplitUtf16Collect() => ValueUtf16!.Split(',');
+
+    [Benchmark]
+    public U8String[] SplitSeqCollect() => Value.Split(", "u8).ToArray();
+
+    [Benchmark]
+    public string[] SplitSeqUtf16Collect() => ValueUtf16!.Split(", ");
 }

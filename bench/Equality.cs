@@ -3,6 +3,7 @@ using BenchmarkDotNet.Jobs;
 
 namespace U8Primitives.Benchmarks;
 
+#pragma warning disable CS1718 // Comparison made to same variable. Why: Benchmark.
 [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Equality
 {
@@ -10,12 +11,12 @@ public class Equality
     static readonly U8String JitConst = Literal;
     static readonly byte[] ByteJitConst = JitConst.ToArray();
     readonly U8String Instance = Literal;
-    U8String Source = Literal;
+    public U8String Source = Literal;
 
     const string LiteralUTF16 = "Привіт, Всесвіт!";
     static readonly string JitConstUTF16 = LiteralUTF16[0] + LiteralUTF16[1..];
     readonly string InstanceUTF16 = LiteralUTF16[0] + LiteralUTF16[1..];
-    string SourceUTF16 = LiteralUTF16[0] + LiteralUTF16[1..];
+    public string SourceUTF16 = LiteralUTF16[0] + LiteralUTF16[1..];
 
     [Benchmark]
     public bool Equals() => Source == Instance;

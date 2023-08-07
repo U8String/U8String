@@ -1,9 +1,8 @@
 using System.Runtime.InteropServices;
-using System.Text;
 
 namespace U8Primitives;
 
-static class U8Slicing
+internal static class U8Slicing
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this T[] value, int start)

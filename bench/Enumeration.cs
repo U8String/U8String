@@ -105,6 +105,18 @@ public class Enumeration
     }
 
     [Benchmark]
+    public int EnumerateLinesSplit()
+    {
+        var res = 0;
+        foreach (var line in ThirdPartyNotices.Split('\n'))
+        {
+            res++;
+        }
+
+        return res;
+    }
+
+    [Benchmark]
     public int EnumerateLinesUtf16Span()
     {
         var res = 0;
@@ -118,6 +130,9 @@ public class Enumeration
 
     [Benchmark]
     public U8String[] CollectLines() => ThirdPartyNotices.Lines.ToArray();
+
+    [Benchmark]
+    public U8String[] CollectLinesSplit() => ThirdPartyNotices.Split('\n').ToArray();
 
     [Benchmark]
     public string[] CollectLinesUtf16Split() => ThirdPartyNoticesU16!.Split('\n');
