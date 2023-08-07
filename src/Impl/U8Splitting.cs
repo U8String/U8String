@@ -61,4 +61,30 @@ internal static class U8Splitting
             }
         }
     }
+
+    // TODO: Slower than string.Split, either remove or find a way to make this useful
+    internal static int SplitRanges<T>(this U8String source, T separator, Span<U8Range> ranges)
+    {
+        var size = U8Info.GetSize(separator);
+        var span = source.UnsafeSpan;
+        var offset = source.Offset;
+        var count = 0;
+        var prev = 0;
+
+        ref var ptr = ref ranges.AsRef();
+        while (true)
+        {
+            var next = U8Searching.IndexOf(span.SliceUnsafe(prev), separator, size);
+            if (next < 0)
+            {
+                break;
+            }
+
+            ptr.Offset(count++) = new(prev + offset, next);
+            prev += next + (int)size;
+        }
+
+        ptr.Offset(count++) = new(prev + offset, span.Length - prev);
+        return count;
+    }
 }

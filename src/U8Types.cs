@@ -1,6 +1,3 @@
-using System.Diagnostics.CodeAnalysis;
-using System.Runtime.InteropServices;
-
 namespace U8Primitives;
 
 [Flags]
@@ -9,4 +6,12 @@ public enum U8SplitOptions : byte
     None = 0,
     RemoveEmpty = 1,
     Trim = 2,
+}
+
+internal enum U8Size : ushort
+{
+    Ascii = 1,
+    Two = 2,
+    Three = 3,
+    Four = 4
 }
