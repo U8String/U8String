@@ -74,12 +74,7 @@ public readonly partial struct U8String
 
     public bool Equals(byte[]? other)
     {
-        if (other != null)
-        {
-            return AsSpan().SequenceEqual(other);
-        }
-
-        return false;
+        return other != null && AsSpan().SequenceEqual(other);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -5,6 +5,7 @@
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
 - [x] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64 Preliminary: yes, it is a bug, 40% perf is left on the table for ARM64. https://github.com/dotnet/runtime/issues/89924
 - [ ] Refactor and generalize large chunks into separate utility classes
+- [x] Consider alternate eagerly-evaluated Split consisting of (byte[] source, U8Range[] offsets). Conclusion: no, but optimize CopyTo()
 - [ ] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs)
 - [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
 - [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison

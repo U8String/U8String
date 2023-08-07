@@ -24,7 +24,9 @@
 - [x] Chars view (same as above)
 - [x] Lines view
 - [ ] Splitting
-    - [ ] Split (byte, Rune, ROS, U8String) + U8SplitOptions (None, IgnoreCase, UnicodeNormalized)
+    - [x] Split (byte, char, Rune)
+    - [ ] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
+    - [ ] parametrized Split collections (all variants)
     - [x] SplitFirst (byte, char, Rune, ROS, U8String)
     - [x] SplitLast (byte, char, Rune, ROS, U8String)
     - [x] ~~EnumerateSplit? Should regular split not be eagerly computed?~~

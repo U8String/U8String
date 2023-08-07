@@ -4,15 +4,15 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
-    public bool Contains(byte value) => U8Shared.Contains(this, value);
+    public bool Contains(byte value) => U8Searching.Contains(this, value);
 
-    public readonly bool Contains(char value) => U8Shared.Contains(this, value);
+    public readonly bool Contains(char value) => U8Searching.Contains(this, value);
 
-    public bool Contains(Rune value) => U8Shared.Contains(this, value);
+    public bool Contains(Rune value) => U8Searching.Contains(this, value);
 
-    public bool Contains(U8String value) => U8Shared.Contains(this, value);
+    public bool Contains(U8String value) => U8Searching.Contains(this, value);
 
-    public bool Contains(ReadOnlySpan<byte> value) => U8Shared.Contains(this, value);
+    public bool Contains(ReadOnlySpan<byte> value) => U8Searching.Contains(this, value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(byte value)
