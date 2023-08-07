@@ -1,6 +1,4 @@
-using System.Buffers;
 using System.Collections;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using U8Primitives.InteropServices;
@@ -230,6 +228,16 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
+    public ConfiguredU8Split<byte> Split(byte separator, U8SplitOptions options)
+    {
+        if (!U8Info.IsAsciiByte(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(this, separator, options);
+    }
+
     public U8Split<char> Split(char separator)
     {
         if (char.IsSurrogate(separator))
@@ -240,11 +248,28 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
+    public ConfiguredU8Split<char> Split(char separator, U8SplitOptions options)
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(this, separator, options);
+    }
+
     public U8Split<Rune> Split(Rune separator) => new(this, separator);
+
+    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
 
     public U8Split Split(U8String separator)
     {
         return !separator.IsEmpty ? new(this, separator) : default;
+    }
+
+    public ConfiguredU8Split<U8String> Split(U8String separator, U8SplitOptions options)
+    {
+        return !separator.IsEmpty ? new(this, separator, options) : default;
     }
 
     public U8Split<byte[]> Split(byte[] separator)
@@ -255,14 +280,20 @@ public readonly partial struct U8String
             ThrowHelpers.InvalidSplit();
         }
 
-        var split = default(U8Split<byte[]>);
         var source = this;
-        if (!source.IsEmpty && separator is not null)
+        return (!source.IsEmpty && separator != null) ? new(source, separator) : default;
+    }
+
+    public ConfiguredU8Split<byte[]> Split(byte[] separator, U8SplitOptions options)
+    {
+        if (!IsValid(separator))
         {
-            split = new(source, separator);
+            // TODO: EH UX
+            ThrowHelpers.InvalidSplit();
         }
 
-        return split;
+        var source = this;
+        return (!source.IsEmpty && separator != null) ? new(source, separator, options) : default;
     }
 }
 
@@ -600,6 +631,95 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
     readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
     readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
     readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
+}
+
+public readonly struct ConfiguredU8Split<TSeparator> : IEnumerable<U8String>
+{
+    readonly U8String _value;
+    readonly TSeparator? _separator;
+    readonly U8SplitOptions _options;
+
+    internal ConfiguredU8Split(U8String value, TSeparator? separator, U8SplitOptions options)
+    {
+        _value = value;
+        _separator = separator;
+        _options = options;
+    }
+
+    public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
+
+    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public struct Enumerator : IEnumerator<U8String>
+    {
+        readonly byte[]? _value;
+        readonly TSeparator? _separator;
+        readonly U8Size _separatorSize;
+        readonly U8SplitOptions _options;
+        U8Range _current;
+        U8Range _remaining;
+
+        internal Enumerator(U8String value, TSeparator? separator, U8SplitOptions options)
+        {
+            _value = value._value;
+            _separator = separator;
+            _separatorSize = U8Info.GetSize(separator);
+            _options = options;
+            _remaining = value._inner;
+        }
+
+        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+
+        // TODO: Not most efficient but it works for now
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+        Next:
+            var remaining = _remaining;
+            if (remaining.Length > 0)
+            {
+                var size = _separatorSize;
+                var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
+                var index = U8Searching.IndexOf(value, _separator, size);
+                if (index >= 0)
+                {
+                    _current = (_options & U8SplitOptions.Trim) != U8SplitOptions.Trim
+                        ? new(remaining.Offset, index)
+                        : TrimEntry(_value!, new(remaining.Offset, index));
+                    _remaining = new(
+                        remaining.Offset + index + (int)size,
+                        remaining.Length - index - (int)size);
+                }
+                else
+                {
+                    _current = (_options & U8SplitOptions.Trim) != U8SplitOptions.Trim
+                        ? remaining
+                        : TrimEntry(_value!, remaining);
+                    _remaining = default;
+                }
+
+                if ((_options & U8SplitOptions.RemoveEmpty) is U8SplitOptions.RemoveEmpty
+                    && _current.Length is 0)
+                {
+                    goto Next;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static U8Range TrimEntry(byte[] value, U8Range range)
+        {
+            throw new NotImplementedException();
+        }
+
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
+    }
 }
 
 // // TODO:
