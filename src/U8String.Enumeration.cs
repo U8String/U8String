@@ -147,9 +147,10 @@ public struct CharCollection : ICollection<char>
 
     public readonly void CopyTo(char[] destination, int index)
     {
-        if (!_value.IsEmpty)
+        var value = _value;
+        if (!value.IsEmpty)
         {
-            Encoding.UTF8.GetChars(_value.UnsafeSpan, destination.AsSpan(index));
+            Encoding.UTF8.GetChars(value.UnsafeSpan, destination.AsSpan(index));
         }
     }
 

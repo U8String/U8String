@@ -5,7 +5,7 @@ public enum U8SplitOptions : byte
 {
     None = 0,
     RemoveEmpty = 1,
-    Trim = 2,
+    Trim = 1 << 1,
 }
 
 internal enum U8Size : ushort
