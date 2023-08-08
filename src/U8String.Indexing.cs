@@ -12,7 +12,7 @@ public readonly partial struct U8String
     /// <exception cref="NullReferenceException">Thrown when <see cref="Length"/> is zero.</exception>
     /// <returns>The <see cref="byte"/> at the specified index.</returns>
     /// <remarks>
-    /// Consider using <see cref="AsSpan()"/> instead when iterating over the contents of <see cref="U8String"/>
+    /// When iterating over the contents of <see cref="U8String"/>, consider using <see cref="AsSpan()"/> instead
     /// for best indexing performance.
     /// </remarks>
     public ref readonly byte this[int index]

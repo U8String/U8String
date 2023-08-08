@@ -197,6 +197,7 @@ internal static class U8Conversions
     internal static unsafe ReadOnlySpan<byte> NonAsciiToUtf8(this char value, [UnscopedRef] out uint _)
     {
         Debug.Assert(!char.IsAscii(value));
+        Debug.Assert(!char.IsSurrogate(value));
 
         _ = default;
         int length;
