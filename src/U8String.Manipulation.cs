@@ -212,7 +212,7 @@ public readonly partial struct U8String
         if (length > 0)
         {
             // TODO: Is there really no way to get rid of length < source.Length when checking the last+1 byte?
-            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
+            if ((start > 0 && U8Info.IsContinuationByte(source.UnsafeRefAdd(start))) || (
                 length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
                 // TODO: Exception message UX
