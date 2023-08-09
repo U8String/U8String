@@ -300,15 +300,15 @@ public readonly partial struct U8String
 public readonly record struct SplitPair
 {
     readonly U8String _value;
-    readonly int _index;
-    readonly int _separator;
+    readonly int _offset;
+    readonly int _stride;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal SplitPair(U8String value, int index, int separator)
+    internal SplitPair(U8String value, int offset, int stride)
     {
         _value = value;
-        _index = index;
-        _separator = separator;
+        _offset = offset;
+        _stride = stride;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -320,13 +320,13 @@ public readonly record struct SplitPair
     public U8String Segment
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => U8Marshal.Slice(_value, 0, _index);
+        get => U8Marshal.Slice(_value, 0, _offset);
     }
 
     public U8String Remainder
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => U8Marshal.Slice(_value, _index + _separator);
+        get => U8Marshal.Slice(_value, _offset + _stride);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
