@@ -170,6 +170,14 @@ public readonly partial struct U8String :
         throw new NotImplementedException();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void Deconstruct(out byte[]? value, out int offset, out int length)
+    {
+        value = _value;
+        offset = Offset;
+        length = Length;
+    }
+
     void IList<byte>.Insert(int index, byte item) => throw new NotImplementedException();
     void IList<byte>.RemoveAt(int index) => throw new NotImplementedException();
     void ICollection<byte>.Add(byte item) => throw new NotImplementedException();

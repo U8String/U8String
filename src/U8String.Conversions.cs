@@ -13,9 +13,14 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlySpan<byte> AsSpan()
     {
+        // The code below is written in a way that allows JIT/ILC to optimize
+        // byte[]? reference assignment to a csel/cmov, eliding the branch conditional.
+        // Worst case, if it is not elided, it will be a predicted forward branch.
+        var (value, offset, length) = this;
         ref var reference = ref Unsafe.NullRef<byte>();
-        if (_value != null) reference = ref UnsafeRef;
-        return MemoryMarshal.CreateReadOnlySpan(ref reference, Length);
+        if (value != null) reference = ref MemoryMarshal.GetArrayDataReference(value);
+        reference = ref Unsafe.Add(ref reference, offset);
+        return MemoryMarshal.CreateReadOnlySpan(ref reference, length);
     }
 
     ///<summary>
