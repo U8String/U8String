@@ -218,7 +218,7 @@ public readonly partial struct U8String
         return default;
     }
 
-    public U8Split<byte> Split(byte separator)
+    public SplitCollection<byte> Split(byte separator)
     {
         if (!U8Info.IsAsciiByte(separator))
         {
@@ -228,7 +228,7 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public ConfiguredU8Split<byte> Split(byte separator, U8SplitOptions options)
+    public ConfiguredSplitCollection<byte> Split(byte separator, U8SplitOptions options)
     {
         if (!U8Info.IsAsciiByte(separator))
         {
@@ -238,7 +238,7 @@ public readonly partial struct U8String
         return new(this, separator, options);
     }
 
-    public U8Split<char> Split(char separator)
+    public SplitCollection<char> Split(char separator)
     {
         if (char.IsSurrogate(separator))
         {
@@ -248,7 +248,7 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public ConfiguredU8Split<char> Split(char separator, U8SplitOptions options)
+    public ConfiguredSplitCollection<char> Split(char separator, U8SplitOptions options)
     {
         if (char.IsSurrogate(separator))
         {
@@ -258,21 +258,21 @@ public readonly partial struct U8String
         return new(this, separator, options);
     }
 
-    public U8Split<Rune> Split(Rune separator) => new(this, separator);
+    public SplitCollection<Rune> Split(Rune separator) => new(this, separator);
 
-    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
+    public ConfiguredSplitCollection<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
 
-    public U8Split Split(U8String separator)
+    public SplitCollection Split(U8String separator)
     {
         return !separator.IsEmpty ? new(this, separator) : default;
     }
 
-    public ConfiguredU8Split<U8String> Split(U8String separator, U8SplitOptions options)
+    public ConfiguredSplitCollection<U8String> Split(U8String separator, U8SplitOptions options)
     {
         return !separator.IsEmpty ? new(this, separator, options) : default;
     }
 
-    public U8Split<byte[]> Split(byte[] separator)
+    public SplitCollection<byte[]> Split(byte[] separator)
     {
         if (!IsValid(separator))
         {
@@ -284,7 +284,7 @@ public readonly partial struct U8String
         return (!source.IsEmpty && separator != null) ? new(source, separator) : default;
     }
 
-    public ConfiguredU8Split<byte[]> Split(byte[] separator, U8SplitOptions options)
+    public ConfiguredSplitCollection<byte[]> Split(byte[] separator, U8SplitOptions options)
     {
         if (!IsValid(separator))
         {
@@ -343,21 +343,16 @@ public readonly record struct SplitPair
     }
 }
 
-internal interface IU8Split<TEnumerator>
-    where TEnumerator : struct, IEnumerator<U8String>
-{
-    TEnumerator GetEnumerator();
-}
-
 [StructLayout(LayoutKind.Auto)]
-public struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumerator>
+public struct SplitCollection :
+    ICollection<U8String>,
+    IU8Enumerable<SplitCollection.Enumerator>
 {
     readonly U8String _value;
     readonly U8String _separator;
     int _count;
 
-    // TODO: Move value.IsEmpty -> count = 0 check here
-    internal U8Split(U8String value, U8String separator)
+    internal SplitCollection(U8String value, U8String separator)
     {
         if (!value.IsEmpty)
         {
@@ -414,13 +409,13 @@ public struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumerator>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
-        this.Deconstruct<U8Split, Enumerator>(out first, out second);
+        this.Deconstruct<SplitCollection, Enumerator>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
-        this.Deconstruct<U8Split, Enumerator>(out first, out second, out third);
+        this.Deconstruct<SplitCollection, Enumerator>(out first, out second, out third);
     }
 
     /// <summary>
@@ -434,7 +429,7 @@ public struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumerator>
     readonly bool ICollection<U8String>.IsReadOnly => true;
 
     [StructLayout(LayoutKind.Auto)]
-    public struct Enumerator : IEnumerator<U8String>
+    public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;
         readonly U8String _separator;
@@ -493,14 +488,16 @@ public struct U8Split : ICollection<U8String>, IU8Split<U8Split.Enumerator>
 // possibly disambiguating on struct vs separator types or maybe even 3 options:
 // primitive, span (ref split aka SplitRef? SplitSpan?) and U8String / byte[]
 [StructLayout(LayoutKind.Auto)]
-public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSeparator>.Enumerator>
+public struct SplitCollection<TSeparator> :
+    ICollection<U8String>,
+    IU8Enumerable<SplitCollection<TSeparator>.Enumerator>
 {
     readonly U8String _value;
     readonly TSeparator? _separator;
     int _count;
 
     // TODO: Move value.IsEmpty -> count = 0 check here
-    internal U8Split(U8String value, TSeparator? separator)
+    internal SplitCollection(U8String value, TSeparator? separator)
     {
         if (!value.IsEmpty)
         {
@@ -557,13 +554,13 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
-        this.Deconstruct<U8Split<TSeparator>, Enumerator>(out first, out second);
+        this.Deconstruct<SplitCollection<TSeparator>, Enumerator>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
-        this.Deconstruct<U8Split<TSeparator>, Enumerator>(out first, out second, out third);
+        this.Deconstruct<SplitCollection<TSeparator>, Enumerator>(out first, out second, out third);
     }
 
     /// <summary>
@@ -577,7 +574,7 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
     readonly bool ICollection<U8String>.IsReadOnly => true;
 
     [StructLayout(LayoutKind.Auto)]
-    public struct Enumerator : IEnumerator<U8String>
+    public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;
         readonly TSeparator? _separator;
@@ -633,13 +630,14 @@ public struct U8Split<TSeparator> : ICollection<U8String>, IU8Split<U8Split<TSep
     readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
-public readonly struct ConfiguredU8Split<TSeparator> : IEnumerable<U8String>
+public readonly struct ConfiguredSplitCollection<TSeparator> :
+    IU8Enumerable<ConfiguredSplitCollection<TSeparator>.Enumerator>
 {
     readonly U8String _value;
     readonly TSeparator? _separator;
     readonly U8SplitOptions _options;
 
-    internal ConfiguredU8Split(U8String value, TSeparator? separator, U8SplitOptions options)
+    internal ConfiguredSplitCollection(U8String value, TSeparator? separator, U8SplitOptions options)
     {
         _value = value;
         _separator = separator;
@@ -651,7 +649,7 @@ public readonly struct ConfiguredU8Split<TSeparator> : IEnumerable<U8String>
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public struct Enumerator : IEnumerator<U8String>
+    public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;
         readonly TSeparator? _separator;

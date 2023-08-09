@@ -20,8 +20,8 @@ internal static class U8Splitting
 
     // TODO: Optimize?
     internal static void Deconstruct<TSplit, TEnumerator>(this TSplit split, out U8String first, out U8String second)
-        where TSplit : IU8Split<TEnumerator>
-        where TEnumerator : struct, IEnumerator<U8String>
+        where TSplit : IU8Enumerable<TEnumerator>
+        where TEnumerator : struct, IU8Enumerator
     {
         // TODO: Should we throw on not match?
         (first, second) = (default , default);
@@ -42,8 +42,8 @@ internal static class U8Splitting
         out U8String first,
         out U8String second,
         out U8String third)
-            where TSplit : IU8Split<TEnumerator>
-            where TEnumerator : struct, IEnumerator<U8String>
+            where TSplit : IU8Enumerable<TEnumerator>
+            where TEnumerator : struct, IU8Enumerator
     {
         (first, second, third) = (default, default, default);
 

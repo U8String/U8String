@@ -245,6 +245,11 @@ public struct CharCollection : ICollection<char>
     readonly bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 }
 
+internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String>
+    where TEnumerator : struct, IU8Enumerator { }
+
+internal interface IU8Enumerator : IEnumerator<U8String> { }
+
 /// <summary>
 /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
 /// </summary>
@@ -381,7 +386,7 @@ public struct RuneCollection : ICollection<Rune>
 /// <summary>
 /// A collection of lines in a provided <see cref="U8String"/>.
 /// </summary>
-public struct LineCollection : ICollection<U8String>, IU8Split<LineCollection.Enumerator>
+public struct LineCollection : ICollection<U8String>, IU8Enumerable<LineCollection.Enumerator>
 {
     readonly U8String _value;
 
@@ -477,7 +482,7 @@ public struct LineCollection : ICollection<U8String>, IU8Split<LineCollection.En
     /// <summary>
     /// A struct that enumerates lines over a string.
     /// </summary>
-    public struct Enumerator : IEnumerator<U8String>
+    public struct Enumerator : IU8Enumerator
     {
         // TODO 1: Ensure this is aligned with Rust's .lines() implementation, or not?
         // private static readonly SearchValues<byte> NewLine = SearchValues.Create("\r\n"u8);

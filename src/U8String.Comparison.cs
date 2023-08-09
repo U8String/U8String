@@ -58,20 +58,6 @@ public readonly partial struct U8String
         return same || deref.UnsafeSpan.SequenceEqual(other.UnsafeSpan);
     }
 
-    public bool Equals(U8String other, U8Comparison comparisonType)
-    {
-        return comparisonType switch
-        {
-            U8Comparison.Ordinal => U8Comparer.Ordinal.Equals(this, other),
-            U8Comparison.OrdinalIgnoreCase => throw new NotImplementedException(),
-            U8Comparison.NormalizationFormC => throw new NotImplementedException(),
-            U8Comparison.NormalizationFormD => throw new NotImplementedException(),
-            U8Comparison.NormalizationFormKC => throw new NotImplementedException(),
-            U8Comparison.NormalizationFormKD => throw new NotImplementedException(),
-            _ => ThrowHelpers.ArgumentOutOfRange<bool>(nameof(comparisonType)),
-        };
-    }
-
     public bool Equals(byte[]? other)
     {
         return other != null && AsSpan().SequenceEqual(other);
@@ -87,6 +73,16 @@ public readonly partial struct U8String
     public bool Equals(ReadOnlySpan<byte> other)
     {
         return AsSpan().SequenceEqual(other);
+    }
+
+    public bool Equals(U8String other, U8Comparison comparisonType)
+    {
+        return comparisonType switch
+        {
+            U8Comparison.Ordinal => U8Comparer.Ordinal.Equals(this, other),
+            U8Comparison.AsciiIgnoreCase => U8Comparer.AsciiIgnoreCase.Equals(this, other),
+            _ => ThrowHelpers.ArgumentOutOfRange<bool>(nameof(comparisonType)),
+        };
     }
 
     /// <summary>
