@@ -27,8 +27,8 @@ public class Dictionaries
     public void Setup()
     {
         Str = StrUtf16!.ToU8String();
-        Dict[Str.AsSpan()] = Str;
-        ConcurrentDict[Str.AsSpan()] = Str;
+        Dict[Str.AsSpan().ToU8String()] = Str;
+        ConcurrentDict[Str.AsSpan().ToU8String()] = Str;
         DictUtf16[StrUtf16!.AsSpan().ToString()] = StrUtf16;
         ConcurrentDictUtf16[StrUtf16!.AsSpan().ToString()] = StrUtf16;
     }

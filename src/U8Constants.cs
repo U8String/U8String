@@ -3,10 +3,13 @@ using System.Text;
 
 namespace U8Primitives;
 
-internal static class U8Constants
+public static class U8Constants
 {
-    internal static ReadOnlySpan<byte> NewLineChars => "\r\n\f\u0085\u2028\u2029"u8;
-    internal static ReadOnlySpan<byte> NewLineCharsExceptLF => "\r\f\u0085\u2028\u2029"u8;
+    public static U8String NewLine { get; } = new U8String(
+        OperatingSystem.IsWindows() ? "\r\n"u8 : "\n"u8, skipValidation: true);
+
+    public static byte DirectorySeparator =>
+        OperatingSystem.IsWindows() ? (byte)'\\' : (byte)'/';
 
     internal static long DefaultHashSeed { get; } = (long)GenerateSeed();
 

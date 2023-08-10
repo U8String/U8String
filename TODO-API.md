@@ -14,15 +14,15 @@
 - `U8String`: Conditional, on manipulation
 
 # TODO
-- [ ] Construction aligned with collection literals initialization syntax and API shape
 - [x] IList, IEnumerable
 - [ ] Comparison
-    - [x] OrdinalU8Comparer
-    - [ ] OrdinalIgnoreCaseU8Comparer
-    - [ ] UnicodeNormalizedU8Comparer (all normalization forms)
+    - [x] OrdinalComparer
+    - [ ] OrdinalIgnoreCaseComparer
+    - [ ] UnicodeNormalizedComparer (all normalization forms)
 - [x] Runes view (IEnumerable, or stateful IList?)
 - [x] Chars view (same as above)
 - [x] Lines view
+- [ ] Join
 - [ ] Splitting
     - [x] Split (byte, char, Rune)
     - [ ] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
@@ -45,17 +45,18 @@
     - [ ] Replace(...)
     - [ ] ReplaceLineEndings
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
-- [ ] IsLatin/IsAlphanumeric?
-- [ ] `IComparable<U8String>`, `IComparable<U8String?>`
+- [x] IsLatin/IsAlphanumeric?
+- [x] Construction aligned with collection literals initialization syntax and API shape (turned out to be quite useless)
+- [x] `IComparable<U8String>`, `IComparable<U8String?>`
 - [x] U8Marshal
     - [x] FromBytes (or CreateUnsafe/Unchecked? Rust or Go naming?)
     - [x] ~~FromAsciiChars~~
 - [x] U8Slice? U8Span? (really better not to do it because spans have special recognition by the compiler)
-- [ ] U8Constants
-    - [ ] (OS-specific) NewLine
-    - [ ] (OS-specific) PathSeparator
+- [x] U8Constants
+    - [x] (OS-specific) NewLine
+    - [x] (OS-specific) PathSeparator
     - [ ] ReplacementChar
-- [ ] DebugView
+- [x] DebugView
 ----------------
 - [ ] Extensions
     - [ ] System.Net.Http (HttpClient, HttpContent, etc.)

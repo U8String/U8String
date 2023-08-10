@@ -9,6 +9,8 @@ namespace U8Primitives.Benchmarks;
 // [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 public class Splitting
 {
+    private static readonly U8String SplitSeq = U8String.CreateUnchecked(", "u8);
+
     [Params(
         "test",
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse",
@@ -30,13 +32,13 @@ public class Splitting
     public int SpanUtf16Count() => ValueUtf16!.AsSpan().Count(',');
 
     [Benchmark]
-    public int SplitSeqCount() => Value.Split(", "u8).Count;
+    public int SplitSeqCount() => Value.Split(SplitSeq).Count;
 
     [Benchmark]
     public U8String SplitFirst() => Value.SplitFirst(',').Segment;
 
     [Benchmark]
-    public U8String SplitFirstSeq() => Value.SplitFirst(", "u8).Segment;
+    public U8String SplitFirstSeq() => Value.SplitFirst(SplitSeq).Segment;
 
     [Benchmark]
     public U8String[] SplitCollect() => Value.Split(',').ToArray();
@@ -45,7 +47,7 @@ public class Splitting
     public string[] SplitUtf16Collect() => ValueUtf16!.Split(',');
 
     [Benchmark]
-    public U8String[] SplitSeqCollect() => Value.Split(", "u8).ToArray();
+    public U8String[] SplitSeqCollect() => Value.Split(SplitSeq).ToArray();
 
     [Benchmark]
     public string[] SplitSeqUtf16Collect() => ValueUtf16!.Split(", ");

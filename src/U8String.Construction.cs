@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using U8Primitives.InteropServices;
 
 namespace U8Primitives;
 
@@ -48,7 +49,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from the specified <see cref="ReadOnlySpan{T}"/> of <see cref="char"/>s.
+    /// Creates a new <see cref="U8String"/> from the specified <see cref="ReadOnlySpan{T}"/> of UTF-8 <see cref="char"/>s.
     /// </summary>
     /// <param name="value">The <see cref="ReadOnlySpan{T}"/> of <see cref="char"/>s to create the <see cref="U8String"/> from.</param>
     /// <remarks>
@@ -135,6 +136,45 @@ public readonly partial struct U8String
         where T : IUtf8SpanFormattable
     {
         return value.ToU8String(provider);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified UTF-8 bytes without validating the input.
+    /// </summary>
+    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String CreateUnchecked(ReadOnlySpan<byte> value)
+    {
+        return new(value, skipValidation: true);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified <see cref="ImmutableArray{T}"/>
+    /// of <see cref="byte"/>s without validating the input.
+    /// </summary>
+    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
+    /// <remarks>
+    /// <para>
+    /// The <see cref="U8String"/> will be created without validating the input by taking the
+    /// underlying reference from the <paramref name="value"/> without copying if the length is greater than 0.
+    /// </para>
+    /// <para>
+    /// This is the safe variant of <see cref="U8Marshal.Create(byte[])"/> which does not allocate.
+    /// </para>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String CreateUnchecked(ImmutableArray<byte> value)
+    {
+        var bytes = ImmutableCollectionsMarshal.AsArray(value);
+        if (bytes != null)
+        {
+            return new(bytes, 0, bytes.Length);
+        }
+
+        return default;
     }
 
     /// <inheritdoc />

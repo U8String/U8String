@@ -295,14 +295,14 @@ public struct RuneCollection : ICollection<Rune>
                 var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
 
                 // TODO: Optimize after porting/copying Utf8Utility from dotnet/runtime
-                value = value.Slice(runeCount);
+                value = value.SliceUnsafe(runeCount);
                 while (!value.IsEmpty)
                 {
                     var result = Rune.DecodeFromUtf8(value, out _, out var consumed);
                     Debug.Assert(result != OperationStatus.InvalidData);
 
                     runeCount++;
-                    value = value.Slice(consumed);
+                    value = value.SliceUnsafe(consumed);
                 }
 
                 return runeCount;

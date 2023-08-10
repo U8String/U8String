@@ -30,16 +30,16 @@ public class Serialization
     {
         FirstName = "John",
         LastName = "Doe",
-        Title = "Software Enginer",
+        Title = "Software Engineer",
         ID = "123456789"
     };
 
     private static readonly PersonU8 PersonU8Value = new()
     {
-        FirstName = "John"u8,
-        LastName = "Doe"u8,
-        Title = "Software Enginer"u8,
-        ID = "123456789"u8
+        FirstName = U8String.CreateUnchecked("John"u8),
+        LastName = U8String.CreateUnchecked("Doe"u8),
+        Title = U8String.CreateUnchecked("Software Engineer"u8),
+        ID = U8String.CreateUnchecked("123456789"u8)
     };
 
     private static readonly byte[] PersonBytes = JsonSerializer

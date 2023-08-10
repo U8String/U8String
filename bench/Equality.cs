@@ -8,10 +8,10 @@ namespace U8Primitives.Benchmarks;
 public class Equality
 {
     static ReadOnlySpan<byte> Literal => "Привіт, Всесвіт!"u8;
-    static readonly U8String JitConst = Literal;
+    static readonly U8String JitConst = U8String.CreateUnchecked(Literal);
     static readonly byte[] ByteJitConst = JitConst.ToArray();
-    readonly U8String Instance = Literal;
-    public U8String Source = Literal;
+    readonly U8String Instance = U8String.CreateUnchecked(Literal);
+    public U8String Source = U8String.CreateUnchecked(Literal);
 
     const string LiteralUTF16 = "Привіт, Всесвіт!";
     static readonly string JitConstUTF16 = LiteralUTF16[0] + LiteralUTF16[1..];

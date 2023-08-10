@@ -51,13 +51,6 @@ public static class U8Marshal
     public static ref readonly byte GetReference(U8String value) => ref value.UnsafeRef;
 
     /// <summary>
-    /// Returns a <see cref="ReadOnlySpan{T}"/> of the UTF-8 bytes in the given <paramref name="value"/>.
-    /// </summary>
-    /// <exception cref="NullReferenceException"><paramref name="value"/> is <see cref="U8String.Empty"/>.</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static ReadOnlySpan<byte> GetSpan(U8String value) => value.UnsafeSpan;
-
-    /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int)"/> which
     /// does not perform bounds checking or UTF-8 validation.
     /// </summary>

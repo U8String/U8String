@@ -66,7 +66,7 @@ public readonly partial struct U8String
     public static bool operator !=(ReadOnlySpan<byte> left, U8String right) => !(left == right);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator U8String(ReadOnlySpan<byte> value)
+    public static explicit operator U8String(ReadOnlySpan<byte> value)
     {
         return new(value);
     }
