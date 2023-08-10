@@ -90,12 +90,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String(byte[]? value, int offset, int length)
     {
-        // TODO: Deduplicate the length check from the callers.
-        if (length > 0)
-        {
-            _value = value;
-            _inner = new U8Range(offset, length);
-        }
+        if (length > 0) _value = value;
+        _inner = new U8Range(offset, length);
 
         Debug.Assert(Offset >= 0);
         Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
@@ -106,11 +102,11 @@ public readonly partial struct U8String
     {
         Debug.Assert(skipValidation);
 
-        if (value.Length > 0)
-        {
-            _value = value.ToArray();
-            _inner = new U8Range(0, value.Length);
-        }
+        if (value.Length > 0) _value = value.ToArray();
+        _inner = new U8Range(0, value.Length);
+
+        Debug.Assert(Offset >= 0);
+        Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
     }
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
