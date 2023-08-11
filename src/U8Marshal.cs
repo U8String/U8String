@@ -6,6 +6,19 @@ namespace U8Primitives.InteropServices;
 public static class U8Marshal
 {
     /// <summary>
+    /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/>.
+    /// </summary>
+    /// <param name="str"></param>
+    /// <remarks>
+    /// This method is a variant of <see cref="U8String.AsSpan()"/> which skips length check
+    /// and uncoditionally constructs the span from the underlying buffer.
+    /// </remarks>
+    /// <exception cref="NullReferenceException">
+    /// Thrown when <see cref="U8String._value"/> is <see langword="null"/>.
+    /// </exception>
+    public static ReadOnlySpan<byte> AsSpan(U8String str) => str.UnsafeSpan;
+
+    /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
     /// without performing UTF-8 validation or copying the data.
     /// </summary>

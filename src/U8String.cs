@@ -102,7 +102,7 @@ public readonly partial struct U8String :
     bool ICollection<byte>.IsReadOnly => true;
 
     /// <summary>
-    /// Must not be accessed if <see cref="IsEmpty"/> is true.
+    /// Will throw NRE if <see cref="IsEmpty"/> is true.
     /// </summary>
     internal ref byte UnsafeRef
     {
@@ -111,6 +111,9 @@ public readonly partial struct U8String :
             ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset);
     }
 
+    /// <summary>
+    /// Will throw NRE if <see cref="IsEmpty"/> is true.
+    /// </summary>
     internal ReadOnlySpan<byte> UnsafeSpan
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,23 +121,13 @@ public readonly partial struct U8String :
     }
 
     /// <summary>
-    /// Must not be accessed if <see cref="IsEmpty"/> is true.
+    /// Will throw NRE if <see cref="IsEmpty"/> is true.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref byte UnsafeRefAdd(int index)
     {
         return ref Unsafe.Add(
             ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)(uint)index);
-    }
-
-    /// <summary>
-    /// Must not be accessed if <see cref="IsEmpty"/> is true.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref byte UnsafeRefAdd(uint index)
-    {
-        return ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)index);
     }
 
     /// <summary>
