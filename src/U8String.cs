@@ -91,8 +91,8 @@ public readonly partial struct U8String :
     public bool IsEmpty
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        // get => _value is null;
-        get => Length is 0;
+        get => _value is null;
+        //get => Length is 0;
     }
 
     /// <inheritdoc/>
