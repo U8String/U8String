@@ -1,21 +1,40 @@
 using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace U8Primitives;
 
-internal static class U8Info
+public static class U8Info
 {
     // From https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Text/Unicode/Utf8Utility.Helpers.cs#L393C40-L393C40
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsContinuationByte(in byte value)
+    public static bool IsContinuationByte(in byte value)
     {
         return (sbyte)value < -64;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsAsciiByte(in byte value)
+    public static bool IsAsciiByte(in byte value)
     {
         return value <= 0x7F;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CodepointLength(in byte value)
+    {
+        if (ArmBase.Arm64.IsSupported)
+        {
+            return ArmBase.Arm64.LeadingSignCount(value << 24);
+        }
+
+        return BitOperations.LeadingZeroCount((uint)~value << 24);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAsciiWhitespace(in byte value)
+    {
+        return value is 0x20 or 0x09 or 0x0A or 0x0B or 0x0C or 0x0D;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
