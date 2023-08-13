@@ -36,4 +36,21 @@ public readonly partial struct U8String
     {
         return (uint)index < (uint)Length && !U8Info.IsContinuationByte(this[index]);
     }
+
+    public int NextCharIndex(int index)
+    {
+        var deref = this;
+        if ((uint)index >= (uint)deref.Length)
+        {
+            return Length;
+        }
+
+        var span = deref.UnsafeSpan;
+        while (index < span.Length && U8Info.IsContinuationByte(span[index]))
+        {
+            index++;
+        }
+
+        return index;
+    }
 }
