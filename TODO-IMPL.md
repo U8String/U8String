@@ -26,7 +26,7 @@
 - [ ] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do
 - [x] Debugger View and ToString
 - [ ] Complete Rune counting vectorization
-- [ ] Invalid sequences sanitization (specifically to remove invalid surrogates and fuck over anyone trying to use steganography)
+- [ ] Invalid sequences sanitization (specifically to remove invalid sequences, non-owned zero space glyps, etc. to interfere with popular utf8 text fingerprinting techniques)
     - [ ] Replace invalid
     - [ ] Trim invalid (and count?)
 - [x] Complete char counting vectorization (does counting non-continuation bytes is sufficient to be compliant with to-Chars conversion?)
