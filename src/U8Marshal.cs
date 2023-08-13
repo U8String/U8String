@@ -47,11 +47,11 @@ public static class U8Marshal
     public static U8String Create(byte[] value, int offset, int length) => new(value, offset, length);
 
     /// <summary>
-    /// Creates a new <see cref="SplitPair"/> representing a split of the given <paramref name="value"/>
+    /// Creates a new <see cref="U8SplitPair"/> representing a split of the given <paramref name="value"/>
     /// without performing bounds checking or UTF-8 validation.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
+    public static U8SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
     {
         return new(value, offset, separatorLength);
     }
