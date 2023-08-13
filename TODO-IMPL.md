@@ -3,6 +3,7 @@
 - [ ] Contribute ArraySortHelper.cs optimizations to make it able specialize on struct TComparers
 - [ ] Contribute https://arxiv.org/pdf/2010.03090.pdf implementation to dotnet/runtime if applicable
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
+- [ ] Contribute IsAsciiWhitespace codegen shape to CoreLib, check out if Utf8Length can be ported too
 - [ ] Argument validation consistency:
     - [ ] Ensure .Contains, .IndexOf, .StartsWith, etc. can handle surrogates, specifically the Rune and char overloads
     - [ ] Ensure .Concat, .Join, .Split{First,Last} reject surrogates if those produce invalid UTF-8 (double-check)
@@ -23,8 +24,11 @@
 - [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
 - [x] Optimize AsSpan() overloads
 - [ ] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do
-- [ ] Debugger View and ToString
+- [x] Debugger View and ToString
 - [ ] Complete Rune counting vectorization
+- [ ] Invalid sequences sanitization (specifically to remove invalid surrogates and fuck over anyone trying to use steganography)
+    - [ ] Replace invalid
+    - [ ] Trim invalid (and count?)
 - [x] Complete char counting vectorization (does counting non-continuation bytes is sufficient to be compliant with to-Chars conversion?)
 - [x] IList<byte>
 - [x] Equality

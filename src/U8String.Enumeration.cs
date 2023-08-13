@@ -293,17 +293,17 @@ public struct RuneCollection : ICollection<Rune>
             {
                 Debug.Assert(!value.IsEmpty);
 
+                // TODO: SIMD non-continuation byte counting
                 var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
-
-                // TODO: Optimize after porting/copying Utf8Utility from dotnet/runtime
                 value = value.SliceUnsafe(runeCount);
-                while (!value.IsEmpty)
-                {
-                    var result = Rune.DecodeFromUtf8(value, out _, out var consumed);
-                    Debug.Assert(result != OperationStatus.InvalidData);
 
+                ref var ptr = ref MemoryMarshal.GetReference(value.SliceUnsafe(runeCount));
+                var offset = 0;
+                var length = value.Length;
+                while (offset < length)
+                {
+                    offset += U8Info.CharLength(ptr.Add(offset));
                     runeCount++;
-                    value = value.SliceUnsafe(consumed);
                 }
 
                 return runeCount;
@@ -525,7 +525,7 @@ public struct LineCollection : ICollection<U8String>, IU8Enumerable<LineCollecti
                 if ((uint)idx < (uint)span.Length)
                 {
                     var cutoff = idx;
-                    if (idx > 0 && span.AsRef().Offset(idx - 1) is (byte)'\r')
+                    if (idx > 0 && span.AsRef().Add(idx - 1) is (byte)'\r')
                     {
                         cutoff--;
                     }

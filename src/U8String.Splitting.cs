@@ -402,7 +402,7 @@ public struct SplitCollection :
         ref var ptr = ref MemoryMarshal.GetArrayDataReference(array);
         foreach (var segment in this)
         {
-            ptr.Offset(index++) = segment;
+            ptr.Add(index++) = segment;
         }
     }
 
@@ -547,7 +547,7 @@ public struct SplitCollection<TSeparator> :
         ref var ptr = ref MemoryMarshal.GetArrayDataReference(array);
         foreach (var segment in this)
         {
-            ptr.Offset(index++) = segment;
+            ptr.Add(index++) = segment;
         }
     }
 

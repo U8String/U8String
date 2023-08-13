@@ -17,13 +17,10 @@ public readonly partial struct U8String
     /// </remarks>
     public ref readonly byte this[int index]
     {
+        // This will throw NRE on empty, there is nothing we can do about it
+        // without sacrificing codegen quality.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            // This will throw NRE on empty, there is nothing we can do about it
-            // without sacrificing codegen quality.
-            return ref UnsafeSpan[index];
-        }
+        get => ref UnsafeSpan[index];
     }
 
     /// <inheritdoc cref="this[int]"/>
@@ -32,5 +29,11 @@ public readonly partial struct U8String
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => this[index];
         set => throw new NotImplementedException();
+    }
+
+    // TODO: Naming? Other options are ugly or long, or even more confusing.
+    public bool IsCharBoundary(int index)
+    {
+        return (uint)index < (uint)Length && !U8Info.IsContinuationByte(this[index]);
     }
 }

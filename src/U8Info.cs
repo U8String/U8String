@@ -1,19 +1,11 @@
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace U8Primitives;
 
 public static class U8Info
 {
-    // From https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Text/Unicode/Utf8Utility.Helpers.cs#L393C40-L393C40
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsContinuationByte(in byte value)
-    {
-        return (sbyte)value < -64;
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiByte(in byte value)
     {
@@ -21,20 +13,44 @@ public static class U8Info
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CodepointLength(in byte value)
+    public static bool IsAsciiWhitespace(in byte value)
     {
-        if (ArmBase.Arm64.IsSupported)
-        {
-            return ArmBase.Arm64.LeadingSignCount(value << 24);
-        }
-
-        return BitOperations.LeadingZeroCount((uint)~value << 24);
+        // On ARM64, .NET does this quite well actually with cmp, ccmp+ccmp and cinc.
+        // I do wonder if there's a better way to do this though.
+        // ---- Ver. 1 -----------------------------------
+        // return value is 0x20 or (>= 0x09 and <= 0x0D);
+        // ---- Ver. 2 -----------------------------------
+        // const ulong mask = 4294983168;
+        // var w0 = (uint)value & 255;
+        // var x1 = w0 < 33 ? 1ul : 0ul;
+        // var x2 = mask >> (int)w0;
+        // var res = x1 & x2;
+        // return Unsafe.As<ulong, bool>(ref res);
+        // ---- Ver. 3 -----------------------------------
+        // Adopted from codegen LLVM emits for Rust's char::is_ascii_whitespace
+        const ulong mask = 4294983168;
+        var x1 = (uint)value < 33 ? 1ul : 0ul;
+        var x2 = mask >> value;
+        var res = x1 & x2;
+        return Unsafe.As<ulong, bool>(ref res);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsAsciiWhitespace(in byte value)
+    public static bool IsContinuationByte(in byte value)
     {
-        return value is 0x20 or 0x09 or 0x0A or 0x0B or 0x0C or 0x0D;
+        return (sbyte)value < -64;
+    }
+
+    // TODO: Is there really no better way to do this?
+    // Why the hell does ARM64 have FCVTZS but not something to count code point length?
+    // TODO 2: Naming? Other options are ugly or long, or even more confusing.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CharLength(in byte value)
+    {
+        var lzcnt = BitOperations.LeadingZeroCount(~(uint)(value << 24));
+        var flag = IsAsciiByte(value);
+
+        return flag ? 1 : lzcnt;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

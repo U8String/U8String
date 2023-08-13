@@ -3,46 +3,98 @@ namespace U8Primitives.Tests;
 public class U8InfoTests
 {
     [Fact]
-    public void IsContinuationByte()
+    public void IsAsciiByte_TrueForAsciiBytes()
     {
-        Assert.True(U8Info.IsContinuationByte(0b1000_0000));
-        Assert.True(U8Info.IsContinuationByte(0b1011_1111));
-        Assert.False(U8Info.IsContinuationByte(0b0000_0000));
-        Assert.False(U8Info.IsContinuationByte(0b0111_1111));
+        foreach (var b in Constants.AsciiBytes)
+        {
+            Assert.True(U8Info.IsAsciiByte(b), $"0x{b:X2}");
+        }
     }
 
     [Fact]
-    public void IsAsciiByte()
+    public void IsAsciiByte_FalseForNonAsciiBytes()
     {
-        Assert.True(U8Info.IsAsciiByte(0b0000_0000));
-        Assert.True(U8Info.IsAsciiByte(0b0111_1111));
-        Assert.False(U8Info.IsAsciiByte(0b1000_0000));
-        Assert.False(U8Info.IsAsciiByte(0b1011_1111));
+        foreach (var b in Constants.NonAsciiBytes)
+        {
+            Assert.False(U8Info.IsAsciiByte(b), $"0x{b:X2}");
+        }
     }
 
     [Fact]
-    public void CodepointLength()
+    public void IsWhitespaceByte_TrueForWhitespaceBytes()
     {
-        Assert.Equal(0, U8Info.CodepointLength(0b1000_0000));
-        Assert.Equal(0, U8Info.CodepointLength(0b1011_1111));
-        Assert.Equal(1, U8Info.CodepointLength(0b0000_0000));
-        Assert.Equal(1, U8Info.CodepointLength(0b0111_1111));
-        Assert.Equal(2, U8Info.CodepointLength(0b1100_0000));
-        Assert.Equal(2, U8Info.CodepointLength(0b1101_1111));
-        Assert.Equal(3, U8Info.CodepointLength(0b1110_0000));
-        Assert.Equal(3, U8Info.CodepointLength(0b1110_1111));
-        Assert.Equal(4, U8Info.CodepointLength(0b1111_0000));
-        Assert.Equal(4, U8Info.CodepointLength(0b1111_0111));
+        foreach (var b in Constants.AsciiWhitespaceBytes)
+        {
+            Assert.True(U8Info.IsAsciiWhitespace(b), $"0x{b:X2}");
+        }
     }
 
     [Fact]
-    public void IsAsciiWhitespace()
+    public void IsAsciiWhitespace_FalseForNonWhitespaceBytes()
     {
-        Assert.True(U8Info.IsAsciiWhitespace(0x20));
-        Assert.True(U8Info.IsAsciiWhitespace(0x09));
-        Assert.True(U8Info.IsAsciiWhitespace(0x0A));
-        Assert.True(U8Info.IsAsciiWhitespace(0x0B));
-        Assert.True(U8Info.IsAsciiWhitespace(0x0C));
-        Assert.True(U8Info.IsAsciiWhitespace(0x0D));
+        foreach (var b in Enumerable
+            .Range(0, 256)
+            .Select(i => (byte)i)
+            .Except(Constants.AsciiWhitespaceBytes.ToArray()))
+        {
+            Assert.False(U8Info.IsAsciiWhitespace(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
+    public void IsContinuationByte_TrueForContinuationBytes()
+    {
+        foreach (var b in Constants.ContinuationBytes)
+        {
+            Assert.True(U8Info.IsContinuationByte(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
+    public void IsContinuationByte_FalseForNonContinuationBytes()
+    {
+        foreach (var b in Constants.NonContinuationBytes)
+        {
+            Assert.False(U8Info.IsContinuationByte(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
+    public void CharLength_IsOneForAsciiBytes()
+    {
+        foreach (var b in Constants.AsciiBytes)
+        {
+            Assert.Equal(1, U8Info.CharLength(b));
+        }
+    }
+
+    [Fact]
+    public void CharLength_IsTwoForCyrilicBytes()
+    {
+        foreach (var b in Constants.CyrilicCharBytes
+            .Select(letter => letter[0]))
+        {
+            Assert.Equal(2, U8Info.CharLength(b));
+        }
+    }
+
+    [Fact]
+    public void CharLength_IsThreeForKanaBytes()
+    {
+        foreach (var b in Constants.KanaCharBytes
+            .Select(letter => letter[0]))
+        {
+            Assert.Equal(3, U8Info.CharLength(b));
+        }
+    }
+
+    [Fact]
+    public void CharLength_IsFourForEmojiBytes()
+    {
+        foreach (var b in Constants.NonSurrogateEmojiChars
+            .Select(letter => letter[0]))
+        {
+            Assert.Equal(4, U8Info.CharLength(b));
+        }
     }
 }
