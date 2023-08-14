@@ -139,7 +139,8 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from the specified UTF-8 bytes without validating the input.
+    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without validating
+    /// if it is a valid UTF-8 sequence.
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
     /// <remarks>
@@ -152,17 +153,17 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from the specified <see cref="ImmutableArray{T}"/>
-    /// of <see cref="byte"/>s without validating the input.
+    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without validating
+    /// if it is a valid UTF-8 sequence.
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
     /// <remarks>
     /// <para>
-    /// The <see cref="U8String"/> will be created without validating the input by taking the
-    /// underlying reference from the <paramref name="value"/> without copying if the length is greater than 0.
+    /// The <see cref="U8String"/> will be created by taking the underlying reference from the
+    /// <paramref name="value"/> without copying if the length is greater than 0.
     /// </para>
     /// <para>
-    /// This is the safe variant of <see cref="U8Marshal.Create(byte[])"/> which does not allocate.
+    /// This is a safe variant of <see cref="U8Marshal.Create(byte[])"/> which does not allocate.
     /// </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -177,6 +178,27 @@ public readonly partial struct U8String
         return default;
     }
 
+    /// <summary>
+    /// Clones the <see cref="U8String"/> by copying the underlying
+    /// <see cref="Length"/> of bytes into a new <see cref="U8String"/> instance.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// This method is useful when a particular <see cref="U8String"/> is a slice of a larger
+    /// <see cref="U8String"/> that is no longer needed and can be garbage collected.
+    /// This allows the GC to collect the larger <see cref="U8String"/> and reclaim the memory
+    /// it would hold otherwise.
+    /// </para>
+    /// <para>
+    /// Example:
+    /// <code>
+    /// var articleText = await httpClient.GetU8StringAsync("https://example.com/article.txt");
+    /// var previewText = articleText[..100].Clone();
+    /// </code>
+    /// </para>
+    /// </remarks>
+    public U8String Clone() => new(this, skipValidation: true);
+
     /// <inheritdoc />
-    public object Clone() => new U8String(this, skipValidation: true);
+    object ICloneable.Clone() => Clone();
 }

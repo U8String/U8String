@@ -36,7 +36,7 @@ public static class U8Info
     }
 
     // TODO: Is there really no better way to do this?
-    // Why the hell does ARM64 have FCVTZS but not something to count code point length?
+    // Why the hell does ARM64 have FJCVTZS but not something to count code point length?
     // TODO 2: Naming? Other options are ugly or long, or even more confusing.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CharLength(in byte value)
