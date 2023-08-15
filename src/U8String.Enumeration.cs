@@ -75,7 +75,7 @@ public readonly partial struct U8String
         public readonly byte Current => _value![_offset + _index];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext() => ++_index < _length;
+        public bool MoveNext() => (uint)(++_index) < (uint)_length;
         // {
         //     var index = _index;
         //     if (++index < _length)
