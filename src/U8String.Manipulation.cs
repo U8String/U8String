@@ -217,6 +217,43 @@ public readonly partial struct U8String
         return result;
     }
 
+    public U8String Trim()
+    {
+        // TODO: Optimize fast path on no whitespace
+        // TODO 2: Do not convert to runes and have proper
+        // whitespace LUT to evaluate code points in a branchless way
+        var source = this;
+        ref var ptr = ref source.DangerousRef;
+
+        var start = 0;
+        for (; start < source.Length; start++)
+        {
+            var b = ptr.Add(start);
+            if (!U8Info.IsContinuationByte(b) && !(
+                U8Info.IsAsciiByte(b)
+                    ? U8Info.IsAsciiWhitespace(b)
+                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(start))))
+            {
+                break;
+            }
+        }
+
+        var end = source.Length - 1;
+        for (; end >= start; end--)
+        {
+            var b = ptr.Add(end);
+            if (!U8Info.IsContinuationByte(b) && !(
+                U8Info.IsAsciiByte(b)
+                    ? U8Info.IsAsciiWhitespace(b)
+                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end))))
+            {
+                break;
+            }
+        }
+
+        return U8Marshal.Slice(source, start, end - start + 1);
+    }
+
     /// <summary>
     /// Removes all leading and trailing ASCII white-space characters from the current string.
     /// </summary>

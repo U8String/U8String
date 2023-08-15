@@ -64,7 +64,7 @@ public class U8InfoTests
     {
         foreach (var b in TestConstants.AsciiBytes)
         {
-            Assert.Equal(1, U8Info.CharLength(b));
+            Assert.Equal(1, U8Info.RuneLength(b));
         }
     }
 
@@ -74,7 +74,7 @@ public class U8InfoTests
         foreach (var b in TestConstants.CyrilicCharBytes
             .Select(letter => letter[0]))
         {
-            Assert.Equal(2, U8Info.CharLength(b));
+            Assert.Equal(2, U8Info.RuneLength(b));
         }
     }
 
@@ -84,7 +84,7 @@ public class U8InfoTests
         foreach (var b in TestConstants.KanaCharBytes
             .Select(letter => letter[0]))
         {
-            Assert.Equal(3, U8Info.CharLength(b));
+            Assert.Equal(3, U8Info.RuneLength(b));
         }
     }
 
@@ -94,7 +94,7 @@ public class U8InfoTests
         foreach (var b in TestConstants.NonSurrogateEmojiChars
             .Select(letter => letter[0]))
         {
-            Assert.Equal(4, U8Info.CharLength(b));
+            Assert.Equal(4, U8Info.RuneLength(b));
         }
     }
 }

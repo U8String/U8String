@@ -1,5 +1,7 @@
+using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
@@ -35,11 +37,40 @@ public static class U8Info
         return (sbyte)value < -64;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsWhitespaceRune(ReadOnlySpan<byte> value)
+    {
+        if (value.Length > 0)
+        {
+            var b = value[0];
+            if (IsAsciiByte(b))
+            {
+                return IsAsciiWhitespace(b);
+            }
+
+            var res = Rune.DecodeFromUtf8(value, out var rune, out _);
+            Debug.Assert(res != OperationStatus.Done);
+
+            return Rune.IsWhiteSpace(rune);
+        }
+
+        return false;
+    }
+
+    internal static bool IsNonAsciiWhitespace(ref byte ptr)
+    {
+        var value = MemoryMarshal.CreateSpan(ref ptr, 4);
+        var res = Rune.DecodeFromUtf8(value, out var rune, out _);
+        Debug.Assert(res is OperationStatus.Done);
+
+        return Rune.IsWhiteSpace(rune);
+    }
+
     // TODO: Is there really no better way to do this?
     // Why the hell does ARM64 have FJCVTZS but not something to count code point length?
     // TODO 2: Naming? Other options are ugly or long, or even more confusing.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int CharLength(in byte value)
+    public static int RuneLength(in byte value)
     {
         var lzcnt = BitOperations.LeadingZeroCount(~(uint)(value << 24));
         var flag = IsAsciiByte(value);

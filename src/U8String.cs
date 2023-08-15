@@ -1,4 +1,5 @@
-﻿using System.Diagnostics;
+﻿using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -102,6 +103,25 @@ public readonly partial struct U8String :
     bool ICollection<byte>.IsReadOnly => true;
 
     /// <summary>
+    /// Similar to <see cref="UnsafeRef"/>, but does not throw NRE if <see cref="IsEmpty"/> is true.
+    /// </summary>
+    /// <remarks>
+    /// cmov's the ref out of byte[] if it is not null and uncoditionally increments it by <see cref="Offset"/>.
+    /// </remarks>
+    internal ref byte DangerousRef
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            var value = _value;
+            ref var reference = ref Unsafe.NullRef<byte>();
+            if (value != null) reference = ref MemoryMarshal.GetArrayDataReference(value);
+            reference = ref Unsafe.Add(ref reference, Offset);
+            return ref reference;
+        }
+    }
+
+    /// <summary>
     /// Will throw NRE if <see cref="IsEmpty"/> is true.
     /// </summary>
     internal ref byte UnsafeRef
@@ -171,6 +191,10 @@ public readonly partial struct U8String :
         offset = Offset;
         length = Length;
     }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref readonly byte GetPinnableReference() => ref DangerousRef;
 
     void IList<byte>.Insert(int index, byte item) => throw new NotImplementedException();
     void IList<byte>.RemoveAt(int index) => throw new NotImplementedException();

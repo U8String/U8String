@@ -296,7 +296,7 @@ public struct U8Runes : ICollection<Rune>
                 var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
                 value = value.SliceUnsafe(runeCount);
 
-                for (var i = 0; (uint)i < (uint)value.Length; i += U8Info.CharLength(value.AsRef(i)))
+                for (var i = 0; (uint)i < (uint)value.Length; i += U8Info.RuneLength(value.AsRef(i)))
                 {
                     runeCount++;
                 }
