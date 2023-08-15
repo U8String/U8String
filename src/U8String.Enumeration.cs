@@ -143,6 +143,10 @@ public struct U8Chars : ICollection<char>
         }
     }
 
+    // TODO: Wow, this seems to be terribly broken on surrogate chars and 
+    // there is no easy way to fix it without sacrificing performance.
+    // Perhaps it is worth just do the transcoding iteration here and warn the users
+    // instead of straight up producing UB or throwing exceptions???
     public readonly bool Contains(char item) => _value.Contains(item);
 
     public readonly void CopyTo(char[] destination, int index)
@@ -297,12 +301,8 @@ public struct U8Runes : ICollection<Rune>
                 var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
                 value = value.SliceUnsafe(runeCount);
 
-                ref var ptr = ref MemoryMarshal.GetReference(value.SliceUnsafe(runeCount));
-                var offset = 0;
-                var length = value.Length;
-                while (offset < length)
+                for (var i = 0; (uint)i < (uint)value.Length; i += U8Info.CharLength(value.AsRef(i)))
                 {
-                    offset += U8Info.CharLength(ptr.Add(offset));
                     runeCount++;
                 }
 

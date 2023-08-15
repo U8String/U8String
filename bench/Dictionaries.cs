@@ -6,7 +6,7 @@ using BenchmarkDotNet.Jobs;
 namespace U8Primitives.Benchmarks;
 
 [MemoryDiagnoser]
-[SimpleJob, SimpleJob(RuntimeMoniker.NativeAot80)]
+[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Dictionaries
 {
     [Params(
@@ -26,19 +26,23 @@ public class Dictionaries
     [GlobalSetup]
     public void Setup()
     {
-        Str = StrUtf16!.ToU8String();
-        Dict[Str.AsSpan().ToU8String()] = Str;
-        ConcurrentDict[Str.AsSpan().ToU8String()] = Str;
-        DictUtf16[StrUtf16!.AsSpan().ToString()] = StrUtf16;
-        ConcurrentDictUtf16[StrUtf16!.AsSpan().ToString()] = StrUtf16;
+        var firstU8 = new U8String(StrUtf16);
+        var secondU8 = firstU8.Clone();
+        var secondU16 = firstU8.ToString();
+
+        Str = firstU8;
+        Dict[secondU8] = secondU8;
+        DictUtf16[secondU16] = secondU16;
+        ConcurrentDict[secondU8] = secondU8;
+        ConcurrentDictUtf16[secondU16] = secondU16;
     }
 
     [Benchmark(Baseline = true)] public U8String Get() => Dict[Str];
-    [Benchmark] public U8String GetConcurrent() => ConcurrentDict[Str];
     [Benchmark] public string? GetUtf16() => DictUtf16[StrUtf16!];
+    [Benchmark] public U8String GetConcurrent() => ConcurrentDict[Str];
     [Benchmark] public string? GetUtf16Concurrent() => ConcurrentDictUtf16[StrUtf16!];
     [Benchmark] public void Set() => Dict[Str] = Str;
-    [Benchmark] public void SetConcurrent() => ConcurrentDict[Str] = Str;
     [Benchmark] public void SetUtf16() => DictUtf16[StrUtf16!] = StrUtf16;
+    [Benchmark] public void SetConcurrent() => ConcurrentDict[Str] = Str;
     [Benchmark] public void SetUtf16Concurrent() => ConcurrentDictUtf16[StrUtf16!] = StrUtf16;
 }

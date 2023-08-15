@@ -5,7 +5,7 @@ public class U8InfoTests
     [Fact]
     public void IsAsciiByte_TrueForAsciiBytes()
     {
-        foreach (var b in Constants.AsciiBytes)
+        foreach (var b in TestConstants.AsciiBytes)
         {
             Assert.True(U8Info.IsAsciiByte(b), $"0x{b:X2}");
         }
@@ -14,7 +14,7 @@ public class U8InfoTests
     [Fact]
     public void IsAsciiByte_FalseForNonAsciiBytes()
     {
-        foreach (var b in Constants.NonAsciiBytes)
+        foreach (var b in TestConstants.NonAsciiBytes)
         {
             Assert.False(U8Info.IsAsciiByte(b), $"0x{b:X2}");
         }
@@ -23,7 +23,7 @@ public class U8InfoTests
     [Fact]
     public void IsWhitespaceByte_TrueForWhitespaceBytes()
     {
-        foreach (var b in Constants.AsciiWhitespaceBytes)
+        foreach (var b in TestConstants.AsciiWhitespaceBytes)
         {
             Assert.True(U8Info.IsAsciiWhitespace(b), $"0x{b:X2}");
         }
@@ -35,7 +35,7 @@ public class U8InfoTests
         foreach (var b in Enumerable
             .Range(0, 256)
             .Select(i => (byte)i)
-            .Except(Constants.AsciiWhitespaceBytes.ToArray()))
+            .Except(TestConstants.AsciiWhitespaceBytes.ToArray()))
         {
             Assert.False(U8Info.IsAsciiWhitespace(b), $"0x{b:X2}");
         }
@@ -44,7 +44,7 @@ public class U8InfoTests
     [Fact]
     public void IsContinuationByte_TrueForContinuationBytes()
     {
-        foreach (var b in Constants.ContinuationBytes)
+        foreach (var b in TestConstants.ContinuationBytes)
         {
             Assert.True(U8Info.IsContinuationByte(b), $"0x{b:X2}");
         }
@@ -53,7 +53,7 @@ public class U8InfoTests
     [Fact]
     public void IsContinuationByte_FalseForNonContinuationBytes()
     {
-        foreach (var b in Constants.NonContinuationBytes)
+        foreach (var b in TestConstants.NonContinuationBytes)
         {
             Assert.False(U8Info.IsContinuationByte(b), $"0x{b:X2}");
         }
@@ -62,7 +62,7 @@ public class U8InfoTests
     [Fact]
     public void CharLength_IsOneForAsciiBytes()
     {
-        foreach (var b in Constants.AsciiBytes)
+        foreach (var b in TestConstants.AsciiBytes)
         {
             Assert.Equal(1, U8Info.CharLength(b));
         }
@@ -71,7 +71,7 @@ public class U8InfoTests
     [Fact]
     public void CharLength_IsTwoForCyrilicBytes()
     {
-        foreach (var b in Constants.CyrilicCharBytes
+        foreach (var b in TestConstants.CyrilicCharBytes
             .Select(letter => letter[0]))
         {
             Assert.Equal(2, U8Info.CharLength(b));
@@ -81,7 +81,7 @@ public class U8InfoTests
     [Fact]
     public void CharLength_IsThreeForKanaBytes()
     {
-        foreach (var b in Constants.KanaCharBytes
+        foreach (var b in TestConstants.KanaCharBytes
             .Select(letter => letter[0]))
         {
             Assert.Equal(3, U8Info.CharLength(b));
@@ -91,7 +91,7 @@ public class U8InfoTests
     [Fact]
     public void CharLength_IsFourForEmojiBytes()
     {
-        foreach (var b in Constants.NonSurrogateEmojiChars
+        foreach (var b in TestConstants.NonSurrogateEmojiChars
             .Select(letter => letter[0]))
         {
             Assert.Equal(4, U8Info.CharLength(b));
