@@ -697,7 +697,8 @@ public readonly struct ConfiguredU8Split<TSeparator> :
 
         private static U8Range TrimEntry(byte[] value, U8Range range)
         {
-            throw new NotImplementedException();
+            // This could have been done better but works for now.
+            return new U8String(value, range).Trim()._inner;
         }
 
         readonly object IEnumerator.Current => Current;

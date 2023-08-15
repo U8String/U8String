@@ -97,6 +97,16 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8String(byte[]? value, U8Range inner)
+    {
+        if (inner.Length > 0) _value = value;
+        _inner = inner;
+
+        Debug.Assert(Offset >= 0);
+        Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String(ReadOnlySpan<byte> value, bool skipValidation)
     {
         Debug.Assert(skipValidation);
