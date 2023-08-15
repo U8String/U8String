@@ -344,10 +344,7 @@ public readonly record struct U8SplitPair
     }
 }
 
-[StructLayout(LayoutKind.Auto)]
-public struct U8Split :
-    ICollection<U8String>,
-    IU8Enumerable<U8Split.Enumerator>
+public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
 {
     readonly U8String _value;
     readonly U8String _separator;
@@ -388,7 +385,7 @@ public struct U8Split :
     public readonly bool Contains(U8String item)
     {
         var separator = _separator;
-        var overlaps = U8Searching.Contains(item, separator);
+        var overlaps = item.Contains(separator);
 
         return !overlaps && _value.Contains(item);
     }

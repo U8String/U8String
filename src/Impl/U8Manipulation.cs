@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace U8Primitives;
 
 internal static class U8Manipulation
@@ -23,5 +25,77 @@ internal static class U8Manipulation
         right.CopyTo(value.SliceUnsafe(left.Length));
 
         return new U8String(value, 0, length);
+    }
+
+    internal static U8String Replace(U8String source, byte oldValue, byte newValue)
+    {
+        if (!source.IsEmpty)
+        {
+            var current = source.UnsafeSpan;
+            var firstReplace = current.IndexOf(oldValue);
+            if (firstReplace < 0)
+            {
+                return source;
+            }
+
+            var replaced = new byte[source.Length];
+            var destination = replaced.AsSpan();
+
+            current
+                .SliceUnsafe(0, firstReplace)
+                .CopyTo(destination);
+
+            destination = destination.SliceUnsafe(firstReplace);
+            current
+                .SliceUnsafe(firstReplace)
+                .Replace(destination, oldValue, newValue);
+
+            // Old and new bytes which individually are invalid unicode scalar values
+            // are allowed if the replacement produces a valid UTF-8 sequence.
+            U8String.Validate(destination);
+            return new(replaced, 0, source.Length);
+        }
+
+        return default;
+    }
+
+    internal static U8String Replace(U8String source, char oldValue, char newValue)
+    {
+        return char.IsAscii(oldValue) && char.IsAscii(newValue)
+            ? Replace(source, (byte)oldValue, (byte)newValue)
+            : ReplaceUnchecked(source, oldValue.NonAsciiToUtf8(out _), newValue.NonAsciiToUtf8(out _));
+    }
+
+    internal static U8String Replace(U8String source, Rune oldValue, Rune newValue)
+    {
+        return oldValue.IsAscii && newValue.IsAscii
+            ? Replace(source, (byte)oldValue.Value, (byte)newValue.Value)
+            : ReplaceUnchecked(source, oldValue.NonAsciiToUtf8(out _), newValue.NonAsciiToUtf8(out _));
+    }
+
+    // TODO: Input args contract - throw on empty old value?
+    internal static U8String Replace(U8String source, ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
+    {
+        if (!source.IsEmpty)
+        {
+            if (oldValue.Length is 1 && newValue.Length is 1)
+            {
+                return Replace(source, oldValue[0], newValue[0]);
+            }
+
+            throw new NotImplementedException();
+        }
+
+        return default;
+    }
+
+    internal static U8String ReplaceUnchecked(U8String source, byte oldValue, byte newValue)
+    {
+        throw new NotImplementedException();
+    }
+
+    internal static U8String ReplaceUnchecked(U8String source, ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
+    {
+        throw new NotImplementedException();
     }
 }

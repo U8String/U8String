@@ -100,37 +100,34 @@ public readonly partial struct U8String
         throw new NotImplementedException();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Replace(byte oldValue, byte newValue)
     {
-        var source = this;
-        if (!source.IsEmpty)
-        {
-            var current = source.UnsafeSpan;
-            var firstReplace = current.IndexOf(oldValue);
-            if (firstReplace < 0)
-            {
-                return source;
-            }
+        return U8Manipulation.Replace(this, oldValue, newValue);
+    }
 
-            var replaced = new byte[source.Length];
-            var destination = replaced.AsSpan();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Replace(char oldValue, char newValue)
+    {
+        return U8Manipulation.Replace(this, oldValue, newValue);
+    }
 
-            current
-                .SliceUnsafe(0, firstReplace)
-                .CopyTo(destination);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Replace(Rune oldValue, Rune newValue)
+    {
+        return U8Manipulation.Replace(this, oldValue, newValue);
+    }
 
-            destination = destination.SliceUnsafe(firstReplace);
-            current
-                .SliceUnsafe(firstReplace)
-                .Replace(destination, oldValue, newValue);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Replace(ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
+    {
+        return U8Manipulation.Replace(this, oldValue, newValue);
+    }
 
-            // Old and new bytes which individually are invalid unicode scalar values
-            // are allowed if the replacement produces a valid UTF-8 sequence.
-            Validate(replaced);
-            return new(replaced, 0, source.Length);
-        }
-
-        return default;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Replace(U8String oldValue, U8String newValue)
+    {
+        return U8Manipulation.ReplaceUnchecked(this, oldValue, newValue);
     }
 
     /// <inheritdoc />
