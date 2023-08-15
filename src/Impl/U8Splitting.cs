@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 

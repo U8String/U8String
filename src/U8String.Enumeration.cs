@@ -3,6 +3,7 @@ using System.Collections;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using U8Primitives.Abstractions;
 
 using Rune = System.Text.Rune;
 
@@ -248,12 +249,6 @@ public struct U8Chars : ICollection<char>
     readonly void ICollection<char>.Clear() => throw new NotSupportedException();
     readonly bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 }
-
-internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String>
-    where TEnumerator : struct, IU8Enumerator
-{ }
-
-internal interface IU8Enumerator : IEnumerator<U8String> { }
 
 /// <summary>
 /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
