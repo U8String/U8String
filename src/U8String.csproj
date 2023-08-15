@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <Authors>neon-sunset</Authors>
@@ -29,7 +29,7 @@
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
     </PackageReference>
-    <PackageReference Include="System.IO.Hashing" Version="8.0.0-preview.6.23329.7" />
+    <PackageReference Include="System.IO.Hashing" Version="8.0.0-preview.7.23375.6" />
   </ItemGroup>
 
   <ItemGroup>
