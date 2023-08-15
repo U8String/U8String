@@ -14,7 +14,7 @@ public class Hashing
         "test",
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse",
         "Привіт, Всесвіт!",
-        null
+        null!
     )]
     public string? ValueUtf16 { get; set; }
     public U8String Value { get; set; }

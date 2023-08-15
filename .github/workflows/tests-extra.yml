@@ -1,0 +1,28 @@
+name: tests-extra
+
+on: [push, pull_request]
+
+jobs:
+  tests-extra:
+    name: tests-extra on ${{ matrix.os.platform }}
+    runs-on: ${{ matrix.os.platform }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        platform: [x64, arm64]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v2
+        with:
+          dotnet-version: 8.0.x
+          include-prerelease: true
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Build
+        run: dotnet build --no-restore
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+        env:
+          DOTNET_EnableAVX512F: 1
