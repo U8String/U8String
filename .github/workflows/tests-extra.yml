@@ -4,8 +4,8 @@ on: [push, pull_request]
 
 jobs:
   tests-extra:
-    name: tests-extra on ${{ matrix.os.platform }}
-    runs-on: ${{ matrix.os.platform }}
+    name: tests-extra on ${{ matrix.os }}-${{ matrix.platform }}
+    runs-on: ${{ matrix.os }}-${{ matrix.platform }}
     strategy:
       matrix:
         os: [ubuntu-latest, windows-latest]
