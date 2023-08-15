@@ -1,5 +1,4 @@
-using System.Diagnostics;
-
+using System.Collections.Immutable;
 using U8Primitives;
 
 namespace System;
@@ -10,28 +9,25 @@ namespace System;
 /// </summary>
 public static class U8StringExtensions
 {
+    /// <inheritdoc cref="U8String(ImmutableArray{byte})"/>
+    public static U8String AsU8String(this ImmutableArray<byte> value) => new(value);
+
     /// <inheritdoc cref="U8String(string?)"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this string? value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this byte[] value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this Span<byte> value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this Span<char> value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this ReadOnlySpan<byte> value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ToU8String(this ReadOnlySpan<char> value) => new(value);
 
     /// <summary>

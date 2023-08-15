@@ -80,11 +80,11 @@ internal static class U8Splitting
                 break;
             }
 
-            ptr.Offset(count++) = new(prev + offset, next);
+            ptr.Add(count++) = new(prev + offset, next);
             prev += next + (int)size;
         }
 
-        ptr.Offset(count++) = new(prev + offset, span.Length - prev);
+        ptr.Add(count++) = new(prev + offset, span.Length - prev);
         return count;
     }
 }

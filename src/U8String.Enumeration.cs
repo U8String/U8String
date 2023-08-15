@@ -17,7 +17,7 @@ public readonly partial struct U8String
     /// <remarks>
     /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
-    public CharCollection Chars
+    public U8Chars Chars
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(this);
@@ -29,7 +29,7 @@ public readonly partial struct U8String
     /// <remarks>
     /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
-    public RuneCollection Runes
+    public U8Runes Runes
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(this);
@@ -41,7 +41,7 @@ public readonly partial struct U8String
     /// <remarks>
     /// This is a lazily-evaluated allocation-free collection.
     /// </remarks>
-    public LineCollection Lines
+    public U8Lines Lines
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(this);
@@ -101,14 +101,14 @@ public readonly partial struct U8String
 /// <summary>
 /// A collection of chars in a provided <see cref="U8String"/>.
 /// </summary>
-public struct CharCollection : ICollection<char>
+public struct U8Chars : ICollection<char>
 {
     readonly U8String _value;
 
     int _count;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public CharCollection(U8String value)
+    public U8Chars(U8String value)
     {
         if (!value.IsEmpty)
         {
@@ -143,6 +143,10 @@ public struct CharCollection : ICollection<char>
         }
     }
 
+    // TODO: Wow, this seems to be terribly broken on surrogate chars and 
+    // there is no easy way to fix it without sacrificing performance.
+    // Perhaps it is worth just do the transcoding iteration here and warn the users
+    // instead of straight up producing UB or throwing exceptions???
     public readonly bool Contains(char item) => _value.Contains(item);
 
     public readonly void CopyTo(char[] destination, int index)
@@ -246,14 +250,15 @@ public struct CharCollection : ICollection<char>
 }
 
 internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String>
-    where TEnumerator : struct, IU8Enumerator { }
+    where TEnumerator : struct, IU8Enumerator
+{ }
 
 internal interface IU8Enumerator : IEnumerator<U8String> { }
 
 /// <summary>
 /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
 /// </summary>
-public struct RuneCollection : ICollection<Rune>
+public struct U8Runes : ICollection<Rune>
 {
     readonly U8String _value;
 
@@ -262,7 +267,7 @@ public struct RuneCollection : ICollection<Rune>
     int _count;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public RuneCollection(U8String value)
+    public U8Runes(U8String value)
     {
         if (!value.IsEmpty)
         {
@@ -292,17 +297,13 @@ public struct RuneCollection : ICollection<Rune>
             {
                 Debug.Assert(!value.IsEmpty);
 
+                // TODO: SIMD non-continuation byte counting
                 var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
-
-                // TODO: Optimize after porting/copying Utf8Utility from dotnet/runtime
                 value = value.SliceUnsafe(runeCount);
-                while (!value.IsEmpty)
-                {
-                    var result = Rune.DecodeFromUtf8(value, out _, out var consumed);
-                    Debug.Assert(result != OperationStatus.InvalidData);
 
+                for (var i = 0; (uint)i < (uint)value.Length; i += U8Info.CharLength(value.AsRef(i)))
+                {
                     runeCount++;
-                    value = value.SliceUnsafe(consumed);
                 }
 
                 return runeCount;
@@ -386,7 +387,7 @@ public struct RuneCollection : ICollection<Rune>
 /// <summary>
 /// A collection of lines in a provided <see cref="U8String"/>.
 /// </summary>
-public struct LineCollection : ICollection<U8String>, IU8Enumerable<LineCollection.Enumerator>
+public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
 {
     readonly U8String _value;
 
@@ -399,7 +400,7 @@ public struct LineCollection : ICollection<U8String>, IU8Enumerable<LineCollecti
     /// </summary>
     /// <param name="value">The string to enumerate over.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public LineCollection(U8String value)
+    public U8Lines(U8String value)
     {
         if (!value.IsEmpty)
         {
@@ -456,13 +457,13 @@ public struct LineCollection : ICollection<U8String>, IU8Enumerable<LineCollecti
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
-        this.Deconstruct<LineCollection, Enumerator>(out first, out second);
+        this.Deconstruct<U8Lines, Enumerator>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
-        this.Deconstruct<LineCollection, Enumerator>(out first, out second, out third);
+        this.Deconstruct<U8Lines, Enumerator>(out first, out second, out third);
     }
 
     /// <summary>
@@ -524,7 +525,7 @@ public struct LineCollection : ICollection<U8String>, IU8Enumerable<LineCollecti
                 if ((uint)idx < (uint)span.Length)
                 {
                     var cutoff = idx;
-                    if (idx > 0 && span.AsRef().Offset(idx - 1) is (byte)'\r')
+                    if (idx > 0 && span.AsRef().Add(idx - 1) is (byte)'\r')
                     {
                         cutoff--;
                     }

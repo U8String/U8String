@@ -8,7 +8,7 @@ using System.Runtime.Intrinsics.X86;
 
 namespace U8Primitives.Polyfills.Text;
 
-#pragma warning disable IDE0007, RCS1211 // Use implicit type and explicit branch ordering. Why: Source format and codegen shape.
+#pragma warning disable IDE0007, IDE1006, RCS1211 // Use implicit type and explicit branch ordering. Why: Source format and codegen shape.
 internal static partial class Ascii
 {
     /// <summary>

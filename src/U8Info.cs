@@ -1,21 +1,50 @@
 using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace U8Primitives;
 
-internal static class U8Info
+public static class U8Info
 {
-    // From https://github.com/dotnet/runtime/blob/main/src/libraries/System.Private.CoreLib/src/System/Text/Unicode/Utf8Utility.Helpers.cs#L393C40-L393C40
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsContinuationByte(in byte value)
+    public static bool IsAsciiByte(in byte value)
+    {
+        return value <= 0x7F;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAsciiWhitespace(in byte value)
+    {
+        // .NET ARM64 supremacy: this is fused into cmp, ccmp and cinc.
+        if (ArmBase.Arm64.IsSupported)
+        {
+            return value is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
+        }
+
+        const ulong mask = 4294983168;
+        var x1 = (uint)value < 33 ? 1ul : 0ul;
+        var x2 = mask >> value;
+        var res = x1 & x2;
+        return Unsafe.As<ulong, bool>(ref res);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsContinuationByte(in byte value)
     {
         return (sbyte)value < -64;
     }
 
+    // TODO: Is there really no better way to do this?
+    // Why the hell does ARM64 have FJCVTZS but not something to count code point length?
+    // TODO 2: Naming? Other options are ugly or long, or even more confusing.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsAsciiByte(in byte value)
+    public static int CharLength(in byte value)
     {
-        return value <= 0x7F;
+        var lzcnt = BitOperations.LeadingZeroCount(~(uint)(value << 24));
+        var flag = IsAsciiByte(value);
+
+        return flag ? 1 : lzcnt;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -14,6 +14,7 @@
 - `U8String`: Conditional, on manipulation
 
 # TODO
+- [ ] Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really vulnerable to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.
 - [x] IList, IEnumerable
 - [ ] Comparison
     - [x] OrdinalComparer

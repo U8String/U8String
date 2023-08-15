@@ -55,7 +55,14 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ref T Offset<T>(this ref T value, int offset)
+    internal static ref readonly T AsRef<T>(this ReadOnlySpan<T> value, int offset)
+        where T : unmanaged
+    {
+        return ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref T Add<T>(this ref T value, int offset)
         where T : struct
     {
         return ref Unsafe.Add(ref value, (nint)(uint)offset);
