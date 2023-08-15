@@ -1,0 +1,29 @@
+name: ci/cd
+
+on:
+  push:
+    paths-ignore:
+    - 'bench/**'
+  pull_request:
+
+jobs:
+  all-in-one:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: true
+        fetch-depth: 0
+    - name: Install .NET SDK
+      uses: actions/setup-dotnet@v2
+      with:
+        dotnet-version: |
+          7.0.x
+          8.0.x
+        include-prerelease: true
+    - name: CI/CD
+      shell: bash
+      run: |
+        dotnet tool install -g dotnet-releaser
+        dotnet-releaser run --nuget-token "${{secrets.NUGET_TOKEN}}" --github-token "${{secrets.GITHUB_TOKEN}}" dotnet-releaser.toml
