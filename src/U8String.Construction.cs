@@ -19,8 +19,6 @@ public readonly partial struct U8String
     {
         // Contract:
         // byte[] Value *must* remain null if the length is 0.
-        // TODO: Consider null-terminating the string to opportunistically
-        // enable zero-copy interop with native code. Or not?
         if (value.Length > 0)
         {
             Validate(value);

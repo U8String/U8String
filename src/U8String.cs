@@ -92,7 +92,7 @@ public readonly partial struct U8String :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value is null;
-        //get => Length is 0;
+        //get => Length is 0; -> regresses Warpskimmer benchmarks
     }
 
     /// <inheritdoc/>
