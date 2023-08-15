@@ -6,7 +6,7 @@ public readonly partial struct U8String
 {
     public bool Contains(byte value) => U8Searching.Contains(this, value);
 
-    public readonly bool Contains(char value) => U8Searching.Contains(this, value);
+    public bool Contains(char value) => U8Searching.Contains(this, value);
 
     public bool Contains(Rune value) => U8Searching.Contains(this, value);
 

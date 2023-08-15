@@ -31,7 +31,9 @@ internal interface IU8String<T> :
 }
 
 internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String>
-    where TEnumerator : IU8Enumerator
-{ }
+    where TEnumerator : struct, IU8Enumerator
+{
+    new TEnumerator GetEnumerator();
+}
 
 internal interface IU8Enumerator : IEnumerator<U8String> { }
