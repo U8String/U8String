@@ -1,10 +1,4 @@
 using System.Buffers;
-using System.Runtime.InteropServices;
-using System.Text;
-
-using U8Primitives.Polyfills.Text;
-
-using Ascii = U8Primitives.Polyfills.Text.Ascii;
 
 namespace U8Primitives.Tests;
 
@@ -122,5 +116,56 @@ public class U8EnumerationTests
         Assert.Equal(runes.Length, u8runes.Count);
         // Boxed evaluation
         Assert.Equal(runes.Length, u8str.Runes.Count());
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidStrings))]
+    public void U8Runes_ContainsReturnsCorrectValue(TestCase testCase)
+    {
+        var runes = testCase.Runes;
+        var u8str = new U8String(testCase.Utf8);
+        var u8runes = u8str.Runes;
+
+        foreach (var r in runes)
+        {
+            // Regular evaluation
+            Assert.True(u8runes.Contains(r));
+            // Boxed evaluation
+            Assert.Contains(r, u8runes);
+        }
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidStrings))]
+    public void U8Runes_EnumeratesToCorrectValues(TestCase testCase)
+    {
+        var runes = testCase.Runes;
+        var u8str = new U8String(testCase.Utf8);
+        var u8runes = u8str.Runes;
+
+        // Non-boxed enumeration
+        var enumerator = u8runes.GetEnumerator();
+        foreach (var r in runes)
+        {
+            Assert.True(enumerator.MoveNext());
+            Assert.Equal(r, enumerator.Current);
+        }
+
+        // Guard against misbehaving consuming implementations
+        Assert.False(enumerator.MoveNext());
+        Assert.False(enumerator.MoveNext());
+
+        // Boxed enumeration
+        Assert.Equal(runes, u8runes);
+    }
+
+    [Theory]
+    [MemberData(nameof(ValidStrings))]
+    public void U8Runes_CollectsToCorrectArray(TestCase testCase)
+    {
+        var runes = testCase.Runes.AsSpan();
+        var u8runes = new U8String(testCase.Utf8).Runes;
+
+        Assert.True(runes.SequenceEqual(u8runes.ToArray()));
     }
 }

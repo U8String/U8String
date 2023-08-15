@@ -311,10 +311,7 @@ public struct U8Runes : ICollection<Rune>
         }
     }
 
-    public readonly bool Contains(Rune item)
-    {
-        return _value.Contains(item);
-    }
+    public readonly bool Contains(Rune item) => _value.Contains(item);
 
     public readonly void CopyTo(Rune[] destination, int index)
     {
