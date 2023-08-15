@@ -395,16 +395,7 @@ public struct U8Split :
 
     public void CopyTo(U8String[] array, int index)
     {
-        if ((uint)Count > (uint)array.Length - (uint)index)
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
-        ref var ptr = ref MemoryMarshal.GetArrayDataReference(array);
-        foreach (var segment in this)
-        {
-            ptr.Add(index++) = segment;
-        }
+        this.CopyTo<U8Split, Enumerator>(array.AsSpan()[index..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -418,6 +409,9 @@ public struct U8Split :
     {
         this.Deconstruct<U8Split, Enumerator>(out first, out second, out third);
     }
+
+    public U8String[] ToArray() => this.ToArray<U8Split, Enumerator>();
+    public List<U8String> ToList() => this.ToList<U8Split, Enumerator>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.
@@ -540,16 +534,7 @@ public struct U8Split<TSeparator> :
 
     public void CopyTo(U8String[] array, int index)
     {
-        if ((uint)Count > (uint)array.Length - (uint)index)
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
-        ref var ptr = ref MemoryMarshal.GetArrayDataReference(array);
-        foreach (var segment in this)
-        {
-            ptr.Add(index++) = segment;
-        }
+        this.CopyTo<U8Split<TSeparator>, Enumerator>(array.AsSpan()[index..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -563,6 +548,9 @@ public struct U8Split<TSeparator> :
     {
         this.Deconstruct<U8Split<TSeparator>, Enumerator>(out first, out second, out third);
     }
+
+    public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator>();
+    public List<U8String> ToList() => this.ToList<U8Split<TSeparator>, Enumerator>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.

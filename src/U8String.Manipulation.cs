@@ -136,19 +136,14 @@ public readonly partial struct U8String
     /// <inheritdoc />
     public void CopyTo(byte[] destination, int index)
     {
-        var source = this;
-        if ((uint)index > (uint)destination.Length)
+        var src = this;
+        var dst = destination.AsSpan()[index..];
+        if (src.Length > dst.Length)
         {
             ThrowHelpers.ArgumentOutOfRange(nameof(index));
         }
 
-        if (destination.Length - index < source.Length)
-        {
-            // TODO: EH UX
-            // ThrowHelpers.Argument(nameof(destination), "Destination buffer is too small.");
-        }
-
-        source.UnsafeSpan.CopyTo(destination.AsSpan(index));
+        src.UnsafeSpan.CopyTo(dst);
     }
 
     /// <summary>

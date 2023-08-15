@@ -1,3 +1,6 @@
+using System.Buffers;
+using System.Text;
+
 namespace U8Primitives;
 
 public readonly partial struct U8String
@@ -32,12 +35,12 @@ public readonly partial struct U8String
     }
 
     // TODO: Naming? Other options are ugly or long, or even more confusing.
-    public bool IsCharBoundary(int index)
+    public bool IsRuneBoundary(int index)
     {
         return (uint)index < (uint)Length && !U8Info.IsContinuationByte(this[index]);
     }
 
-    public int NextCharIndex(int index)
+    public int NextRuneIndex(int index)
     {
         var deref = this;
         if ((uint)index >= (uint)deref.Length)
@@ -52,5 +55,20 @@ public readonly partial struct U8String
         }
 
         return index;
+    }
+
+    public bool TryGetRuneAt(int index, out Rune rune)
+    {
+        var deref = this;
+        if ((uint)index < (uint)deref.Length)
+        {
+            return Rune.DecodeFromUtf8(
+                deref.UnsafeSpan.SliceUnsafe(index),
+                out rune,
+                out _) is OperationStatus.Done;
+        }
+
+        rune = default;
+        return false;
     }
 }

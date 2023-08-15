@@ -310,6 +310,7 @@ public struct U8Runes : ICollection<Rune>
 
     public readonly void CopyTo(Rune[] destination, int index)
     {
+        // TODO: Simple SIMD widen ASCII to UTF-32 (ideally widen+validate in place instead of double traversal)
         // TODO: Consistency and correctness? Implement single-pass vectorized conversion?
         foreach (var rune in this)
         {
@@ -429,21 +430,7 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
 
     public void CopyTo(U8String[] destination, int index)
     {
-        var count = Count;
-        var dst = destination.AsSpan();
-        if ((uint)count > (uint)dst.Length - (uint)index)
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
-        if (count > 0)
-        {
-            foreach (var line in this)
-            {
-                dst[index++] = line;
-            }
-        }
+        this.CopyTo<U8Lines, Enumerator>(destination.AsSpan()[index..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -457,6 +444,9 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
     {
         this.Deconstruct<U8Lines, Enumerator>(out first, out second, out third);
     }
+
+    public U8String[] ToArray() => this.ToArray<U8Lines, Enumerator>();
+    public List<U8String> ToList() => this.ToList<U8Lines, Enumerator>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.
