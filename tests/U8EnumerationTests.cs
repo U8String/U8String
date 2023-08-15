@@ -89,7 +89,7 @@ public class U8EnumerationTests
         Assert.False(enumerator.MoveNext());
 
         // Boxed enumeration
-        Assert.Equal(chars, u8chars);
+        Assert.Equal(chars.ToArray(), u8chars);
     }
 
     [Theory]

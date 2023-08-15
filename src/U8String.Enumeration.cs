@@ -52,8 +52,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(this);
 
-    IEnumerator<byte> IEnumerable<byte>.GetEnumerator() => new Enumerator(this);
-    IEnumerator IEnumerable.GetEnumerator() => new Enumerator(this);
+    IEnumerator<byte> IEnumerable<byte>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public struct Enumerator : IEnumerator<byte>
     {
