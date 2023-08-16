@@ -246,15 +246,21 @@ public readonly partial struct U8String
         }
 
         var end = source.Length - 1;
-        for (; end >= start; end--)
+        for (var endSearch = end; endSearch >= start; endSearch--)
         {
-            var b = ptr.Add(end);
-            if (!U8Info.IsContinuationByte(b) && !(
-                U8Info.IsAsciiByte(b)
-                    ? U8Info.IsAsciiWhitespace(b)
-                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end))))
+            var b = ptr.Add(endSearch);
+            if (!U8Info.IsContinuationByte(b))
             {
-                break;
+                if (U8Info.IsAsciiByte(b)
+                    ? U8Info.IsAsciiWhitespace(b)
+                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end)))
+                {
+                    end = endSearch - 1;
+                }
+                else
+                {
+                    break;
+                }
             }
         }
 
