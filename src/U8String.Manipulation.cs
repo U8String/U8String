@@ -217,6 +217,13 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Removes all leading and trailing whitespace characters from the current string.
+    /// </summary>
+    /// <returns>
+    /// A sub-slice that remains after all whitespace characters
+    /// are removed from the start and end of the current string.
+    /// </returns>
     public U8String Trim()
     {
         // TODO: Optimize fast path on no whitespace
@@ -255,10 +262,79 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Removes all leading and trailing ASCII white-space characters from the current string.
+    /// Removes all leading whitespace characters from the current string.
     /// </summary>
     /// <returns>
-    /// A substring that remains after all ASCII white-space characters
+    /// A sub-slice that remains after all whitespace characters
+    /// are removed from the start of the current string.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
+    public U8String TrimStart()
+    {
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            ref var ptr = ref source.UnsafeRef;
+            var b = ptr;
+
+            if (U8Info.IsAsciiByte(b) && !U8Info.IsAsciiWhitespace(b))
+            {
+                return source;
+            }
+
+            var start = 0;
+            for (; start < source.Length;)
+            {
+                if (!U8Info.IsContinuationByte(b) && !(
+                    U8Info.IsAsciiByte(b)
+                        ? U8Info.IsAsciiWhitespace(b)
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(start))))
+                {
+                    break;
+                }
+
+                b = ptr.Add(++start);
+            }
+
+            return U8Marshal.Slice(source, start);
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    /// Removes all trailing whitespace characters from the current string.
+    /// </summary>
+    /// <returns>
+    /// A sub-slice that remains after all whitespace characters
+    /// are removed from the end of the current string.
+    /// </returns>
+    public U8String TrimEnd()
+    {
+        var source = this;
+        ref var ptr = ref source.DangerousRef;
+
+        var end = source.Length - 1;
+        for (; end >= 0; end--)
+        {
+            var b = ptr.Add(end);
+            if (!U8Info.IsContinuationByte(b) && !(
+                U8Info.IsAsciiByte(b)
+                    ? U8Info.IsAsciiWhitespace(b)
+                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end))))
+            {
+                break;
+            }
+        }
+
+        return U8Marshal.Slice(source, 0, end + 1);
+    }
+
+    /// <summary>
+    /// Removes all leading and trailing ASCII whitespace characters from the current string.
+    /// </summary>
+    /// <returns>
+    /// A sub-slice that remains after all ASCII whitespace characters
     /// are removed from the start and end of the current string.
     /// </returns>
     public U8String TrimAscii()
@@ -272,13 +348,12 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Removes all the leading ASCII white-space characters from the current string.
+    /// Removes all the leading ASCII whitespace characters from the current string.
     /// </summary>
     /// <returns>
-    /// A substring that remains after all white-space characters
+    /// A sub-slice that remains after all whitespace characters
     /// are removed from the start of the current string.
     /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String TrimStartAscii()
     {
         var source = this;
@@ -290,13 +365,12 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Removes all the trailing ASCII white-space characters from the current string.
+    /// Removes all the trailing ASCII whitespace characters from the current string.
     /// </summary>
     /// <returns>
-    /// A substring that remains after all white-space characters
+    /// A sub-slice that remains after all whitespace characters
     /// are removed from the end of the current string.
     /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String TrimEndAscii()
     {
         var source = this;
