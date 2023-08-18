@@ -139,11 +139,25 @@ public readonly partial struct U8String
         return value.ToU8String();
     }
 
+    /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, ReadOnlySpan{char})"/>
+    public static U8String Create<T>(T value, ReadOnlySpan<char> format)
+        where T : IUtf8SpanFormattable
+    {
+        return value.ToU8String(format);
+    }
+
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, IFormatProvider?)"/>
-    public static U8String Create<T>(T value, IFormatProvider? provider = null)
+    public static U8String Create<T>(T value, IFormatProvider? provider)
         where T : IUtf8SpanFormattable
     {
         return value.ToU8String(provider);
+    }
+
+    /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, ReadOnlySpan{char}, IFormatProvider?)"/>
+    public static U8String Create<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
+        where T : IUtf8SpanFormattable
+    {
+        return value.ToU8String(format, provider);
     }
 
     /// <summary>

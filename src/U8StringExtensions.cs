@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using U8Primitives;
 
 namespace System;
@@ -43,13 +44,26 @@ public static class U8StringExtensions
     }
 
     /// <summary>
+    /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the specified format.
+    /// </summary>
+    /// <typeparam name="T">The type of the value to convert.</typeparam>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="format">The format to use.</param>
+    /// <returns>U8String representation of the value.</returns>
+    public static U8String ToU8String<T>(this T value, ReadOnlySpan<char> format)
+        where T : IUtf8SpanFormattable
+    {
+        return ToU8String(value, format, null);
+    }
+
+    /// <summary>
     /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the default format and a provider, if specified.
     /// </summary>
     /// <typeparam name="T">The type of the value to convert.</typeparam>
     /// <param name="value">The value to convert.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <returns>U8String representation of the value.</returns>
-    public static U8String ToU8String<T>(this T value, IFormatProvider? provider = null)
+    public static U8String ToU8String<T>(this T value, IFormatProvider? provider)
         where T : IUtf8SpanFormattable
     {
         return ToU8String(value, default, provider);

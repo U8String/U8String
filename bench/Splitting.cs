@@ -13,8 +13,9 @@ public class Splitting
 
     [Params(
         "test",
-        "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed non risus. Suspendisse",
-        "Привіт, Всесвіт!"
+        "Lorem ipsum dolor sit amet, consectetur adipiscing elit, Sed non risus. Suspendisse",
+        "Привіт, Всесвіт!",
+        " foo ,, , bar , , , baz , ,, hoge,moge"
     )]
     public string? ValueUtf16 { get; set; }
     public U8String Value { get; set; }
@@ -51,4 +52,13 @@ public class Splitting
 
     [Benchmark]
     public string[] SplitSeqUtf16Collect() => ValueUtf16!.Split(", ");
+
+    [Benchmark]
+    public U8String[] SplitOptionsCollect() => Value
+        .Split(',', U8SplitOptions.Trim | U8SplitOptions.RemoveEmpty)
+        .ToArray();
+
+    [Benchmark]
+    public string[] SplitOptionsUtf16Collect() => ValueUtf16!
+        .Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
 }
