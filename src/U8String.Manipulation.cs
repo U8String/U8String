@@ -230,41 +230,45 @@ public readonly partial struct U8String
         // TODO 2: Do not convert to runes and have proper
         // whitespace LUT to evaluate code points in a branchless way
         var source = this;
-        ref var ptr = ref source.DangerousRef;
-
-        var start = 0;
-        for (; start < source.Length; start++)
+        if (!source.IsEmpty)
         {
-            var b = ptr.Add(start);
-            if (!U8Info.IsContinuationByte(b) && !(
-                U8Info.IsAsciiByte(b)
-                    ? U8Info.IsAsciiWhitespace(b)
-                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(start))))
-            {
-                break;
-            }
-        }
+            ref var ptr = ref source.UnsafeRef;
 
-        var end = source.Length - 1;
-        for (var endSearch = end; endSearch >= start; endSearch--)
-        {
-            var b = ptr.Add(endSearch);
-            if (!U8Info.IsContinuationByte(b))
+            var start = 0;
+            for (; start < source.Length; start++)
             {
-                if (U8Info.IsAsciiByte(b)
-                    ? U8Info.IsAsciiWhitespace(b)
-                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end)))
-                {
-                    end = endSearch - 1;
-                }
-                else
+                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start)))
                 {
                     break;
                 }
             }
+
+            var end = source.Length - 1;
+            for (var endSearch = end; endSearch >= start; endSearch--)
+            {
+                var b = ptr.Add(endSearch);
+                if (!U8Info.IsContinuationByte(b))
+                {
+                    if (U8Info.IsAsciiByte(b)
+                        ? U8Info.IsAsciiWhitespace(b)
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end)))
+                    {
+                        // Save the last found whitespace code point offset and continue searching
+                        // for more whitspace byte sequences from their end. If we don't do this,
+                        // we will end up trimming away continuation bytes at the end of the string.
+                        end = endSearch - 1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
+            }
+
+            return U8Marshal.Slice(source, start, end - start + 1);
         }
 
-        return U8Marshal.Slice(source, start, end - start + 1);
+        return default;
     }
 
     /// <summary>
@@ -289,17 +293,12 @@ public readonly partial struct U8String
             }
 
             var start = 0;
-            for (; start < source.Length;)
+            for (; start < source.Length; start++)
             {
-                if (!U8Info.IsContinuationByte(b) && !(
-                    U8Info.IsAsciiByte(b)
-                        ? U8Info.IsAsciiWhitespace(b)
-                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(start))))
+                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start)))
                 {
                     break;
                 }
-
-                b = ptr.Add(++start);
             }
 
             return U8Marshal.Slice(source, start);
@@ -318,22 +317,33 @@ public readonly partial struct U8String
     public U8String TrimEnd()
     {
         var source = this;
-        ref var ptr = ref source.DangerousRef;
-
-        var end = source.Length - 1;
-        for (; end >= 0; end--)
+        if (!source.IsEmpty)
         {
-            var b = ptr.Add(end);
-            if (!U8Info.IsContinuationByte(b) && !(
-                U8Info.IsAsciiByte(b)
-                    ? U8Info.IsAsciiWhitespace(b)
-                    : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end))))
+            ref var ptr = ref source.UnsafeRef;
+
+            var end = source.Length - 1;
+            for (var endSearch = end; endSearch >= 0; endSearch--)
             {
-                break;
+                var b = ptr.Add(endSearch);
+                if (!U8Info.IsContinuationByte(b))
+                {
+                    if (U8Info.IsAsciiByte(b)
+                        ? U8Info.IsAsciiWhitespace(b)
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end)))
+                    {
+                        end = endSearch - 1;
+                    }
+                    else
+                    {
+                        break;
+                    }
+                }
             }
+
+            return U8Marshal.Slice(source, 0, end + 1);
         }
 
-        return U8Marshal.Slice(source, 0, end + 1);
+        return default;
     }
 
     /// <summary>

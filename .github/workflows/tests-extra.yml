@@ -25,3 +25,9 @@ jobs:
         run: dotnet test --no-build --verbosity normal
         env:
           DOTNET_EnableAVX512F: 1
+      - name: Build Release
+        run: dotnet build -c Release --no-restore
+      - name: Test Release
+        run: dotnet test -c Release --no-build --verbosity normal
+        env:
+          DOTNET_EnableAVX512F: 1

@@ -5,7 +5,7 @@ namespace U8Primitives.Tests;
 #pragma warning disable CA1829, RCS1077 // Optimize LINQ method call.
 #pragma warning disable xUnit1004 // Test methods should not be skipped
 #pragma warning disable xUnit2017 // xUnit analyzer suggests changes that are wrong
-public class U8EnumerationTests
+public class Enumeration
 {
     // TODO: Refactor?
     public static IEnumerable<object[]> ValidStrings =>

@@ -49,12 +49,21 @@ public static class U8Info
             }
 
             var res = Rune.DecodeFromUtf8(value, out var rune, out _);
-            Debug.Assert(res != OperationStatus.Done);
+            Debug.Assert(res is OperationStatus.Done);
 
             return Rune.IsWhiteSpace(rune);
         }
 
         return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool IsWhitespaceRune(ref byte ptr)
+    {
+        var b = ptr;
+        return !IsContinuationByte(b) && IsAsciiByte(b)
+            ? IsAsciiWhitespace(b)
+            : IsNonAsciiWhitespace(ref ptr);
     }
 
     internal static bool IsNonAsciiWhitespace(ref byte ptr)
