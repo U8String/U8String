@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text;
 using U8Primitives.InteropServices;
 
@@ -398,53 +397,38 @@ public readonly partial struct U8String
             : default;
     }
 
-    /// <summary>
-    /// Returns a copy of this ASCII string converted to lower case.
-    /// </summary>
-    /// <returns>A lowercase equivalent of the current ASCII string.</returns>
-    /// <exception cref="ArgumentException">
-    /// The current string is not a valid ASCII sequence.
-    /// </exception>
+    // TODO: docs
     public U8String ToLowerAscii()
     {
         var source = this;
-        if (!source.IsEmpty)
+        if (source.Length > 0)
         {
-            var span = source.UnsafeSpan;
-            var destination = new byte[span.Length];
-            var result = Ascii.ToLower(span, destination, out _);
-            if (result is OperationStatus.InvalidData)
-            {
-                ThrowHelpers.InvalidAscii();
-            }
+            var destination = new U8String(new byte[source.Length], 0, source.Length);
 
-            return new U8String(destination, 0, span.Length);
+            U8Manipulation.ToLowerAscii(
+                ref source.UnsafeRef,
+                ref destination.UnsafeRef,
+                (uint)source.Length);
+
+            return destination;
         }
 
         return default;
     }
 
-    /// <summary>
-    /// Returns a copy of this ASCII string converted to upper case.
-    /// </summary>
-    /// <returns>The uppercase equivalent of the current ASCII string.</returns>
-    /// <exception cref="ArgumentException">
-    /// The current string is not a valid ASCII sequence.
-    /// </exception>
     public U8String ToUpperAscii()
     {
         var source = this;
-        if (!source.IsEmpty)
+        if (source.Length > 0)
         {
-            var span = source.UnsafeSpan;
-            var destination = new byte[span.Length];
-            var result = Ascii.ToUpper(span, destination, out _);
-            if (result is OperationStatus.InvalidData)
-            {
-                ThrowHelpers.InvalidAscii();
-            }
+            var destination = new U8String(new byte[source.Length], 0, source.Length);
 
-            return new U8String(destination, 0, span.Length);
+            U8Manipulation.ToUpperAscii(
+                ref source.UnsafeRef,
+                ref destination.UnsafeRef,
+                (uint)source.Length);
+
+            return destination;
         }
 
         return default;

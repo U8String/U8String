@@ -1,3 +1,4 @@
+using System.Runtime.Intrinsics;
 using System.Text;
 
 namespace U8Primitives;
@@ -97,5 +98,79 @@ internal static class U8Manipulation
     internal static U8String ReplaceUnchecked(U8String source, ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
     {
         throw new NotImplementedException();
+    }
+
+    internal static void ToUpperAscii(ref byte src, ref byte dst, nuint length)
+    {
+        var lower = Vector256.Create((byte)'a');
+        var upper = Vector256.Create((byte)'z');
+        var mask = Vector256.Create((byte)0x20);
+
+        nuint offset = 0;
+        if (length >= (nuint)Vector256<byte>.Count)
+        {
+            var lastvec = length - (nuint)Vector256<byte>.Count;
+            do
+            {
+                var chunk = Vector256.LoadUnsafe(ref src.Add(offset));
+                var isLower = Vector256.GreaterThanOrEqual(chunk, lower);
+                var isUpper = Vector256.LessThanOrEqual(chunk, upper);
+                var isLetter = isLower & isUpper;
+                var changeCase = isLetter & mask;
+
+                chunk ^= changeCase;
+                chunk.StoreUnsafe(ref dst.Add(offset));
+                offset += (nuint)Vector256<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        while (offset < length)
+        {
+            var b = src.Add(offset);
+            if (b is >= (byte)'a' and <= (byte)'z')
+            {
+                b ^= 0x20;
+            }
+
+            dst.Add(offset) = b;
+            offset++;
+        }
+    }
+
+    internal static void ToLowerAscii(ref byte src, ref byte dst, nuint length)
+    {
+        var lower = Vector256.Create((byte)'A');
+        var upper = Vector256.Create((byte)'Z');
+        var mask = Vector256.Create((byte)0x20);
+
+        nuint offset = 0;
+        if (length >= (nuint)Vector256<byte>.Count)
+        {
+            var lastvec = length - (nuint)Vector256<byte>.Count;
+            do
+            {
+                var chunk = Vector256.LoadUnsafe(ref src.Add(offset));
+                var isLower = Vector256.GreaterThanOrEqual(chunk, lower);
+                var isUpper = Vector256.LessThanOrEqual(chunk, upper);
+                var isLetter = isLower & isUpper;
+                var changeCase = isLetter & mask;
+
+                chunk |= changeCase;
+                chunk.StoreUnsafe(ref dst.Add(offset));
+                offset += (nuint)Vector256<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        while (offset < length)
+        {
+            var b = src.Add(offset);
+            if (b is >= (byte)'A' and <= (byte)'Z')
+            {
+                b |= 0x20;
+            }
+
+            dst.Add(offset) = b;
+            offset++;
+        }
     }
 }
