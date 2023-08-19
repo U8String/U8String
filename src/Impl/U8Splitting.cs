@@ -19,51 +19,6 @@ internal static class U8Splitting
         return MemoryMarshal.CreateReadOnlySpan(ref ptr, length);
     }
 
-    // TODO: Optimize? Maybe a dedicated split type or similar? Would be really nice to have const generics for this
-    // Perhaps a U8SplitPair-like struct with byte[] and U8Range[] (or inline array) indices?
-    internal static void Deconstruct<TSplit, TEnumerator>(this TSplit split, out U8String first, out U8String second)
-        where TSplit : struct, IU8Enumerable<TEnumerator>
-        where TEnumerator : struct, IU8Enumerator
-    {
-        // TODO: Should we throw on not match?
-        (first, second) = (default , default);
-
-        var enumerator = split.GetEnumerator();
-        if (enumerator.MoveNext())
-        {
-            first = enumerator.Current;
-            if (enumerator.MoveNext())
-            {
-                second = enumerator.Current;
-            }
-        }
-    }
-
-    internal static void Deconstruct<TSplit, TEnumerator>(
-        this TSplit split,
-        out U8String first,
-        out U8String second,
-        out U8String third)
-            where TSplit : struct, IU8Enumerable<TEnumerator>
-            where TEnumerator : struct, IU8Enumerator
-    {
-        (first, second, third) = (default, default, default);
-
-        var enumerator = split.GetEnumerator();
-        if (enumerator.MoveNext())
-        {
-            first = enumerator.Current;
-            if (enumerator.MoveNext())
-            {
-                second = enumerator.Current;
-                if (enumerator.MoveNext())
-                {
-                    third = enumerator.Current;
-                }
-            }
-        }
-    }
-
     // TODO: Slower than string.Split, either remove or find a way to make this useful
     internal static int SplitRanges<T>(this U8String source, T separator, Span<U8Range> ranges)
     {

@@ -8,43 +8,90 @@ namespace U8Primitives;
 // in a SIMD way (is there a way to make it not explode and not be a total UB?)
 internal static class U8Enumeration
 {
-    internal static void CopyTo<T, E>(this ref T source, Span<U8String> destination)
-        where T : struct, ICollection<U8String>, IU8Enumerable<E>
-        where E : struct, IU8Enumerator
+    // TODO: Optimize? Maybe a dedicated split type or similar? Would be really nice to have const generics for this
+    // Perhaps a U8SplitPair-like struct with byte[] and U8Range[] (or inline array) indices?
+    // TODO 2: Consider making out Us nullable? Alternatively, consider throwing?
+    internal static void Deconstruct<T, E, U>(this T source, out U first, out U second)
+        where T : struct, IEnumerable<U, E>
+        where E : struct, IEnumerator<U>
+        where U : struct
     {
-        var count = source.Count;
-        if (count is not 0)
+        // TODO: Should we throw on not match?
+        (first, second) = (default, default);
+
+        var enumerator = source.GetEnumerator();
+        if (enumerator.MoveNext())
         {
-            source.FillUnchecked<T, E, U8String>(destination[..count]);
+            first = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                second = enumerator.Current;
+            }
         }
     }
 
-    internal static U8String[] ToArray<T, E>(this ref T source)
-        where T : struct, ICollection<U8String>, IU8Enumerable<E>
-        where E : struct, IU8Enumerator
+    internal static void Deconstruct<T, E, U>(this T source, out U first, out U second, out U third)
+        where T : struct, IEnumerable<U, E>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        (first, second, third) = (default, default, default);
+
+        var enumerator = source.GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            first = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                second = enumerator.Current;
+                if (enumerator.MoveNext())
+                {
+                    third = enumerator.Current;
+                }
+            }
+        }
+    }
+
+    internal static void CopyTo<T, E, U>(this ref T source, Span<U> destination)
+        where T : struct, IEnumerable<U, E>, ICollection<U>
+        where E : struct, IEnumerator<U>
+        where U : struct
     {
         var count = source.Count;
         if (count is not 0)
         {
-            var result = new U8String[count];
-            source.FillUnchecked<T, E, U8String>(result);
+            source.FillUnchecked<T, E, U>(destination[..count]);
+        }
+    }
+
+    internal static U[] ToArray<T, E, U>(this ref T source)
+        where T : struct, IEnumerable<U, E>, ICollection<U>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        var count = source.Count;
+        if (count is not 0)
+        {
+            var result = new U[count];
+            source.FillUnchecked<T, E, U>(result);
 
             return result;
         }
 
-        return Array.Empty<U8String>();
+        return Array.Empty<U>();
     }
 
-    internal static List<U8String> ToList<T, E>(this ref T source)
-        where T : struct, ICollection<U8String>, IU8Enumerable<E>
-        where E : struct, IU8Enumerator
+    internal static List<U> ToList<T, E, U>(this ref T source)
+        where T : struct, IEnumerable<U, E>, ICollection<U>
+        where E : struct, IEnumerator<U>
+        where U : struct
     {
         var count = source.Count;
-        var result = new List<U8String>(count);
+        var result = new List<U>(count);
 
         CollectionsMarshal.SetCount(result, count);
         var span = CollectionsMarshal.AsSpan(result);
-        source.FillUnchecked<T, E, U8String>(span);
+        source.FillUnchecked<T, E, U>(span);
 
         return result;
     }

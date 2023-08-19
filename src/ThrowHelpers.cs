@@ -16,13 +16,13 @@ internal static class ThrowHelpers
     [DoesNotReturn, StackTraceHidden]
     internal static void InvalidAscii()
     {
-        throw new ArgumentException("The value is not a valid ASCII sequence.");
+        throw new FormatException("The value is not a valid ASCII sequence.");
     }
 
     [DoesNotReturn, StackTraceHidden]
     internal static void InvalidSplit()
     {
-        throw new ArgumentException("The value is not a valid split sequence.");
+        throw new FormatException("The value is not a valid split sequence.");
     }
 
     [DoesNotReturn, StackTraceHidden]

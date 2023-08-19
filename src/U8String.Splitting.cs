@@ -392,23 +392,23 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
 
     public void CopyTo(U8String[] array, int index)
     {
-        this.CopyTo<U8Split, Enumerator>(array.AsSpan()[index..]);
+        this.CopyTo<U8Split, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
-        this.Deconstruct<U8Split, Enumerator>(out first, out second);
+        this.Deconstruct<U8Split, Enumerator, U8String>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
-        this.Deconstruct<U8Split, Enumerator>(out first, out second, out third);
+        this.Deconstruct<U8Split, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public U8String[] ToArray() => this.ToArray<U8Split, Enumerator>();
-    public List<U8String> ToList() => this.ToList<U8Split, Enumerator>();
+    public U8String[] ToArray() => this.ToArray<U8Split, Enumerator, U8String>();
+    public List<U8String> ToList() => this.ToList<U8Split, Enumerator, U8String>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.
@@ -528,23 +528,23 @@ public struct U8Split<TSeparator> :
 
     public void CopyTo(U8String[] array, int index)
     {
-        this.CopyTo<U8Split<TSeparator>, Enumerator>(array.AsSpan()[index..]);
+        this.CopyTo<U8Split<TSeparator>, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
-        this.Deconstruct<U8Split<TSeparator>, Enumerator>(out first, out second);
+        this.Deconstruct<U8Split<TSeparator>, Enumerator, U8String>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
-        this.Deconstruct<U8Split<TSeparator>, Enumerator>(out first, out second, out third);
+        this.Deconstruct<U8Split<TSeparator>, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator>();
-    public List<U8String> ToList() => this.ToList<U8Split<TSeparator>, Enumerator>();
+    public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator, U8String>();
+    public List<U8String> ToList() => this.ToList<U8Split<TSeparator>, Enumerator, U8String>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.

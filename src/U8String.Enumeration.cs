@@ -102,7 +102,7 @@ public readonly partial struct U8String
 /// <summary>
 /// A collection of chars in a provided <see cref="U8String"/>.
 /// </summary>
-public struct U8Chars : ICollection<char>
+public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
 {
     readonly U8String _value;
 
@@ -152,8 +152,48 @@ public struct U8Chars : ICollection<char>
         var value = _value;
         if (!value.IsEmpty)
         {
-            Encoding.UTF8.GetChars(value.UnsafeSpan, destination.AsSpan(index));
+            Encoding.UTF8.GetChars(value.UnsafeSpan, destination.AsSpan()[index..]);
         }
+    }
+
+    public readonly void Deconstruct(out char first, out char second)
+    {
+        this.Deconstruct<U8Chars, Enumerator, char>(out first, out second);
+    }
+
+    public readonly void Deconstruct(out char first, out char second, out char third)
+    {
+        this.Deconstruct<U8Chars, Enumerator, char>(out first, out second, out third);
+    }
+
+    public char[] ToArray()
+    {
+        var value = _value;
+        if (!value.IsEmpty)
+        {
+            var chars = new char[Count];
+            Encoding.UTF8.GetChars(value.UnsafeSpan, chars);
+            return chars;
+        }
+
+        return Array.Empty<char>();
+    }
+
+    public List<char> ToList()
+    {
+        var value = _value;
+        if (!value.IsEmpty)
+        {
+            var count = Count;
+            var chars = new List<char>(count);
+            CollectionsMarshal.SetCount(chars, count);
+            var span = CollectionsMarshal.AsSpan(chars);
+
+            Encoding.UTF8.GetChars(value.UnsafeSpan, span);
+            return chars;
+        }
+
+        return new List<char>();
     }
 
     public readonly Enumerator GetEnumerator() => new(_value);
@@ -247,7 +287,7 @@ public struct U8Chars : ICollection<char>
 /// <summary>
 /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
 /// </summary>
-public struct U8Runes : ICollection<Rune>
+public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
 {
     readonly U8String _value;
 
@@ -308,6 +348,20 @@ public struct U8Runes : ICollection<Rune>
             destination[index++] = rune;
         }
     }
+
+    public readonly void Deconstruct(out Rune first, out Rune second)
+    {
+        this.Deconstruct<U8Runes, Enumerator, Rune>(out first, out second);
+    }
+
+    public readonly void Deconstruct(out Rune first, out Rune second, out Rune third)
+    {
+        this.Deconstruct<U8Runes, Enumerator, Rune>(out first, out second, out third);
+    }
+
+    public Rune[] ToArray() => this.ToArray<U8Runes, Enumerator, Rune>();
+
+    public List<Rune> ToList() => this.ToList<U8Runes, Enumerator, Rune>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly Enumerator GetEnumerator() => new(_value);
@@ -413,23 +467,23 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
 
     public void CopyTo(U8String[] destination, int index)
     {
-        this.CopyTo<U8Lines, Enumerator>(destination.AsSpan()[index..]);
+        this.CopyTo<U8Lines, Enumerator, U8String>(destination.AsSpan()[index..]);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
-        this.Deconstruct<U8Lines, Enumerator>(out first, out second);
+        this.Deconstruct<U8Lines, Enumerator, U8String>(out first, out second);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
-        this.Deconstruct<U8Lines, Enumerator>(out first, out second, out third);
+        this.Deconstruct<U8Lines, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public U8String[] ToArray() => this.ToArray<U8Lines, Enumerator>();
-    public List<U8String> ToList() => this.ToList<U8Lines, Enumerator>();
+    public U8String[] ToArray() => this.ToArray<U8Lines, Enumerator, U8String>();
+    public List<U8String> ToList() => this.ToList<U8Lines, Enumerator, U8String>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.
