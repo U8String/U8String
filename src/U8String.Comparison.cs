@@ -1,4 +1,6 @@
+using System.Collections.Immutable;
 using System.IO.Hashing;
+using System.Runtime.InteropServices;
 
 namespace U8Primitives;
 
@@ -93,6 +95,23 @@ public readonly partial struct U8String
             U8Comparison.AsciiIgnoreCase => U8Comparer.AsciiIgnoreCase.Equals(this, other),
             _ => ThrowHelpers.ArgumentOutOfRange<bool>(nameof(comparisonType)),
         };
+    }
+
+    public bool SourceEquals(U8String other)
+    {
+        return ReferenceEquals(_value, other._value);
+    }
+
+    public bool SourceEquals(ImmutableArray<byte> other)
+    {
+        var arr = ImmutableCollectionsMarshal.AsArray(other);
+
+        return ReferenceEquals(_value, arr);
+    }
+
+    public bool SourceEquals(byte[] other)
+    {
+        return ReferenceEquals(_value, other);
     }
 
     /// <summary>

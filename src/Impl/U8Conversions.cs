@@ -77,6 +77,56 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Rune CodepointToRune(
+        ref byte ptr,
+        out int size,
+        [ConstantExpected] bool checkAscii = true)
+    {
+        // from: https://github.com/rust-lang/rust/blob/master/library/core/src/str/validations.rs#L36
+        const byte continuationMask = 0b0011_1111;
+
+        var b0 = ptr;
+        if (checkAscii && U8Info.IsAsciiByte(b0))
+        {
+            size = 1;
+            return Unsafe.BitCast<uint, Rune>(b0);
+        }
+
+        size = 2;
+        var init = FirstByte(b0, 2);
+        var b1 = ptr.Add(1);
+        var rune = Accumulate(init, b1);
+
+        if (b0 >= 0xE0)
+        {
+            size = 3;
+            var b2 = ptr.Add(2);
+            var b1b2 = Accumulate((uint)(b1 & continuationMask), b2);
+            rune = (init << 12) | b1b2;
+            if (b0 >= 0xF0)
+            {
+                size = 4;
+                var b3 = ptr.Add(3);
+                rune = ((init & 7) << 18) | Accumulate(b1b2, b3);
+            }
+        }
+
+        return Unsafe.BitCast<uint, Rune>(rune);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint FirstByte(byte value, int width)
+        {
+            return (uint)(value & (0x7F >> width));
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint Accumulate(uint rune, byte value)
+        {
+            return (rune << 6) | (uint)(value & continuationMask);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ReadOnlySpan<byte> ToUtf8<T>(T value, [UnscopedRef] out uint _)
     {
         Debug.Assert(value is byte or char or Rune or U8String or byte[]);

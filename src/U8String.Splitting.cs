@@ -491,12 +491,9 @@ public struct U8Split<TSeparator> :
     // TODO: Move value.IsEmpty -> count = 0 check here
     internal U8Split(U8String value, TSeparator? separator)
     {
-        if (!value.IsEmpty)
-        {
-            _value = value;
-            _separator = separator;
-            _count = -1;
-        }
+        _value = value;
+        _separator = separator;
+        _count = value.IsEmpty ? 0 : -1;
     }
 
     public int Count

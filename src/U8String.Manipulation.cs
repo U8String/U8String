@@ -235,12 +235,13 @@ public readonly partial struct U8String
             ref var ptr = ref source.UnsafeRef;
 
             var start = 0;
-            for (; start < source.Length; start++)
+            while (start < source.Length)
             {
-                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start)))
+                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start), out var size))
                 {
                     break;
                 }
+                start += size;
             }
 
             var end = source.Length - 1;
@@ -251,7 +252,7 @@ public readonly partial struct U8String
                 {
                     if (U8Info.IsAsciiByte(b)
                         ? U8Info.IsAsciiWhitespace(b)
-                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end)))
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end), out _))
                     {
                         // Save the last found whitespace code point offset and continue searching
                         // for more whitspace byte sequences from their end. If we don't do this,
@@ -278,7 +279,6 @@ public readonly partial struct U8String
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the start of the current string.
     /// </returns>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public U8String TrimStart()
     {
         var source = this;
@@ -293,12 +293,13 @@ public readonly partial struct U8String
             }
 
             var start = 0;
-            for (; start < source.Length; start++)
+            while (start < source.Length)
             {
-                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start)))
+                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start), out var size))
                 {
                     break;
                 }
+                start += size;
             }
 
             return U8Marshal.Slice(source, start);
@@ -329,7 +330,7 @@ public readonly partial struct U8String
                 {
                     if (U8Info.IsAsciiByte(b)
                         ? U8Info.IsAsciiWhitespace(b)
-                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end)))
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end), out _))
                     {
                         end = endSearch - 1;
                     }

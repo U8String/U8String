@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.Diagnostics;
 using System.Numerics;
-using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
@@ -58,19 +57,22 @@ public static class U8Info
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsWhitespaceRune(ref byte ptr)
+    internal static bool IsWhitespaceRune(ref byte ptr, out int size)
     {
         var b = ptr;
-        return !IsContinuationByte(b) && IsAsciiByte(b)
-            ? IsAsciiWhitespace(b)
-            : IsNonAsciiWhitespace(ref ptr);
+        if (IsAsciiByte(b))
+        {
+            size = 1;
+            return IsAsciiWhitespace(b);
+        }
+
+        return IsNonAsciiWhitespace(ref ptr, out size);
     }
 
-    internal static bool IsNonAsciiWhitespace(ref byte ptr)
+    internal static bool IsNonAsciiWhitespace(ref byte ptr, out int size)
     {
-        var value = MemoryMarshal.CreateSpan(ref ptr, 4);
-        var res = Rune.DecodeFromUtf8(value, out var rune, out _);
-        Debug.Assert(res is OperationStatus.Done);
+        var rune = U8Conversions.CodepointToRune(ref ptr, out size, checkAscii: false);
+        Debug.Assert(Rune.IsValid(rune.Value));
 
         return Rune.IsWhiteSpace(rune);
     }

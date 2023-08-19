@@ -111,11 +111,8 @@ public struct U8Chars : ICollection<char>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Chars(U8String value)
     {
-        if (!value.IsEmpty)
-        {
-            _value = value;
-            _count = -1;
-        }
+        _value = value;
+        _count = value.IsEmpty ? 0 : -1;
     }
 
     /// <summary>
@@ -176,13 +173,10 @@ public struct U8Chars : ICollection<char>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Enumerator(U8String value)
         {
-            if (!value.IsEmpty)
-            {
-                _value = value._value;
-                _offset = value.Offset;
-                _length = value.Length;
-                _nextByteIdx = 0;
-            }
+            _value = value._value;
+            _offset = value.Offset;
+            _length = value.Length;
+            _nextByteIdx = 0;
         }
 
         // TODO
@@ -264,11 +258,8 @@ public struct U8Runes : ICollection<Rune>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Runes(U8String value)
     {
-        if (!value.IsEmpty)
-        {
-            _value = value;
-            _count = -1;
-        }
+        _value = value;
+        _count = value.IsEmpty ? 0 : -1;
     }
 
     /// <summary>
@@ -334,12 +325,9 @@ public struct U8Runes : ICollection<Rune>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Enumerator(U8String value)
         {
-            if (!value.IsEmpty)
-            {
-                _value = value._value;
-                _offset = value.Offset;
-                _length = value.Length;
-            }
+            _value = value._value;
+            _offset = value.Offset;
+            _length = value.Length;
         }
 
         public Rune Current { get; private set; }
@@ -347,17 +335,15 @@ public struct U8Runes : ICollection<Rune>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            // TODO: Optimize for codegen, this one isn't great
             var index = _index;
             if (index < _length)
             {
-                Rune.DecodeFromUtf8(
-                    _value!.SliceUnsafe(_offset + index, _length - index),
-                    out var rune,
-                    out var consumed);
+                ref var ptr = ref MemoryMarshal
+                    .GetArrayDataReference(_value!)
+                    .Add(_offset + index);
 
-                Current = rune;
-                _index = index + consumed;
+                Current = U8Conversions.CodepointToRune(ref ptr, out var size);
+                _index = index + size;
                 return true;
             }
 
@@ -395,11 +381,8 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Lines(U8String value)
     {
-        if (!value.IsEmpty)
-        {
-            _value = value;
-            _count = -1;
-        }
+        _value = value;
+        _count = value.IsEmpty ? 0 : -1;
     }
 
     /// <summary>
@@ -480,11 +463,8 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
         /// <param name="value">The string to enumerate over.</param>
         public Enumerator(U8String value)
         {
-            if (!value.IsEmpty)
-            {
-                _value = value._value;
-                _remaining = value._inner;
-            }
+            _value = value._value;
+            _remaining = value._inner;
         }
 
         /// <summary>
