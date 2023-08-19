@@ -30,10 +30,13 @@ internal interface IU8String<T> :
     T Slice(int start, int length);
 }
 
-internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String>
-    where TEnumerator : struct, IU8Enumerator
+internal interface IEnumerable<T, E> : IEnumerable<T>
+    where E : struct, IEnumerator<T>
 {
-    new TEnumerator GetEnumerator();
+    new E GetEnumerator();
 }
+
+internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
+    where TEnumerator : struct, IU8Enumerator { }
 
 internal interface IU8Enumerator : IEnumerator<U8String> { }

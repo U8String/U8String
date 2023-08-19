@@ -15,13 +15,7 @@ internal static class U8Enumeration
         var count = source.Count;
         if (count is not 0)
         {
-            var span = destination[..count];
-
-            var i = 0;
-            foreach (var item in source)
-            {
-                span.AsRef(i++) = item;
-            }
+            source.FillUnchecked<T, E, U8String>(destination[..count]);
         }
     }
 
@@ -33,13 +27,7 @@ internal static class U8Enumeration
         if (count is not 0)
         {
             var result = new U8String[count];
-            var span = result.AsSpan();
-
-            var i = 0;
-            foreach (var item in source)
-            {
-                span.AsRef(i++) = item;
-            }
+            source.FillUnchecked<T, E, U8String>(result);
 
             return result;
         }
@@ -56,13 +44,21 @@ internal static class U8Enumeration
 
         CollectionsMarshal.SetCount(result, count);
         var span = CollectionsMarshal.AsSpan(result);
-
-        var i = 0;
-        foreach (var item in source)
-        {
-            span.AsRef(i++) = item;
-        }
+        source.FillUnchecked<T, E, U8String>(span);
 
         return result;
+    }
+
+    private static void FillUnchecked<T, E, U>(this ref T source, Span<U> destination)
+        where T : struct, IEnumerable<U, E>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        var i = 0;
+        ref var ptr = ref destination.AsRef();
+        foreach (var item in source)
+        {
+            ptr.Add(i++) = item;
+        }
     }
 }

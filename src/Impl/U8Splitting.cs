@@ -19,9 +19,10 @@ internal static class U8Splitting
         return MemoryMarshal.CreateReadOnlySpan(ref ptr, length);
     }
 
-    // TODO: Optimize?
+    // TODO: Optimize? Maybe a dedicated split type or similar? Would be really nice to have const generics for this
+    // Perhaps a U8SplitPair-like struct with byte[] and U8Range[] (or inline array) indices?
     internal static void Deconstruct<TSplit, TEnumerator>(this TSplit split, out U8String first, out U8String second)
-        where TSplit : IU8Enumerable<TEnumerator>
+        where TSplit : struct, IU8Enumerable<TEnumerator>
         where TEnumerator : struct, IU8Enumerator
     {
         // TODO: Should we throw on not match?
@@ -43,7 +44,7 @@ internal static class U8Splitting
         out U8String first,
         out U8String second,
         out U8String third)
-            where TSplit : IU8Enumerable<TEnumerator>
+            where TSplit : struct, IU8Enumerable<TEnumerator>
             where TEnumerator : struct, IU8Enumerator
     {
         (first, second, third) = (default, default, default);
