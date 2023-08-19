@@ -108,7 +108,6 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
 
     int _count;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Chars(U8String value)
     {
         _value = value;
@@ -210,7 +209,6 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
         int _nextByteIdx;
         uint _currentCharPair;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Enumerator(U8String value)
         {
             _value = value._value;
@@ -295,7 +293,6 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
     // similar to LineCollection.
     int _count;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Runes(U8String value)
     {
         _value = value;
@@ -376,7 +373,6 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
         readonly int _length;
         int _index;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public Enumerator(U8String value)
         {
             _value = value._value;
@@ -432,7 +428,6 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
     /// Creates a new line enumeration over the provided string.
     /// </summary>
     /// <param name="value">The string to enumerate over.</param>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Lines(U8String value)
     {
         _value = value;
@@ -541,7 +536,7 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
                 if ((uint)idx < (uint)span.Length)
                 {
                     var cutoff = idx;
-                    if (idx > 0 && span.AsRef().Add(idx - 1) is (byte)'\r')
+                    if (idx > 0 && span.AsRef(idx - 1) is (byte)'\r')
                     {
                         cutoff--;
                     }
