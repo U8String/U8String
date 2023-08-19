@@ -352,12 +352,9 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
 
     internal U8Split(U8String value, U8String separator)
     {
-        if (!value.IsEmpty)
-        {
-            _value = value;
-            _separator = separator;
-            _count = -1;
-        }
+        _value = value;
+        _separator = separator;
+        _count = value.IsEmpty ? 0 : -1;
     }
 
     public int Count
@@ -420,7 +417,6 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     readonly bool ICollection<U8String>.IsReadOnly => true;
 
-    [StructLayout(LayoutKind.Auto)]
     public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;
@@ -475,11 +471,8 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
     readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
-// TODO: I don't think this is a successful design. JIT/ILC can't optimize away
-// ASCII char literal conversion causing the size of MoveNext() to explode. This needs an overhaul,
-// possibly disambiguating on struct vs separator types or maybe even 3 options:
-// primitive, span (ref split aka SplitRef? SplitSpan?) and U8String / byte[]
-[StructLayout(LayoutKind.Auto)]
+// TODO: Optimize even more. This design is far from the northstar of perfect codegen
+// but it still somehow manages to outperform Rust split iterators
 public struct U8Split<TSeparator> :
     ICollection<U8String>,
     IU8Enumerable<U8Split<TSeparator>.Enumerator>
@@ -488,7 +481,12 @@ public struct U8Split<TSeparator> :
     readonly TSeparator? _separator;
     int _count;
 
-    // TODO: Move value.IsEmpty -> count = 0 check here
+    // TODO: validate/guard against unsupported generic instantiations
+    // e.g.: foreach (var e in default(U8Split<object[]>)) must throw or at least not produce UB
+    // Possible solution: just make the T -> byte[] cast throwing instead of reinterpret,
+    // paying the price for splitting on boxed byte sequences which are not U8String.
+    // This can be further mitigated by introducing proper U8RefSplit for splitting on
+    // UTF-8 literals and other sources of ROS<byte> without forcing reallocation due to lifetime constraints.
     internal U8Split(U8String value, TSeparator? separator)
     {
         _value = value;
@@ -556,7 +554,6 @@ public struct U8Split<TSeparator> :
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
     readonly bool ICollection<U8String>.IsReadOnly => true;
 
-    [StructLayout(LayoutKind.Auto)]
     public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;

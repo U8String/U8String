@@ -1,5 +1,4 @@
 using System.Runtime.InteropServices;
-using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 
@@ -20,7 +19,9 @@ internal static class U8Splitting
     }
 
     // TODO: Slower than string.Split, either remove or find a way to make this useful
-    internal static int SplitRanges<T>(this U8String source, T separator, Span<U8Range> ranges)
+    internal static int SplitRanges<T>(
+        // Change this to Span<int> indices if I ever decide to pursue this variant
+        this U8String source, T separator, Span<U8Range> ranges)
     {
         var size = U8Info.GetSize(separator);
         var span = source.UnsafeSpan;
