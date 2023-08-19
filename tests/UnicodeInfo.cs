@@ -63,7 +63,7 @@ public class UnicodeInfo
                 string.Join(",", whitespace.Select(b => $"0x{b:X2}")));
 
             Assert.True(
-                U8Info.IsWhitespaceRune(ref whitespace[0]),
+                U8Info.IsWhitespaceRune(ref whitespace[0], out _),
                 string.Join(",", whitespace.Select(b => $"0x{b:X2}")));
         }
     }
@@ -78,7 +78,7 @@ public class UnicodeInfo
             var message = $"0x{rune.Value:X4}";
 
             Assert.False(U8Info.IsWhitespaceRune(utf8), message);
-            Assert.False(U8Info.IsWhitespaceRune(ref utf8[0]), message);
+            Assert.False(U8Info.IsWhitespaceRune(ref utf8[0], out _), message);
         }
     }
 
