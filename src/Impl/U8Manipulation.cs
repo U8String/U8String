@@ -102,13 +102,14 @@ internal static class U8Manipulation
 
     internal static void ToUpperAscii(ref byte src, ref byte dst, nuint length)
     {
-        var lower = Vector256.Create((byte)'a');
-        var upper = Vector256.Create((byte)'z');
-        var mask = Vector256.Create((byte)0x20);
-
         nuint offset = 0;
         if (length >= (nuint)Vector256<byte>.Count)
         {
+            // As usual, .NET unrolls this into 128x2 when 256 is not available
+            var lower = Vector256.Create((byte)'a');
+            var upper = Vector256.Create((byte)'z');
+            var mask = Vector256.Create((byte)0x20);
+
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
@@ -124,6 +125,29 @@ internal static class U8Manipulation
             } while (offset <= lastvec);
         }
 
+        if (length >= (nuint)Vector64<byte>.Count)
+        {
+            var lower = Vector64.Create((byte)'a');
+            var upper = Vector64.Create((byte)'z');
+            var mask = Vector64.Create((byte)0x20);
+
+            var lastvec = length - (nuint)Vector64<byte>.Count;
+            do
+            {
+                var chunk = Vector64.LoadUnsafe(ref src.Add(offset));
+                var isLower = Vector64.GreaterThanOrEqual(chunk, lower);
+                var isUpper = Vector64.LessThanOrEqual(chunk, upper);
+                var isLetter = isLower & isUpper;
+                var changeCase = isLetter & mask;
+
+                chunk ^= changeCase;
+                chunk.StoreUnsafe(ref dst.Add(offset));
+                offset += (nuint)Vector64<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        // TODO: Pack the last few bytes and do bitwise case change
+        // Especially important if this is V256/512
         while (offset < length)
         {
             var b = src.Add(offset);
@@ -139,13 +163,13 @@ internal static class U8Manipulation
 
     internal static void ToLowerAscii(ref byte src, ref byte dst, nuint length)
     {
-        var lower = Vector256.Create((byte)'A');
-        var upper = Vector256.Create((byte)'Z');
-        var mask = Vector256.Create((byte)0x20);
-
         nuint offset = 0;
         if (length >= (nuint)Vector256<byte>.Count)
         {
+            var lower = Vector256.Create((byte)'A');
+            var upper = Vector256.Create((byte)'Z');
+            var mask = Vector256.Create((byte)0x20);
+
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
@@ -158,6 +182,27 @@ internal static class U8Manipulation
                 chunk |= changeCase;
                 chunk.StoreUnsafe(ref dst.Add(offset));
                 offset += (nuint)Vector256<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        if (length >= (nuint)Vector64<byte>.Count)
+        {
+            var lower = Vector64.Create((byte)'A');
+            var upper = Vector64.Create((byte)'Z');
+            var mask = Vector64.Create((byte)0x20);
+
+            var lastvec = length - (nuint)Vector64<byte>.Count;
+            do
+            {
+                var chunk = Vector64.LoadUnsafe(ref src.Add(offset));
+                var isLower = Vector64.GreaterThanOrEqual(chunk, lower);
+                var isUpper = Vector64.LessThanOrEqual(chunk, upper);
+                var isLetter = isLower & isUpper;
+                var changeCase = isLetter & mask;
+
+                chunk |= changeCase;
+                chunk.StoreUnsafe(ref dst.Add(offset));
+                offset += (nuint)Vector64<byte>.Count;
             } while (offset <= lastvec);
         }
 

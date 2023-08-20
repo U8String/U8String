@@ -1,3 +1,4 @@
+using System.Runtime.InteropServices;
 using System.Text;
 using U8Primitives.InteropServices;
 
@@ -403,14 +404,14 @@ public readonly partial struct U8String
         var source = this;
         if (source.Length > 0)
         {
-            var destination = new U8String(new byte[source.Length], 0, source.Length);
+            var destination = new byte[source.Length];
 
             U8Manipulation.ToLowerAscii(
                 ref source.UnsafeRef,
-                ref destination.UnsafeRef,
+                ref MemoryMarshal.GetArrayDataReference(destination),
                 (uint)source.Length);
 
-            return destination;
+            return new(destination, 0, source.Length);
         }
 
         return default;
@@ -421,14 +422,14 @@ public readonly partial struct U8String
         var source = this;
         if (source.Length > 0)
         {
-            var destination = new U8String(new byte[source.Length], 0, source.Length);
+            var destination = new byte[source.Length];
 
             U8Manipulation.ToUpperAscii(
                 ref source.UnsafeRef,
-                ref destination.UnsafeRef,
+                ref MemoryMarshal.GetArrayDataReference(destination),
                 (uint)source.Length);
 
-            return destination;
+            return new(destination, 0, source.Length);
         }
 
         return default;
