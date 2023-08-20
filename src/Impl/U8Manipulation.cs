@@ -125,7 +125,7 @@ internal static class U8Manipulation
             } while (offset <= lastvec);
         }
 
-        if (length >= (nuint)Vector64<byte>.Count)
+        if (Vector64.IsHardwareAccelerated && length >= (nuint)Vector64<byte>.Count)
         {
             var lower = Vector64.Create((byte)'a');
             var upper = Vector64.Create((byte)'z');
@@ -185,7 +185,7 @@ internal static class U8Manipulation
             } while (offset <= lastvec);
         }
 
-        if (length >= (nuint)Vector64<byte>.Count)
+        if (Vector64.IsHardwareAccelerated && length >= (nuint)Vector64<byte>.Count)
         {
             var lower = Vector64.Create((byte)'A');
             var upper = Vector64.Create((byte)'Z');
