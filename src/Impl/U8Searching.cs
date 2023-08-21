@@ -49,6 +49,26 @@ internal static class U8Searching
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool SplitContains<T>(
+        ReadOnlySpan<byte> value,
+        T separator,
+        ReadOnlySpan<byte> item)
+    {
+        return !Contains(item, separator) && Contains(value, item);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool SplitContains(
+        ReadOnlySpan<byte> value,
+        ReadOnlySpan<byte> separator,
+        ReadOnlySpan<byte> item)
+    {
+        // When the item we are looking for contains the separator, it means that it will
+        // never be found in the split since it would be pointing to the split boundary.
+        return !Contains(item, separator) && Contains(value, item);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int Count<T>(ReadOnlySpan<byte> value, T item)
     {
         Debug.Assert(item is byte or char or Rune or U8String or byte[]);
@@ -81,7 +101,8 @@ internal static class U8Searching
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int Count(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item)
     {
-        return item.Length is 1 ? value.Count(item.AsRef()) : value.Count(item);
+        //return item.Length is 1 ? value.Count(item.AsRef()) : value.Count(item);
+        return value.Count(item); // This already has internal check for Length is 1
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

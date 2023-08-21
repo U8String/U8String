@@ -1,3 +1,5 @@
+using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using U8Primitives.InteropServices;
@@ -359,9 +361,7 @@ public readonly partial struct U8String
         var source = this;
         var range = Ascii.Trim(source);
 
-        return !range.IsEmpty()
-            ? U8Marshal.Slice(source, range)
-            : default;
+        return U8Marshal.Slice(source, range);
     }
 
     /// <summary>
@@ -376,9 +376,7 @@ public readonly partial struct U8String
         var source = this;
         var range = Ascii.TrimStart(source);
 
-        return !range.IsEmpty()
-            ? U8Marshal.Slice(source, range)
-            : default;
+        return U8Marshal.Slice(source, range);
     }
 
     /// <summary>
@@ -393,9 +391,87 @@ public readonly partial struct U8String
         var source = this;
         var range = Ascii.TrimEnd(source);
 
-        return !range.IsEmpty()
-            ? U8Marshal.Slice(source, range)
-            : default;
+        return U8Marshal.Slice(source, range);
+    }
+
+    // TODO:
+    // - Complete impl. depends on porting of InlineArray-based array builder for letters
+    // which have different lengths in upper/lower case.
+    // - Remove/rename to ToLowerFallback or move to something like "FallbackInvariantComparer"
+    // clearly indicating it being slower and inferior alternative to proper implementations
+    // which call into ICU/NLS/Hybrid-provided case change exports.
+    public U8String ToLower()
+    {
+        var source = this;
+        if (source.Length > 0)
+        {
+            var lowercase = new byte[source.Length];
+            var destination = lowercase.AsSpan();
+
+            var result = Ascii.ToLower(source, destination, out var consumed);
+            if (result is OperationStatus.InvalidData)
+            {
+                foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
+                {
+                    var lower = Rune.ToLowerInvariant(rune);
+                    var (scalar, length) = U8Conversions.RuneToCodepoint(lower);
+                    if (consumed + 4 > destination.Length)
+                    {
+                        [DoesNotReturn]
+                        static void Unimpl()
+                        {
+                            throw new NotImplementedException();
+                        }
+
+                        Unimpl();
+                    }
+
+                    Unsafe.As<byte, uint>(ref destination.AsRef(consumed)) = scalar;
+                    consumed += length;
+                }
+            }
+
+            return new(lowercase, 0, consumed);
+        }
+
+        return default;
+    }
+
+    public U8String ToUpper()
+    {
+        var source = this;
+        if (source.Length > 0)
+        {
+            var uppercase = new byte[source.Length + 3];
+            var destination = uppercase.AsSpan();
+
+            var result = Ascii.ToUpper(source, destination, out var consumed);
+            if (result is OperationStatus.InvalidData)
+            {
+                foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
+                {
+                    var upper = Rune.ToUpperInvariant(rune);
+                    var (scalar, length) = U8Conversions.RuneToCodepoint(upper);
+                    if (consumed + 4 > destination.Length)
+                    {
+                        [DoesNotReturn]
+                        static void Unimpl()
+                        {
+                            throw new NotImplementedException();
+                        }
+
+                        Unimpl();
+                    }
+
+                    Unsafe.As<byte, uint>(ref destination.AsRef(consumed)) = scalar;
+                    consumed += length;
+                }
+            }
+
+            return new(uppercase, 0, consumed);
+        }
+
+        return default;
     }
 
     // TODO: docs

@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using U8Primitives.InteropServices;
 
@@ -53,7 +54,6 @@ public readonly partial struct U8String
     /// <remarks>
     /// The <see cref="U8String"/> will be created by encoding the <see cref="char"/>s as UTF-8.
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String(ReadOnlySpan<char> value)
     {
         if (value.Length > 0)
@@ -69,7 +69,6 @@ public readonly partial struct U8String
     /// <remarks>
     /// The <see cref="U8String"/> will be created by encoding the <see cref="string"/> as UTF-8.
     /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String(string? value)
     {
         if (!string.IsNullOrEmpty(value))
@@ -161,7 +160,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without validating
+    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
     /// if it is a valid UTF-8 sequence.
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
@@ -175,7 +174,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without validating
+    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
     /// if it is a valid UTF-8 sequence.
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
@@ -198,6 +197,36 @@ public readonly partial struct U8String
         }
 
         return default;
+    }
+
+    public static U8String Move([MaybeNull] ref byte[]? value)
+    {
+        var source = value;
+        value = null;
+        var result = default(U8String);
+
+        if (source?.Length > 0)
+        {
+            Validate(source);
+            result = new U8String(value, 0, source.Length);
+        }
+
+        return result;
+    }
+
+    public static U8String Move([MaybeNull] ref byte[]? value, int offset, int length)
+    {
+        var source = value;
+        value = null;
+        var result = default(U8String);
+
+        if (source != null)
+        {
+            Validate(source.AsSpan().Slice(offset, length));
+            result = new U8String(value, offset, length);
+        }
+
+        return result;
     }
 
     /// <summary>

@@ -70,6 +70,13 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref byte AsByteRef<T>(this ref T value)
+        where T : unmanaged
+    {
+        return ref Unsafe.As<T, byte>(ref value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T Add<T>(this ref T value, int offset)
         where T : struct
     {
@@ -133,6 +140,16 @@ internal static class U8Conversions
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (uint Scalar, int Length) RuneToCodepoint(Rune rune, [ConstantExpected] bool checkAscii = true)
+    {
+        var scalar = (uint)0;
+        var length = RuneToCodepoint(rune, ref scalar.AsByteRef(), checkAscii);
+
+        return (scalar, length);
+    }
+
+    // TODO: Remove other variants, rename to ReadRune?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int RuneToCodepoint(
         Rune rune,

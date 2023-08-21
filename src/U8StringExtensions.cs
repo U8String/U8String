@@ -1,5 +1,4 @@
 using System.Collections.Immutable;
-using System.Diagnostics.CodeAnalysis;
 using U8Primitives;
 
 namespace System;
@@ -94,8 +93,10 @@ public static class U8StringExtensions
         return u8str;
     }
 
-    // TODO: Move impls off U8StringExtensions and change strategy into
-    // FormatExact (for Ts of exact max length, with other calls optimized away) -> FormatOpporunistic -> FormatUnsized
+    // TODO:
+    // - Really, this should have been moved to U8Conversions or U8String long ago
+    // - Use inline-array based or sequence-like builder when FormatExact can fail or
+    // when calling into FormatUnsized
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool FormatExact<T>(
         ReadOnlySpan<char> format,

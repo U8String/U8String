@@ -5,26 +5,37 @@
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
 - [ ] Contribute IsAsciiWhitespace codegen shape to CoreLib, check out if Utf8Length can be ported too
 - [ ] Contribute optimized versions of span enumerators
+- [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
+    - [ ] Invariant
+    - [ ] Ordinal + .Uf8
+    - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
+    - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
+- [ ] Choose scope for 1.0.0 release - there is simply too much to do
+- [ ] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
+- [ ] Reconsider opportunistic null-termination on U8String itself rather than having to always re-allocate
+- [ ] Reconsider the choice to scan split sequences for the element count when separator is more than 1 byte long when materializing to `List<U8String>` - maybe it's a better trade-off to just keep growing the list allowing it to re-allocate? Might be fixed with InlineArray builder too
+- [ ] Port InlineArray-based array builder from neuecc's https://github.com/dotnet/runtime/pull/90459
 - [ ] Argument validation consistency:
     - [ ] Ensure .Contains, .IndexOf, .StartsWith, etc. can handle surrogates, specifically the Rune and char overloads
     - [ ] Ensure .Concat, .Join, .Split{First,Last} reject surrogates if those produce invalid UTF-8 (double-check)
 - [x] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64 Preliminary: yes, it is a bug, 40% perf is left on the table for ARM64. https://github.com/dotnet/runtime/issues/89924
+- [ ] Refactor internal extensions and helper methods into separate classes
 - [ ] Look into MakeSeparatorListVectorized impl. in CoreLib and adopt its approach if applicable
 - [ ] Refactor and generalize large chunks into separate utility classes
 - [x] Consider alternate eagerly-evaluated Split consisting of (byte[] source, U8Range[] offsets). Conclusion: no, but optimize CopyTo()
-- [ ] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs)
+- [x] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs) Solution: not worth, focus on `ROS<byte>` as much as possible with `NativeU8String` and `NativeU8String<TAlloc>`(?) as alternatives
 - [ ] Optimize `Split(...).ToArray()` path - right now it loses to string.Split quite a bit on short lengths
 - [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
 - [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
 - [x] Ensure `default(U8String)` is always valid
 - [ ] Implement packed count of codepoints (both charcount and match count)
 - [x] Decide how to guard (or declare UB) methods that accept chars against surrogates
-- [ ] Author exception types and messages for malformed UTF-8
+- [ ] Author exception types and messages for malformed UTF-8 (use FormatException or U8FormatException?)
 - [ ] Author documentation
 - [x] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
 - [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
 - [x] Optimize AsSpan() overloads
-- [ ] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do
+- [x] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do. Done: now non-ascii chars are simply ignored
 - [x] Debugger View and ToString
 - [ ] Complete Rune counting vectorization
 - [ ] Invalid sequences sanitization (specifically to remove invalid sequences, non-owned zero space glyps, etc. to interfere with popular utf8 text fingerprinting techniques)

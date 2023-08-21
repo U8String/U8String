@@ -2,21 +2,9 @@ using System.Text;
 
 namespace U8Primitives;
 
-public enum U8Comparison
-{
-    Ordinal = 0,
-    OrdinalIgnoreCase = 1,
-    AsciiIgnoreCase = 2,
-    NormalizationFormC = 3,
-    NormalizationFormD = 4,
-    NormalizationFormKC = 5,
-    NormalizationFormKD = 6,
-}
-
 public static class U8Comparer
 {
     public static OrdinalComparer Ordinal => default;
-    public static OrdinalIgnoreCaseComparer OrdinalIgnoreCase => default;
     public static AsciiIgnoreCaseComparer AsciiIgnoreCase => default;
 
     public readonly struct OrdinalComparer :
@@ -95,16 +83,6 @@ public static class U8Comparer
         }
     }
 
-    // TODO: Impl
-    public readonly struct OrdinalIgnoreCaseComparer // :
-        // IComparer<U8String>,
-        // IComparer<U8String?>,
-        // IEqualityComparer<U8String>,
-        // IEqualityComparer<U8String?>
-    {
-        public static OrdinalIgnoreCaseComparer Instance => default;
-    }
-
     public readonly struct AsciiIgnoreCaseComparer :
         IComparer<U8String>,
         IComparer<U8String?>,
@@ -119,11 +97,18 @@ public static class U8Comparer
 
         public bool Equals(U8String x, U8String y)
         {
-            var same = ReferenceEquals(x._value, y._value)
-                && x.Offset == y.Offset
-                && x.Length == y.Length;
+            if (x.Length == y.Length)
+            {
+                if (x.Offset == y.Offset && x.SourceEquals(y))
+                {
+                    return true;
+                }
 
-            return same || Ascii.EqualsIgnoreCase(x.UnsafeSpan, y.UnsafeSpan);
+                // Change to custom implementation which performs ordinal comparison of non-ascii bytes
+                return Ascii.EqualsIgnoreCase(x.UnsafeSpan, y.UnsafeSpan);
+            }
+
+            return false;
         }
 
         public bool Equals(U8String? x, U8String? y)

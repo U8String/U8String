@@ -1,5 +1,7 @@
 using System.Text;
 
+using U8Primitives.InteropServices;
+
 namespace U8Primitives;
 
 public readonly partial struct U8String
@@ -38,6 +40,21 @@ public readonly partial struct U8String
     public bool StartsWith(ReadOnlySpan<byte> value) => AsSpan().StartsWith(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool StartsWith<T>(U8String value, T comparer)
+        where T : IEqualityComparer<U8String>
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            return U8Marshal
+                .Slice(deref, 0, value.Length)
+                .Equals(value, comparer);
+        }
+
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(byte value)
     {
         var span = AsSpan();
@@ -59,6 +76,21 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(ReadOnlySpan<byte> value) => AsSpan().EndsWith(value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool EndsWith<T>(U8String value, T comparer)
+        where T : IEqualityComparer<U8String>
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            return U8Marshal
+                .Slice(deref, deref.Length - value.Length)
+                .Equals(value, comparer);
+        }
+
+        return false;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf(byte value) => AsSpan().IndexOf(value);

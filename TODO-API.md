@@ -15,32 +15,41 @@
 
 # TODO
 - [ ] Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really vulnerable to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.
+- [ ] Globalization
+    - [ ] Investigate if it's possible to access and reuse internal ICU/NLS/Hybrid bindings. Note: 1. CoreLib seems to rely on unchanging length case folding; 2. CoreLib scans if string is ASCII only (do better: scan and convert in place, then contribute this back) and then either calls out to ASCII or invariant logic (which uses platform-specific globalization provider)
+    - [ ] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers
+    - [ ] Map and allow explicit opt into using CultureInfo?
+    - [ ] Finish implementing AsciiIgnoreCase comparer
+    - [ ] Adopt the abstraction for .Contains, .IndexOf, etc.
 - [x] IList, IEnumerable
-- [ ] Comparison
+- [x] Comparison
     - [x] OrdinalComparer
-    - [ ] OrdinalIgnoreCaseComparer
-    - [ ] UnicodeNormalizedComparer (all normalization forms)
+    - [x] ~~AsciiIgnoreCaseComparer~~
+    - [x] ~~OrdinalIgnoreCaseComparer~~
+    - [x] ~~UnicodeNormalizedComparer (all normalization forms)~~
 - [x] Runes view (IEnumerable, or stateful IList?)
 - [x] Chars view (same as above)
+    - [ ] Optimize `U8Chars.Enumerator` and contribute to dotnet/runtime
 - [x] Lines view
 - [ ] Join
 - [ ] Splitting
     - [x] Split (byte, char, Rune)
     - [ ] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
+    - [ ] `SplitAny (byte, char, Rune, ROS, U8String, SearchValues<byte>, SearchValues<U8String>)`
+    - [ ] `Split<T>, SplitAny<T> where T : IEqualityComparer<U8String>`
     - [ ] parametrized Split collections (all variants)
     - [x] SplitFirst (byte, char, Rune, ROS, U8String)
     - [x] SplitLast (byte, char, Rune, ROS, U8String)
     - [x] ~~EnumerateSplit? Should regular split not be eagerly computed?~~
 - [ ] Comparison
-    - [ ] Contains (+case insensitive)
-    - [ ] StartsWith (+case insensitive)
-    - [ ] EndsWith (+case insensitive)
-    - [ ] IndexOf (+case insensitive)
-    - [ ] LastIndexOf (+case insensitive)
-    - [ ] Equals (+case insensitive)
-    - [ ] Equals UTF-16 (+case insensitive)
+    - [ ] Contains (+`T where T : IU8Comparer`?)
+    - [x] StartsWith
+    - [x] EndsWith
+    - [ ] IndexOf (+`T where T : IU8Comparer`?)
+    - [ ] LastIndexOf (+`T where T : IU8Comparer`?)
+    - [x] Equals
 - [ ] Manipulation
-    - [ ] Trim, TrimStart, TrimEnd
+    - [x] Trim, TrimStart, TrimEnd
     - [x] TrimAscii, TrimStartAscii, TrimEndAscii
     - [x] Replace(byte)
     - [ ] Replace(...)
@@ -63,10 +72,13 @@
     - [ ] System.Net.Http (HttpClient, HttpContent, etc.)
     - [ ] System.IO (File, anything else?)
     - [ ] Streams? Pipelines?
+        - [ ] U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.
 - [ ] Analyzers
     - [ ] Replace string literal comparison with a UTF-8 one
     - [ ] Replace direct for/foreach over a U8String with U8String.AsSpan()
     - [ ] Call .Lines instead of .Split((byte)'\n')
+    - [ ] Pass large structs by in or ref / ref readonly (autofixer: mutable splits and enumerations by ref / ref readonly, readonly - by in)
+    - [ ] Replace predicate on LINQ projection/reduction with direct Contains/Count/etc. call
 - [ ] Source Generators
     - [ ] Switch map trie generator to work around C# limitations
 - [ ] Interpolation? Accept CompositeFormat (or how is it called) as input?

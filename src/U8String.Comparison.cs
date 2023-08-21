@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Globalization;
 using System.IO.Hashing;
 using System.Runtime.InteropServices;
 
@@ -29,6 +30,12 @@ public readonly partial struct U8String
         }
 
         return 1;
+    }
+
+    public int CompareTo<T>(U8String other, T comparer)
+        where T : IComparer<U8String>
+    {
+        return comparer.Compare(this, other);
     }
 
     /// <summary>
@@ -87,21 +94,19 @@ public readonly partial struct U8String
         return AsSpan().SequenceEqual(other);
     }
 
-    public bool Equals(U8String other, U8Comparison comparisonType)
+    public bool Equals<T>(U8String other, T comparer)
+        where T : IEqualityComparer<U8String>
     {
-        return comparisonType switch
-        {
-            U8Comparison.Ordinal => U8Comparer.Ordinal.Equals(this, other),
-            U8Comparison.AsciiIgnoreCase => U8Comparer.AsciiIgnoreCase.Equals(this, other),
-            _ => ThrowHelpers.ArgumentOutOfRange<bool>(nameof(comparisonType)),
-        };
+        return comparer.Equals(this, other);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool SourceEquals(U8String other)
     {
         return ReferenceEquals(_value, other._value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool SourceEquals(ImmutableArray<byte> other)
     {
         var arr = ImmutableCollectionsMarshal.AsArray(other);
@@ -109,6 +114,7 @@ public readonly partial struct U8String
         return ReferenceEquals(_value, arr);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool SourceEquals(byte[] other)
     {
         return ReferenceEquals(_value, other);
@@ -122,7 +128,6 @@ public readonly partial struct U8String
     /// </remarks>
     public override int GetHashCode()
     {
-        // TODO: Consider non-default seed?
         var hash = XxHash3.HashToUInt64(this, U8Constants.DefaultHashSeed);
 
         return ((int)hash) ^ (int)(hash >> 32);

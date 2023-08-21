@@ -229,16 +229,6 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public ConfiguredU8Split<byte> Split(byte separator, U8SplitOptions options)
-    {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
-        return new(this, separator, options);
-    }
-
     public U8Split<char> Split(char separator)
     {
         if (char.IsSurrogate(separator))
@@ -249,28 +239,11 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public ConfiguredU8Split<char> Split(char separator, U8SplitOptions options)
-    {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
-        return new(this, separator, options);
-    }
-
     public U8Split<Rune> Split(Rune separator) => new(this, separator);
-
-    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
 
     public U8Split Split(U8String separator)
     {
-        return !separator.IsEmpty ? new(this, separator) : default;
-    }
-
-    public ConfiguredU8Split<U8String> Split(U8String separator, U8SplitOptions options)
-    {
-        return !separator.IsEmpty ? new(this, separator, options) : default;
+        return new(this, separator);
     }
 
     public U8Split<byte[]> Split(byte[] separator)
@@ -283,6 +256,43 @@ public readonly partial struct U8String
 
         var source = this;
         return (!source.IsEmpty && separator != null) ? new(source, separator) : default;
+    }
+
+    public U8RefSplit Split(ReadOnlySpan<byte> separator)
+    {
+        if (!IsValid(separator))
+        {
+            ThrowHelpers.InvalidSplit();
+        }
+
+        return new(this, separator);
+    }
+
+    public ConfiguredU8Split<byte> Split(byte separator, U8SplitOptions options)
+    {
+        if (!U8Info.IsAsciiByte(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(this, separator, options);
+    }
+
+    public ConfiguredU8Split<char> Split(char separator, U8SplitOptions options)
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(this, separator, options);
+    }
+
+    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
+
+    public ConfiguredU8Split<U8String> Split(U8String separator, U8SplitOptions options)
+    {
+        return new(this, separator, options);
     }
 
     public ConfiguredU8Split<byte[]> Split(byte[] separator, U8SplitOptions options)
@@ -381,10 +391,7 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
 
     public readonly bool Contains(U8String item)
     {
-        var separator = _separator;
-        var overlaps = item.Contains(separator);
-
-        return !overlaps && _value.Contains(item);
+        return U8Searching.SplitContains(_value, _separator, item);
     }
 
     public void CopyTo(U8String[] array, int index)
@@ -518,10 +525,7 @@ public struct U8Split<TSeparator> :
 
     public readonly bool Contains(U8String item)
     {
-        var separator = _separator;
-        var overlaps = U8Searching.Contains(item, separator);
-
-        return !overlaps && _value.Contains(item);
+        return U8Searching.SplitContains(_value, _separator, item);
     }
 
     public void CopyTo(U8String[] array, int index)
@@ -701,11 +705,145 @@ public readonly struct ConfiguredU8Split<TSeparator> :
     }
 }
 
-// // TODO:
-// public ref struct U8RefSplit
-// {
-//     readonly U8String _value;
-//     readonly ReadOnlySpan<byte> _separator;
-//     // Can't force JIT/ILC to emit proper layout here which is sad, and explicit layout ruins codegen
-//     // int _count;
-// }
+// Unfortunately, because ref structs cannot be used as generic type arguments,
+// we have to resort to duplicating the implementation and exposing methods manually.
+// What's worse, ConfiguredU8RefSplit has to be duplicated as well. Things we do for performance...
+// TODO: Implement this
+// TODO 2: Eventually, remove duplicate code once ref structs can be used as generics.
+public readonly ref struct U8RefSplit
+{
+    readonly U8String _value;
+    readonly ReadOnlySpan<byte> _separator;
+
+    public U8RefSplit(U8String value, ReadOnlySpan<byte> separator)
+    {
+        _value = value;
+        _separator = separator;
+    }
+
+    public bool Contains(U8String item)
+    {
+        return U8Searching.SplitContains(_value, _separator, item);
+    }
+
+    public void CopyTo(U8String[] array, int index)
+    {
+        var span = array.AsSpan()[index..];
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            var count = U8Searching.Count(
+                split._value.UnsafeSpan,
+                split._separator) + 1;
+            span = span[..count];
+
+            var i = 0;
+            ref var dst = ref span.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item;
+            }
+        }
+    }
+
+    public U8String[] ToArray()
+    {
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            var count = U8Searching.Count(
+                split._value.UnsafeSpan,
+                split._separator) + 1;
+
+            var result = new U8String[count];
+            var span = result.AsSpan();
+
+            var i = 0;
+            ref var dst = ref span.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item;
+            }
+
+            return result;
+        }
+
+        return Array.Empty<U8String>();
+    }
+
+    public List<U8String> ToList()
+    {
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            var count = U8Searching.Count(
+                split._value.UnsafeSpan,
+                split._separator) + 1;
+
+            var result = new List<U8String>(count);
+            CollectionsMarshal.SetCount(result, count);
+            var span = CollectionsMarshal.AsSpan(result);
+
+            var i = 0;
+            ref var dst = ref span.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item;
+            }
+
+            return result;
+        }
+
+        return new List<U8String>();
+    }
+
+    public readonly Enumerator GetEnumerator() => new(_value, _separator);
+
+    public ref struct Enumerator
+    {
+        readonly byte[]? _value;
+        readonly ReadOnlySpan<byte> _separator;
+        U8Range _current;
+        U8Range _remaining;
+
+        internal Enumerator(U8String value, ReadOnlySpan<byte> separator)
+        {
+            _value = value._value;
+            _separator = separator;
+            _remaining = value._inner;
+        }
+
+        public readonly U8String Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(_value, _current.Offset, _current.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            var remaining = _remaining;
+            if (remaining.Length > 0)
+            {
+                var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
+                var index = value.IndexOf(_separator);
+                if (index >= 0)
+                {
+                    _current = new(remaining.Offset, index);
+                    _remaining = new(
+                        remaining.Offset + index + _separator.Length,
+                        remaining.Length - index - _separator.Length);
+                }
+                else
+                {
+                    _current = remaining;
+                    _remaining = default;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+}
