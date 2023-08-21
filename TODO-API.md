@@ -55,6 +55,7 @@
     - [ ] Replace(...)
     - [ ] ReplaceLineEndings
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
+- [ ] TryCreate construction variants
 - [x] IsLatin/IsAlphanumeric?
 - [x] Construction aligned with collection literals initialization syntax and API shape (turned out to be quite useless)
 - [x] `IComparable<U8String>`, `IComparable<U8String?>`
