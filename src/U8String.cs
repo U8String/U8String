@@ -166,7 +166,15 @@ public readonly partial struct U8String :
     /// </summary>
     /// <param name="value">The <see cref="ReadOnlySpan{T}"/> to validate.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsValid(ReadOnlySpan<byte> value) => Utf8.IsValid(value);
+    public static bool IsValid(ReadOnlySpan<byte> value)
+    {
+        return value.Length switch
+        {
+            0 => true,
+            1 => U8Info.IsAsciiByte(value[0]),
+            _ => Utf8.IsValid(value)
+        };
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Validate(ReadOnlySpan<byte> value)
