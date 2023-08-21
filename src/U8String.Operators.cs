@@ -3,6 +3,17 @@ namespace U8Primitives;
 public readonly partial struct U8String
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String operator +(U8String left, byte right)
+    {
+        if (!U8Info.IsAsciiByte(right))
+        {
+            ThrowHelpers.InvalidUtf8();
+        }
+
+        return U8Manipulation.ConcatUnchecked(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String operator +(U8String left, U8String right) => Concat(left, right);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

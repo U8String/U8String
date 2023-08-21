@@ -5,13 +5,15 @@ namespace U8Primitives;
 
 internal static class U8Manipulation
 {
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, byte right)
     {
         var length = left.Length + 1;
         var value = new byte[length];
+        var span = value.AsSpan();
 
-        left.CopyTo(value);
-        value[length - 1] = right;
+        left.CopyTo(span);
+        span.AsRef(length - 1) = right;
 
         return new U8String(value, 0, length);
     }

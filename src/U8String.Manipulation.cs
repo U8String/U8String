@@ -17,13 +17,9 @@ public readonly partial struct U8String
         {
             if (!right.IsEmpty)
             {
-                var length = left.Length + right.Length;
-                var value = new byte[length];
-
-                left.UnsafeSpan.CopyTo(value);
-                right.UnsafeSpan.CopyTo(value.AsSpan(left.Length));
-
-                return new U8String(value, 0, length);
+                return U8Manipulation.ConcatUnchecked(
+                    left.UnsafeSpan,
+                    right.UnsafeSpan);
             }
 
             return left;
@@ -39,13 +35,7 @@ public readonly partial struct U8String
             Validate(right);
             if (!left.IsEmpty)
             {
-                var length = left.Length + right.Length;
-                var value = new byte[length];
-
-                left.UnsafeSpan.CopyTo(value);
-                right.CopyTo(value.AsSpan(left.Length));
-
-                return new U8String(value, 0, length);
+                return U8Manipulation.ConcatUnchecked(left.UnsafeSpan, right);
             }
 
             return new U8String(right, skipValidation: true);
@@ -61,13 +51,7 @@ public readonly partial struct U8String
             Validate(left);
             if (!right.IsEmpty)
             {
-                var length = left.Length + right.Length;
-                var value = new byte[length];
-
-                left.CopyTo(value);
-                right.UnsafeSpan.CopyTo(value.AsSpan(left.Length));
-
-                return new U8String(value, 0, length);
+                return U8Manipulation.ConcatUnchecked(left, right.UnsafeSpan);
             }
 
             return new U8String(left, skipValidation: true);
