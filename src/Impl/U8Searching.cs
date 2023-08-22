@@ -25,11 +25,11 @@ internal static class U8Searching
 
                 char c => char.IsAscii(c)
                     ? value.Contains((byte)c)
-                    : value.IndexOf(c.NonAsciiToUtf8()) >= 0, // TODO: Optimize char conversion?
+                    : value.IndexOf(U8Scalar.Create(c, checkAscii: false)) >= 0,
 
                 Rune r => r.IsAscii
                     ? value.Contains((byte)r.Value)
-                    : value.IndexOf(r.NonAsciiToUtf8()) >= 0, // TODO: Dedup and forward to the next overload?
+                    : value.IndexOf(U8Scalar.Create(r, checkAscii: false)) >= 0,
 
                 U8Scalar s => s.Size is 1
                     ? value.Contains(s.B0)
@@ -86,11 +86,11 @@ internal static class U8Searching
 
                 char c => char.IsAscii(c)
                     ? value.UnsafeSpan.Count((byte)c)
-                    : value.UnsafeSpan.Count(c.NonAsciiToUtf8()),
+                    : value.UnsafeSpan.Count(U8Scalar.Create(c, checkAscii: false)),
 
                 Rune r => r.IsAscii
                     ? value.UnsafeSpan.Count((byte)r.Value)
-                    : value.UnsafeSpan.Count(r.NonAsciiToUtf8()),
+                    : value.UnsafeSpan.Count(U8Scalar.Create(r, checkAscii: false)),
 
                 U8Scalar s => value.UnsafeSpan.Count(s),
 
@@ -148,11 +148,11 @@ internal static class U8Searching
 
                 char c => char.IsAscii(c)
                     ? value.IndexOf((byte)c)
-                    : value.IndexOf(c.NonAsciiToUtf8()),
+                    : value.IndexOf(U8Scalar.Create(c, checkAscii: false)),
 
                 Rune r => r.IsAscii
                     ? value.IndexOf((byte)r.Value)
-                    : value.IndexOf(r.NonAsciiToUtf8()),
+                    : value.IndexOf(U8Scalar.Create(r, checkAscii: false)),
 
                 U8Scalar s => s.Size is 1 ? value.IndexOf(s.B0) : value.IndexOf(s),
 

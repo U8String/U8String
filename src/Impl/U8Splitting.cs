@@ -12,9 +12,9 @@ internal static class U8Splitting
     // (or not, because it will cause separate single byte loads due to alignment, unless we bitwise unpack
     // but then bitwise unpack can and likely will break constant prop ruining codegen in a different way, can't win)
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ReadOnlySpan<byte> CreateSeparator(in uint value, byte length)
+    internal static ReadOnlySpan<byte> CreateSeparator(ref uint value, byte length)
     {
-        ref var ptr = ref Unsafe.As<uint, byte>(ref Unsafe.AsRef(in value));
+        ref var ptr = ref Unsafe.As<uint, byte>(ref value);
         return MemoryMarshal.CreateReadOnlySpan(ref ptr, length);
     }
 

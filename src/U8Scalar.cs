@@ -20,7 +20,7 @@ public struct U8Scalar
         {
             return self;
         }
-        
+
         var scalar = new U8Scalar();
         if (value is byte b)
         {
@@ -29,13 +29,19 @@ public struct U8Scalar
         }
         else if (value is char c)
         {
+            Debug.Assert(!char.IsSurrogate(c));
+
             if (checkAscii && c <= 0x7F)
             {
+                Debug.Assert(char.IsAscii(c));
+
                 scalar.Size = 1;
                 scalar.B0 = (byte)c;
             }
             else if (c <= 0x7FF)
             {
+                Debug.Assert(!char.IsAscii(c));
+
                 scalar.Size = 2;
                 scalar.B0 = (byte)(0xC0 | (c >> 6));
                 scalar.B1 = (byte)(0x80 | (c & 0x3F));
@@ -53,17 +59,24 @@ public struct U8Scalar
             var r = (uint)rune.Value;
             if (checkAscii && r <= 0x7F)
             {
+                Debug.Assert(rune.IsAscii);
+                Debug.Assert(rune.Utf8SequenceLength is 1);
+
                 scalar.Size = 1;
                 scalar.B0 = (byte)r;
             }
             else if (r <= 0x7FF)
             {
+                Debug.Assert(rune.Utf8SequenceLength is 2);
+
                 scalar.Size = 2;
                 scalar.B0 = (byte)((r + (0b110u << 11)) >> 6);
                 scalar.B1 = (byte)((r & 0x3Fu) + 0x80u);
             }
             else if (r <= 0xFFFF)
             {
+                Debug.Assert(rune.Utf8SequenceLength is 3);
+
                 scalar.Size = 3;
                 scalar.B0 = (byte)((r + (0b1110 << 16)) >> 12);
                 scalar.B1 = (byte)(((r & (0x3Fu << 6)) >> 6) + 0x80u);
@@ -71,6 +84,8 @@ public struct U8Scalar
             }
             else
             {
+                Debug.Assert(rune.Utf8SequenceLength is 4);
+
                 scalar.Size = 4;
                 scalar.B0 = (byte)((r + (0b11110 << 21)) >> 18);
                 scalar.B1 = (byte)(((r & (0x3Fu << 12)) >> 12) + 0x80u);
@@ -84,6 +99,12 @@ public struct U8Scalar
         }
 
         return scalar;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void StoreUnsafe<T>(ref T ptr) where T : unmanaged
+    {
+        Unsafe.As<T, uint>(ref ptr) = Unsafe.As<byte, uint>(ref B0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

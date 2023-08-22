@@ -35,11 +35,11 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitFirst(char separator) => char.IsAscii(separator)
         ? SplitFirst((byte)separator)
-        : SplitFirstUnchecked(separator.NonAsciiToUtf8());
+        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false));
 
     public U8SplitPair SplitFirst(Rune separator) => separator.IsAscii
         ? SplitFirst((byte)separator.Value)
-        : SplitFirstUnchecked(separator.NonAsciiToUtf8());
+        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false));
 
     public U8SplitPair SplitFirst(U8String separator)
     {
@@ -143,11 +143,11 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitLast(char separator) => char.IsAscii(separator)
         ? SplitLast((byte)separator)
-        : SplitLastUnchecked(separator.NonAsciiToUtf8());
+        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false));
 
     public U8SplitPair SplitLast(Rune separator) => separator.IsAscii
         ? SplitLast((byte)separator.Value)
-        : SplitLastUnchecked(separator.NonAsciiToUtf8());
+        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false));
 
     public U8SplitPair SplitLast(U8String separator)
     {

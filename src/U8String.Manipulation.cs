@@ -389,8 +389,9 @@ public readonly partial struct U8String
         var source = this;
         if (source.Length > 0)
         {
-            var lowercase = new byte[source.Length];
+            var lowercase = new byte[source.Length + 3];
             var destination = lowercase.AsSpan();
+            ref var dst = ref destination.AsRef();
 
             var result = Ascii.ToLower(source, destination, out var consumed);
             if (result is OperationStatus.InvalidData)
@@ -398,7 +399,7 @@ public readonly partial struct U8String
                 foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
                 {
                     var lower = Rune.ToLowerInvariant(rune);
-                    var (scalar, length) = U8Conversions.RuneToCodepoint(lower);
+                    var scalar = U8Scalar.Create(lower);
                     if (consumed + 4 > destination.Length)
                     {
                         [DoesNotReturn]
@@ -410,8 +411,8 @@ public readonly partial struct U8String
                         Unimpl();
                     }
 
-                    Unsafe.As<byte, uint>(ref destination.AsRef(consumed)) = scalar;
-                    consumed += length;
+                    scalar.StoreUnsafe(ref dst.Add(consumed));
+                    consumed += scalar.Size;
                 }
             }
 
@@ -428,6 +429,7 @@ public readonly partial struct U8String
         {
             var uppercase = new byte[source.Length + 3];
             var destination = uppercase.AsSpan();
+            ref var dst = ref destination.AsRef();
 
             var result = Ascii.ToUpper(source, destination, out var consumed);
             if (result is OperationStatus.InvalidData)
@@ -435,7 +437,7 @@ public readonly partial struct U8String
                 foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
                 {
                     var upper = Rune.ToUpperInvariant(rune);
-                    var (scalar, length) = U8Conversions.RuneToCodepoint(upper);
+                    var scalar = U8Scalar.Create(upper);
                     if (consumed + 4 > destination.Length)
                     {
                         [DoesNotReturn]
@@ -447,8 +449,8 @@ public readonly partial struct U8String
                         Unimpl();
                     }
 
-                    Unsafe.As<byte, uint>(ref destination.AsRef(consumed)) = scalar;
-                    consumed += length;
+                    scalar.StoreUnsafe(ref dst.Add(consumed));
+                    consumed += scalar.Size;
                 }
             }
 

@@ -30,7 +30,7 @@ public readonly partial struct U8String
 
     public bool StartsWith(Rune value)
     {
-        return AsSpan().StartsWith(value.ToUtf8(out _));
+        return AsSpan().StartsWith(U8Scalar.Create(value));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -68,7 +68,7 @@ public readonly partial struct U8String
 
     public bool EndsWith(Rune value)
     {
-        return AsSpan().EndsWith(value.ToUtf8(out _));
+        return AsSpan().EndsWith(U8Scalar.Create(value));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -97,7 +97,7 @@ public readonly partial struct U8String
 
     public int IndexOf(Rune value)
     {
-        return AsSpan().IndexOf(value.ToUtf8(out _));
+        return AsSpan().IndexOf(U8Scalar.Create(value));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -112,7 +112,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf(Rune value)
     {
-        return AsSpan().LastIndexOf(value.ToUtf8(out _));
+        return AsSpan().LastIndexOf(U8Scalar.Create(value));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
