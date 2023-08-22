@@ -35,11 +35,11 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitFirst(char separator) => char.IsAscii(separator)
         ? SplitFirst((byte)separator)
-        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false));
+        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
 
     public U8SplitPair SplitFirst(Rune separator) => separator.IsAscii
         ? SplitFirst((byte)separator.Value)
-        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false));
+        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
 
     public U8SplitPair SplitFirst(U8String separator)
     {
@@ -143,11 +143,11 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitLast(char separator) => char.IsAscii(separator)
         ? SplitLast((byte)separator)
-        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false));
+        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
 
     public U8SplitPair SplitLast(Rune separator) => separator.IsAscii
         ? SplitLast((byte)separator.Value)
-        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false));
+        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
 
     public U8SplitPair SplitLast(U8String separator)
     {
@@ -465,12 +465,6 @@ public struct U8Split<TSeparator> :
     readonly TSeparator _separator;
     int _count;
 
-    // TODO: validate/guard against unsupported generic instantiations
-    // e.g.: foreach (var e in default(U8Split<object[]>)) must throw or at least not produce UB
-    // Possible solution: just make the T -> byte[] cast throwing instead of reinterpret,
-    // paying the price for splitting on boxed byte sequences which are not U8String.
-    // This can be further mitigated by introducing proper U8RefSplit for splitting on
-    // UTF-8 literals and other sources of ROS<byte> without forcing reallocation due to lifetime constraints.
     internal U8Split(U8String value, TSeparator separator)
     {
         _value = value;

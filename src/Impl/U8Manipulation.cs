@@ -68,8 +68,8 @@ internal static class U8Manipulation
             ? Replace(source, (byte)oldValue, (byte)newValue)
             : ReplaceUnchecked(
                 source,
-                U8Scalar.Create(oldValue, checkAscii: false),
-                U8Scalar.Create(newValue, checkAscii: false));
+                U8Scalar.Create(oldValue, checkAscii: false).AsSpan(),
+                U8Scalar.Create(newValue, checkAscii: false).AsSpan());
     }
 
     internal static U8String Replace(U8String source, Rune oldValue, Rune newValue)
@@ -78,8 +78,8 @@ internal static class U8Manipulation
             ? Replace(source, (byte)oldValue.Value, (byte)newValue.Value)
             : ReplaceUnchecked(
                 source,
-                U8Scalar.Create(oldValue, checkAscii: false),
-                U8Scalar.Create(newValue, checkAscii: false));
+                U8Scalar.Create(oldValue, checkAscii: false).AsSpan(),
+                U8Scalar.Create(newValue, checkAscii: false).AsSpan());
     }
 
     // TODO: Input args contract - throw on empty old value?

@@ -10,6 +10,7 @@
     - [ ] Ordinal + .Uf8
     - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
+- [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
 - [ ] Choose scope for 1.0.0 release - there is simply too much to do
 - [ ] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
 - [ ] Reconsider opportunistic null-termination on U8String itself rather than having to always re-allocate

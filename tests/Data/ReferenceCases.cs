@@ -2,7 +2,7 @@ using System.Text;
 
 namespace U8Primitives.Tests;
 
-public static class TestData
+public static class ReferenceCases
 {
     public static readonly TestCase[] ValidStrings = new[]
     {

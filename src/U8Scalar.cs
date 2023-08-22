@@ -5,7 +5,7 @@ using System.Text;
 
 namespace U8Primitives;
 
-public struct U8Scalar
+internal struct U8Scalar
 {
     internal byte B0, B1, B2, B3;
     internal byte Size;
@@ -110,13 +110,6 @@ public struct U8Scalar
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ReadOnlySpan<byte> AsSpan()
     {
-        ref var src = ref this;
-        return MemoryMarshal.CreateReadOnlySpan(ref src.B0, src.Size);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlySpan<byte>(in U8Scalar scalar)
-    {
-        return scalar.AsSpan();
+        return MemoryMarshal.CreateReadOnlySpan(ref B0, Size);
     }
 }

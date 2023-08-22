@@ -1,10 +1,14 @@
 using System.Text;
-using System.Text.Unicode;
 
 namespace U8Primitives.Tests;
 
 public static class Constants
 {
+    public static IEnumerable<Rune> AllRunes => Enumerable
+        .Range(0, 0xD7FF + 1).Concat(Enumerable
+        .Range(0xE000, 0x10FFFF - 0xE000 + 1))
+        .Select(i => new Rune(i));
+
     public static readonly byte[] AsciiBytes =
         Enumerable.Range(0b0000_0000, 128).Select(i => (byte)i).ToArray();
 
@@ -88,7 +92,7 @@ public static class Constants
     // Covers all non-whitespace runes
     public static IEnumerable<Rune> NonWhitespaceRunes => Enumerable
         .Range(0, 0xD7FF + 1).Concat(Enumerable
-        .Range(0xE000, (0x10FFFF - 0xE000) + 1))
+        .Range(0xE000, 0x10FFFF - 0xE000 + 1))
         .Select(i => new Rune(i))
         .Except(WhitespaceRunes);
 }

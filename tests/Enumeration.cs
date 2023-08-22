@@ -9,7 +9,7 @@ public class Enumeration
 {
     // TODO: Refactor?
     public static IEnumerable<object[]> ValidStrings =>
-        TestData.ValidStrings.Select(c => new object[] { c });
+        ReferenceCases.ValidStrings.Select(c => new object[] { c });
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
@@ -50,8 +50,7 @@ public class Enumeration
         Assert.Equal(chars.Length, u8str.Chars.Count());
     }
 
-    [Theory(Skip = "This is absolutely broken because you can't transcode a single char from a surrogate pair to UTF-8." +
-                   "Skipping for now until I decide on the best way to handle this without making suboptimal tradeoffs.")]
+    [Theory]
     [MemberData(nameof(ValidStrings))]
     public void U8Chars_ContainsReturnsCorrectValue(TestCase testCase)
     {
@@ -61,10 +60,18 @@ public class Enumeration
 
         foreach (var c in chars)
         {
-            // Regular evaluation
-            Assert.True(u8chars.Contains(c));
-            // Boxed evaluation
-            Assert.Contains(c, u8chars);
+            if (!char.IsSurrogate(c))
+            {
+                // Regular evaluation
+                Assert.True(u8chars.Contains(c));
+                // Boxed evaluation
+                Assert.True(((IEnumerable<char>)u8chars).Contains(c));
+            }
+            else
+            {
+                Assert.False(u8chars.Contains(c));
+                Assert.False(((IEnumerable<char>)u8chars).Contains(c));
+            }
         }
     }
 
