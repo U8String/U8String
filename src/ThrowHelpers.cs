@@ -48,4 +48,20 @@ internal static class ThrowHelpers
     {
         throw new ArgumentOutOfRangeException(paramName);
     }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static void Unreachable(
+        [CallerFilePath] string? path = null,
+        [CallerLineNumber] int line = 0)
+    {
+        throw new InvalidOperationException($"Unreachable code reached at {path}:{line}.");
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static T Unreachable<T>(
+        [CallerFilePath] string? path = null,
+        [CallerLineNumber] int line = 0)
+    {
+        throw new InvalidOperationException($"Unreachable code reached at {path}:{line}.");
+    }
 }

@@ -32,7 +32,7 @@ internal static class U8Splitting
         ref var ptr = ref ranges.AsRef();
         while (true)
         {
-            var next = U8Searching.IndexOf(span.SliceUnsafe(prev), scalar);
+            var next = span.SliceUnsafe(prev).IndexOf(scalar.AsSpan());
             if (next < 0)
             {
                 break;

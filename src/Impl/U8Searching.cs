@@ -41,7 +41,7 @@ internal static class U8Searching
 
                 U8String str => value.IndexOf(str) >= 0,
 
-                _ => false
+                _ => ThrowHelpers.Unreachable<bool>()
             };
         }
         else
@@ -104,7 +104,7 @@ internal static class U8Searching
 
                 U8String str => value.UnsafeSpan.Count(str),
 
-                _ => 0
+                _ => ThrowHelpers.Unreachable<int>()
             };
         }
         else
@@ -147,35 +147,47 @@ internal static class U8Searching
     /// Contract: when T is char, it must never be a surrogate.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(ReadOnlySpan<byte> value, T item)
+    internal static int IndexOf<T>(ReadOnlySpan<byte> value, T item, out int size)
+        where T : struct
     {
         Debug.Assert(item is not char i || !char.IsSurrogate(i));
-        Debug.Assert(item is byte or char or Rune or U8String or byte[] or U8Scalar);
+        Debug.Assert(item is byte or char or Rune or U8String);
 
-        if (typeof(T).IsValueType)
+        switch (item)
         {
-            return item switch
-            {
-                byte b => value.IndexOf(b),
+            case byte b:
+                size = 1;
+                return value.IndexOf(b);
 
-                char c => char.IsAscii(c)
-                    ? value.IndexOf((byte)c)
-                    : value.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()),
+            case char c:
+                if (char.IsAscii(c))
+                {
+                    size = 1;
+                    return value.IndexOf((byte)c);
+                }
 
-                Rune r => r.IsAscii
-                    ? value.IndexOf((byte)r.Value)
-                    : value.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()),
+                var scalar = U8Scalar.Create(c, checkAscii: false);
+                size = scalar.Size;
+                return value.IndexOf(scalar.AsSpan());
 
-                U8Scalar s => s.Size is 1 ? value.IndexOf(s.B0) : value.IndexOf(s.AsSpan()),
+            case Rune r:
+                if (r.IsAscii)
+                {
+                    size = 1;
+                    return value.IndexOf((byte)r.Value);
+                }
 
-                U8String str => value.IndexOf(str.UnsafeSpan),
+                var rune = U8Scalar.Create(r, checkAscii: false);
+                size = rune.Size;
+                return value.IndexOf(rune.AsSpan());
 
-                _ => -1
-            };
-        }
-        else
-        {
-            return value.IndexOf(Unsafe.As<T, byte[]>(ref item));
+            case U8String str:
+                size = str.Length;
+                return value.IndexOf(str);
+
+            default:
+                size = 0;
+                return ThrowHelpers.Unreachable<int>();
         }
     }
 }
