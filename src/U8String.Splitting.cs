@@ -35,11 +35,11 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitFirst(char separator) => char.IsAscii(separator)
         ? SplitFirst((byte)separator)
-        : SplitFirstUnchecked(separator.NonAsciiToUtf8(out _));
+        : SplitFirstUnchecked(separator.NonAsciiToUtf8());
 
     public U8SplitPair SplitFirst(Rune separator) => separator.IsAscii
         ? SplitFirst((byte)separator.Value)
-        : SplitFirstUnchecked(separator.NonAsciiToUtf8(out _));
+        : SplitFirstUnchecked(separator.NonAsciiToUtf8());
 
     public U8SplitPair SplitFirst(U8String separator)
     {
@@ -143,11 +143,11 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitLast(char separator) => char.IsAscii(separator)
         ? SplitLast((byte)separator)
-        : SplitLastUnchecked(separator.NonAsciiToUtf8(out _));
+        : SplitLastUnchecked(separator.NonAsciiToUtf8());
 
     public U8SplitPair SplitLast(Rune separator) => separator.IsAscii
         ? SplitLast((byte)separator.Value)
-        : SplitLastUnchecked(separator.NonAsciiToUtf8(out _));
+        : SplitLastUnchecked(separator.NonAsciiToUtf8());
 
     public U8SplitPair SplitLast(U8String separator)
     {
@@ -246,18 +246,6 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public U8Split<byte[]> Split(byte[] separator)
-    {
-        if (!IsValid(separator))
-        {
-            // TODO: EH UX
-            ThrowHelpers.InvalidSplit();
-        }
-
-        var source = this;
-        return (!source.IsEmpty && separator != null) ? new(source, separator) : default;
-    }
-
     public U8RefSplit Split(ReadOnlySpan<byte> separator)
     {
         if (!IsValid(separator))
@@ -290,21 +278,9 @@ public readonly partial struct U8String
 
     public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
 
-    public ConfiguredU8Split<U8String> Split(U8String separator, U8SplitOptions options)
+    public ConfiguredU8Split Split(U8String separator, U8SplitOptions options)
     {
         return new(this, separator, options);
-    }
-
-    public ConfiguredU8Split<byte[]> Split(byte[] separator, U8SplitOptions options)
-    {
-        if (!IsValid(separator))
-        {
-            // TODO: EH UX
-            ThrowHelpers.InvalidSplit();
-        }
-
-        var source = this;
-        return (!source.IsEmpty && separator != null) ? new(source, separator, options) : default;
     }
 }
 
@@ -360,7 +336,7 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
     readonly U8String _separator;
     int _count;
 
-    internal U8Split(U8String value, U8String separator)
+    public U8Split(U8String value, U8String separator)
     {
         _value = value;
         _separator = separator;
@@ -448,7 +424,7 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
             {
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
                 var separator = _separator;
-                var index = value.IndexOf(separator.UnsafeSpan);
+                var index = value.IndexOf(separator);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);
@@ -483,9 +459,10 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
 public struct U8Split<TSeparator> :
     ICollection<U8String>,
     IU8Enumerable<U8Split<TSeparator>.Enumerator>
+        where TSeparator : unmanaged
 {
     readonly U8String _value;
-    readonly TSeparator? _separator;
+    readonly TSeparator _separator;
     int _count;
 
     // TODO: validate/guard against unsupported generic instantiations
@@ -494,7 +471,7 @@ public struct U8Split<TSeparator> :
     // paying the price for splitting on boxed byte sequences which are not U8String.
     // This can be further mitigated by introducing proper U8RefSplit for splitting on
     // UTF-8 literals and other sources of ROS<byte> without forcing reallocation due to lifetime constraints.
-    internal U8Split(U8String value, TSeparator? separator)
+    internal U8Split(U8String value, TSeparator separator)
     {
         _value = value;
         _separator = separator;
@@ -516,7 +493,7 @@ public struct U8Split<TSeparator> :
             // TODO: Should we break consistency and not count the very last segment if it is empty?
             return _count = Count(_value, _separator) + 1;
 
-            static int Count(ReadOnlySpan<byte> value, TSeparator? separator)
+            static int Count(U8String value, TSeparator separator)
             {
                 return U8Searching.Count(value, separator);
             }
@@ -561,16 +538,14 @@ public struct U8Split<TSeparator> :
     public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;
-        readonly TSeparator? _separator;
-        readonly U8Size _separatorSize;
+        readonly TSeparator _separator;
         U8Range _current;
         U8Range _remaining;
 
-        internal Enumerator(U8String value, TSeparator? separator)
+        internal Enumerator(U8String value, TSeparator separator)
         {
             _value = value._value;
             _separator = separator;
-            _separatorSize = U8Info.GetSize(separator);
             _remaining = value._inner;
         }
 
@@ -582,15 +557,15 @@ public struct U8Split<TSeparator> :
             var remaining = _remaining;
             if (remaining.Length > 0)
             {
-                var size = _separatorSize;
+                var scalar = U8Scalar.Create(_separator);
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var index = U8Searching.IndexOf(value, _separator, size);
+                var index = U8Searching.IndexOf(value, scalar);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);
                     _remaining = new(
-                        remaining.Offset + index + (int)size,
-                        remaining.Length - index - (int)size);
+                        remaining.Offset + index + scalar.Size,
+                        remaining.Length - index - scalar.Size);
                 }
                 else
                 {
@@ -614,14 +589,14 @@ public struct U8Split<TSeparator> :
     readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
-public readonly struct ConfiguredU8Split<TSeparator> :
-    IU8Enumerable<ConfiguredU8Split<TSeparator>.Enumerator>
+public readonly struct ConfiguredU8Split :
+    IU8Enumerable<ConfiguredU8Split.Enumerator>
 {
     readonly U8String _value;
-    readonly TSeparator? _separator;
+    readonly U8String _separator;
     readonly U8SplitOptions _options;
 
-    internal ConfiguredU8Split(U8String value, TSeparator? separator, U8SplitOptions options)
+    public ConfiguredU8Split(U8String value, U8String separator, U8SplitOptions options)
     {
         _value = value;
         _separator = separator;
@@ -636,17 +611,15 @@ public readonly struct ConfiguredU8Split<TSeparator> :
     public struct Enumerator : IU8Enumerator
     {
         readonly byte[]? _value;
-        readonly TSeparator? _separator;
-        readonly U8Size _separatorSize;
+        readonly U8String _separator;
         readonly U8SplitOptions _options;
         U8Range _current;
         U8Range _remaining;
 
-        internal Enumerator(U8String value, TSeparator? separator, U8SplitOptions options)
+        public Enumerator(U8String value, U8String separator, U8SplitOptions options)
         {
             _value = value._value;
             _separator = separator;
-            _separatorSize = U8Info.GetSize(separator);
             _options = options;
             _remaining = value._inner;
         }
@@ -661,17 +634,107 @@ public readonly struct ConfiguredU8Split<TSeparator> :
             var remaining = _remaining;
             if (remaining.Length > 0)
             {
-                var size = _separatorSize;
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var index = U8Searching.IndexOf(value, _separator, size);
+                var separator = _separator;
+                var index = value.IndexOf(separator);
                 if (index >= 0)
                 {
                     _current = (_options & U8SplitOptions.Trim) != U8SplitOptions.Trim
                         ? new(remaining.Offset, index)
                         : TrimEntry(_value!, new(remaining.Offset, index));
                     _remaining = new(
-                        remaining.Offset + index + (int)size,
-                        remaining.Length - index - (int)size);
+                        remaining.Offset + index + separator.Length,
+                        remaining.Length - index - separator.Length);
+                }
+                else
+                {
+                    _current = (_options & U8SplitOptions.Trim) != U8SplitOptions.Trim
+                        ? remaining
+                        : TrimEntry(_value!, remaining);
+                    _remaining = default;
+                }
+
+                if ((_options & U8SplitOptions.RemoveEmpty) is U8SplitOptions.RemoveEmpty
+                    && _current.Length is 0)
+                {
+                    goto Next;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        private static U8Range TrimEntry(byte[] value, U8Range range)
+        {
+            // This could have been done better but works for now.
+            return new U8String(value, range).Trim()._inner;
+        }
+
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
+    }
+}
+
+public readonly struct ConfiguredU8Split<TSeparator> :
+    IU8Enumerable<ConfiguredU8Split<TSeparator>.Enumerator>
+        where TSeparator : unmanaged
+{
+    readonly U8String _value;
+    readonly TSeparator _separator;
+    readonly U8SplitOptions _options;
+
+    internal ConfiguredU8Split(U8String value, TSeparator separator, U8SplitOptions options)
+    {
+        _value = value;
+        _separator = separator;
+        _options = options;
+    }
+
+    public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
+
+    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public struct Enumerator : IU8Enumerator
+    {
+        readonly byte[]? _value;
+        readonly TSeparator _separator;
+        readonly U8SplitOptions _options;
+        U8Range _current;
+        U8Range _remaining;
+
+        internal Enumerator(U8String value, TSeparator separator, U8SplitOptions options)
+        {
+            _value = value._value;
+            _separator = separator;
+            _options = options;
+            _remaining = value._inner;
+        }
+
+        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+
+        // TODO: Not most efficient but it works for now
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+        Next:
+            var remaining = _remaining;
+            if (remaining.Length > 0)
+            {
+                var scalar = U8Scalar.Create(_separator);
+                var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
+                var index = U8Searching.IndexOf(value, scalar);
+                if (index >= 0)
+                {
+                    _current = (_options & U8SplitOptions.Trim) != U8SplitOptions.Trim
+                        ? new(remaining.Offset, index)
+                        : TrimEntry(_value!, new(remaining.Offset, index));
+                    _remaining = new(
+                        remaining.Offset + index + scalar.Size,
+                        remaining.Length - index - scalar.Size);
                 }
                 else
                 {

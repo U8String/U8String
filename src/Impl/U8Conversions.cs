@@ -270,75 +270,63 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static unsafe ReadOnlySpan<byte> NonAsciiToUtf8(
-        this Rune value,
-        [UnscopedRef] out uint _)
+    internal static unsafe U8Scalar NonAsciiToUtf8(this Rune value)
     {
         Debug.Assert(!value.IsAscii);
 
-        _ = default;
-        int length;
-        var bytes = _.AsBytes();
+        var rune = (uint)value.Value;
+        var scalar = new U8Scalar();
 
-        fixed (byte* ptr = &bytes.AsRef())
+        // And I pray: unlimited optimization works
+        // (dear compiler please fold this)
+        if (rune <= 0x7FFu)
         {
-            var scalar = (uint)value.Value;
-
-            // And I pray: unlimited optimization works
-            // (dear compiler please fold this)
-            if (scalar <= 0x7FFu)
-            {
-                ptr[0] = (byte)((scalar + (0b110u << 11)) >> 6);
-                ptr[1] = (byte)((scalar & 0x3Fu) + 0x80u);
-                length = 2;
-            }
-            else if (scalar <= 0xFFFFu)
-            {
-                ptr[0] = (byte)((scalar + (0b1110 << 16)) >> 12);
-                ptr[1] = (byte)(((scalar & (0x3Fu << 6)) >> 6) + 0x80u);
-                ptr[2] = (byte)((scalar & 0x3Fu) + 0x80u);
-                length = 3;
-            }
-            else
-            {
-                ptr[0] = (byte)((scalar + (0b11110 << 21)) >> 18);
-                ptr[1] = (byte)(((scalar & (0x3Fu << 12)) >> 12) + 0x80u);
-                ptr[2] = (byte)(((scalar & (0x3Fu << 6)) >> 6) + 0x80u);
-                ptr[3] = (byte)((scalar & 0x3Fu) + 0x80u);
-                length = 4;
-            }
-
-            return bytes.SliceUnsafe(0, length);
+            scalar.Size = 2;
+            scalar.B0 = (byte)((rune + (0b110u << 11)) >> 6);
+            scalar.B1 = (byte)((rune & 0x3Fu) + 0x80u);
         }
+        else if (rune <= 0xFFFFu)
+        {
+            scalar.Size = 3;
+            scalar.B0 = (byte)((rune + (0b1110 << 16)) >> 12);
+            scalar.B1 = (byte)(((rune & (0x3Fu << 6)) >> 6) + 0x80u);
+            scalar.B2 = (byte)((rune & 0x3Fu) + 0x80u);
+        }
+        else
+        {
+            scalar.Size = 4;
+            scalar.B0 = (byte)((rune + (0b11110 << 21)) >> 18);
+            scalar.B1 = (byte)(((rune & (0x3Fu << 12)) >> 12) + 0x80u);
+            scalar.B2 = (byte)(((rune & (0x3Fu << 6)) >> 6) + 0x80u);
+            scalar.B3 = (byte)((rune & 0x3Fu) + 0x80u);
+        }
+
+        return scalar;
     }
 
+    // TODO: Rewrtite to U8Scalar
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static unsafe ReadOnlySpan<byte> NonAsciiToUtf8(this char value, [UnscopedRef] out uint _)
+    internal static U8Scalar NonAsciiToUtf8(this char value)
     {
         Debug.Assert(!char.IsAscii(value));
         Debug.Assert(!char.IsSurrogate(value));
 
-        _ = default;
-        int length;
-        var bytes = _.AsBytes();
+        var scalar = new U8Scalar();
 
-        fixed (byte* ptr = &bytes.AsRef())
+        if (value <= 0x7FF)
         {
-            if (value <= 0x7FF)
-            {
-                ptr[0] = (byte)(0xC0 | (value >> 6));
-                ptr[1] = (byte)(0x80 | (value & 0x3F));
-                length = 2;
-            }
-            else
-            {
-                ptr[0] = (byte)(0xE0 | (value >> 12));
-                ptr[1] = (byte)(0x80 | ((value >> 6) & 0x3F));
-                ptr[2] = (byte)(0x80 | (value & 0x3F));
-                length = 3;
-            }
+            scalar.Size = 2;
+            scalar.B0 = (byte)(0xC0 | (value >> 6));
+            scalar.B1 = (byte)(0x80 | (value & 0x3F));
+        }
+        else
+        {
+            scalar.Size = 3;
+            scalar.B0 = (byte)(0xE0 | (value >> 12));
+            scalar.B1 = (byte)(0x80 | ((value >> 6) & 0x3F));
+            scalar.B2 = (byte)(0x80 | (value & 0x3F));
         }
 
-        return bytes.SliceUnsafe(0, length);
+        return scalar;
     }
 }

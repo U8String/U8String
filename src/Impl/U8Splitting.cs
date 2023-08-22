@@ -21,9 +21,9 @@ internal static class U8Splitting
     // TODO: Slower than string.Split, either remove or find a way to make this useful
     internal static int SplitRanges<T>(
         // Change this to Span<int> indices if I ever decide to pursue this variant
-        this U8String source, T separator, Span<U8Range> ranges)
+        this U8String source, T separator, Span<U8Range> ranges) where T : unmanaged
     {
-        var size = U8Info.GetSize(separator);
+        var scalar = U8Scalar.Create(separator);
         var span = source.UnsafeSpan;
         var offset = source.Offset;
         var count = 0;
@@ -32,14 +32,14 @@ internal static class U8Splitting
         ref var ptr = ref ranges.AsRef();
         while (true)
         {
-            var next = U8Searching.IndexOf(span.SliceUnsafe(prev), separator, size);
+            var next = U8Searching.IndexOf(span.SliceUnsafe(prev), scalar);
             if (next < 0)
             {
                 break;
             }
 
             ptr.Add(count++) = new(prev + offset, next);
-            prev += next + (int)size;
+            prev += next + scalar.Size;
         }
 
         ptr.Add(count++) = new(prev + offset, span.Length - prev);
