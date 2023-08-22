@@ -8,13 +8,6 @@ namespace U8Primitives;
 internal static class U8Conversions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool IsEmpty(this Range value)
-    {
-        var (start, end) = Unsafe.As<Range, (int, int)>(ref value);
-        return start == end;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<byte> AsBytes<T>([UnscopedRef] this ref T value)
         where T : unmanaged
     {
@@ -22,20 +15,7 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ReadOnlySpan<byte> AsReadOnlyBytes([UnscopedRef] this ref uint value)
-    {
-        return new ReadOnlySpan<uint>(ref value).AsBytes();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<byte> AsBytes<T>(this Span<T> value)
-        where T : unmanaged
-    {
-        return MemoryMarshal.Cast<T, byte>(value);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ReadOnlySpan<byte> AsBytes<T>(this ReadOnlySpan<T> value)
         where T : unmanaged
     {
         return MemoryMarshal.Cast<T, byte>(value);
@@ -67,13 +47,6 @@ internal static class U8Conversions
         where T : unmanaged
     {
         return ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ref byte AsByteRef<T>(this ref T value)
-        where T : unmanaged
-    {
-        return ref Unsafe.As<T, byte>(ref value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
