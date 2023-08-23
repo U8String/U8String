@@ -6,7 +6,6 @@ namespace U8Primitives;
 
 internal static class U8Manipulation
 {
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, byte right)
     {
         var length = left.Length + 1;
@@ -150,7 +149,6 @@ internal static class U8Manipulation
     /// <para>- <paramref name="newValue"/> is not empty</para>
     /// <para>- <paramref name="oldValue"/> and <paramref name="newValue"/> lengths are not 1</para>
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static U8String ReplaceCore(
         U8String source,
         ReadOnlySpan<byte> oldValue,
