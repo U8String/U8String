@@ -84,8 +84,8 @@ public static class U8StringExtensions
     {
         if (value is not U8String u8str)
         {
-            var length = U8Constants.GetFormattedLength<T>();
-            return FormatExact(format, value, provider, length, out var result)
+            var length = U8Constants.GetFormattedLength(value);
+            return FormatPresized(format, value, provider, length, out var result)
                 ? result
                 : FormatUnsized(format, value, provider);
         }
@@ -98,7 +98,7 @@ public static class U8StringExtensions
     // - Use inline-array based or sequence-like builder when FormatExact can fail or
     // when calling into FormatUnsized
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static bool FormatExact<T>(
+    static bool FormatPresized<T>(
         ReadOnlySpan<char> format,
         T value,
         IFormatProvider? provider,
@@ -121,15 +121,13 @@ public static class U8StringExtensions
             where T : IUtf8SpanFormattable
     {
         // TODO: Additional length-resolving heuristics or a stack-allocated into arraypool buffer
+        int length;
         var buffer = new byte[64];
-    Retry:
-        if (value.TryFormat(buffer, out var length, format, provider))
+        while (!value.TryFormat(buffer, out length, format, provider))
         {
-            return new U8String(buffer, 0, length);
+            buffer = new byte[buffer.Length * 2];
         }
 
-        // Limits???? Check what CoreLib does
-        buffer = new byte[buffer.Length * 2];
-        goto Retry;
+        return new(buffer, 0, length);
     }
 }
