@@ -17,37 +17,27 @@ internal static class U8Searching
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool Contains<T>(ReadOnlySpan<byte> value, T item)
+        where T : struct
     {
-        Debug.Assert(item is byte or char or Rune or U8String or byte[] or U8Scalar);
+        Debug.Assert(item is byte or char or Rune or U8String);
 
-        if (typeof(T).IsValueType)
+        return item switch
         {
-            return item switch
-            {
-                byte b => value.Contains(b),
+            byte b => value.Contains(b),
 
-                char c => char.IsAscii(c)
-                    ? value.Contains((byte)c)
-                    : !char.IsSurrogate(c)
-                        && value.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
+            char c => char.IsAscii(c)
+                ? value.Contains((byte)c)
+                : !char.IsSurrogate(c)
+                    && value.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
 
-                Rune r => r.IsAscii
-                    ? value.Contains((byte)r.Value)
-                    : value.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()) >= 0,
+            Rune r => r.IsAscii
+                ? value.Contains((byte)r.Value)
+                : value.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()) >= 0,
 
-                U8Scalar s => s.Size is 1
-                    ? value.Contains(s.B0)
-                    : value.IndexOf(s.AsSpan()) >= 0,
+            U8String str => value.IndexOf(str) >= 0,
 
-                U8String str => value.IndexOf(str) >= 0,
-
-                _ => ThrowHelpers.Unreachable<bool>()
-            };
-        }
-        else
-        {
-            return value.IndexOf(Unsafe.As<T, byte[]>(ref item)) >= 0;
-        }
+            _ => ThrowHelpers.Unreachable<bool>()
+        };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -60,7 +50,7 @@ internal static class U8Searching
     internal static bool SplitContains<T>(
         ReadOnlySpan<byte> value,
         T separator,
-        ReadOnlySpan<byte> item)
+        ReadOnlySpan<byte> item) where T : struct
     {
         return !Contains(item, separator) && Contains(value, item);
     }
@@ -81,36 +71,28 @@ internal static class U8Searching
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int Count<T>(U8String value, T item)
+        where T : struct
     {
         Debug.Assert(!value.IsEmpty);
         Debug.Assert(item is not char i || !char.IsSurrogate(i));
-        Debug.Assert(item is byte or char or Rune or U8String or byte[] or U8Scalar);
+        Debug.Assert(item is byte or char or Rune or U8String);
 
-        if (typeof(T).IsValueType)
+        return item switch
         {
-            return item switch
-            {
-                byte b => value.UnsafeSpan.Count(b),
+            byte b => value.UnsafeSpan.Count(b),
 
-                char c => char.IsAscii(c)
-                    ? value.UnsafeSpan.Count((byte)c)
-                    : value.UnsafeSpan.Count(U8Scalar.Create(c, checkAscii: false).AsSpan()),
+            char c => char.IsAscii(c)
+                ? value.UnsafeSpan.Count((byte)c)
+                : value.UnsafeSpan.Count(U8Scalar.Create(c, checkAscii: false).AsSpan()),
 
-                Rune r => r.IsAscii
-                    ? value.UnsafeSpan.Count((byte)r.Value)
-                    : value.UnsafeSpan.Count(U8Scalar.Create(r, checkAscii: false).AsSpan()),
+            Rune r => r.IsAscii
+                ? value.UnsafeSpan.Count((byte)r.Value)
+                : value.UnsafeSpan.Count(U8Scalar.Create(r, checkAscii: false).AsSpan()),
 
-                U8Scalar s => value.UnsafeSpan.Count(s.AsSpan()),
+            U8String str => value.UnsafeSpan.Count(str),
 
-                U8String str => value.UnsafeSpan.Count(str),
-
-                _ => ThrowHelpers.Unreachable<int>()
-            };
-        }
-        else
-        {
-            return value.UnsafeSpan.Count(Unsafe.As<T, byte[]>(ref item));
-        }
+            _ => ThrowHelpers.Unreachable<int>()
+        };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -189,5 +171,11 @@ internal static class U8Searching
                 size = 0;
                 return ThrowHelpers.Unreachable<int>();
         }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int IndexOf(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item)
+    {
+        return item.Length is 1 ? value.IndexOf(item.AsRef()) : value.IndexOf(item);
     }
 }

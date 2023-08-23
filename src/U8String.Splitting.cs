@@ -881,13 +881,14 @@ public readonly ref struct U8RefSplit
             if (remaining.Length > 0)
             {
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var index = value.IndexOf(_separator);
+                var separator = _separator;
+                var index = U8Searching.IndexOf(value, separator);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);
                     _remaining = new(
-                        remaining.Offset + index + _separator.Length,
-                        remaining.Length - index - _separator.Length);
+                        remaining.Offset + index + separator.Length,
+                        remaining.Length - index - separator.Length);
                 }
                 else
                 {
