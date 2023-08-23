@@ -34,7 +34,7 @@
 - [ ] Join
 - [ ] Splitting
     - [x] Split (byte, char, Rune)
-    - [ ] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
+    - [x] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
     - [ ] `SplitAny (byte, char, Rune, ROS, U8String, SearchValues<byte>, SearchValues<U8String>)`
     - [ ] `Split<T>, SplitAny<T> where T : IEqualityComparer<U8String>`
     - [ ] parametrized Split collections (all variants)
@@ -52,7 +52,9 @@
     - [x] Trim, TrimStart, TrimEnd
     - [x] TrimAscii, TrimStartAscii, TrimEndAscii
     - [x] Replace(byte)
-    - [ ] Replace(...)
+    - [x] Replace(...)
+    - [ ] Replace(..., T comparer)
+    - [ ] ReplaceAny
     - [ ] ReplaceLineEndings
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
 - [ ] TryCreate construction variants

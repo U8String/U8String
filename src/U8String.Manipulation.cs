@@ -77,6 +77,19 @@ public readonly partial struct U8String
         return default;
     }
 
+    /// <inheritdoc />
+    public void CopyTo(byte[] destination, int index)
+    {
+        var src = this;
+        var dst = destination.AsSpan()[index..];
+        if (src.Length > dst.Length)
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(index));
+        }
+
+        src.UnsafeSpan.CopyTo(dst);
+    }
+
     /// <summary>
     /// Normalizes current <see cref="U8String"/> to the specified Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
     /// </summary>
@@ -113,20 +126,24 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Replace(U8String oldValue, U8String newValue)
     {
-        return U8Manipulation.ReplaceUnchecked(this, oldValue, newValue);
+        return U8Manipulation.Replace(this, oldValue, newValue);
     }
 
-    /// <inheritdoc />
-    public void CopyTo(byte[] destination, int index)
+    public U8String ReplaceLineEndings()
     {
-        var src = this;
-        var dst = destination.AsSpan()[index..];
-        if (src.Length > dst.Length)
+        var source = this;
+        if (!source.IsEmpty)
         {
-            ThrowHelpers.ArgumentOutOfRange(nameof(index));
+            if (!OperatingSystem.IsWindows())
+            {
+                return U8Manipulation.ReplaceCore(
+                    source, "\r\n"u8, "\n"u8, validate: false);
+            }
+
+            throw new NotImplementedException();
         }
 
-        src.UnsafeSpan.CopyTo(dst);
+        return source;
     }
 
     /// <summary>

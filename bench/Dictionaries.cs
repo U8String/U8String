@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-
+using System.Collections.Frozen;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 
@@ -19,8 +19,10 @@ public class Dictionaries
     public U8String Str;
 
     private readonly Dictionary<U8String, U8String> Dict = new();
+    private FrozenDictionary<U8String, U8String> FrozenDict = null!;
     private readonly ConcurrentDictionary<U8String, U8String> ConcurrentDict = new();
     private readonly Dictionary<string, string?> DictUtf16 = new();
+    private FrozenDictionary<string, string?> FrozenDictUtf16 = null!;
     private readonly ConcurrentDictionary<string, string?> ConcurrentDictUtf16 = new();
 
     [GlobalSetup]
@@ -33,12 +35,16 @@ public class Dictionaries
         Str = firstU8;
         Dict[secondU8] = secondU8;
         DictUtf16[secondU16] = secondU16;
+        FrozenDict = Dict.ToFrozenDictionary();
+        FrozenDictUtf16 = DictUtf16.ToFrozenDictionary();
         ConcurrentDict[secondU8] = secondU8;
         ConcurrentDictUtf16[secondU16] = secondU16;
     }
 
     [Benchmark(Baseline = true)] public U8String Get() => Dict[Str];
     [Benchmark] public string? GetUtf16() => DictUtf16[StrUtf16!];
+    [Benchmark] public U8String GetFrozen() => FrozenDict[Str];
+    [Benchmark] public string? GetUtf16Frozen() => FrozenDictUtf16[StrUtf16!];
     [Benchmark] public U8String GetConcurrent() => ConcurrentDict[Str];
     [Benchmark] public string? GetUtf16Concurrent() => ConcurrentDictUtf16[StrUtf16!];
     [Benchmark] public void Set() => Dict[Str] = Str;

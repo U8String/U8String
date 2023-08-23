@@ -93,23 +93,26 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int IndexOf(byte value) => AsSpan().IndexOf(value);
+    public int IndexOf(byte value) => U8Searching.IndexOf(this, value);
 
-    public int IndexOf(Rune value)
-    {
-        return AsSpan().IndexOf(U8Scalar.Create(value).AsSpan());
-    }
+    public int IndexOf(char value) => U8Searching.IndexOf(this, value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int IndexOf(U8String value) => AsSpan().IndexOf(value);
+    public int IndexOf(Rune value) => U8Searching.IndexOf(this, value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int IndexOf(ReadOnlySpan<byte> value) => AsSpan().IndexOf(value);
+    public int IndexOf(U8String value) => U8Searching.IndexOf(this, value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int IndexOf(ReadOnlySpan<byte> value) => U8Searching.IndexOf(this, value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf(byte value) => AsSpan().LastIndexOf(value);
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int LastIndexOf(char value)
+    {
+        return AsSpan().LastIndexOf(U8Scalar.Create(value).AsSpan());
+    }
+
     public int LastIndexOf(Rune value)
     {
         return AsSpan().LastIndexOf(U8Scalar.Create(value).AsSpan());

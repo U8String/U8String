@@ -125,6 +125,13 @@ internal static class U8Searching
         throw new NotImplementedException();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int IndexOf<T>(ReadOnlySpan<byte> value, T item)
+        where T : struct
+    {
+        return IndexOf(value, item, out _);
+    }
+
     /// <summary>
     /// Contract: when T is char, it must never be a surrogate.
     /// </summary>
@@ -164,8 +171,9 @@ internal static class U8Searching
                 return value.IndexOf(rune.AsSpan());
 
             case U8String str:
-                size = str.Length;
-                return value.IndexOf(str);
+                var span = str.AsSpan();
+                size = span.Length;
+                return IndexOf(value, span);
 
             default:
                 size = 0;
