@@ -96,6 +96,21 @@ public readonly partial struct U8String :
         //get => Length is 0; -> regresses Warpskimmer benchmarks
     }
 
+    /// <summary>
+    /// The number of UTF-8 code points in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <remarks>
+    /// Although evaluation of this property is O(n), its actual cost is very low.
+    /// </remarks>
+    public int RuneCount
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            return !IsEmpty ? U8Searching.CountRunes(ref UnsafeRef, (nuint)Length) : 0;
+        }
+    }
+
     /// <inheritdoc/>
     int ICollection<byte>.Count => Length;
 

@@ -102,6 +102,18 @@ internal struct U8Scalar
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static U8Scalar LoadUnsafe(ref byte ptr)
+    {
+        var scalar = new U8Scalar();
+        ref var src = ref Unsafe.As<byte, uint>(ref ptr);
+        ref var dst = ref Unsafe.As<byte, uint>(ref scalar.B0);
+        dst = src;
+        scalar.Size = (byte)(uint)U8Info.RuneLength(scalar.B0);
+
+        return scalar;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void StoreUnsafe<T>(ref T ptr) where T : unmanaged
     {
         Unsafe.As<T, uint>(ref ptr) = Unsafe.As<byte, uint>(ref B0);

@@ -314,23 +314,7 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
                 return count;
             }
 
-            return _count = Count(_value.UnsafeSpan);
-
-            static int Count(ReadOnlySpan<byte> value)
-            {
-                Debug.Assert(!value.IsEmpty);
-
-                // TODO: SIMD non-continuation byte counting
-                var runeCount = (int)(nint)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
-                value = value.SliceUnsafe(runeCount);
-
-                for (var i = 0; (uint)i < (uint)value.Length; i += U8Info.RuneLength(value.AsRef(i)))
-                {
-                    runeCount++;
-                }
-
-                return runeCount;
-            }
+            return _count = U8Searching.CountRunes(ref _value.UnsafeRef, (uint)_value.Length);
         }
     }
 

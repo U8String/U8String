@@ -1,4 +1,7 @@
 using System.Diagnostics;
+using System.Numerics;
+using System.Runtime.Intrinsics;
+using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace U8Primitives;
@@ -123,6 +126,63 @@ internal static class U8Searching
     {
         Debug.Assert(options != U8SplitOptions.None);
         throw new NotImplementedException();
+    }
+
+    // TODO: Count without cast -> lt -> sub vec len?
+    // TODO 2: Consider adding AVX512 path?
+    internal static int CountRunes(ref byte src, nuint length)
+    {
+        // Adopted from https://github.com/simdutf/simdutf/blob/master/src/generic/utf8.h#L10
+        var count = 0;
+        var offset = (nuint)0;
+        ref var ptr = ref Unsafe.As<byte, sbyte>(ref src);
+
+        if (length >= (nuint)Vector256<byte>.Count)
+        {
+            var continuations = Vector256.Create((sbyte)-64);
+            var lastvec = length - (nuint)Vector256<byte>.Count;
+            do
+            {
+                var chunk = Vector256.LoadUnsafe(ref ptr.Add(offset));
+                var matches = Vector256.LessThan(chunk, continuations);
+
+                count += 32 - matches.CountMatches();
+                offset += (nuint)Vector256<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        if (offset <= length - (nuint)Vector128<byte>.Count)
+        {
+            var continuations = Vector128.Create((sbyte)-64);
+            var chunk = Vector128.LoadUnsafe(ref ptr.Add(offset));
+            var matches = Vector128.LessThan(chunk, continuations);
+
+            count += 16 - matches.CountMatches();
+            offset += (nuint)Vector128<byte>.Count;
+        }
+
+        if (AdvSimd.IsSupported &&
+            (offset <= length - (nuint)Vector64<byte>.Count))
+        {
+            var continuations = Vector64.Create((sbyte)-64);
+            var chunk = Vector64.LoadUnsafe(ref ptr.Add(offset));
+            var matches = Vector64
+                .LessThan(chunk, continuations)
+                .AsUInt64()
+                .ToScalar();
+
+            count += 8 - (BitOperations.PopCount(matches) / 8);
+            offset += (nuint)Vector64<byte>.Count;
+        }
+
+        while (offset < length)
+        {
+            // Branchless: x86_64: cmp + setge; arm64: cmp + cinc
+            count += U8Info.IsContinuationByte((byte)ptr.Add(offset)) ? 0 : 1;
+            offset++;
+        }
+
+        return count;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
