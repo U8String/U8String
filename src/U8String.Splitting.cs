@@ -375,16 +375,24 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
         this.CopyTo<U8Split, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Split, Enumerator, U8String>(out first, out second);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Split, Enumerator, U8String>(out first, out second, out third);
+    }
+
+    public readonly U8String ElementAt(int index)
+    {
+        return this.ElementAt<U8Split, Enumerator, U8String>(index);
+    }
+
+    public readonly U8String ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8Split, Enumerator, U8String>(index);
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split, Enumerator, U8String>();
@@ -504,16 +512,24 @@ public struct U8Split<TSeparator> :
         this.CopyTo<U8Split<TSeparator>, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Split<TSeparator>, Enumerator, U8String>(out first, out second);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Split<TSeparator>, Enumerator, U8String>(out first, out second, out third);
+    }
+
+    public readonly U8String ElementAt(int index)
+    {
+        return this.ElementAt<U8Split<TSeparator>, Enumerator, U8String>(index);
+    }
+
+    public readonly U8String ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8Split<TSeparator>, Enumerator, U8String>(index);
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator, U8String>();
@@ -594,6 +610,26 @@ public readonly struct ConfiguredU8Split :
         _value = value;
         _separator = separator;
         _options = options;
+    }
+
+    public readonly void Deconstruct(out U8String first, out U8String second)
+    {
+        this.Deconstruct<ConfiguredU8Split, Enumerator, U8String>(out first, out second);
+    }
+
+    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    {
+        this.Deconstruct<ConfiguredU8Split, Enumerator, U8String>(out first, out second, out third);
+    }
+
+    public readonly U8String ElementAt(int index)
+    {
+        return this.ElementAt<ConfiguredU8Split, Enumerator, U8String>(index);
+    }
+
+    public readonly U8String ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<ConfiguredU8Split, Enumerator, U8String>(index);
     }
 
     public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
@@ -686,6 +722,26 @@ public readonly struct ConfiguredU8Split<TSeparator> :
         _options = options;
     }
 
+    public readonly void Deconstruct(out U8String first, out U8String second)
+    {
+        this.Deconstruct<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(out first, out second);
+    }
+
+    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    {
+        this.Deconstruct<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(out first, out second, out third);
+    }
+
+    public readonly U8String ElementAt(int index)
+    {
+        return this.ElementAt<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(index);
+    }
+
+    public readonly U8String ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(index);
+    }
+
     public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
 
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
@@ -776,6 +832,19 @@ public readonly ref struct U8RefSplit
         _separator = separator;
     }
 
+    public int Count()
+    {
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            return U8Searching.Count(
+                split._value.UnsafeSpan,
+                split._separator) + 1;
+        }
+
+        return 0;
+    }
+
     public bool Contains(U8String item)
     {
         return U8Searching.SplitContains(_value, _separator, item);
@@ -787,9 +856,7 @@ public readonly ref struct U8RefSplit
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = U8Searching.Count(
-                split._value.UnsafeSpan,
-                split._separator) + 1;
+            var count = split.Count();
             span = span[..count];
 
             var i = 0;
@@ -801,15 +868,88 @@ public readonly ref struct U8RefSplit
         }
     }
 
+    public void Deconstruct(out U8String first, out U8String second)
+    {
+        (first, second) = (default, default);
+
+        var enumerator = GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            first = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                second = enumerator.Current;
+            }
+        }
+    }
+
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
+    {
+        (first, second, third) = (default, default, default);
+
+        var enumerator = GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            first = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                second = enumerator.Current;
+                if (enumerator.MoveNext())
+                {
+                    third = enumerator.Current;
+                }
+            }
+        }
+    }
+
+    public U8String ElementAt(int index)
+    {
+        if (index < 0)
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        var enumerator = GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            if (index is 0)
+            {
+                return enumerator.Current;
+            }
+
+            index--;
+        }
+
+        return ThrowHelpers.ArgumentOutOfRange<U8String>();
+    }
+
+    public U8String ElementAtOrDefault(int index)
+    {
+        if (index < 0)
+        {
+            return default;
+        }
+
+        var enumerator = GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            if (index is 0)
+            {
+                return enumerator.Current;
+            }
+
+            index--;
+        }
+
+        return default;
+    }
+
     public U8String[] ToArray()
     {
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = U8Searching.Count(
-                split._value.UnsafeSpan,
-                split._separator) + 1;
-
+            var count = split.Count();
             var result = new U8String[count];
             var span = result.AsSpan();
 
@@ -831,10 +971,7 @@ public readonly ref struct U8RefSplit
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = U8Searching.Count(
-                split._value.UnsafeSpan,
-                split._separator) + 1;
-
+            var count = split.Count();
             var result = new List<U8String>(count);
             CollectionsMarshal.SetCount(result, count);
             var span = CollectionsMarshal.AsSpan(result);

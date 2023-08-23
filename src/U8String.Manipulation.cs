@@ -140,6 +140,7 @@ public readonly partial struct U8String
                     source, "\r\n"u8, "\n"u8, validate: false);
             }
 
+            // This needs manual loop which is sad
             throw new NotImplementedException();
         }
 

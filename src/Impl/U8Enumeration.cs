@@ -8,6 +8,18 @@ namespace U8Primitives;
 // in a SIMD way (is there a way to make it not explode and not be a total UB?)
 internal static class U8Enumeration
 {
+    internal static void CopyTo<T, E, U>(this ref T source, Span<U> destination)
+        where T : struct, IEnumerable<U, E>, ICollection<U>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        var count = source.Count;
+        if (count is not 0)
+        {
+            source.FillUnchecked<T, E, U>(destination[..count]);
+        }
+    }
+
     // TODO: Optimize? Maybe a dedicated split type or similar? Would be really nice to have const generics for this
     // Perhaps a U8SplitPair-like struct with byte[] and U8Range[] (or inline array) indices?
     // TODO 2: Consider making out Us nullable? Alternatively, consider throwing?
@@ -52,17 +64,102 @@ internal static class U8Enumeration
         }
     }
 
-    internal static void CopyTo<T, E, U>(this ref T source, Span<U> destination)
-        where T : struct, IEnumerable<U, E>, ICollection<U>
+    internal static U ElementAt<T, E, U>(this T source, int index)
+        where T : struct, IEnumerable<U, E>
         where E : struct, IEnumerator<U>
         where U : struct
     {
-        var count = source.Count;
-        if (count is not 0)
+        if (index < 0)
         {
-            source.FillUnchecked<T, E, U>(destination[..count]);
+            ThrowHelpers.ArgumentOutOfRange();
         }
+
+        var enumerator = source.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            if (index is 0)
+            {
+                return enumerator.Current;
+            }
+
+            index--;
+        }
+
+        return ThrowHelpers.ArgumentOutOfRange<U>();
     }
+
+    internal static U ElementAtOrDefault<T, E, U>(this T source, int index)
+        where T : struct, IEnumerable<U, E>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        if (index < 0)
+        {
+            return default;
+        }
+
+        var enumerator = source.GetEnumerator();
+        while (enumerator.MoveNext())
+        {
+            if (index is 0)
+            {
+                return enumerator.Current;
+            }
+
+            index--;
+        }
+
+        return default;
+    }
+
+    // internal static U First<T, E, U>(this T source)
+    //     where T : struct, IEnumerable<U, E>
+    //     where E : struct, IEnumerator<U>
+    //     where U : struct
+    // {
+    //     var enumerator = source.GetEnumerator();
+    //     if (enumerator.MoveNext())
+    //     {
+    //         return enumerator.Current;
+    //     }
+
+    //     return ThrowHelpers.SequenceIsEmpty<U>();
+    // }
+
+    // internal static U FirstOrDefault<T, E, U>(this T source)
+    //     where T : struct, IEnumerable<U, E>
+    //     where E : struct, IEnumerator<U>
+    //     where U : struct
+    // {
+    //     var enumerator = source.GetEnumerator();
+    //     if (enumerator.MoveNext())
+    //     {
+    //         return enumerator.Current;
+    //     }
+
+    //     return default;
+    // }
+
+    // internal static U Last<T, E, U>(this T source)
+    //     where T : struct, IEnumerable<U, E>
+    //     where E : struct, IEnumerator<U>
+    //     where U : struct
+    // {
+    //     // TODO: Use LastIndexOf on splits? Replace this with analyzer to use SplitFirst/Last?
+    //     var enumerator = source.GetEnumerator();
+    //     if (enumerator.MoveNext())
+    //     {
+    //         var result = enumerator.Current;
+    //         while (enumerator.MoveNext())
+    //         {
+    //             result = enumerator.Current;
+    //         }
+
+    //         return result;
+    //     }
+
+    //     return ThrowHelpers.SequenceIsEmpty<U>();
+    // }
 
     internal static U[] ToArray<T, E, U>(this ref T source)
         where T : struct, IEnumerable<U, E>, ICollection<U>

@@ -165,6 +165,16 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
         this.Deconstruct<U8Chars, Enumerator, char>(out first, out second, out third);
     }
 
+    public readonly char ElementAt(int index)
+    {
+        return this.ElementAt<U8Chars, Enumerator, char>(index);
+    }
+
+    public readonly char ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8Chars, Enumerator, char>(index);
+    }
+
     public char[] ToArray()
     {
         var value = _value;
@@ -340,6 +350,16 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
         this.Deconstruct<U8Runes, Enumerator, Rune>(out first, out second, out third);
     }
 
+    public readonly Rune ElementAt(int index)
+    {
+        return this.ElementAt<U8Runes, Enumerator, Rune>(index);
+    }
+
+    public readonly Rune ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8Runes, Enumerator, Rune>(index);
+    }
+
     public Rune[] ToArray() => this.ToArray<U8Runes, Enumerator, Rune>();
 
     public List<Rune> ToList() => this.ToList<U8Runes, Enumerator, Rune>();
@@ -449,16 +469,24 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
         this.CopyTo<U8Lines, Enumerator, U8String>(destination.AsSpan()[index..]);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Lines, Enumerator, U8String>(out first, out second);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Lines, Enumerator, U8String>(out first, out second, out third);
+    }
+
+    public readonly U8String ElementAt(int index)
+    {
+        return this.ElementAt<U8Lines, Enumerator, U8String>(index);
+    }
+
+    public readonly U8String ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8Lines, Enumerator, U8String>(index);
     }
 
     public U8String[] ToArray() => this.ToArray<U8Lines, Enumerator, U8String>();

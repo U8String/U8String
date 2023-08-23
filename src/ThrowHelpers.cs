@@ -50,6 +50,12 @@ internal static class ThrowHelpers
     }
 
     [DoesNotReturn, StackTraceHidden]
+    internal static T SequenceIsEmpty<T>()
+    {
+        throw new InvalidOperationException("The sequence is empty.");
+    }
+
+    [DoesNotReturn, StackTraceHidden]
     internal static void Unreachable(
         [CallerFilePath] string? path = null,
         [CallerLineNumber] int line = 0)

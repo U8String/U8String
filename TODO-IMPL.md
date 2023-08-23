@@ -19,18 +19,18 @@
 - [ ] Port InlineArray-based array builder from neuecc's https://github.com/dotnet/runtime/pull/90459
 - [ ] Argument validation consistency:
     - [ ] Ensure .Contains, .IndexOf, .StartsWith, etc. can handle surrogates, specifically the Rune and char overloads
-    - [ ] Ensure .Concat, .Join, .Split{First,Last} reject surrogates if those produce invalid UTF-8 (double-check)
+    - [x] Ensure .Concat, .Join, .Split{First,Last} reject surrogates if those produce invalid UTF-8 (double-check)
 - [x] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64 Preliminary: yes, it is a bug, 40% perf is left on the table for ARM64. https://github.com/dotnet/runtime/issues/89924
 - [ ] Refactor internal extensions and helper methods into separate classes
-- [ ] Look into MakeSeparatorListVectorized impl. in CoreLib and adopt its approach if applicable
-- [ ] Refactor and generalize large chunks into separate utility classes
+- [x] ~~Look into MakeSeparatorListVectorized impl. in CoreLib and adopt its approach if applicable~~
+- [x] Refactor and generalize large chunks into separate utility classes
+- [ ] Optimize Split(..., U8SplitOptions)
 - [x] Consider alternate eagerly-evaluated Split consisting of (byte[] source, U8Range[] offsets). Conclusion: no, but optimize CopyTo()
 - [x] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs) Solution: not worth, focus on `ROS<byte>` as much as possible with `NativeU8String` and `NativeU8String<TAlloc>`(?) as alternatives
-- [ ] Optimize `Split(...).ToArray()` path - right now it loses to string.Split quite a bit on short lengths
+- [x] Optimize `Split(...).ToArray()` path - right now it loses to string.Split quite a bit on short lengths
 - [x] ~~U8Info to evaluate byte and rune properties, ideally in a branchless lookup table based way~~
 - [x] Consider whether overloads should take U8Comparison or CultureInfo? (i.e. IgnoreCase, UnicodeNormalized, etc.) Solution: U8Comparison
 - [x] Ensure `default(U8String)` is always valid
-- [ ] Implement packed count of codepoints (both charcount and match count)
 - [x] Decide how to guard (or declare UB) methods that accept chars against surrogates
 - [ ] Author exception types and messages for malformed UTF-8 (use FormatException or U8FormatException?)
 - [ ] Author documentation
