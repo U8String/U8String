@@ -9,6 +9,13 @@ namespace U8Primitives;
 // TODO: Better name?
 internal static class U8Searching
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool Contains<T>(U8String value, T item)
+        where T : struct
+    {
+        return value.Length > 0 && Contains(value.UnsafeSpan, item);
+    }
+
     /// <summary>
     /// Returns the index of the first occurrence of a specified value in a span.
     /// </summary>
@@ -37,7 +44,7 @@ internal static class U8Searching
                 ? value.Contains((byte)r.Value)
                 : value.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()) >= 0,
 
-            U8String str => value.IndexOf(str) >= 0,
+            U8String str => Contains(value, str.AsSpan()),
 
             _ => ThrowHelpers.Unreachable<bool>()
         };
@@ -186,10 +193,10 @@ internal static class U8Searching
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(ReadOnlySpan<byte> value, T item)
+    internal static int IndexOf<T>(U8String value, T item)
         where T : struct
     {
-        return IndexOf(value, item, out _);
+        return value.Length > 0 ? IndexOf(value.UnsafeSpan, item, out _) : -1;
     }
 
     /// <summary>
@@ -231,9 +238,8 @@ internal static class U8Searching
                 return value.IndexOf(rune.AsSpan());
 
             case U8String str:
-                var span = str.AsSpan();
-                size = span.Length;
-                return IndexOf(value, span);
+                size = str.Length;
+                return IndexOf(value, str);
 
             default:
                 size = 0;
