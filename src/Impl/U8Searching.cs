@@ -146,7 +146,7 @@ internal static class U8Searching
                 var chunk = Vector256.LoadUnsafe(ref ptr.Add(offset));
                 var matches = Vector256.LessThan(chunk, continuations);
 
-                count += 32 - matches.CountMatches();
+                count += 32 - matches.AsByte().CountMatches();
                 offset += (nuint)Vector256<byte>.Count;
             } while (offset <= lastvec);
         }
@@ -157,7 +157,7 @@ internal static class U8Searching
             var chunk = Vector128.LoadUnsafe(ref ptr.Add(offset));
             var matches = Vector128.LessThan(chunk, continuations);
 
-            count += 16 - matches.CountMatches();
+            count += 16 - matches.AsByte().CountMatches();
             offset += (nuint)Vector128<byte>.Count;
         }
 
@@ -177,7 +177,7 @@ internal static class U8Searching
 
         while (offset < length)
         {
-            // Branchless: x86_64: cmp + setge; arm64: cmp + cinc
+            // Branchless: x86_64: cmp + setge; arm64: cmn + cset
             count += U8Info.IsContinuationByte((byte)ptr.Add(offset)) ? 0 : 1;
             offset++;
         }
