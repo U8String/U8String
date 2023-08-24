@@ -20,7 +20,7 @@
     - [ ] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers
     - [ ] Map and allow explicit opt into using CultureInfo?
     - [ ] Finish implementing AsciiIgnoreCase comparer
-    - [ ] Adopt the abstraction for .Contains, .IndexOf, etc.
+    - [x] Adopt the abstraction for .Contains, .IndexOf, etc.
 - [x] IList, IEnumerable
 - [x] Comparison
     - [x] OrdinalComparer
@@ -42,10 +42,11 @@
     - [x] SplitLast (byte, char, Rune, ROS, U8String)
     - [x] ~~EnumerateSplit? Should regular split not be eagerly computed?~~
 - [ ] Comparison
-    - [ ] Contains (+`T where T : IU8Comparer`?)
+    - [x] Contains (+`T where T : IU8Comparer`?)
     - [x] StartsWith
     - [x] EndsWith
-    - [ ] IndexOf (+`T where T : IU8Comparer`?)
+    - [ ] Starts/EndsWith (+ `T where T : IU8Comparer`) overloads
+    - [x] IndexOf (+`T where T : IU8Comparer`?)
     - [ ] LastIndexOf (+`T where T : IU8Comparer`?)
     - [x] Equals
 - [ ] Manipulation

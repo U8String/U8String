@@ -1,4 +1,5 @@
 using System.Text;
+using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 
@@ -8,14 +9,15 @@ public static class U8Comparer
     public static AsciiIgnoreCaseComparer AsciiIgnoreCase => default;
 
     public readonly struct OrdinalComparer :
-    IComparer<U8String>,
-    IComparer<U8String?>,
-    IEqualityComparer<U8String>,
-    IEqualityComparer<U8String?>
+        IComparer<U8String>,
+        IComparer<U8String?>,
+        IEqualityComparer<U8String?>,
+        IU8EqualityComparer,
+        IU8ContainsOperator,
+        IU8IndexOfOperator
     {
         public static OrdinalComparer Instance => default;
 
-        // TODO: Optimize?
         public int Compare(U8String x, U8String y)
         {
             if (!x.IsEmpty)
@@ -51,12 +53,10 @@ public static class U8Comparer
             return y.HasValue ? -1 : 0;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool Equals(U8String x, U8String y)
-        {
-            return x.Equals(y);
-        }
+        public bool Contains(ReadOnlySpan<byte> source, byte value) => U8Searching.Contains(source, value);
+        public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value) => U8Searching.Contains(source, value);
 
+        public bool Equals(U8String x, U8String y) => x.Equals(y);
         public bool Equals(U8String? x, U8String? y)
         {
             if (x.HasValue)
@@ -72,28 +72,39 @@ public static class U8Comparer
             return !y.HasValue;
         }
 
-        public int GetHashCode(U8String obj)
-        {
-            return obj.GetHashCode();
-        }
+        public bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right) => left.SequenceEqual(right);
 
-        public int GetHashCode(U8String? obj)
-        {
-            return obj.GetHashCode();
-        }
+        public int GetHashCode(U8String obj) => U8String.GetHashCode(obj);
+        public int GetHashCode(U8String? obj) => obj.GetHashCode();
+        public int GetHashCode(ReadOnlySpan<byte> obj) => U8String.GetHashCode(obj);
+
+        public int IndexOf(ReadOnlySpan<byte> source, byte value) => U8Searching.IndexOf(source, value, out _);
+        public int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value) => U8Searching.IndexOf(source, value);
     }
 
     public readonly struct AsciiIgnoreCaseComparer :
         IComparer<U8String>,
         IComparer<U8String?>,
-        IEqualityComparer<U8String>,
-        IEqualityComparer<U8String?>
+        IEqualityComparer<U8String?>,
+        IU8EqualityComparer,
+        IU8ContainsOperator,
+        IU8IndexOfOperator
     {
         public static AsciiIgnoreCaseComparer Instance => default;
 
         public int Compare(U8String x, U8String y) => throw new NotImplementedException();
 
         public int Compare(U8String? x, U8String? y) => throw new NotImplementedException();
+
+        public bool Contains(ReadOnlySpan<byte> source, byte value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            throw new NotImplementedException();
+        }
 
         public bool Equals(U8String x, U8String y)
         {
@@ -126,8 +137,28 @@ public static class U8Comparer
             return !y.HasValue;
         }
 
+        public bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+        {
+            throw new NotImplementedException();
+        }
+
         public int GetHashCode(U8String obj) => throw new NotImplementedException();
 
         public int GetHashCode(U8String? obj) => throw new NotImplementedException();
+
+        public int GetHashCode(ReadOnlySpan<byte> obj)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int IndexOf(ReadOnlySpan<byte> source, byte value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            throw new NotImplementedException();
+        }
     }
 }

@@ -2,6 +2,37 @@ using System.Collections.Immutable;
 
 namespace U8Primitives.Abstractions;
 
+public interface IU8ContainsOperator
+{
+    bool Contains(ReadOnlySpan<byte> source, byte value);
+    bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
+}
+
+public interface IU8IndexOfOperator
+{
+    int IndexOf(ReadOnlySpan<byte> source, byte value);
+    int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
+}
+
+public interface IU8EqualityComparer : IEqualityComparer<U8String>
+{
+    bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right);
+
+    int GetHashCode(ReadOnlySpan<byte> obj);
+}
+
+public interface IEnumerable<T, TEnumerator> : IEnumerable<T>
+    where TEnumerator : struct, IEnumerator<T>
+{
+    new TEnumerator GetEnumerator();
+}
+
+public interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
+    where TEnumerator : struct, IU8Enumerator
+{ }
+
+public interface IU8Enumerator : IEnumerator<U8String> { }
+
 // Decision: This waits post 1.0.0 release to better understand the practical use cases
 // and desired API shape to accomodate possible user defined implementations.
 // In preparation for supporing NativeU8String, MutableU8String, etc.?
@@ -29,14 +60,3 @@ internal interface IU8String<T> :
     T Slice(int start);
     T Slice(int start, int length);
 }
-
-internal interface IEnumerable<T, E> : IEnumerable<T>
-    where E : struct, IEnumerator<T>
-{
-    new E GetEnumerator();
-}
-
-internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
-    where TEnumerator : struct, IU8Enumerator { }
-
-internal interface IU8Enumerator : IEnumerator<U8String> { }

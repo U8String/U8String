@@ -3,19 +3,13 @@ using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
+using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 
 // TODO: Better name?
 internal static class U8Searching
 {
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool Contains<T>(U8String value, T item)
-        where T : struct
-    {
-        return value.Length > 0 && Contains(value.UnsafeSpan, item);
-    }
-
     /// <summary>
     /// Returns the index of the first occurrence of a specified value in a span.
     /// </summary>
@@ -26,34 +20,74 @@ internal static class U8Searching
     /// </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool Contains<T>(ReadOnlySpan<byte> value, T item)
+    internal static bool Contains<T>(ReadOnlySpan<byte> source, T value)
         where T : struct
     {
-        Debug.Assert(item is byte or char or Rune or U8String);
+        Debug.Assert(value is byte or char or Rune or U8String);
 
-        return item switch
+        return value switch
         {
-            byte b => value.Contains(b),
+            byte b => source.Contains(b),
 
             char c => char.IsAscii(c)
-                ? value.Contains((byte)c)
-                : !char.IsSurrogate(c)
-                    && value.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
+                ? source.Contains((byte)c)
+                : !char.IsSurrogate(c) &&
+                    source.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
 
             Rune r => r.IsAscii
-                ? value.Contains((byte)r.Value)
-                : value.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()) >= 0,
+                ? source.Contains((byte)r.Value)
+                : source.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()) >= 0,
 
-            U8String str => Contains(value, str.AsSpan()),
+            U8String str => Contains(source, str.AsSpan()),
 
             _ => ThrowHelpers.Unreachable<bool>()
         };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool Contains(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item)
+    internal static bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        return item.Length is 1 ? value.Contains(item.AsRef()) : value.IndexOf(item) >= 0;
+        return value.Length is 1
+            ? source.Contains(value[0])
+            : source.IndexOf(value) >= 0;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool Contains<T, C>(ReadOnlySpan<byte> source, T value, C comparer)
+        where T : struct
+        where C : IU8ContainsOperator
+    {
+        // Debug.Assert(value is not char s || !char.IsSurrogate(s));
+        Debug.Assert(value is byte or char or Rune or U8String);
+
+        return value switch
+        {
+            byte b => comparer.Contains(source, b),
+
+            char c => char.IsAscii(c)
+                ? comparer.Contains(source, (byte)c)
+                : !char.IsSurrogate(c) &&
+                    comparer.Contains(source, U8Scalar.Create(c, checkAscii: false).AsSpan()),
+
+            Rune r => r.IsAscii
+                ? comparer.Contains(source, (byte)r.Value)
+                : comparer.Contains(source, U8Scalar.Create(r, checkAscii: false).AsSpan()),
+
+            U8String str => Contains(source, str.AsSpan(), comparer),
+
+            _ => ThrowHelpers.Unreachable<bool>()
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool Contains<T>(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value, T comparer)
+        where T : IU8ContainsOperator
+    {
+        Debug.Assert(!source.IsEmpty);
+
+        return value.Length is 1
+            ? comparer.Contains(source, value[0]) // TODO: Verify if this bounds checks
+            : comparer.Contains(source, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -80,26 +114,25 @@ internal static class U8Searching
     /// Contract: when T is char, it must never be a surrogate.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int Count<T>(U8String value, T item)
+    internal static int Count<T>(ReadOnlySpan<byte> source, T value)
         where T : struct
     {
-        Debug.Assert(!value.IsEmpty);
-        Debug.Assert(item is not char i || !char.IsSurrogate(i));
-        Debug.Assert(item is byte or char or Rune or U8String);
+        Debug.Assert(value is not char i || !char.IsSurrogate(i));
+        Debug.Assert(value is byte or char or Rune or U8String);
 
-        return item switch
+        return value switch
         {
-            byte b => value.UnsafeSpan.Count(b),
+            byte b => source.Count(b),
 
             char c => char.IsAscii(c)
-                ? value.UnsafeSpan.Count((byte)c)
-                : value.UnsafeSpan.Count(U8Scalar.Create(c, checkAscii: false).AsSpan()),
+                ? source.Count((byte)c)
+                : source.Count(U8Scalar.Create(c, checkAscii: false).AsSpan()),
 
             Rune r => r.IsAscii
-                ? value.UnsafeSpan.Count((byte)r.Value)
-                : value.UnsafeSpan.Count(U8Scalar.Create(r, checkAscii: false).AsSpan()),
+                ? source.Count((byte)r.Value)
+                : source.Count(U8Scalar.Create(r, checkAscii: false).AsSpan()),
 
-            U8String str => value.UnsafeSpan.Count(str),
+            U8String str => Count(source, str.AsSpan()),
 
             _ => ThrowHelpers.Unreachable<int>()
         };
@@ -192,54 +225,48 @@ internal static class U8Searching
         return count;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(U8String value, T item)
-        where T : struct
-    {
-        return value.Length > 0 ? IndexOf(value.UnsafeSpan, item, out _) : -1;
-    }
-
     /// <summary>
     /// Contract: when T is char, it must never be a surrogate.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(ReadOnlySpan<byte> value, T item, out int size)
+    internal static int IndexOf<T>(ReadOnlySpan<byte> source, T value, out int size)
         where T : struct
     {
-        Debug.Assert(item is not char i || !char.IsSurrogate(i));
-        Debug.Assert(item is byte or char or Rune or U8String);
+        Debug.Assert(value is not char i || !char.IsSurrogate(i));
+        Debug.Assert(value is byte or char or Rune or U8String);
 
-        switch (item)
+        switch (value)
         {
             case byte b:
                 size = 1;
-                return value.IndexOf(b);
+                return source.IndexOf(b);
 
             case char c:
                 if (char.IsAscii(c))
                 {
                     size = 1;
-                    return value.IndexOf((byte)c);
+                    return source.IndexOf((byte)c);
                 }
 
                 var scalar = U8Scalar.Create(c, checkAscii: false);
                 size = scalar.Size;
-                return value.IndexOf(scalar.AsSpan());
+                return source.IndexOf(scalar.AsSpan());
 
             case Rune r:
                 if (r.IsAscii)
                 {
                     size = 1;
-                    return value.IndexOf((byte)r.Value);
+                    return source.IndexOf((byte)r.Value);
                 }
 
                 var rune = U8Scalar.Create(r, checkAscii: false);
                 size = rune.Size;
-                return value.IndexOf(rune.AsSpan());
+                return source.IndexOf(rune.AsSpan());
 
             case U8String str:
-                size = str.Length;
-                return IndexOf(value, str);
+                var span = str.AsSpan();
+                size = span.Length;
+                return IndexOf(source, span);
 
             default:
                 size = 0;
@@ -248,8 +275,64 @@ internal static class U8Searching
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item)
+    internal static int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        return item.Length is 1 ? value.IndexOf(item.AsRef()) : value.IndexOf(item);
+        return value.Length is 1 ? source.IndexOf(value[0]) : source.IndexOf(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int IndexOf<T, C>(ReadOnlySpan<byte> source, T value, C comparer, out int size)
+        where T : struct
+        where C : IU8IndexOfOperator
+    {
+        Debug.Assert(value is not char i || !char.IsSurrogate(i));
+        Debug.Assert(value is byte or char or Rune or U8String);
+
+        switch (value)
+        {
+            case byte b:
+                size = 1;
+                return comparer.IndexOf(source, b);
+
+            case char c:
+                if (char.IsAscii(c))
+                {
+                    size = 1;
+                    return comparer.IndexOf(source, (byte)c);
+                }
+
+                var scalar = U8Scalar.Create(c, checkAscii: false);
+                size = scalar.Size;
+                return comparer.IndexOf(source, scalar.AsSpan());
+
+            case Rune r:
+                if (r.IsAscii)
+                {
+                    size = 1;
+                    return comparer.IndexOf(source, (byte)r.Value);
+                }
+
+                var rune = U8Scalar.Create(r, checkAscii: false);
+                size = rune.Size;
+                return comparer.IndexOf(source, rune.AsSpan());
+
+            case U8String str:
+                var span = str.AsSpan();
+                size = span.Length;
+                return IndexOf(source, span, comparer);
+
+            default:
+                size = 0;
+                return ThrowHelpers.Unreachable<int>();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int IndexOf<T>(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value, T comparer)
+        where T : IU8IndexOfOperator
+    {
+        return value.Length is 1
+            ? comparer.IndexOf(source, value[0])
+            : comparer.IndexOf(source, value);
     }
 }

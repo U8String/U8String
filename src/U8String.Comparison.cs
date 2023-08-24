@@ -120,15 +120,22 @@ public readonly partial struct U8String
         return ReferenceEquals(_value, other);
     }
 
+    /// <inheritdoc cref="GetHashCode(ReadOnlySpan{byte})"/>
+    public override int GetHashCode()
+    {
+        return GetHashCode(AsSpan());
+    }
+
     /// <summary>
     /// Returns a hash code for this instance.
     /// </summary>
+    /// <param name="value">UTF-8 bytes to calculate the hash code for.</param>
     /// <remarks>
-    /// The hash code is calculated using the xxHash32 algorithm.
+    /// The hash code is calculated using the xxHash3 algorithm.
     /// </remarks>
-    public override int GetHashCode()
+    public static int GetHashCode(ReadOnlySpan<byte> value)
     {
-        var hash = XxHash3.HashToUInt64(this, U8Constants.DefaultHashSeed);
+        var hash = XxHash3.HashToUInt64(value, U8Constants.DefaultHashSeed);
 
         return ((int)hash) ^ (int)(hash >> 32);
     }
