@@ -8,20 +8,6 @@ namespace U8Primitives;
 internal static class U8Conversions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Span<byte> AsBytes<T>([UnscopedRef] this ref T value)
-        where T : unmanaged
-    {
-        return new Span<T>(ref value).AsBytes();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Span<byte> AsBytes<T>(this Span<T> value)
-        where T : unmanaged
-    {
-        return MemoryMarshal.Cast<T, byte>(value);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this Span<T> value)
         where T : struct
     {
@@ -29,23 +15,18 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ref readonly T AsRef<T>(this ReadOnlySpan<T> value)
+    internal static ref T AsRef<T>(this T[] value, int offset)
         where T : struct
     {
-        return ref MemoryMarshal.GetReference(value);
+        Debug.Assert((uint)offset < (uint)value.Length);
+        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)offset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this Span<T> value, int offset)
         where T : struct
     {
-        return ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ref readonly T AsRef<T>(this ReadOnlySpan<T> value, int offset)
-        where T : unmanaged
-    {
+        Debug.Assert((uint)offset < (uint)value.Length);
         return ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset);
     }
 
@@ -111,38 +92,5 @@ internal static class U8Conversions
         {
             return (rune << 6) | (uint)(value & continuationMask);
         }
-    }
-
-    internal static int GetUtf8SequenceLength(Rune rune)
-    {
-        var value = (uint)rune.Value;
-        var a = ((int)value - 0x0800) >> 31;
-
-        // The number of UTF-8 code units for a given scalar is as follows:
-        // - U+0000..U+007F => 1 code unit
-        // - U+0080..U+07FF => 2 code units
-        // - U+0800..U+FFFF => 3 code units
-        // - U+10000+       => 4 code units
-        //
-        // If we XOR the incoming scalar with 0xF800, the chart mutates:
-        // - U+0000..U+F7FF => 3 code units
-        // - U+F800..U+F87F => 1 code unit
-        // - U+F880..U+FFFF => 2 code units
-        // - U+10000+       => 4 code units
-        //
-        // Since the 1- and 3-code unit cases are now clustered, they can
-        // both be checked together very cheaply.
-
-        value ^= 0xF800u;
-        value -= 0xF880u;   // if scalar is 1 or 3 code units, high byte = 0xFF; else high byte = 0x00
-        value += 4 << 24; // if scalar is 1 or 3 code units, high byte = 0x03; else high byte = 0x04
-        value >>= 24;       // shift high byte down
-
-        // Final return value:
-        // - U+0000..U+007F => 3 + (-1) * 2 = 1
-        // - U+0080..U+07FF => 4 + (-1) * 2 = 2
-        // - U+0800..U+FFFF => 3 + ( 0) * 2 = 3
-        // - U+10000+       => 4 + ( 0) * 2 = 4
-        return (int)value + (a * 2);
     }
 }

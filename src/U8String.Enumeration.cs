@@ -230,8 +230,8 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
         // TODO
         public readonly char Current => (char)_currentCharPair;
 
-        // TODO: This looks terrible, there must be a better way
-        // to convert UTF-8 to UTF-16 with an enumerator.
+        // TODO: This is still terrible,
+        // refactor to avoid UTF8->Rune->char conversion
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
@@ -242,21 +242,18 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
             {
                 if ((uint)nextByteIdx < (uint)length)
                 {
-                    var span = _value!.SliceUnsafe(offset + nextByteIdx, length - nextByteIdx);
-                    var firstByte = MemoryMarshal.GetReference(span);
-                    if (U8Info.IsAsciiByte(firstByte))
+                    ref var ptr = ref _value!.AsRef(offset + nextByteIdx);
+
+                    if (U8Info.IsAsciiByte(in ptr))
                     {
-                        // Fast path because Rune.DecodeFromUtf8 won't inline
-                        // making UTF-8 push us more and more towards anglocentrism.
                         _nextByteIdx = nextByteIdx + 1;
-                        _currentCharPair = firstByte;
+                        _currentCharPair = ptr;
                         return true;
                     }
 
-                    var status = Rune.DecodeFromUtf8(span, out var rune, out var bytesConsumed);
-                    Debug.Assert(status is OperationStatus.Done);
-
-                    _nextByteIdx = nextByteIdx + bytesConsumed;
+                    var rune = U8Conversions.CodepointToRune(
+                        ref ptr, out var size, checkAscii: false);
+                    _nextByteIdx = nextByteIdx + size;
 
                     if (rune.IsBmp)
                     {
@@ -392,9 +389,7 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
             var index = _index;
             if (index < _length)
             {
-                ref var ptr = ref MemoryMarshal
-                    .GetArrayDataReference(_value!)
-                    .Add(_offset + index);
+                ref var ptr = ref _value!.AsRef(_offset + index);
 
                 Current = U8Conversions.CodepointToRune(ref ptr, out var size);
                 _index = index + size;

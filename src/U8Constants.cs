@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 
@@ -43,7 +44,8 @@ public static class U8Constants
     private static ulong GenerateSeed()
     {
         var seed = 0ul;
-        RandomNumberGenerator.Fill(seed.AsBytes());
+        var span = MemoryMarshal.Cast<ulong, byte>(new Span<ulong>(ref seed));
+        RandomNumberGenerator.Fill(span);
         return seed;
     }
 }
