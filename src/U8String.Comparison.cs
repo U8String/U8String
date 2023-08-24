@@ -14,7 +14,7 @@ public readonly partial struct U8String
     /// </summary>
     public int CompareTo(U8String other)
     {
-        return U8Comparer.Ordinal.Compare(this, other);
+        return U8Comparison.Ordinal.Compare(this, other);
     }
 
     public int CompareTo(U8String? other)

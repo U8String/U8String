@@ -21,6 +21,15 @@ public interface IU8EqualityComparer : IEqualityComparer<U8String>
     int GetHashCode(ReadOnlySpan<byte> obj);
 }
 
+// TODO: Member naming?
+public interface IU8CaseConverter
+{
+    (int Offset, int ResultLength) UppercaseHint(ReadOnlySpan<byte> source);
+    (int Offset, int ResultLength) LowercaseHint(ReadOnlySpan<byte> source);
+    int ToLower(ReadOnlySpan<byte> source, Span<byte> destination);
+    int ToUpper(ReadOnlySpan<byte> source, Span<byte> destination);
+}
+
 public interface IEnumerable<T, TEnumerator> : IEnumerable<T>
     where TEnumerator : struct, IEnumerator<T>
 {

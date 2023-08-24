@@ -15,6 +15,13 @@ internal static class U8Conversions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref T AsRef<T>(this ReadOnlySpan<T> value)
+        where T : struct
+    {
+        return ref MemoryMarshal.GetReference(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this T[] value, int offset)
         where T : struct
     {

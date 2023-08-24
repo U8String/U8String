@@ -289,6 +289,7 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
     readonly bool ICollection<char>.Remove(char item) => throw new NotSupportedException();
 }
 
+// TODO: Implement span-taking alternatives to work with ROS<T> where T in byte, char, Rune
 /// <summary>
 /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
 /// </summary>
@@ -321,7 +322,7 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
                 return count;
             }
 
-            return _count = U8Searching.CountRunes(ref _value.UnsafeRef, (uint)_value.Length);
+            return _count = _value.RuneCount;
         }
     }
 

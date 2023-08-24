@@ -1,7 +1,7 @@
-using System.Buffers;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
+
+using U8Primitives.Abstractions;
 using U8Primitives.InteropServices;
 
 namespace U8Primitives;
@@ -402,83 +402,71 @@ public readonly partial struct U8String
     // - Remove/rename to ToLowerFallback or move to something like "FallbackInvariantComparer"
     // clearly indicating it being slower and inferior alternative to proper implementations
     // which call into ICU/NLS/Hybrid-provided case change exports.
-    public U8String ToLower()
+    public U8String ToLower<T>(T converter)
+        where T : IU8CaseConverter
     {
-        var source = this;
-        if (source.Length > 0)
+        // 1. Estimate the start offset of the conversion (first char requiring case change)
+        // 2. Estimate the length of the conversion (the length of the resulting segment after case change)
+        // 3. Allocate the resulting buffer and copy the pre-offset segment
+        // 4. Perform the conversion which writes to the remainder segment of the buffer
+        // 5. Return the resulting buffer as a new string
+
+        var deref = this;
+        if (!deref.IsEmpty)
         {
-            var lowercase = new byte[source.Length + 3];
-            var destination = lowercase.AsSpan();
-            ref var dst = ref destination.AsRef();
+            var source = deref.UnsafeSpan;
+            var (offset, resultLength) = converter.LowercaseHint(source);
 
-            var result = Ascii.ToLower(source, destination, out var consumed);
-            if (result is OperationStatus.InvalidData)
+            if (resultLength > 0)
             {
-                foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
-                {
-                    var lower = Rune.ToLowerInvariant(rune);
-                    var scalar = U8Scalar.Create(lower);
-                    if (consumed + 4 > destination.Length)
-                    {
-                        [DoesNotReturn]
-                        static void Unimpl()
-                        {
-                            throw new NotImplementedException();
-                        }
+                var totalLength = source.Length - offset + resultLength;
+                var lowercase = new byte[totalLength];
+                var destination = lowercase.AsSpan();
 
-                        Unimpl();
-                    }
+                source[..offset].CopyTo(destination);
+                source = source.Slice(offset);
+                destination = destination.Slice(offset);
 
-                    scalar.StoreUnsafe(ref dst.Add(consumed));
-                    consumed += scalar.Size;
-                }
+                var convertedLength = converter.ToLower(source, destination);
+
+                return new U8String(lowercase, 0, offset + convertedLength);
             }
-
-            return new(lowercase, 0, consumed);
         }
 
-        return default;
+        return deref;
     }
 
-    public U8String ToUpper()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String ToUpper<T>(T converter)
+        where T : IU8CaseConverter
     {
-        var source = this;
-        if (source.Length > 0)
+        var deref = this;
+        if (!deref.IsEmpty)
         {
-            var uppercase = new byte[source.Length + 3];
-            var destination = uppercase.AsSpan();
-            ref var dst = ref destination.AsRef();
+            var source = deref.UnsafeSpan;
+            var (offset, resultLength) = converter.UppercaseHint(source);
 
-            var result = Ascii.ToUpper(source, destination, out var consumed);
-            if (result is OperationStatus.InvalidData)
+            if (resultLength > 0)
             {
-                foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
-                {
-                    var upper = Rune.ToUpperInvariant(rune);
-                    var scalar = U8Scalar.Create(upper);
-                    if (consumed + 4 > destination.Length)
-                    {
-                        [DoesNotReturn]
-                        static void Unimpl()
-                        {
-                            throw new NotImplementedException();
-                        }
+                var totalLength = source.Length - offset + resultLength;
+                var uppercase = new byte[totalLength];
+                var destination = uppercase.AsSpan();
 
-                        Unimpl();
-                    }
+                source[..offset].CopyTo(destination);
+                source = source.Slice(offset);
+                destination = destination.Slice(offset);
 
-                    scalar.StoreUnsafe(ref dst.Add(consumed));
-                    consumed += scalar.Size;
-                }
+                var convertedLength = converter.ToUpper(source, destination);
+
+                return new U8String(uppercase, 0, offset + convertedLength);
             }
-
-            return new(uppercase, 0, consumed);
         }
 
-        return default;
+        return deref;
     }
 
     // TODO: docs
+    // TODO 2: scan for lower/uppercase chars and only allocate if there are any
     public U8String ToLowerAscii()
     {
         var source = this;
