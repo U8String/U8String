@@ -493,9 +493,9 @@ public struct U8Split<TSeparator> :
 
             // Matches the behavior of string.Split('\n').Length for "hello\n"
             // TODO: Should we break consistency and not count the very last segment if it is empty?
-            return _count = Count(_value, _separator) + 1;
+            return _count = Count(_value.UnsafeSpan, _separator) + 1;
 
-            static int Count(U8String value, TSeparator separator)
+            static int Count(ReadOnlySpan<byte> value, TSeparator separator)
             {
                 return U8Searching.Count(value, separator);
             }
@@ -826,7 +826,7 @@ public readonly ref struct U8RefSplit
     readonly U8String _value;
     readonly ReadOnlySpan<byte> _separator;
 
-    public U8RefSplit(U8String value, ReadOnlySpan<byte> separator)
+    internal U8RefSplit(U8String value, ReadOnlySpan<byte> separator)
     {
         _value = value;
         _separator = separator;
