@@ -42,7 +42,7 @@ public class Sorting
     [Benchmark]
     public void SortSpecialized()
     {
-        Array.Sort(Strings, U8Comparer.Ordinal);
+        Array.Sort(Strings, U8Comparison.Ordinal);
     }
 
     [Benchmark]
