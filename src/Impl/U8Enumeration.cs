@@ -74,15 +74,12 @@ internal static class U8Enumeration
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        var enumerator = source.GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (var item in source)
         {
-            if (index is 0)
+            if (index-- is 0)
             {
-                return enumerator.Current;
+                return item;
             }
-
-            index--;
         }
 
         return ThrowHelpers.ArgumentOutOfRange<U>();
@@ -98,15 +95,12 @@ internal static class U8Enumeration
             return default;
         }
 
-        var enumerator = source.GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (var item in source)
         {
-            if (index is 0)
+            if (index-- is 0)
             {
-                return enumerator.Current;
+                return item;
             }
-
-            index--;
         }
 
         return default;

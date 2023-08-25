@@ -631,15 +631,12 @@ public readonly ref struct U8RefSplit
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        var enumerator = GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (var item in this)
         {
-            if (index is 0)
+            if (index-- is 0)
             {
-                return enumerator.Current;
+                return item;
             }
-
-            index--;
         }
 
         return ThrowHelpers.ArgumentOutOfRange<U8String>();
@@ -652,15 +649,12 @@ public readonly ref struct U8RefSplit
             return default;
         }
 
-        var enumerator = GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (var item in this)
         {
-            if (index is 0)
+            if (index-- is 0)
             {
-                return enumerator.Current;
+                return item;
             }
-
-            index--;
         }
 
         return default;
