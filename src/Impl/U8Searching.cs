@@ -229,7 +229,7 @@ internal static class U8Searching
     /// Contract: when T is char, it must never be a surrogate.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(ReadOnlySpan<byte> source, T value, out int size)
+    internal static (int Offset, int Length) IndexOf<T>(ReadOnlySpan<byte> source, T value)
         where T : struct
     {
         Debug.Assert(value is not char i || !char.IsSurrogate(i));
@@ -238,39 +238,32 @@ internal static class U8Searching
         switch (value)
         {
             case byte b:
-                size = 1;
-                return source.IndexOf(b);
+                return (source.IndexOf(b), 1);
 
             case char c:
                 if (char.IsAscii(c))
                 {
-                    size = 1;
-                    return source.IndexOf((byte)c);
+                    return (source.IndexOf((byte)c), 1);
                 }
 
                 var scalar = U8Scalar.Create(c, checkAscii: false);
-                size = scalar.Size;
-                return source.IndexOf(scalar.AsSpan());
+                return (source.IndexOf(scalar.AsSpan()), scalar.Size);
 
             case Rune r:
                 if (r.IsAscii)
                 {
-                    size = 1;
-                    return source.IndexOf((byte)r.Value);
+                    return (source.IndexOf((byte)r.Value), 1);
                 }
 
                 var rune = U8Scalar.Create(r, checkAscii: false);
-                size = rune.Size;
-                return source.IndexOf(rune.AsSpan());
+                return (source.IndexOf(rune.AsSpan()), rune.Size);
 
             case U8String str:
                 var span = str.AsSpan();
-                size = span.Length;
-                return IndexOf(source, span);
+                return (IndexOf(source, span), span.Length);
 
             default:
-                size = 0;
-                return ThrowHelpers.Unreachable<int>();
+                return ThrowHelpers.Unreachable<(int, int)>();
         }
     }
 

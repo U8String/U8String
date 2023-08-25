@@ -7,7 +7,7 @@
 - [ ] Contribute optimized versions of span enumerators
 - [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
     - [ ] Invariant
-    - [ ] Ordinal + .Uf8
+    - [ ] Ordinal + .Utf8 (Ordinal.Utf8.cs)
     - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
 - [ ] Optimize .Replace methods

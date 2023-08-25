@@ -14,22 +14,22 @@ public static class U8CaseConversion
     {
         public static AsciiConverter Instance => default;
 
-        public (int Offset, int ResultLength) LowercaseHint(ReadOnlySpan<byte> source)
+        public (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source)
         {
             var firstByte = source.IndexOfAnyInRange((byte)'A', (byte)'Z');
 
             return firstByte >= 0
-                ? (firstByte, source.Length - firstByte)
-                : (source.Length, 0);
+                ? (firstByte, source.Length)
+                : (source.Length, source.Length);
         }
 
-        public (int Offset, int ResultLength) UppercaseHint(ReadOnlySpan<byte> source)
+        public (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source)
         {
             var firstByte = source.IndexOfAnyInRange((byte)'a', (byte)'z');
             
             return firstByte >= 0
-                ? (firstByte, source.Length - firstByte)
-                : (source.Length, 0);
+                ? (firstByte, source.Length)
+                : (source.Length, source.Length);
         }
 
         public int ToLower(ReadOnlySpan<byte> source, Span<byte> destination)
@@ -67,12 +67,12 @@ public static class U8CaseConversion
     {
         public static FallbackInvariantConverter Instance => default;
 
-        public (int Offset, int ResultLength) LowercaseHint(ReadOnlySpan<byte> source)
+        public (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source)
         {
             throw new NotImplementedException();
         }
 
-        public (int Offset, int ResultLength) UppercaseHint(ReadOnlySpan<byte> source)
+        public (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source)
         {
             throw new NotImplementedException();
         }

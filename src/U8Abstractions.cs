@@ -8,24 +8,31 @@ public interface IU8ContainsOperator
     bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
 }
 
+public interface IU8CountOperator
+{
+    int Count(ReadOnlySpan<byte> source, byte value);
+    int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
+}
+
 public interface IU8IndexOfOperator
 {
-    int IndexOf(ReadOnlySpan<byte> source, byte value);
-    int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
+    (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value);
+    (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
 }
 
 public interface IU8EqualityComparer : IEqualityComparer<U8String>
 {
     bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right);
-
     int GetHashCode(ReadOnlySpan<byte> obj);
 }
 
 // TODO: Member naming?
 public interface IU8CaseConverter
 {
-    (int Offset, int ResultLength) UppercaseHint(ReadOnlySpan<byte> source);
-    (int Offset, int ResultLength) LowercaseHint(ReadOnlySpan<byte> source);
+    // {Lower/Upper}Length indicates the *total* length of the source if it were to be converted.
+    // TODO: Maybe out int?
+    (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source);
+    (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source);
     int ToLower(ReadOnlySpan<byte> source, Span<byte> destination);
     int ToUpper(ReadOnlySpan<byte> source, Span<byte> destination);
 }

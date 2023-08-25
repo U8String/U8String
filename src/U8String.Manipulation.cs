@@ -415,21 +415,21 @@ public readonly partial struct U8String
         if (!deref.IsEmpty)
         {
             var source = deref.UnsafeSpan;
-            var (offset, resultLength) = converter.LowercaseHint(source);
 
-            if (resultLength > 0)
+            var (replaceStart, resultLength) = converter.LowercaseHint(source);
+
+            if ((uint)replaceStart < (uint)source.Length)
             {
-                var totalLength = source.Length - offset + resultLength;
-                var lowercase = new byte[totalLength];
+                var lowercase = new byte[resultLength];
                 var destination = lowercase.AsSpan();
 
-                source[..offset].CopyTo(destination);
-                source = source.Slice(offset);
-                destination = destination.Slice(offset);
+                source[..replaceStart].CopyTo(destination);
+                source = source.Slice(replaceStart);
+                destination = destination.Slice(replaceStart);
 
                 var convertedLength = converter.ToLower(source, destination);
 
-                return new U8String(lowercase, 0, offset + convertedLength);
+                return new U8String(lowercase, 0, replaceStart + convertedLength);
             }
         }
 
@@ -444,21 +444,20 @@ public readonly partial struct U8String
         if (!deref.IsEmpty)
         {
             var source = deref.UnsafeSpan;
-            var (offset, resultLength) = converter.UppercaseHint(source);
+            var (replaceStart, resultLength) = converter.UppercaseHint(source);
 
             if (resultLength > 0)
             {
-                var totalLength = source.Length - offset + resultLength;
-                var uppercase = new byte[totalLength];
+                var uppercase = new byte[resultLength];
                 var destination = uppercase.AsSpan();
 
-                source[..offset].CopyTo(destination);
-                source = source.Slice(offset);
-                destination = destination.Slice(offset);
+                source[..replaceStart].CopyTo(destination);
+                source = source.Slice(replaceStart);
+                destination = destination.Slice(replaceStart);
 
                 var convertedLength = converter.ToUpper(source, destination);
 
-                return new U8String(uppercase, 0, offset + convertedLength);
+                return new U8String(uppercase, 0, replaceStart + convertedLength);
             }
         }
 
