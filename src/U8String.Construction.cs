@@ -208,7 +208,7 @@ public readonly partial struct U8String
         if (source?.Length > 0)
         {
             Validate(source);
-            result = new U8String(value, 0, source.Length);
+            result = new U8String(source, 0, source.Length);
         }
 
         return result;
@@ -223,7 +223,7 @@ public readonly partial struct U8String
         if (source != null)
         {
             Validate(source.AsSpan().Slice(offset, length));
-            result = new U8String(value, offset, length);
+            result = new U8String(source, offset, length);
         }
 
         return result;

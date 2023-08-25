@@ -8,7 +8,7 @@ namespace U8Primitives;
 internal struct U8Scalar
 {
     internal byte B0, B1, B2, B3;
-    internal byte Size;
+    internal byte Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static U8Scalar Create<T>(
@@ -24,7 +24,7 @@ internal struct U8Scalar
         var scalar = new U8Scalar();
         if (value is byte b)
         {
-            scalar.Size = 1;
+            scalar.Length = 1;
             scalar.B0 = b;
         }
         else if (value is char c)
@@ -35,20 +35,20 @@ internal struct U8Scalar
             {
                 Debug.Assert(char.IsAscii(c));
 
-                scalar.Size = 1;
+                scalar.Length = 1;
                 scalar.B0 = (byte)c;
             }
             else if (c <= 0x7FF)
             {
                 Debug.Assert(!char.IsAscii(c));
 
-                scalar.Size = 2;
+                scalar.Length = 2;
                 scalar.B0 = (byte)(0xC0 | (c >> 6));
                 scalar.B1 = (byte)(0x80 | (c & 0x3F));
             }
             else
             {
-                scalar.Size = 3;
+                scalar.Length = 3;
                 scalar.B0 = (byte)(0xE0 | (c >> 12));
                 scalar.B1 = (byte)(0x80 | ((c >> 6) & 0x3F));
                 scalar.B2 = (byte)(0x80 | (c & 0x3F));
@@ -62,14 +62,14 @@ internal struct U8Scalar
                 Debug.Assert(rune.IsAscii);
                 Debug.Assert(rune.Utf8SequenceLength is 1);
 
-                scalar.Size = 1;
+                scalar.Length = 1;
                 scalar.B0 = (byte)r;
             }
             else if (r <= 0x7FF)
             {
                 Debug.Assert(rune.Utf8SequenceLength is 2);
 
-                scalar.Size = 2;
+                scalar.Length = 2;
                 scalar.B0 = (byte)((r + (0b110u << 11)) >> 6);
                 scalar.B1 = (byte)((r & 0x3Fu) + 0x80u);
             }
@@ -77,7 +77,7 @@ internal struct U8Scalar
             {
                 Debug.Assert(rune.Utf8SequenceLength is 3);
 
-                scalar.Size = 3;
+                scalar.Length = 3;
                 scalar.B0 = (byte)((r + (0b1110 << 16)) >> 12);
                 scalar.B1 = (byte)(((r & (0x3Fu << 6)) >> 6) + 0x80u);
                 scalar.B2 = (byte)((r & 0x3Fu) + 0x80u);
@@ -86,7 +86,7 @@ internal struct U8Scalar
             {
                 Debug.Assert(rune.Utf8SequenceLength is 4);
 
-                scalar.Size = 4;
+                scalar.Length = 4;
                 scalar.B0 = (byte)((r + (0b11110 << 21)) >> 18);
                 scalar.B1 = (byte)(((r & (0x3Fu << 12)) >> 12) + 0x80u);
                 scalar.B2 = (byte)(((r & (0x3Fu << 6)) >> 6) + 0x80u);
@@ -108,7 +108,7 @@ internal struct U8Scalar
         ref var src = ref Unsafe.As<byte, uint>(ref ptr);
         ref var dst = ref Unsafe.As<byte, uint>(ref scalar.B0);
         dst = src;
-        scalar.Size = (byte)(uint)U8Info.RuneLength(scalar.B0);
+        scalar.Length = (byte)(uint)U8Info.RuneLength(scalar.B0);
 
         return scalar;
     }
@@ -122,6 +122,6 @@ internal struct U8Scalar
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ReadOnlySpan<byte> AsSpan()
     {
-        return MemoryMarshal.CreateReadOnlySpan(ref B0, Size);
+        return MemoryMarshal.CreateReadOnlySpan(ref B0, Length);
     }
 }

@@ -78,8 +78,15 @@ public static class U8Comparison
         public int GetHashCode(U8String? obj) => obj.GetHashCode();
         public int GetHashCode(ReadOnlySpan<byte> obj) => U8String.GetHashCode(obj);
 
-        public int IndexOf(ReadOnlySpan<byte> source, byte value) => U8Searching.IndexOf(source, value, out _);
-        public int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value) => U8Searching.IndexOf(source, value);
+        public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)
+        {
+            return (U8Searching.IndexOf(source, value).Offset, 1);
+        }
+
+        public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            return (U8Searching.IndexOf(source, value), value.Length);
+        }
     }
 
     public readonly struct AsciiIgnoreCaseComparer :
@@ -102,6 +109,16 @@ public static class U8Comparison
         }
 
         public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
         {
             throw new NotImplementedException();
         }
@@ -147,16 +164,6 @@ public static class U8Comparison
         public int GetHashCode(U8String? obj) => throw new NotImplementedException();
 
         public int GetHashCode(ReadOnlySpan<byte> obj)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int IndexOf(ReadOnlySpan<byte> source, byte value)
-        {
-            throw new NotImplementedException();
-        }
-
-        public int IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
         {
             throw new NotImplementedException();
         }

@@ -247,7 +247,7 @@ internal static class U8Searching
                 }
 
                 var scalar = U8Scalar.Create(c, checkAscii: false);
-                return (source.IndexOf(scalar.AsSpan()), scalar.Size);
+                return (source.IndexOf(scalar.AsSpan()), scalar.Length);
 
             case Rune r:
                 if (r.IsAscii)
@@ -256,7 +256,7 @@ internal static class U8Searching
                 }
 
                 var rune = U8Scalar.Create(r, checkAscii: false);
-                return (source.IndexOf(rune.AsSpan()), rune.Size);
+                return (source.IndexOf(rune.AsSpan()), rune.Length);
 
             case U8String str:
                 var span = str.AsSpan();
@@ -274,7 +274,7 @@ internal static class U8Searching
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T, C>(ReadOnlySpan<byte> source, T value, C comparer, out int size)
+    internal static (int Offset, int Length) IndexOf<T, C>(ReadOnlySpan<byte> source, T value, C comparer)
         where T : struct
         where C : IU8IndexOfOperator
     {
@@ -284,44 +284,37 @@ internal static class U8Searching
         switch (value)
         {
             case byte b:
-                size = 1;
                 return comparer.IndexOf(source, b);
 
             case char c:
                 if (char.IsAscii(c))
                 {
-                    size = 1;
                     return comparer.IndexOf(source, (byte)c);
                 }
 
                 var scalar = U8Scalar.Create(c, checkAscii: false);
-                size = scalar.Size;
                 return comparer.IndexOf(source, scalar.AsSpan());
 
             case Rune r:
                 if (r.IsAscii)
                 {
-                    size = 1;
                     return comparer.IndexOf(source, (byte)r.Value);
                 }
 
                 var rune = U8Scalar.Create(r, checkAscii: false);
-                size = rune.Size;
                 return comparer.IndexOf(source, rune.AsSpan());
 
             case U8String str:
                 var span = str.AsSpan();
-                size = span.Length;
                 return IndexOf(source, span, comparer);
 
             default:
-                size = 0;
-                return ThrowHelpers.Unreachable<int>();
+                return ThrowHelpers.Unreachable<(int, int)>();
         }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value, T comparer)
+    internal static (int Offset, int Length) IndexOf<T>(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value, T comparer)
         where T : IU8IndexOfOperator
     {
         return value.Length is 1

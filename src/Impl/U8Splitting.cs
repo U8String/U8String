@@ -39,7 +39,7 @@ internal static class U8Splitting
             }
 
             ptr.Add(count++) = new(prev + offset, next);
-            prev += next + scalar.Size;
+            prev += next + scalar.Length;
         }
 
         ptr.Add(count++) = new(prev + offset, span.Length - prev);

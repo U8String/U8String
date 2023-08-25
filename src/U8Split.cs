@@ -290,13 +290,13 @@ public struct U8Split<TSeparator> :
             if (remaining.Length > 0)
             {
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var index = U8Searching.IndexOf(value, _separator, out var size);
+                var (index, length) = U8Searching.IndexOf(value, _separator);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);
                     _remaining = new(
-                        remaining.Offset + index + size,
-                        remaining.Length - index - size);
+                        remaining.Offset + index + length,
+                        remaining.Length - index - length);
                 }
                 else
                 {
@@ -496,15 +496,15 @@ public readonly struct ConfiguredU8Split<TSeparator> :
             if (remaining.Length > 0)
             {
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var index = U8Searching.IndexOf(value, _separator, out var size);
+                var (index, length) = U8Searching.IndexOf(value, _separator);
                 if (index >= 0)
                 {
                     _current = (_options & U8SplitOptions.Trim) != U8SplitOptions.Trim
                         ? new(remaining.Offset, index)
                         : TrimEntry(_value!, new(remaining.Offset, index));
                     _remaining = new(
-                        remaining.Offset + index + size,
-                        remaining.Length - index - size);
+                        remaining.Offset + index + length,
+                        remaining.Length - index - length);
                 }
                 else
                 {

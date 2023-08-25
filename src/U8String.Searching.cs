@@ -119,14 +119,14 @@ public readonly partial struct U8String
         return false;
     }
 
-    public int IndexOf(byte value) => U8Searching.IndexOf(this, value, out _);
+    public int IndexOf(byte value) => U8Searching.IndexOf(this, value).Offset;
 
-    public int IndexOf(char value) => U8Searching.IndexOf(this, value, out _);
+    public int IndexOf(char value) => U8Searching.IndexOf(this, value).Offset;
 
-    public int IndexOf(Rune value) => U8Searching.IndexOf(this, value, out _);
+    public int IndexOf(Rune value) => U8Searching.IndexOf(this, value).Offset;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int IndexOf(U8String value) => U8Searching.IndexOf(this, value);
+    public int IndexOf(U8String value) => U8Searching.IndexOf(this, value).Offset;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf(ReadOnlySpan<byte> value) => U8Searching.IndexOf(this, value);
@@ -134,33 +134,33 @@ public readonly partial struct U8String
     public int IndexOf<T>(byte value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer, out _);
+        return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
     public int IndexOf<T>(char value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer, out _);
+        return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
     public int IndexOf<T>(Rune value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer, out _);
+        return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf<T>(U8String value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer);
+        return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer);
+        return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

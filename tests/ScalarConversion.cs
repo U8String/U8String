@@ -16,7 +16,7 @@ public class ScalarConversion
             var message = $"Byte: {b} (0x{b:X})";
 
             Assert.True(new[] { b }.AsSpan().SequenceEqual(scalar.AsSpan()), message);
-            Assert.Equal(1, scalar.Size);
+            Assert.Equal(1, scalar.Length);
         }
     }
 
@@ -33,7 +33,7 @@ public class ScalarConversion
             var message = $"Char: {c} (0x{(int)c:X})";
 
             Assert.True(bytes.AsSpan().SequenceEqual(scalar.AsSpan()), message);
-            Assert.Equal(bytes.Length, scalar.Size);
+            Assert.Equal(bytes.Length, scalar.Length);
         }
     }
     
@@ -47,7 +47,7 @@ public class ScalarConversion
             var message = $"Rune: {rune} (0x{rune.Value:X})";
 
             Assert.True(bytes.AsSpan().SequenceEqual(scalar.AsSpan()), message);
-            Assert.Equal(bytes.Length, scalar.Size);
+            Assert.Equal(bytes.Length, scalar.Length);
         }
     }
 }
