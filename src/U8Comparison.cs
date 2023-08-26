@@ -5,6 +5,7 @@ namespace U8Primitives;
 
 public static class U8Comparison
 {
+    // TODO: Make these not nested?
     public static OrdinalComparer Ordinal => default;
     public static AsciiIgnoreCaseComparer AsciiIgnoreCase => default;
 
@@ -14,6 +15,7 @@ public static class U8Comparison
         IEqualityComparer<U8String?>,
         IU8EqualityComparer,
         IU8ContainsOperator,
+        IU8CountOperator,
         IU8IndexOfOperator
     {
         public static OrdinalComparer Instance => default;
@@ -53,8 +55,25 @@ public static class U8Comparison
             return y.HasValue ? -1 : 0;
         }
 
-        public bool Contains(ReadOnlySpan<byte> source, byte value) => U8Searching.Contains(source, value);
-        public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value) => U8Searching.Contains(source, value);
+        public bool Contains(ReadOnlySpan<byte> source, byte value)
+        {
+            return source.Contains(value);
+        }
+
+        public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            return source.IndexOf(value) >= 0;
+        }
+
+        public int Count(ReadOnlySpan<byte> source, byte value)
+        {
+            return source.Count(value);
+        }
+
+        public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            return source.Count(value);
+        }
 
         public bool Equals(U8String x, U8String y) => x.Equals(y);
         public bool Equals(U8String? x, U8String? y)
@@ -80,12 +99,12 @@ public static class U8Comparison
 
         public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)
         {
-            return (U8Searching.IndexOf(source, value).Offset, 1);
+            return (source.IndexOf(value), 1);
         }
 
         public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
         {
-            return (U8Searching.IndexOf(source, value), value.Length);
+            return (source.IndexOf(value), value.Length);
         }
     }
 

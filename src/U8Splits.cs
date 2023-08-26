@@ -187,8 +187,7 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
 // TODO: Optimize even more. This design is far from the northstar of perfect codegen
 // but it still somehow manages to outperform Rust split iterators
 public struct U8Split<TSeparator> :
-    ICollection<U8String>,
-    IU8Enumerable<U8Split<TSeparator>.Enumerator>
+    ICollection<U8String>, IU8Enumerable<U8Split<TSeparator>.Enumerator>
         where TSeparator : unmanaged
 {
     readonly U8String _value;
@@ -320,6 +319,149 @@ public struct U8Split<TSeparator> :
     readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
+public struct U8Split<TSeparator, TComparer> :
+    ICollection<U8String>, IU8Enumerable<U8Split<TSeparator, TComparer>.Enumerator>
+        where TSeparator : struct
+        where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+{
+    readonly U8String _value;
+    readonly TSeparator _separator;
+    readonly TComparer _comparer;
+    int _count;
+
+    public U8Split(U8String value, TSeparator separator, TComparer comparer)
+    {
+        _value = value;
+        _separator = separator;
+        _comparer = comparer;
+        _count = value.IsEmpty ? 0 : -1;
+    }
+
+    public int Count
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            var count = _count;
+            if (count >= 0)
+            {
+                return count;
+            }
+
+            return _count = Count(_value.UnsafeSpan, _separator, _comparer) + 1;
+
+            static int Count(ReadOnlySpan<byte> value, TSeparator separator, TComparer comparer)
+            {
+                return U8Searching.Count(value, separator, comparer);
+            }
+        }
+    }
+
+    public readonly bool Contains(U8String item)
+    {
+        return U8Searching.SplitContains(_value, _separator, item, _comparer);
+    }
+
+    public void CopyTo(U8String[] array, int index)
+    {
+        this.CopyTo<U8Split<TSeparator, TComparer>, Enumerator, U8String>(array.AsSpan()[index..]);
+    }
+
+    public readonly void Deconstruct(out U8String first, out U8String second)
+    {
+        this.Deconstruct<U8Split<TSeparator, TComparer>, Enumerator, U8String>(out first, out second);
+    }
+
+    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    {
+        this.Deconstruct<U8Split<TSeparator, TComparer>, Enumerator, U8String>(out first, out second, out third);
+    }
+
+    public readonly U8String ElementAt(int index)
+    {
+        return this.ElementAt<U8Split<TSeparator, TComparer>, Enumerator, U8String>(index);
+    }
+
+    public readonly U8String ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8Split<TSeparator, TComparer>, Enumerator, U8String>(index);
+    }
+
+    public U8String[] ToArray() => this.ToArray<U8Split<TSeparator, TComparer>, Enumerator, U8String>();
+    public List<U8String> ToList() => this.ToList<U8Split<TSeparator, TComparer>, Enumerator, U8String>();
+
+    /// <summary>
+    /// Returns a <see cref="Enumerator"/> over the provided string.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly Enumerator GetEnumerator() => new(_value, _separator, _comparer);
+
+    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    readonly bool ICollection<U8String>.IsReadOnly => true;
+
+    public struct Enumerator : IU8Enumerator
+    {
+        readonly byte[]? _value;
+        readonly TSeparator _separator;
+        readonly TComparer _comparer;
+        U8Range _current;
+        U8Range _remaining;
+
+        internal Enumerator(U8String value, TSeparator separator, TComparer comparer)
+        {
+            _value = value._value;
+            _separator = separator;
+            _comparer = comparer;
+            _remaining = value._inner;
+        }
+        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            var remaining = _remaining;
+            if (remaining.Length > 0)
+            {
+                var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
+                var (index, length) = U8Searching.IndexOf(value, _separator, _comparer);
+                if (index >= 0)
+                {
+                    _current = new(remaining.Offset, index);
+                    _remaining = new(
+                        remaining.Offset + index + length,
+                        remaining.Length - index - length);
+                }
+                else
+                {
+                    _current = remaining;
+                    _remaining = default;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
+    }
+
+    readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+    readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
+    readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
+}
+
+[Flags]
+public enum U8SplitOptions : byte
+{
+    None = 0,
+    RemoveEmpty = 1,
+    Trim = 2,
+}
+
 public readonly struct ConfiguredU8Split :
     IU8Enumerable<ConfiguredU8Split.Enumerator>
 {
@@ -334,27 +476,27 @@ public readonly struct ConfiguredU8Split :
         _options = options;
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second)
+    public void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<ConfiguredU8Split, Enumerator, U8String>(out first, out second);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<ConfiguredU8Split, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public readonly U8String ElementAt(int index)
+    public U8String ElementAt(int index)
     {
         return this.ElementAt<ConfiguredU8Split, Enumerator, U8String>(index);
     }
 
-    public readonly U8String ElementAtOrDefault(int index)
+    public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<ConfiguredU8Split, Enumerator, U8String>(index);
     }
 
-    public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
+    public Enumerator GetEnumerator() => new(_value, _separator, _options);
 
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -423,9 +565,9 @@ public readonly struct ConfiguredU8Split :
             return new U8String(value, range).Trim()._inner;
         }
 
-        readonly object IEnumerator.Current => Current;
-        readonly void IEnumerator.Reset() => throw new NotSupportedException();
-        readonly void IDisposable.Dispose() { }
+        object IEnumerator.Current => Current;
+        void IEnumerator.Reset() => throw new NotSupportedException();
+        void IDisposable.Dispose() { }
     }
 }
 
@@ -444,27 +586,27 @@ public readonly struct ConfiguredU8Split<TSeparator> :
         _options = options;
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second)
+    public void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(out first, out second);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public readonly U8String ElementAt(int index)
+    public U8String ElementAt(int index)
     {
         return this.ElementAt<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(index);
     }
 
-    public readonly U8String ElementAtOrDefault(int index)
+    public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(index);
     }
 
-    public readonly Enumerator GetEnumerator() => new(_value, _separator, _options);
+    public Enumerator GetEnumerator() => new(_value, _separator, _options);
 
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -532,17 +674,16 @@ public readonly struct ConfiguredU8Split<TSeparator> :
             return new U8String(value, range).Trim()._inner;
         }
 
-        readonly object IEnumerator.Current => Current;
-        readonly void IEnumerator.Reset() => throw new NotSupportedException();
-        readonly void IDisposable.Dispose() { }
+        object IEnumerator.Current => Current;
+        void IEnumerator.Reset() => throw new NotSupportedException();
+        void IDisposable.Dispose() { }
     }
 }
 
 // Unfortunately, because ref structs cannot be used as generic type arguments,
 // we have to resort to duplicating the implementation and exposing methods manually.
 // What's worse, ConfiguredU8RefSplit has to be duplicated as well. Things we do for performance...
-// TODO: Implement this
-// TODO 2: Eventually, remove duplicate code once ref structs can be used as generics.
+// TODO: Eventually, remove duplicate code once ref structs can be used as generics.
 public readonly ref struct U8RefSplit
 {
     readonly U8String _value;
@@ -742,6 +883,225 @@ public readonly ref struct U8RefSplit
                     _remaining = new(
                         remaining.Offset + index + separator.Length,
                         remaining.Length - index - separator.Length);
+                }
+                else
+                {
+                    _current = remaining;
+                    _remaining = default;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+}
+
+public readonly ref struct U8RefSplit<TComparer>
+    where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+{
+    readonly U8String _value;
+    readonly ReadOnlySpan<byte> _separator;
+    readonly TComparer _comparer;
+
+    internal U8RefSplit(U8String value, ReadOnlySpan<byte> separator, TComparer comparer)
+    {
+        _value = value;
+        _separator = separator;
+        _comparer = comparer;
+    }
+
+    public int Count()
+    {
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            return U8Searching.Count(
+                split._value.UnsafeSpan,
+                split._separator,
+                split._comparer) + 1;
+        }
+
+        return 0;
+    }
+
+    public bool Contains(U8String item)
+    {
+        return U8Searching.SplitContains(_value, _separator, item, _comparer);
+    }
+
+    public void CopyTo(U8String[] array, int index)
+    {
+        var span = array.AsSpan()[index..];
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            var count = split.Count();
+            span = span[..count];
+
+            var i = 0;
+            ref var dst = ref span.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item;
+            }
+        }
+    }
+
+    public void Deconstruct(out U8String first, out U8String second)
+    {
+        (first, second) = (default, default);
+
+        var enumerator = GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            first = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                second = enumerator.Current;
+            }
+        }
+    }
+
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
+    {
+        (first, second, third) = (default, default, default);
+
+        var enumerator = GetEnumerator();
+        if (enumerator.MoveNext())
+        {
+            first = enumerator.Current;
+            if (enumerator.MoveNext())
+            {
+                second = enumerator.Current;
+                if (enumerator.MoveNext())
+                {
+                    third = enumerator.Current;
+                }
+            }
+        }
+    }
+
+    public U8String ElementAt(int index)
+    {
+        if (index < 0)
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        foreach (var item in this)
+        {
+            if (index-- is 0)
+            {
+                return item;
+            }
+        }
+
+        return ThrowHelpers.ArgumentOutOfRange<U8String>();
+    }
+
+    public U8String ElementAtOrDefault(int index)
+    {
+        if (index < 0)
+        {
+            return default;
+        }
+
+        foreach (var item in this)
+        {
+            if (index-- is 0)
+            {
+                return item;
+            }
+        }
+
+        return default;
+    }
+
+    public U8String[] ToArray()
+    {
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            var count = split.Count();
+            var result = new U8String[count];
+            var span = result.AsSpan();
+
+            var i = 0;
+            ref var dst = ref span.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item;
+            }
+
+            return result;
+        }
+
+        return Array.Empty<U8String>();
+    }
+
+    public List<U8String> ToList()
+    {
+        var split = this;
+        if (split._value.Length > 0)
+        {
+            var count = split.Count();
+            var result = new List<U8String>(count);
+            CollectionsMarshal.SetCount(result, count);
+            var span = CollectionsMarshal.AsSpan(result);
+
+            var i = 0;
+            ref var dst = ref span.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item;
+            }
+
+            return result;
+        }
+
+        return new List<U8String>();
+    }
+
+    public readonly Enumerator GetEnumerator() => new(_value, _separator, _comparer);
+
+    public ref struct Enumerator
+    {
+        readonly byte[]? _value;
+        readonly ReadOnlySpan<byte> _separator;
+        readonly TComparer _comparer;
+        U8Range _current;
+        U8Range _remaining;
+
+        internal Enumerator(U8String value, ReadOnlySpan<byte> separator, TComparer comparer)
+        {
+            _value = value._value;
+            _separator = separator;
+            _comparer = comparer;
+            _remaining = value._inner;
+        }
+
+        public readonly U8String Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(_value, _current.Offset, _current.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            var remaining = _remaining;
+            if (remaining.Length > 0)
+            {
+                var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
+                var (index, length) = U8Searching.IndexOf(value, _separator, _comparer);
+                if (index >= 0)
+                {
+                    _current = new(remaining.Offset, index);
+                    _remaining = new(
+                        remaining.Offset + index + length,
+                        remaining.Length - index - length);
                 }
                 else
                 {

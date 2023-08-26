@@ -92,9 +92,8 @@ internal static class U8Searching
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool SplitContains<T>(
-        ReadOnlySpan<byte> value,
-        T separator,
-        ReadOnlySpan<byte> item) where T : struct
+        ReadOnlySpan<byte> value, T separator, ReadOnlySpan<byte> item)
+            where T : struct
     {
         return !Contains(item, separator) && Contains(value, item);
     }
@@ -108,6 +107,27 @@ internal static class U8Searching
         // When the item we are looking for contains the separator, it means that it will
         // never be found in the split since it would be pointing to the split boundary.
         return !Contains(item, separator) && Contains(value, item);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool SplitContains<T, C>(
+        ReadOnlySpan<byte> value, T separator, ReadOnlySpan<byte> item, C comparer)
+            where T : struct
+            where C : IU8ContainsOperator
+    {
+        return !Contains(item, separator, comparer) && Contains(value, item, comparer);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool SplitContains<T>(
+        ReadOnlySpan<byte> value,
+        ReadOnlySpan<byte> separator,
+        ReadOnlySpan<byte> item,
+        T comparer) where T : IU8ContainsOperator
+    {
+        // When the item we are looking for contains the separator, it means that it will
+        // never be found in the split since it would be pointing to the split boundary.
+        return !Contains(item, separator, comparer) && Contains(value, item, comparer);
     }
 
     /// <summary>
@@ -143,6 +163,39 @@ internal static class U8Searching
     {
         //return item.Length is 1 ? value.Count(item.AsRef()) : value.Count(item);
         return value.Count(item); // This already has internal check for Length is 1
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int Count<T, C>(ReadOnlySpan<byte> source, T value, C comparer)
+        where T : struct
+        where C : IU8CountOperator
+    {
+        Debug.Assert(value is not char i || !char.IsSurrogate(i));
+        Debug.Assert(value is byte or char or Rune or U8String);
+
+        return value switch
+        {
+            byte b => comparer.Count(source, b),
+
+            char c => char.IsAscii(c)
+                ? comparer.Count(source, (byte)c)
+                : comparer.Count(source, U8Scalar.Create(c, checkAscii: false).AsSpan()),
+
+            Rune r => r.IsAscii
+                ? comparer.Count(source, (byte)r.Value)
+                : comparer.Count(source, U8Scalar.Create(r, checkAscii: false).AsSpan()),
+
+            U8String str => Count(source, str.AsSpan(), comparer),
+
+            _ => ThrowHelpers.Unreachable<int>()
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int Count<T>(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value, T comparer)
+        where T : IU8CountOperator
+    {
+        return comparer.Count(source, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

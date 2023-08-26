@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 
 namespace U8Primitives.Abstractions;
 
+#pragma warning disable IDE0057 // Use range operator. Why: Performance.
 public interface IU8ContainsOperator
 {
     bool Contains(ReadOnlySpan<byte> source, byte value);
@@ -14,6 +15,9 @@ public interface IU8CountOperator
     int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
 }
 
+// Note: it is expected for these to be called by U8Searching and similar, so that
+// interface implementations don't have to double-check for length is 1 -> fast path.
+// Flow: public method -> (enumerator ->) U8Searching/Impls -> interface implementation
 public interface IU8IndexOfOperator
 {
     (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value);

@@ -1,5 +1,7 @@
 using System.Text;
 
+using U8Primitives.Abstractions;
+
 #pragma warning disable RCS1085, RCS1085FadeOut, IDE0032 // Use auto-implemented property. Why: readable fields.
 namespace U8Primitives;
 
@@ -270,6 +272,52 @@ public readonly partial struct U8String
         }
 
         return new(this, separator, options);
+    }
+
+    // TODO: Consider aggregating multiple interfaces into a single IU8Searcher (better name???) interface.
+    public U8Split<byte, T> Split<T>(byte separator, T comparer)
+        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        if (!U8Info.IsAsciiByte(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(this, separator, comparer);
+    }
+
+    public U8Split<char, T> Split<T>(char separator, T comparer)
+        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(this, separator, comparer);
+    }
+
+    public U8Split<Rune, T> Split<T>(Rune separator, T comparer)
+        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        return new(this, separator, comparer);
+    }
+
+    public U8Split<U8String, T> Split<T>(U8String separator, T comparer)
+        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        return new(this, separator, comparer);
+    }
+
+    public U8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer)
+        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        if (!IsValid(separator))
+        {
+            ThrowHelpers.InvalidSplit();
+        }
+
+        return new(this, separator, comparer);
     }
 
     public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);

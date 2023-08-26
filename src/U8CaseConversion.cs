@@ -26,7 +26,7 @@ public static class U8CaseConversion
         public (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source)
         {
             var firstByte = source.IndexOfAnyInRange((byte)'a', (byte)'z');
-            
+
             return firstByte >= 0
                 ? (firstByte, source.Length)
                 : (source.Length, source.Length);
