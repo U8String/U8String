@@ -235,14 +235,11 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
 
     public readonly bool Contains(Rune item) => _value.Contains(item);
 
-    public readonly void CopyTo(Rune[] destination, int index)
+    public void CopyTo(Rune[] destination, int index)
     {
         // TODO: Simple SIMD widen ASCII to UTF-32 (ideally widen+validate in place instead of double traversal)
         // TODO: Consistency and correctness? Implement single-pass vectorized conversion?
-        foreach (var rune in this)
-        {
-            destination[index++] = rune;
-        }
+        this.CopyTo<U8Runes, Enumerator, Rune>(destination.AsSpan()[index..]);
     }
 
     public readonly void Deconstruct(out Rune first, out Rune second)
