@@ -34,7 +34,8 @@ public interface IU8EqualityComparer : IEqualityComparer<U8String>
 public interface IU8CaseConverter
 {
     // {Lower/Upper}Length indicates the *total* length of the source if it were to be converted.
-    // TODO: Maybe out int?
+    // ReplaceStart indicates the start of the first character that would be replaced, if any.
+    // If ReplaceStart is -1, then no characters would be replaced.
     (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source);
     (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source);
     int ToLower(ReadOnlySpan<byte> source, Span<byte> destination);

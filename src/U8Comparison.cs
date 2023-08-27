@@ -114,6 +114,7 @@ public static class U8Comparison
         IEqualityComparer<U8String?>,
         IU8EqualityComparer,
         IU8ContainsOperator,
+        IU8CountOperator,
         IU8IndexOfOperator
     {
         public static AsciiIgnoreCaseComparer Instance => default;
@@ -128,6 +129,16 @@ public static class U8Comparison
         }
 
         public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Count(ReadOnlySpan<byte> source, byte value)
+        {
+            throw new NotImplementedException();
+        }
+
+        public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
         {
             throw new NotImplementedException();
         }

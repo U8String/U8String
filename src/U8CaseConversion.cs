@@ -16,20 +16,12 @@ public static class U8CaseConversion
 
         public (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source)
         {
-            var firstByte = source.IndexOfAnyInRange((byte)'A', (byte)'Z');
-
-            return firstByte >= 0
-                ? (firstByte, source.Length)
-                : (source.Length, source.Length);
+            return (source.IndexOfAnyInRange((byte)'A', (byte)'Z'), source.Length);
         }
 
         public (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source)
         {
-            var firstByte = source.IndexOfAnyInRange((byte)'a', (byte)'z');
-
-            return firstByte >= 0
-                ? (firstByte, source.Length)
-                : (source.Length, source.Length);
+            return (source.IndexOfAnyInRange((byte)'a', (byte)'z'), source.Length);
         }
 
         public int ToLower(ReadOnlySpan<byte> source, Span<byte> destination)

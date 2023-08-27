@@ -446,7 +446,7 @@ public readonly partial struct U8String
             var source = deref.UnsafeSpan;
             var (replaceStart, resultLength) = converter.UppercaseHint(source);
 
-            if (resultLength > 0)
+            if ((uint)replaceStart < (uint)source.Length)
             {
                 var uppercase = new byte[resultLength];
                 var destination = uppercase.AsSpan();
