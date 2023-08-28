@@ -15,6 +15,12 @@ public static class U8Info
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAsciiLetter(in byte value)
+    {
+        return (value | 0x20) - 0x61 <= 25;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiWhitespace(in byte value)
     {
         // .NET ARM64 supremacy: this is fused into cmp, ccmp and cinc.

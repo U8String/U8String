@@ -1,4 +1,5 @@
 using System.Text;
+
 using U8Primitives.Abstractions;
 
 namespace U8Primitives;
@@ -145,6 +146,11 @@ public static class U8Comparison
 
         public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)
         {
+            if (!U8Info.IsAsciiLetter(value))
+            {
+                return (source.IndexOf(value), 1);
+            }
+
             throw new NotImplementedException();
         }
 
