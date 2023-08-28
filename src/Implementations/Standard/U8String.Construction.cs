@@ -2,7 +2,9 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+using Microsoft.Win32.SafeHandles;
 using U8Primitives.InteropServices;
+using U8Primitives.IO;
 
 namespace U8Primitives;
 
@@ -197,6 +199,31 @@ public readonly partial struct U8String
         }
 
         return default;
+    }
+
+    // TODO: Offset-taking overloads?
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Read(Stream stream)
+    {
+        return stream.ReadToU8String();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Read(SafeFileHandle handle)
+    {
+        return handle.ReadToU8String();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Task<U8String> Read(FileStream stream, CancellationToken ct = default)
+    {
+        return stream.ReadToU8StringAsync(ct);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Task<U8String> Read(SafeFileHandle handle, CancellationToken ct = default)
+    {
+        return handle.ReadToU8StringAsync(ct: ct);
     }
 
     public static U8String Move([MaybeNull] ref byte[]? value)
