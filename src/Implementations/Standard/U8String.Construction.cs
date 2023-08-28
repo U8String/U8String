@@ -215,13 +215,13 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Task<U8String> Read(FileStream stream, CancellationToken ct = default)
+    public static Task<U8String> ReadAsync(FileStream stream, CancellationToken ct = default)
     {
         return stream.ReadToU8StringAsync(ct);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Task<U8String> Read(SafeFileHandle handle, CancellationToken ct = default)
+    public static Task<U8String> ReadAsync(SafeFileHandle handle, CancellationToken ct = default)
     {
         return handle.ReadToU8StringAsync(ct: ct);
     }
