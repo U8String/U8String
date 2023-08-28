@@ -185,12 +185,17 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValid(ReadOnlySpan<byte> value)
     {
-        return value.Length switch
+        if (value.Length is 1)
         {
-            0 => true,
-            1 => U8Info.IsAsciiByte(value[0]),
-            _ => Utf8.IsValid(value)
-        };
+            return U8Info.IsAsciiByte(value[0]);
+        }
+
+        if (value.Length != 0)
+        {
+            return Utf8.IsValid(value);
+        }
+
+        return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

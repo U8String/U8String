@@ -14,6 +14,7 @@
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
 - [ ] Choose scope for 1.0.0 release - there is simply too much to do
 - [ ] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
+- [ ] Turns out that `(int)nint` cast does not "reverse-sign-extend" and produces -1 - audit the code and fix that via `int.CreateSaturating` and investigate if there's a way to improve codegen for this
 - [ ] Reconsider opportunistic null-termination on U8String itself rather than having to always re-allocate
 - [ ] Reconsider the choice to scan split sequences for the element count when separator is more than 1 byte long when materializing to `List<U8String>` - maybe it's a better trade-off to just keep growing the list allowing it to re-allocate? Might be fixed with InlineArray builder too
 - [ ] Port InlineArray-based array builder from neuecc's https://github.com/dotnet/runtime/pull/90459

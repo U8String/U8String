@@ -14,6 +14,9 @@
 - `U8String`: Conditional, on manipulation
 
 # TODO
+- [ ] NativeU8String
+    - [ ] NativeU8String.Alloc and .Free
+    - [ ] NativeU8Span
 - [ ] Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really vulnerable to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.
 - [ ] Globalization
     - [ ] Investigate if it's possible to access and reuse internal ICU/NLS/Hybrid bindings. Note: 1. CoreLib seems to rely on unchanging length case folding; 2. CoreLib scans if string is ASCII only (do better: scan and convert in place, then contribute this back) and then either calls out to ASCII or invariant logic (which uses platform-specific globalization provider)
@@ -58,6 +61,7 @@
     - [ ] ReplaceAny
     - [ ] ReplaceLineEndings
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
+- [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
 - [ ] TryCreate construction variants
 - [x] IsLatin/IsAlphanumeric?
 - [x] Construction aligned with collection literals initialization syntax and API shape (turned out to be quite useless)
@@ -80,6 +84,7 @@
 - [ ] Analyzers
     - [ ] Replace string literal comparison with a UTF-8 one
     - [ ] Replace direct for/foreach over a U8String with U8String.AsSpan()
+    - [ ] Consider deallocating NativeU8String allocated in the current scope with `using var ...`
     - [ ] Call .Lines instead of .Split((byte)'\n')
     - [ ] Pass large structs by in or ref / ref readonly (autofixer: mutable splits and enumerations by ref / ref readonly, readonly - by in)
     - [ ] Replace predicate on LINQ projection/reduction with direct Contains/Count/etc. call

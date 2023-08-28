@@ -1,0 +1,24 @@
+## 1.0.0
+- [ ] U8Abstractions
+    - [ ] Comparison
+    - [ ] Case conversion
+    - [ ] Splitting
+    - [ ] Enumeration
+- [ ] U8String
+    - [ ] Comparison
+        - [x] Ordinal
+        - [ ] AsciiIgnoreCase
+        - [ ] OrdinalIgnoreCase
+        - [ ] FallbackInvariant
+        - [ ] FallbackInvariantIgnoreCase (?)
+    - [ ] Case conversion
+        - [x] Ascii
+        - [ ] Unicode (???)
+        - [ ] FallbackInvariant
+- [ ] Extensions
+    - [ ] HttpClient
+    - [ ] Stream and PipeReader (?)
+    - [ ] Console (?)
+- [ ] U8Info, U8Scalar
+- [ ] NativeU8String (1.X.X candidate?)
+    - [ ] NativeU8Span (?)
