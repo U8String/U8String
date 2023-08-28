@@ -91,9 +91,11 @@ public readonly partial struct U8String :
     [MemberNotNullWhen(false, nameof(_value))]
     public bool IsEmpty
     {
+        // TODO: consolidate to a single discriminant of "emptiness"
+        // and stop relying on null _value. That is, as long as it
+        // does not regress Warpskimmer numbers.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value is null;
-        //get => Length is 0; -> regresses Warpskimmer benchmarks
     }
 
     /// <summary>

@@ -26,4 +26,10 @@ public class Manipulation
 
     [Benchmark]
     public string TrimU16() => ValueU16.Trim();
+
+    [Benchmark]
+    public U8String Concat() => Value + Value;
+
+    [Benchmark]
+    public string ConcatU16() => ValueU16 + ValueU16;
 }

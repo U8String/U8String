@@ -12,20 +12,19 @@ internal static class U8Manipulation
         var value = new byte[length];
         var span = value.AsSpan();
 
-        left.CopyTo(span);
+        left.CopyTo(span.SliceUnsafe(0, length));
         span.AsRef(length - 1) = right;
 
         return new U8String(value, 0, length);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
         var length = left.Length + right.Length;
         var value = new byte[length];
 
-        left.CopyTo(value);
-        right.CopyTo(value.SliceUnsafe(left.Length));
+        left.CopyTo(value.SliceUnsafe(0, left.Length));
+        right.CopyTo(value.SliceUnsafe(left.Length, right.Length));
 
         return new U8String(value, 0, length);
     }

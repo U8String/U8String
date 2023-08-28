@@ -25,7 +25,7 @@ public readonly partial struct U8String
             return left;
         }
 
-        return right;
+        return default;
     }
 
     public static U8String Concat(U8String left, ReadOnlySpan<byte> right)
@@ -41,7 +41,7 @@ public readonly partial struct U8String
             return new U8String(right, skipValidation: true);
         }
 
-        return left;
+        return default;
     }
 
     public static U8String Concat(ReadOnlySpan<byte> left, U8String right)
@@ -57,7 +57,7 @@ public readonly partial struct U8String
             return new U8String(left, skipValidation: true);
         }
 
-        return right;
+        return default;
     }
 
     public static U8String Concat(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)

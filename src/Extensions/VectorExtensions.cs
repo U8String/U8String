@@ -14,28 +14,10 @@ internal static class VectorExtensions
             return BitOperations.PopCount(mask.ExtractMostSignificantBits());
         }
 
-        var upper = mask.GetUpper();
         var lower = mask.GetLower();
-
-        int upperCount, lowerCount;
-        if (AdvSimd.Arm64.IsSupported)
-        {
-            var upperMatches = AdvSimd
-                .ShiftRightLogicalNarrowingLower(upper.AsUInt16(), 4)
-                .AsUInt64();
-            var lowerMatches = AdvSimd
-                .ShiftRightLogicalNarrowingLower(lower.AsUInt16(), 4)
-                .AsUInt64();
-            upperCount = BitOperations.PopCount(upperMatches.ToScalar()) >> 2;
-            lowerCount = BitOperations.PopCount(lowerMatches.ToScalar()) >> 2;
-        }
-        else
-        {
-            var upperMatches = upper.ExtractMostSignificantBits();
-            var lowerMatches = lower.ExtractMostSignificantBits();
-            upperCount = BitOperations.PopCount(upperMatches);
-            lowerCount = BitOperations.PopCount(lowerMatches);
-        }
+        var upper = mask.GetUpper();
+        var lowerCount = CountMatches(lower);
+        var upperCount = CountMatches(upper);
 
         return upperCount + lowerCount;
     }
