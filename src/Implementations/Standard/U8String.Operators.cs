@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace U8Primitives;
 
 public readonly partial struct U8String
@@ -78,6 +80,12 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static explicit operator U8String(ReadOnlySpan<byte> value)
+    {
+        return new(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator U8String(ImmutableArray<byte> value)
     {
         return new(value);
     }
