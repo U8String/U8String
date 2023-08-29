@@ -6,6 +6,7 @@
     <RepositoryUrl>https://github.com/neon-sunset/U8String</RepositoryUrl>
     <PackageProjectUrl>https://github.com/neon-sunset/U8String</PackageProjectUrl>
     <PackageTags>Utf8;Utf8String;UTF-8;Unicode;String;Primitive;Networking</PackageTags>
+    <PackageIcon>logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <Description>[work-in-progress] Highly functional and performant UTF-8 string primitive for C#.</Description>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -34,6 +35,7 @@
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)../README.md" Pack="true" PackagePath="/" />
+    <None Include="$(MSBuildThisFileDirectory)../logo.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
 </Project>
