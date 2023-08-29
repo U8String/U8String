@@ -11,7 +11,7 @@ public static class U8FileExtensions
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
-        
+
         if (length > 0)
         {
             var buffer = new byte[(int)length];
@@ -34,7 +34,7 @@ public static class U8FileExtensions
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
-        
+
         if (length > 0)
         {
             var buffer = new byte[(int)length];

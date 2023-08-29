@@ -201,7 +201,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    // TODO: Offset-taking overloads?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Read(Stream stream)
     {
@@ -209,9 +208,9 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Read(SafeFileHandle handle)
+    public static U8String Read(SafeFileHandle handle, long offset = 0)
     {
-        return handle.ReadToU8String();
+        return handle.ReadToU8String(offset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -221,39 +220,10 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Task<U8String> ReadAsync(SafeFileHandle handle, CancellationToken ct = default)
+    public static Task<U8String> ReadAsync(
+        SafeFileHandle handle, long offset = 0, CancellationToken ct = default)
     {
-        return handle.ReadToU8StringAsync(ct: ct);
-    }
-
-    public static U8String Move([MaybeNull] ref byte[]? value)
-    {
-        var source = value;
-        value = null;
-        var result = default(U8String);
-
-        if (source?.Length > 0)
-        {
-            Validate(source);
-            result = new U8String(source, 0, source.Length);
-        }
-
-        return result;
-    }
-
-    public static U8String Move([MaybeNull] ref byte[]? value, int offset, int length)
-    {
-        var source = value;
-        value = null;
-        var result = default(U8String);
-
-        if (source != null)
-        {
-            Validate(source.AsSpan().Slice(offset, length));
-            result = new U8String(source, offset, length);
-        }
-
-        return result;
+        return handle.ReadToU8StringAsync(offset, ct);
     }
 
     /// <summary>
