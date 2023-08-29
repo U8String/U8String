@@ -14,14 +14,11 @@
 - `U8String`: Conditional, on manipulation
 
 # TODO
-- [ ] NativeU8String
-    - [ ] NativeU8String.Alloc and .Free
-    - [ ] NativeU8Span
-- [ ] Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really vulnerable to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.
+- [ ] Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really fragile to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.
 - [ ] Globalization
     - [ ] Investigate if it's possible to access and reuse internal ICU/NLS/Hybrid bindings. Note: 1. CoreLib seems to rely on unchanging length case folding; 2. CoreLib scans if string is ASCII only (do better: scan and convert in place, then contribute this back) and then either calls out to ASCII or invariant logic (which uses platform-specific globalization provider)
-    - [ ] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers
-    - [ ] Map and allow explicit opt into using CultureInfo?
+    - [x] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers (see U8Abstractions, U8Comparison and U8CaseConversion)
+    - [x] ~~Map and allow explicit opt into using CultureInfo?~~ (comparer implementation-defined)
     - [ ] Finish implementing AsciiIgnoreCase comparer
     - [x] Adopt the abstraction for .Contains, .IndexOf, etc.
 - [x] IList, IEnumerable
@@ -78,8 +75,8 @@
 ----------------
 - [ ] Extensions
     - [ ] System.Net.Http (HttpClient, HttpContent, etc.)
-    - [ ] System.IO (File, anything else?)
-    - [ ] Streams? Pipelines?
+    - [x] System.IO (File, anything else?)
+    - [x] Streams? Pipelines?
         - [ ] U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.
 - [ ] Analyzers
     - [ ] Replace string literal comparison with a UTF-8 one
