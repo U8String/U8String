@@ -1,6 +1,6 @@
 namespace U8Primitives.InteropServices;
 
-internal unsafe readonly partial struct NativeU8String<T>
+internal unsafe readonly partial struct NativeU8Span
 {
     // TODO: Write an analyzer that warns against indexing with `int` which can overflow.
     public ref readonly byte this[nint index]

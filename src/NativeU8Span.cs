@@ -4,22 +4,15 @@ using System.Text;
 
 namespace U8Primitives.InteropServices;
 
-// TODO: Design choices
-// - Immutable (ptr+len) vs mutable (ptr+len+capacity)
-// - If NativeU8Span can be projected from mutable, it must not have use-after-free issues
-// - Consider using class with object finalizer instead
-// - Store additional state? Allow for dealloc callbacks?
-internal unsafe readonly partial struct NativeU8String<T> : IDisposable
-    where T : struct, IU8Allocator
+// TODO: Double-check to ensure zero-extension on all casts and math (after all, _length must never be negative)
+#pragma warning disable IDE0032, RCS1085 // Use auto-implemented property. Why: readable layout
+internal unsafe readonly partial struct NativeU8Span
 {
-    public static NativeU8String<T> Empty => default;
+    public static NativeU8Span Empty => default;
 
     readonly byte* _ptr;
     readonly nint _length;
 
-
-    // TODO: Either switch to nuint or mask out the most significant bit
-    // TODO: Proper converstion to int, exposed either via ShortLength or change this to NativeLength?
     public nint Length => _length;
 
     internal Span<byte> UnsafeSpan
@@ -44,13 +37,5 @@ internal unsafe readonly partial struct NativeU8String<T> : IDisposable
     public override string ToString()
     {
         return Encoding.UTF8.GetString(this);
-    }
-
-    public void Dispose()
-    {
-        if (_ptr is not null)
-        {
-            T.Free(_ptr);
-        }
     }
 }

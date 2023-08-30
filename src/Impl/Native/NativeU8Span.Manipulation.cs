@@ -1,6 +1,6 @@
 namespace U8Primitives.InteropServices;
 
-internal unsafe readonly partial struct NativeU8String<T>
+internal unsafe readonly partial struct NativeU8Span
 {
     public NativeU8Span this[Range range]
     {

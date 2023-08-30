@@ -1,9 +1,34 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace U8Primitives;
+namespace U8Primitives.InteropServices;
 
-public unsafe readonly partial struct NativeU8String
+internal static partial class NativeU8String
+{
+    public static NativeU8String<DefaultAllocator> Create(ReadOnlySpan<byte> value)
+    {
+        return Create<DefaultAllocator>(value);
+    }
+
+    public static NativeU8String<T> Create<T>(ReadOnlySpan<byte> value)
+        where T : struct, IU8Allocator
+    {
+        return new(value);
+    }
+
+    public static NativeU8String<DefaultAllocator> CreateUnchecked(ReadOnlySpan<byte> value)
+    {
+        return CreateUnchecked<DefaultAllocator>(value);
+    }
+
+    public static NativeU8String<T> CreateUnchecked<T>(ReadOnlySpan<byte> value)
+        where T : struct, IU8Allocator
+    {
+        return new(value, skipValidation: true);
+    }
+}
+
+internal unsafe readonly partial struct NativeU8String<T>
 {
     public NativeU8String(ReadOnlySpan<byte> value)
     {
@@ -38,17 +63,10 @@ public unsafe readonly partial struct NativeU8String
         }
     }
 
-    public static NativeU8String CreateUnchecked(ReadOnlySpan<byte> value)
-    {
-        return new(value, skipValidation: true);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static NativeU8String CreateFromPinnedUnchecked(ReadOnlySpan<byte> value)
+    internal NativeU8String(byte* ptr, nint length)
     {
-        var ptr = (byte*)Unsafe.AsPointer(ref MemoryMarshal.GetReference(value));
-        var length = (nint)(uint)value.Length;
-
-        return new(ptr, length);
+        _ptr = ptr;
+        _length = length;
     }
 }
