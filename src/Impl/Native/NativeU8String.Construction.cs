@@ -48,16 +48,15 @@ internal unsafe readonly partial struct NativeU8String<T>
         {
             if (value[^1] is not (byte)'\0')
             {
-                // TODO: dedup ops and improve or just leave it as is?
                 _ptr = T.Alloc((uint)value.Length + 1);
-                _length = (nint)(uint)value.Length + 1;
                 _ptr[value.Length] = (byte)'\0';
             }
             else
             {
+                // TODO: Should we trim the null terminator here as well?
                 _ptr = T.Alloc((uint)value.Length);
-                _length = (nint)(uint)value.Length;
             }
+            _length = (nint)(uint)value.Length;
 
             value.CopyTo(MemoryMarshal.CreateSpan(ref _ptr[0], value.Length));
         }
