@@ -12,6 +12,7 @@
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
 - [ ] Optimize .Replace methods
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
+- [ ] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
 - [ ] Choose scope for 1.0.0 release - there is simply too much to do
 - [ ] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
 - [ ] Turns out that `(int)nint` cast does not "reverse-sign-extend" and produces -1 - audit the code and fix that via `int.CreateSaturating` and investigate if there's a way to improve codegen for this
