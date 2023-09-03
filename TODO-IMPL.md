@@ -11,6 +11,7 @@
     - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
 - [ ] Optimize .Replace methods
+- [ ] Mirror caching of certain types which cache ToString() with ConditionalWeakTable?
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
 - [ ] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
 - [ ] Choose scope for 1.0.0 release - there is simply too much to do

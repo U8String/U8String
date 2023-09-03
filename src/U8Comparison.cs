@@ -109,6 +109,7 @@ public static class U8Comparison
         }
     }
 
+    // TODO: Optimize impls.
     public readonly struct AsciiIgnoreCaseComparer :
         IComparer<U8String>,
         IComparer<U8String?>,
@@ -126,11 +127,22 @@ public static class U8Comparison
 
         public bool Contains(ReadOnlySpan<byte> source, byte value)
         {
-            throw new NotImplementedException();
+            return U8Info.IsAsciiLetter(value)
+                ? source.ContainsAny(value, (byte)(value ^ 0x20))
+                : source.Contains(value);
         }
 
         public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
         {
+            if (value.Length is 1)
+            {
+                return Contains(source, value[0]);
+            }
+
+            // TODO: options
+            // - Check if input has ascii letters, then use default search or custom masked simd search
+            // - Use custom masked simd search from the get go
+            // - Probably call into IndexOf like in other locations
             throw new NotImplementedException();
         }
 
@@ -156,6 +168,7 @@ public static class U8Comparison
 
         public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
         {
+            // TODO: Impl - mimic what CoreLib SpanHelpers.IndexOf does and apply masked simd search
             throw new NotImplementedException();
         }
 
@@ -168,8 +181,7 @@ public static class U8Comparison
                     return true;
                 }
 
-                // Change to custom implementation which performs ordinal comparison of non-ascii bytes
-                return Ascii.EqualsIgnoreCase(x.UnsafeSpan, y.UnsafeSpan);
+                return Equals(x.UnsafeSpan, y.UnsafeSpan);
             }
 
             return false;
@@ -192,6 +204,10 @@ public static class U8Comparison
 
         public bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
         {
+            // TODO: Impl - masked to upper for both vectors in each respective source?
+            // An idiom to skip (mask out?) 0x00100000 bit comparison in each vector for ascii letters?
+            // Is there a way to do that without having to pay with 4 comparisons (lt+gt for each source vec)?
+            // TODO: (for the above) optimized simd elementwise range check?
             throw new NotImplementedException();
         }
 
@@ -201,6 +217,7 @@ public static class U8Comparison
 
         public int GetHashCode(ReadOnlySpan<byte> obj)
         {
+            // Supposedly, the implementation will set 0x20 bit for all ascii letters
             throw new NotImplementedException();
         }
     }

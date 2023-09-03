@@ -37,7 +37,8 @@ public readonly partial struct U8String
     // TODO: Naming? Other options are ugly or long, or even more confusing.
     public bool IsRuneBoundary(int index)
     {
-        return (uint)index < (uint)Length && !U8Info.IsContinuationByte(this[index]);
+        return (uint)index < (uint)Length
+            && !U8Info.IsContinuationByte(UnsafeRefAdd(index));
     }
 
     public int NextRuneIndex(int index)
@@ -57,15 +58,33 @@ public readonly partial struct U8String
         return index;
     }
 
+    public Rune GetRuneAt(int index)
+    {
+        var deref = this;
+        if ((uint)index >= (uint)deref.Length)
+        {
+            // TODO: EH UX
+            ThrowHelpers.IndexOutOfRange();
+        }
+
+        if (U8Info.IsContinuationByte(deref.UnsafeRefAdd(index)))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return U8Conversions.CodepointToRune(ref deref.UnsafeRefAdd(index), out _);
+    }
+
     public bool TryGetRuneAt(int index, out Rune rune)
     {
         var deref = this;
         if ((uint)index < (uint)deref.Length)
         {
-            return Rune.DecodeFromUtf8(
-                deref.UnsafeSpan.SliceUnsafe(index),
-                out rune,
-                out _) is OperationStatus.Done;
+            // TODO: Better codegen shape with dedicated method? (which won't dereference first byte twice,
+            // or at least will optimize with dereferincing an entire word instead?)
+            // TODO: Guard against surrogate values(if applicable)/range of values not accepted by Rune?
+            rune = U8Conversions.CodepointToRune(ref deref.UnsafeRefAdd(index), out _);
+            return !U8Info.IsContinuationByte(deref.UnsafeRefAdd(index));
         }
 
         rune = default;

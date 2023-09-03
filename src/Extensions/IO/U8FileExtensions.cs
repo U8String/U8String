@@ -4,6 +4,7 @@ namespace U8Primitives.IO;
 
 public static class U8FileExtensions
 {
+    // TODO: Handle possible scenario where length == 0 for files that are unseekable or of unknown length
     public static U8String ReadToU8String(this SafeFileHandle handle, long offset = 0)
     {
         var length = RandomAccess.GetLength(handle) - offset;
