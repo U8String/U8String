@@ -79,26 +79,20 @@ public readonly partial struct U8String
     public static bool operator !=(ReadOnlySpan<byte> left, U8String right) => !(left == right);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static explicit operator U8String(ReadOnlySpan<byte> value)
-    {
-        return new(value);
-    }
+    public static explicit operator U8String(ReadOnlySpan<byte> value) => new(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static explicit operator U8String(ImmutableArray<byte> value)
-    {
-        return new(value);
-    }
+    public static explicit operator U8String(ImmutableArray<byte> value) => new(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlySpan<byte>(U8String value)
-    {
-        return value.AsSpan();
-    }
+    public static explicit operator U8String(string value) => new(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator ReadOnlyMemory<byte>(U8String value)
-    {
-        return value.AsMemory();
-    }
+    public static explicit operator U8String(ReadOnlySpan<char> value) => new(value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static implicit operator ReadOnlySpan<byte>(U8String value) => value.AsSpan();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static implicit operator ReadOnlyMemory<byte>(U8String value) => value.AsMemory();
 }
