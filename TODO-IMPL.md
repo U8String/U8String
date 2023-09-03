@@ -10,6 +10,10 @@
     - [ ] Ordinal + .Utf8 (Ordinal.Utf8.cs)
     - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
+- [ ] Consider Rust-like U8Searcher (or IU8Searcher) abstraction (or just U8SearchValuesSplit for now). This is to stop duplicating splitting code, because adding another split type impl. seems a bit too much
+    - [ ] `U8Searcher<T>` where T is byte or char or Rune
+    - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
 - [ ] Optimize .Replace methods
 - [ ] Mirror caching of certain types which cache ToString() with ConditionalWeakTable?
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search

@@ -107,7 +107,7 @@ internal static class U8Manipulation
             if (newValue.Length is 0)
             {
                 return oldValue.Length is 1
-                    ? RemoveByte(source, oldValue[0])
+                    ? Remove(source, oldValue[0])
                     : Remove(source, oldValue);
             }
 
@@ -191,12 +191,9 @@ internal static class U8Manipulation
         return source;
     }
 
-    internal static U8String Remove(U8String source, ReadOnlySpan<byte> value)
+    internal static U8String Remove(U8String source, ReadOnlySpan<byte> value, bool validate = true)
     {
-        Debug.Assert(!source.IsEmpty);
-        Debug.Assert(!value.IsEmpty);
-
-        var count = source.UnsafeSpan.Count(value);
+        var count = source.AsSpan().Count(value);
         if (count is not 0)
         {
             var result = new byte[source.Length - (value.Length * count)];
@@ -208,18 +205,19 @@ internal static class U8Manipulation
                 destination = destination.SliceUnsafe(segment.Length);
             }
 
-            U8String.Validate(destination);
+            if (validate)
+            {
+                U8String.Validate(destination);
+            }
             return new(result, 0, result.Length);
         }
 
         return source;
     }
 
-    internal static U8String RemoveByte(U8String source, byte value)
+    internal static U8String Remove(U8String source, byte value)
     {
-        Debug.Assert(!source.IsEmpty);
-
-        var count = source.UnsafeSpan.Count(value);
+        var count = source.AsSpan().Count(value);
         if (count is not 0)
         {
             var result = new byte[source.Length - count];

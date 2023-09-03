@@ -99,6 +99,28 @@ public readonly partial struct U8String
         throw new NotImplementedException();
     }
 
+    /// <inheritdoc cref="Remove(U8String)"/>
+    public U8String Remove(byte value) => U8Manipulation.Remove(this, value);
+
+    /// <inheritdoc cref="Remove(U8String)"/>
+    public U8String Remove(char value) => char.IsAscii(value)
+        ? U8Manipulation.Remove(this, (byte)value)
+        : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan());
+
+    /// <inheritdoc cref="Remove(U8String)"/>
+    public U8String Remove(Rune value) => value.IsAscii
+        ? U8Manipulation.Remove(this, (byte)value.Value)
+        : U8Manipulation.Remove(this, U8Scalar.Create(value.Value, checkAscii: false).AsSpan());
+
+    /// <inheritdoc cref="Remove(U8String)"/>
+    public U8String Remove(ReadOnlySpan<byte> value) => U8Manipulation.Remove(this, value);
+
+    /// <summary>
+    /// Removes all occurrences of <paramref name="value"/> from the current <see cref="U8String"/>.
+    /// </summary>
+    /// <param name="value">The element to remove from the current <see cref="U8String"/>.</param>
+    public U8String Remove(U8String value) => U8Manipulation.Remove(this, value, validate: false);
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Replace(byte oldValue, byte newValue)
     {
