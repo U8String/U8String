@@ -102,8 +102,11 @@ public static class U8Comparison
         IU8CountOperator,
         IU8IndexOfOperator
     {
-        private static readonly SearchValues<byte> AsciiLetters =
+        static readonly SearchValues<byte> AsciiLetters =
             SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"u8);
+
+        [ThreadStatic]
+        static XxHash3? Hasher;
 
         public static AsciiIgnoreCaseComparer Instance => default;
 
@@ -314,28 +317,33 @@ public static class U8Comparison
                 return U8String.GetHashCode(buffer.SliceUnsafe(0, obj.Length));
             }
 
-            return GetHashCodeCore(ref obj.AsRef(), (nuint)obj.Length, buffer);
+            return GetHashCodeLarge(ref obj.AsRef(), (nuint)obj.Length, buffer);
+        }
 
-            static int GetHashCodeCore(ref byte src, nuint length, ReadOnlySpan<byte> buffer)
+        static int GetHashCodeLarge(ref byte src, nuint length, ReadOnlySpan<byte> buffer)
+        {
+            var hasher = Interlocked.Exchange(ref Hasher, null);
+            hasher ??= new XxHash3(U8Constants.DefaultHashSeed);
+
+            do
             {
-                var hashcode = new XxHash3(U8Constants.DefaultHashSeed);
-                do
-                {
-                    var remainder = Math.Min(length, (uint)buffer.Length);
+                var remainder = Math.Min(length, (uint)buffer.Length);
 
-                    U8Manipulation.ToLowerAscii(
-                        src: ref src,
-                        dst: ref buffer.AsRef(),
-                        remainder);
+                U8Manipulation.ToLowerAscii(
+                    src: ref src,
+                    dst: ref buffer.AsRef(),
+                    remainder);
 
-                    hashcode.Append(buffer.SliceUnsafe(0, (int)remainder));
+                hasher.Append(buffer.SliceUnsafe(0, (int)remainder));
 
-                    length -= remainder;
-                } while (length > 0);
+                length -= remainder;
+            } while (length > 0);
 
-                var hash = hashcode.GetCurrentHashAsUInt64();
-                return ((int)hash) ^ (int)(hash >> 32);
-            }
+            var hash = hasher.GetCurrentHashAsUInt64();
+
+            hasher.Reset();
+            Hasher = hasher;
+            return ((int)hash) ^ (int)(hash >> 32);
         }
     }
 }
