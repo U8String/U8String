@@ -288,7 +288,7 @@ public static class U8Comparison
                 var l = left.Add(offset);
                 var r = right.Add(offset);
 
-                if (l != r && U8Info.IsAsciiLetter(l) && (l ^ 0x20) != r)
+                if (l != r && (!U8Info.IsAsciiLetter(l) || (l ^ 0x20) != r))
                 {
                     return false;
                 }
