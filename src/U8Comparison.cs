@@ -204,7 +204,6 @@ public static class U8Comparison
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveOptimization)]
         static bool EqualsCore(ref byte left, ref byte right, nuint length)
         {
             nuint offset = 0;
@@ -300,9 +299,7 @@ public static class U8Comparison
             return true;
         }
 
-        public int GetHashCode(U8String obj) => throw new NotImplementedException();
-
-        public int GetHashCode(U8String? obj) => throw new NotImplementedException();
+        public int GetHashCode(U8String obj) => GetHashCode(obj.AsSpan());
 
         public int GetHashCode(ReadOnlySpan<byte> obj)
         {
