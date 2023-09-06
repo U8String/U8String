@@ -37,4 +37,52 @@ internal static class VectorExtensions
 
         return BitOperations.PopCount(mask.ExtractMostSignificantBits());
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector256<T> Gt<T>(this Vector256<T> left, Vector256<T> right)
+    {
+        return Vector256.GreaterThan(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector128<T> Gt<T>(this Vector128<T> left, Vector128<T> right)
+    {
+        return Vector128.GreaterThan(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector256<T> Gte<T>(this Vector256<T> left, Vector256<T> right)
+    {
+        return Vector256.GreaterThanOrEqual(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector128<T> Gte<T>(this Vector128<T> left, Vector128<T> right)
+    {
+        return Vector128.GreaterThanOrEqual(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector256<T> Lt<T>(this Vector256<T> left, Vector256<T> right)
+    {
+        return Vector256.LessThan(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector128<T> Lt<T>(this Vector128<T> left, Vector128<T> right)
+    {
+        return Vector128.LessThan(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector256<T> Lte<T>(this Vector256<T> left, Vector256<T> right)
+    {
+        return Vector256.LessThanOrEqual(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector128<T> Lte<T>(this Vector128<T> left, Vector128<T> right)
+    {
+        return Vector128.LessThanOrEqual(left, right);
+    }
 }

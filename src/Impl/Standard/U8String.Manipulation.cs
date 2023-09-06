@@ -110,7 +110,7 @@ public readonly partial struct U8String
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(Rune value) => value.IsAscii
         ? U8Manipulation.Remove(this, (byte)value.Value)
-        : U8Manipulation.Remove(this, U8Scalar.Create(value.Value, checkAscii: false).AsSpan());
+        : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan());
 
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(ReadOnlySpan<byte> value) => U8Manipulation.Remove(this, value);

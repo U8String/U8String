@@ -255,7 +255,7 @@ internal static class U8Searching
         }
 
         if (AdvSimd.IsSupported &&
-            (offset <= length - (nuint)Vector64<byte>.Count))
+            offset <= length - (nuint)Vector64<byte>.Count)
         {
             var continuations = Vector64.Create((sbyte)-64);
             var chunk = Vector64.LoadUnsafe(ref ptr.Add(offset));

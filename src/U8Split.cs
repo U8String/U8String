@@ -496,6 +496,8 @@ public readonly struct ConfiguredU8Split :
         return this.ElementAtOrDefault<ConfiguredU8Split, Enumerator, U8String>(index);
     }
 
+    // TODO: ToArray, ToList once InlineArray-based ArrayBuilder is implemented
+
     public Enumerator GetEnumerator() => new(_value, _separator, _options);
 
     readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
@@ -565,9 +567,9 @@ public readonly struct ConfiguredU8Split :
             return new U8String(value, range).Trim()._inner;
         }
 
-        object IEnumerator.Current => Current;
-        void IEnumerator.Reset() => throw new NotSupportedException();
-        void IDisposable.Dispose() { }
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
     }
 }
 
@@ -674,9 +676,9 @@ public readonly struct ConfiguredU8Split<TSeparator> :
             return new U8String(value, range).Trim()._inner;
         }
 
-        object IEnumerator.Current => Current;
-        void IEnumerator.Reset() => throw new NotSupportedException();
-        void IDisposable.Dispose() { }
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
     }
 }
 
