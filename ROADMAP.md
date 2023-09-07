@@ -1,10 +1,20 @@
 ## 1.0.0
-- [ ] U8Abstractions
-    - [ ] Comparison
-    - [ ] Case conversion
-    - [ ] Splitting
-    - [ ] Enumeration
+- [x] U8Abstractions (definition)
+    - [x] Comparison
+    - [x] Case conversion
+    - [x] Splitting
+    - [x] Enumeration
+    - [x] Allocation (internal, not for 1.0.0)
 - [ ] U8String
+    - [x] CoreLib `string` non-globalized features parity
+        - [x] Split
+        - [x] Slice (done right, superior variant)
+        - [x] Replace, Remove
+        - [x] Enumerations (superior variants)
+        - [x] Conversions
+        - [x] Concat
+        - [x] Comparison, Equality and Hashcode
+        - [ ] etc.
     - [ ] Comparison
         - [x] Ordinal
         - [ ] AsciiIgnoreCase
@@ -15,10 +25,15 @@
         - [x] Ascii
         - [ ] Unicode (???)
         - [ ] FallbackInvariant
+    - [x] Unsafe (U8Marshal)
 - [ ] Extensions
-    - [ ] HttpClient
-    - [ ] Stream and PipeReader (?)
+    - [x] HttpClient (basic variants)
+    - [x] Stream and SafeHandle (basic variants)
+    - [ ] Stream, FileStream and Socket (advanced variants like line iterator, etc.)
     - [ ] Console (?)
-- [ ] U8Info, U8Scalar
+- [x] U8Info, U8Scalar
+
+## 1.1.0
 - [ ] NativeU8String (1.X.X candidate?)
     - [ ] NativeU8Span (?)
+- [ ] `SearchValues<U8String>`

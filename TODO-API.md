@@ -1,20 +1,21 @@
 # Overloads Policy
-- `byte`
-- `Rune`
-- `U8String`
-- `ReadOnlySpan<byte>`
-- `ReadOnlySpan<char>` / `string`
+- `byte` (required)
+- `char` (required)
+- `Rune` (required)
+- `U8String` (required)
+- `ReadOnlySpan<byte>` (required)
+- `ReadOnlySpan<char>` / `string` (optional)
+- `SearchValues<byte>` (optional)
 
 # Validation Policy
 - `ReadOnlySpan<byte>`: Always
-- `ReadOnlySpan<char>`: Never
-- `string`: Never
+- `string` / `ReadOnlySpan<char>`: Never
+- `char` : Disallow surrogates
 - `byte`: Always
 - `Rune`: Never
 - `U8String`: Conditional, on manipulation
 
 # TODO
-- [ ] Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really fragile to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.
 - [ ] Globalization
     - [ ] Investigate if it's possible to access and reuse internal ICU/NLS/Hybrid bindings. Note: 1. CoreLib seems to rely on unchanging length case folding; 2. CoreLib scans if string is ASCII only (do better: scan and convert in place, then contribute this back) and then either calls out to ASCII or invariant logic (which uses platform-specific globalization provider)
     - [x] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers (see U8Abstractions, U8Comparison and U8CaseConversion)
@@ -57,7 +58,12 @@
     - [ ] Replace(..., T comparer)
     - [ ] ReplaceAny
     - [ ] ReplaceLineEndings
+    - [x] Remove
+    - [ ] Remove(..., T comparer)
+    - [ ] RemoveAny(...)
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
+    - [x] ToLower/ToUpper (invariant case converter not implemented yet)
+    - [x] ToLowerAscii/ToUpperAscii
 - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
 - [ ] TryCreate construction variants
 - [x] IsLatin/IsAlphanumeric?
@@ -72,6 +78,7 @@
     - [x] (OS-specific) PathSeparator
     - [ ] ReplacementChar
 - [x] DebugView
+- [x] ~~Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really fragile to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.~~
 ----------------
 - [ ] Extensions
     - [ ] System.Net.Http (HttpClient, HttpContent, etc.)
