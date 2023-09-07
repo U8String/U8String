@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)../README.md" Pack="true" PackagePath="/" />
+    <None Include="$(MSBuildThisFileDirectory)../THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="/" />
     <None Include="$(MSBuildThisFileDirectory)../logo.png" Pack="true" PackagePath="/" />
   </ItemGroup>
 
