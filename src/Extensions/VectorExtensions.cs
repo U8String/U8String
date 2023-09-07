@@ -77,7 +77,7 @@ internal static class VectorExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int CountMatches(this Vector64<byte> mask)
     {
-        return AdvSimd.Arm64.AddAcross(AdvSimd.PopCount(mask)).ToScalar();
+        return AdvSimd.Arm64.AddAcross(AdvSimd.PopCount(mask)).ToScalar() / 8;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
