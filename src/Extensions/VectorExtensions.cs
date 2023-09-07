@@ -64,12 +64,20 @@ internal static class VectorExtensions
         {
             var matches = AdvSimd
                 .ShiftRightLogicalNarrowingLower(mask.AsUInt16(), 4)
-                .AsUInt64()
-                .ToScalar();
-            return BitOperations.PopCount(matches) >> 2;
+                .AsByte();
+
+            return AdvSimd.Arm64
+                .AddAcross(AdvSimd.PopCount(matches))
+                .ToScalar() >> 2;
         }
 
         return BitOperations.PopCount(mask.ExtractMostSignificantBits());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int CountMatches(this Vector64<byte> mask)
+    {
+        return AdvSimd.Arm64.AddAcross(AdvSimd.PopCount(mask)).ToScalar();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

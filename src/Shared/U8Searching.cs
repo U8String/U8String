@@ -254,17 +254,14 @@ internal static class U8Searching
             offset += (nuint)Vector128<byte>.Count;
         }
 
-        if (AdvSimd.IsSupported &&
+        if (AdvSimd.Arm64.IsSupported &&
             offset <= length - (nuint)Vector64<byte>.Count)
         {
             var continuations = Vector64.Create((sbyte)-64);
             var chunk = Vector64.LoadUnsafe(ref ptr.Add(offset));
-            var matches = Vector64
-                .LessThan(chunk, continuations)
-                .AsUInt64()
-                .ToScalar();
+            var matches = Vector64.LessThan(chunk, continuations);
 
-            count += 8 - (BitOperations.PopCount(matches) / 8);
+            count += 8 - matches.AsByte().CountMatches();
             offset += (nuint)Vector64<byte>.Count;
         }
 
