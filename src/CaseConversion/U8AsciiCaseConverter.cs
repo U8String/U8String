@@ -99,20 +99,27 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             } while (offset <= lastvec);
         }
 
-        if (Vector64.IsHardwareAccelerated
-            && (length - offset) >= (nuint)Vector64<byte>.Count)
+        if (offset <= length - (nuint)Vector128<byte>.Count)
         {
-            var lastvec = length - (nuint)Vector64<byte>.Count;
-            do
-            {
-                var utf8 = Vector64.LoadUnsafe(ref src.Add(offset));
+            var utf8 = Vector128.LoadUnsafe(ref src, offset);
 
-                Instance
-                    .ToLower(utf8)
-                    .StoreUnsafe(ref dst.Add(offset));
+            Instance
+                .ToLower(utf8)
+                .StoreUnsafe(ref dst.Add(offset));
 
-                offset += (nuint)Vector64<byte>.Count;
-            } while (offset <= lastvec);
+            offset += (nuint)Vector128<byte>.Count;
+        }
+
+        if (Vector64.IsHardwareAccelerated &&
+            offset <= length - (nuint)Vector64<byte>.Count)
+        {
+            var utf8 = Vector64.LoadUnsafe(ref src, offset);
+
+            Instance
+                .ToLower(utf8)
+                .StoreUnsafe(ref dst.Add(offset));
+
+            offset += (nuint)Vector64<byte>.Count;
         }
 
         while (offset < length)
@@ -207,20 +214,27 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             } while (offset <= lastvec);
         }
 
-        if (Vector64.IsHardwareAccelerated
-            && (length - offset) >= (nuint)Vector64<byte>.Count)
+        if (offset <= length - (nuint)Vector128<byte>.Count)
         {
-            var lastvec = length - (nuint)Vector64<byte>.Count;
-            do
-            {
-                var utf8 = Vector64.LoadUnsafe(ref src.Add(offset));
+            var utf8 = Vector128.LoadUnsafe(ref src, offset);
 
-                Instance
-                    .ToUpper(utf8)
-                    .StoreUnsafe(ref dst.Add(offset));
+            Instance
+                .ToUpper(utf8)
+                .StoreUnsafe(ref dst.Add(offset));
 
-                offset += (nuint)Vector64<byte>.Count;
-            } while (offset <= lastvec);
+            offset += (nuint)Vector128<byte>.Count;
+        }
+
+        if (Vector64.IsHardwareAccelerated &&
+            offset <= length - (nuint)Vector64<byte>.Count)
+        {
+            var utf8 = Vector64.LoadUnsafe(ref src, offset);
+
+            Instance
+                .ToUpper(utf8)
+                .StoreUnsafe(ref dst.Add(offset));
+
+            offset += (nuint)Vector64<byte>.Count;
         }
 
         // TODO: Pack the last few bytes and do bitwise case change

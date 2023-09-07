@@ -170,8 +170,8 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             offset += (nuint)Vector128<byte>.Count;
         }
 
-        if (AdvSimd.IsSupported &&
-            offset <= length - (nuint)Vector128<byte>.Count)
+        if (Vector64.IsHardwareAccelerated &&
+            offset <= length - (nuint)Vector64<byte>.Count)
         {
             var lvec = Vector64.LoadUnsafe(ref left, offset);
             var rvec = Vector64.LoadUnsafe(ref right, offset);
