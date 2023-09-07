@@ -17,6 +17,7 @@
 - [ ] Optimize .Replace methods
 - [ ] Mirror caching of certain types which cache ToString() with ConditionalWeakTable?
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
+- [ ] Use https://developer.arm.com/documentation/ddi0596/2020-12/SIMD-FP-Instructions/TBX--Table-vector-lookup-extension- to speed-up case conversions
 - [ ] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
 - [ ] Choose scope for 1.0.0 release - there is simply too much to do
 - [ ] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)

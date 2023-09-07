@@ -64,13 +64,16 @@ public readonly partial struct U8String
         var deref = this;
         if (deref.Length == other.Length)
         {
-            if (deref.Offset == other.Offset &&
-                ReferenceEquals(deref._value, other._value))
+            ref var thisRef = ref deref.UnsafeRef;
+            ref var otherRef = ref other.UnsafeRef;
+            if (deref.Offset != other.Offset || !deref.SourceEquals(other))
             {
-                return true;
+                return MemoryMarshal
+                    .CreateSpan(ref thisRef, deref.Length)
+                    .SequenceEqual(MemoryMarshal.CreateSpan(ref otherRef, deref.Length));
             }
 
-            return deref.UnsafeSpan.SequenceEqual(other.UnsafeSpan);
+            return true;
         }
 
         return false;

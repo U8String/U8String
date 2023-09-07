@@ -436,50 +436,94 @@ public readonly partial struct U8String
         var deref = this;
         if (!deref.IsEmpty)
         {
+            var trusted = U8CaseConversion.IsTrustedImplementation(converter);
             var source = deref.UnsafeSpan;
 
             var (replaceStart, resultLength) = converter.LowercaseHint(source);
 
+            int convertedLength;
             if ((uint)replaceStart < (uint)source.Length)
             {
                 var lowercase = new byte[resultLength];
                 var destination = lowercase.AsSpan();
 
-                source[..replaceStart].CopyTo(destination);
-                source = source.Slice(replaceStart);
-                destination = destination.Slice(replaceStart);
+                if (trusted)
+                {
+                    source
+                        .SliceUnsafe(0, replaceStart)
+                        .CopyTo(destination.SliceUnsafe(0, source.Length));
+                    source = source.SliceUnsafe(replaceStart);
+                    destination = destination.SliceUnsafe(replaceStart, source.Length);
 
-                var convertedLength = converter.ToLower(source, destination);
+                    convertedLength = converter.ToLower(source, destination) + replaceStart;
+                }
+                else
+                {
+                    source[..replaceStart]
+                        .CopyTo(destination.SliceUnsafe(0, source.Length));
+                    source = source.Slice(replaceStart);
+                    destination = destination.Slice(replaceStart, source.Length);
 
-                return new U8String(lowercase, 0, replaceStart + convertedLength);
+                    convertedLength = converter.ToLower(source, destination) + replaceStart;
+
+                    if (convertedLength > resultLength)
+                    {
+                        // TODO: EH UX
+                        ThrowHelpers.ArgumentOutOfRange();
+                    }
+                }
+
+                return new U8String(lowercase, 0, convertedLength);
             }
         }
 
         return deref;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String ToUpper<T>(T converter)
         where T : IU8CaseConverter
     {
         var deref = this;
         if (!deref.IsEmpty)
         {
+            var trusted = U8CaseConversion.IsTrustedImplementation(converter);
             var source = deref.UnsafeSpan;
+
             var (replaceStart, resultLength) = converter.UppercaseHint(source);
 
+            int convertedLength;
             if ((uint)replaceStart < (uint)source.Length)
             {
                 var uppercase = new byte[resultLength];
                 var destination = uppercase.AsSpan();
 
-                source[..replaceStart].CopyTo(destination);
-                source = source.Slice(replaceStart);
-                destination = destination.Slice(replaceStart);
+                if (trusted)
+                {
+                    source
+                        .SliceUnsafe(0, replaceStart)
+                        .CopyTo(destination.SliceUnsafe(0, source.Length));
+                    source = source.SliceUnsafe(replaceStart);
+                    destination = destination.SliceUnsafe(replaceStart, source.Length);
 
-                var convertedLength = converter.ToUpper(source, destination);
+                    convertedLength = converter.ToUpper(source, destination) + replaceStart;
+                }
+                else
+                {
+                    source[..replaceStart]
+                        .CopyTo(destination.SliceUnsafe(0, source.Length));
+                    source = source.Slice(replaceStart);
+                    destination = destination.Slice(replaceStart, source.Length);
 
-                return new U8String(uppercase, 0, replaceStart + convertedLength);
+                    convertedLength = converter.ToUpper(source, destination) + replaceStart;
+
+                    if (convertedLength > resultLength)
+                    {
+                        // TODO: EH UX
+                        ThrowHelpers.ArgumentOutOfRange();
+                    }
+                }
+
+                return new U8String(uppercase, 0, convertedLength);
             }
         }
 
@@ -487,40 +531,13 @@ public readonly partial struct U8String
     }
 
     // TODO: docs
-    // TODO 2: scan for lower/uppercase chars and only allocate if there are any
     public U8String ToLowerAscii()
     {
-        var source = this;
-        if (source.Length > 0)
-        {
-            var destination = new byte[source.Length];
-
-            U8Manipulation.ToLowerAscii(
-                ref source.UnsafeRef,
-                ref MemoryMarshal.GetArrayDataReference(destination),
-                (uint)source.Length);
-
-            return new(destination, 0, source.Length);
-        }
-
-        return default;
+        return ToLower(U8CaseConversion.Ascii);
     }
 
     public U8String ToUpperAscii()
     {
-        var source = this;
-        if (source.Length > 0)
-        {
-            var destination = new byte[source.Length];
-
-            U8Manipulation.ToUpperAscii(
-                ref source.UnsafeRef,
-                ref MemoryMarshal.GetArrayDataReference(destination),
-                (uint)source.Length);
-
-            return new(destination, 0, source.Length);
-        }
-
-        return default;
+        return ToUpper(U8CaseConversion.Ascii);
     }
 }

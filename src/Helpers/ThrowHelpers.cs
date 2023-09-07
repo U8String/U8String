@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 
-namespace System;
+namespace U8Primitives;
 
 // TODO: Author exception messages
 internal static class ThrowHelpers
