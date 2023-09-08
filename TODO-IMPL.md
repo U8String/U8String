@@ -14,6 +14,7 @@
     - [ ] `U8Searcher<T>` where T is byte or char or Rune
     - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
+- [ ] Null-terminate odd-sized arrays?
 - [ ] Optimize .Replace methods
 - [ ] Mirror caching of certain types which cache ToString() with ConditionalWeakTable?
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
