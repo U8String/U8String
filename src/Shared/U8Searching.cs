@@ -244,7 +244,7 @@ internal static class U8Searching
             } while (offset <= lastvec);
         }
 
-        if (offset <= length - (nuint)Vector128<byte>.Count)
+        if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var continuations = Vector128.Create((sbyte)-64);
             var chunk = Vector128.LoadUnsafe(ref ptr.Add(offset));
@@ -255,7 +255,7 @@ internal static class U8Searching
         }
 
         if (AdvSimd.Arm64.IsSupported &&
-            offset <= length - (nuint)Vector64<byte>.Count)
+            length >= offset + (nuint)Vector64<byte>.Count)
         {
             var continuations = Vector64.Create((sbyte)-64);
             var chunk = Vector64.LoadUnsafe(ref ptr.Add(offset));

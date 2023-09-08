@@ -48,8 +48,8 @@ public static class Constants
         NonSurrogateEmoji.EnumerateRunes().Select(TestExtensions.ToUtf8);
 
     public const string Mixed =
-        "ABCDEFGHIJKLMNOPQRSTUVWXYZ" +
-        "abcあいうабв🤣😃😄😅诶比西" +
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜß" +
+        "abcäöüあいうабв🤣😃😄😅诶比西" +
         "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШ" +
         "ЩЬЮЯあいうえおかきくけこさしすせそ" +
         "たちつてとなにぬねのはひふへほまみむめも" +

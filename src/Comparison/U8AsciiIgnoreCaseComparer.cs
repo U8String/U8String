@@ -109,12 +109,12 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             ref var lptr = ref left.AsRef();
             ref var rptr = ref right.AsRef();
 
-            if (Unsafe.AreSame(ref lptr, ref rptr))
+            if (!Unsafe.AreSame(ref lptr, ref rptr))
             {
-                return true;
+                return EqualsCore(ref lptr, ref rptr, (nuint)left.Length);
             }
 
-            return EqualsCore(ref lptr, ref rptr, (nuint)left.Length);
+            return true;
         }
 
         return false;
@@ -155,7 +155,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             } while (offset <= lastvec);
         }
 
-        if (offset <= length - (nuint)Vector128<byte>.Count)
+        if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var lvec = Vector128.LoadUnsafe(ref left, offset);
             var rvec = Vector128.LoadUnsafe(ref right, offset);
@@ -171,11 +171,11 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         }
 
         if (Vector64.IsHardwareAccelerated &&
-            offset <= length - (nuint)Vector64<byte>.Count)
+            length >= offset + (nuint)Vector64<byte>.Count)
         {
             var lvec = Vector64.LoadUnsafe(ref left, offset);
             var rvec = Vector64.LoadUnsafe(ref right, offset);
-            
+
             var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
             var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
 

@@ -99,7 +99,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             } while (offset <= lastvec);
         }
 
-        if (offset <= length - (nuint)Vector128<byte>.Count)
+        if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var utf8 = Vector128.LoadUnsafe(ref src, offset);
 
@@ -111,7 +111,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         }
 
         if (Vector64.IsHardwareAccelerated &&
-            offset <= length - (nuint)Vector64<byte>.Count)
+            length >= offset + (nuint)Vector64<byte>.Count)
         {
             var utf8 = Vector64.LoadUnsafe(ref src, offset);
 
@@ -214,7 +214,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             } while (offset <= lastvec);
         }
 
-        if (offset <= length - (nuint)Vector128<byte>.Count)
+        if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var utf8 = Vector128.LoadUnsafe(ref src, offset);
 
@@ -226,7 +226,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         }
 
         if (Vector64.IsHardwareAccelerated &&
-            offset <= length - (nuint)Vector64<byte>.Count)
+            length >= offset + (nuint)Vector64<byte>.Count)
         {
             var utf8 = Vector64.LoadUnsafe(ref src, offset);
 

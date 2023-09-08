@@ -58,9 +58,9 @@ internal static class U8Manipulation
 
             // Old and new bytes which individually are invalid unicode scalar values
             // are allowed if the replacement produces a valid UTF-8 sequence.
-            if (validate
-                && !U8Info.IsAsciiByte(oldValue)
-                && !U8Info.IsAsciiByte(newValue))
+            if (validate && (
+                !U8Info.IsAsciiByte(oldValue) ||
+                !U8Info.IsAsciiByte(newValue)))
             {
                 U8String.Validate(destination);
             }
