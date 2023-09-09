@@ -84,24 +84,25 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         throw new NotImplementedException();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String x, U8String y)
     {
         if (x.Length == y.Length)
         {
-            if (x.Offset == y.Offset && x.SourceEquals(y))
+            if (x.Length != 0 && (
+                x.Offset != y.Offset || !x.SourceEquals(y)))
             {
-                return true;
+                return EqualsCore(
+                    ref x.UnsafeRef, ref y.UnsafeRef, (nuint)x.Length);
             }
 
-            return EqualsCore(
-                ref x.UnsafeRef,
-                ref y.UnsafeRef,
-                (nuint)x.Length);
+            return true;
         }
 
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
         if (left.Length == right.Length)
