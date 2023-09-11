@@ -236,7 +236,7 @@ internal static class U8Searching
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
-                var chunk = Vector256.LoadUnsafe(ref ptr.Add(offset));
+                var chunk = Vector256.LoadUnsafe(ref ptr, offset);
                 var matches = Vector256.LessThan(chunk, continuations);
 
                 count += 32 - matches.AsByte().CountMatches();
@@ -247,7 +247,7 @@ internal static class U8Searching
         if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var continuations = Vector128.Create((sbyte)-64);
-            var chunk = Vector128.LoadUnsafe(ref ptr.Add(offset));
+            var chunk = Vector128.LoadUnsafe(ref ptr, offset);
             var matches = Vector128.LessThan(chunk, continuations);
 
             count += 16 - matches.AsByte().CountMatches();
@@ -258,7 +258,7 @@ internal static class U8Searching
             length >= offset + (nuint)Vector64<byte>.Count)
         {
             var continuations = Vector64.Create((sbyte)-64);
-            var chunk = Vector64.LoadUnsafe(ref ptr.Add(offset));
+            var chunk = Vector64.LoadUnsafe(ref ptr, offset);
             var matches = Vector64.LessThan(chunk, continuations);
 
             count += 8 - matches.AsByte().CountMatches();

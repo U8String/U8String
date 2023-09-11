@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.Intrinsics;
 using System.Text;
 
 namespace U8Primitives;
@@ -12,7 +11,7 @@ internal static class U8Manipulation
         var value = new byte[length];
         var span = value.AsSpan();
 
-        left.CopyTo(span.SliceUnsafe(0, length));
+        left.CopyTo(span.SliceUnsafe(0, left.Length));
         span.AsRef(length - 1) = right;
 
         return new U8String(value, 0, length);
@@ -49,12 +48,15 @@ internal static class U8Manipulation
 
             current
                 .SliceUnsafe(0, firstReplace)
-                .CopyTo(destination);
+                .CopyTo(destination.SliceUnsafe(0, firstReplace));
 
             destination = destination.SliceUnsafe(firstReplace);
-            current
-                .SliceUnsafe(firstReplace)
-                .Replace(destination, oldValue, newValue);
+            current = current.SliceUnsafe(firstReplace);
+
+            current.Replace(
+                destination.SliceUnsafe(0, current.Length),
+                oldValue,
+                newValue);
 
             // Old and new bytes which individually are invalid unicode scalar values
             // are allowed if the replacement produces a valid UTF-8 sequence.
@@ -169,14 +171,14 @@ internal static class U8Manipulation
 
             foreach (var segment in new U8RefSplit(source, oldValue))
             {
-                segment.AsSpan().CopyTo(destination);
+                segment.AsSpan().CopyTo(destination.SliceUnsafe(0, segment.Length));
                 destination = destination.SliceUnsafe(segment.Length);
                 if (destination.Length is 0)
                 {
                     break;
                 }
 
-                newValue.CopyTo(destination);
+                newValue.CopyTo(destination.SliceUnsafe(0, newValue.Length));
                 destination = destination.SliceUnsafe(newValue.Length);
             }
 
@@ -201,7 +203,7 @@ internal static class U8Manipulation
 
             foreach (var segment in new U8RefSplit(source, value))
             {
-                segment.AsSpan().CopyTo(destination);
+                segment.AsSpan().CopyTo(destination.SliceUnsafe(0, segment.Length));
                 destination = destination.SliceUnsafe(segment.Length);
             }
 
@@ -225,7 +227,7 @@ internal static class U8Manipulation
 
             foreach (var segment in new U8Split<byte>(source, value))
             {
-                segment.AsSpan().CopyTo(destination);
+                segment.AsSpan().CopyTo(destination.SliceUnsafe(0, segment.Length));
                 destination = destination.SliceUnsafe(segment.Length);
             }
 

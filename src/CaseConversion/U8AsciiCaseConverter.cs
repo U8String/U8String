@@ -87,13 +87,13 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             {
                 // We cannot use extension helper because the compiler refuses
                 // to hoist constant loads out of the loop on ARM64
-                var utf8 = Vector256.LoadUnsafe(ref src.Add(offset));
+                var utf8 = Vector256.LoadUnsafe(ref src, offset);
 
                 var changeCase = mask
                     & utf8.Gte(lower)
                     & utf8.Lte(upper);
 
-                (utf8 | changeCase).StoreUnsafe(ref dst.Add(offset));
+                (utf8 | changeCase).StoreUnsafe(ref dst, offset);
 
                 offset += (nuint)Vector256<byte>.Count;
             } while (offset <= lastvec);
@@ -105,7 +105,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
             Instance
                 .ToLower(utf8)
-                .StoreUnsafe(ref dst.Add(offset));
+                .StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector128<byte>.Count;
         }
@@ -117,7 +117,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
             Instance
                 .ToLower(utf8)
-                .StoreUnsafe(ref dst.Add(offset));
+                .StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector64<byte>.Count;
         }
@@ -202,13 +202,13 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
-                var utf8 = Vector256.LoadUnsafe(ref src.Add(offset));
+                var utf8 = Vector256.LoadUnsafe(ref src, offset);
 
                 var changeCase = mask
                     & utf8.Gte(lower)
                     & utf8.Lte(upper);
 
-                (utf8 ^ changeCase).StoreUnsafe(ref dst.Add(offset));
+                (utf8 ^ changeCase).StoreUnsafe(ref dst, offset);
 
                 offset += (nuint)Vector256<byte>.Count;
             } while (offset <= lastvec);
@@ -220,7 +220,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
             Instance
                 .ToUpper(utf8)
-                .StoreUnsafe(ref dst.Add(offset));
+                .StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector128<byte>.Count;
         }
@@ -232,7 +232,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
             Instance
                 .ToUpper(utf8)
-                .StoreUnsafe(ref dst.Add(offset));
+                .StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector64<byte>.Count;
         }
