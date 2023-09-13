@@ -187,7 +187,22 @@ internal static class U8Enumeration
         return result;
     }
 
-    private static void FillUnchecked<T, E, U>(this ref T source, Span<U> destination)
+    internal static List<U> ToListUnsized<T, E, U>(this T source, int sizeHint)
+        where T : struct, IEnumerable<U, E>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        var result = new List<U>(sizeHint);
+
+        CollectionsMarshal.SetCount(result, sizeHint);
+        var span = CollectionsMarshal.AsSpan(result);
+        var count = source.FillUnchecked<T, E, U>(span);
+        CollectionsMarshal.SetCount(result, count);
+
+        return result;
+    }
+
+    static int FillUnchecked<T, E, U>(this ref T source, Span<U> destination)
         where T : struct, IEnumerable<U, E>
         where E : struct, IEnumerator<U>
         where U : struct
@@ -198,5 +213,7 @@ internal static class U8Enumeration
         {
             ptr.Add(i++) = item;
         }
+
+        return i;
     }
 }

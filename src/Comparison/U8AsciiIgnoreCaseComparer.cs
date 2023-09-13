@@ -1,7 +1,6 @@
 using System.Buffers;
 using System.IO.Hashing;
 using System.Runtime.Intrinsics;
-using System.Runtime.Intrinsics.Arm;
 
 using U8Primitives.Abstractions;
 
@@ -13,7 +12,8 @@ public readonly struct U8AsciiIgnoreCaseComparer :
     IU8EqualityComparer,
     IU8ContainsOperator,
     IU8CountOperator,
-    IU8IndexOfOperator
+    IU8IndexOfOperator,
+    IU8LastIndexOfOperator
 {
     static readonly SearchValues<byte> AsciiLetters =
         SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"u8);
@@ -81,6 +81,21 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         var needleHead = value[..value.IndexOfAny(AsciiLetters)];
         var needleAscii = value[needleHead.Length..];
 
+        throw new NotImplementedException();
+    }
+
+    public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, byte value)
+    {
+        if (!U8Info.IsAsciiLetter(value))
+        {
+            return (source.LastIndexOf(value), 1);
+        }
+
+        return (source.LastIndexOfAny(value, (byte)(value ^ 0x20)), 1);
+    }
+
+    public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
         throw new NotImplementedException();
     }
 

@@ -7,7 +7,8 @@ public readonly struct U8OrdinalComparer :
     IU8EqualityComparer,
     IU8ContainsOperator,
     IU8CountOperator,
-    IU8IndexOfOperator
+    IU8IndexOfOperator,
+    IU8LastIndexOfOperator
 {
     public static U8OrdinalComparer Instance => default;
 
@@ -79,5 +80,15 @@ public readonly struct U8OrdinalComparer :
     public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
         return (source.IndexOf(value), value.Length);
+    }
+
+    public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, byte value)
+    {
+        return (source.LastIndexOf(value), 1);
+    }
+
+    public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        return (source.LastIndexOf(value), value.Length);
     }
 }

@@ -24,6 +24,12 @@ public interface IU8IndexOfOperator
     (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
 }
 
+public interface IU8LastIndexOfOperator
+{
+    (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, byte value);
+    (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
+}
+
 public interface IU8EqualityComparer : IEqualityComparer<U8String>
 {
     bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right);

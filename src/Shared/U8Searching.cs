@@ -371,4 +371,53 @@ internal static class U8Searching
             ? comparer.IndexOf(source, value[0])
             : comparer.IndexOf(source, value);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (int Offset, int Length) LastIndexOf<T, C>(ReadOnlySpan<byte> source, T value, C comparer)
+        where T : struct
+        where C : IU8LastIndexOfOperator
+    {
+        Debug.Assert(value is not char i || !char.IsSurrogate(i));
+        Debug.Assert(value is byte or char or Rune or U8String);
+
+        switch (value)
+        {
+            case byte b:
+                return comparer.LastIndexOf(source, b);
+
+            case char c:
+                if (char.IsAscii(c))
+                {
+                    return comparer.LastIndexOf(source, (byte)c);
+                }
+
+                var scalar = U8Scalar.Create(c, checkAscii: false);
+                return comparer.LastIndexOf(source, scalar.AsSpan());
+
+            case Rune r:
+                if (r.IsAscii)
+                {
+                    return comparer.LastIndexOf(source, (byte)r.Value);
+                }
+
+                var rune = U8Scalar.Create(r, checkAscii: false);
+                return comparer.LastIndexOf(source, rune.AsSpan());
+
+            case U8String str:
+                var span = str.AsSpan();
+                return LastIndexOf(source, span, comparer);
+
+            default:
+                return ThrowHelpers.Unreachable<(int, int)>();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (int Offset, int Length) LastIndexOf<T>(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        return value.Length is 1
+            ? comparer.LastIndexOf(source, value[0])
+            : comparer.LastIndexOf(source, value);
+    }
 }
