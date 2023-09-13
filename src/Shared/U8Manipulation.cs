@@ -83,8 +83,8 @@ internal static class U8Manipulation
             ? Replace(source, (byte)oldValue, (byte)newValue, validate: false)
             : ReplaceCore(
                 source,
-                U8Scalar.Create(oldValue, checkAscii: false).AsSpan(),
-                U8Scalar.Create(newValue, checkAscii: false).AsSpan());
+                U8Scalar.Create(oldValue).AsSpan(),
+                U8Scalar.Create(newValue).AsSpan());
     }
 
     internal static U8String Replace(U8String source, Rune oldValue, Rune newValue)
@@ -93,8 +93,8 @@ internal static class U8Manipulation
             ? Replace(source, (byte)oldValue.Value, (byte)newValue.Value, validate: false)
             : ReplaceCore(
                 source,
-                U8Scalar.Create(oldValue, checkAscii: false).AsSpan(),
-                U8Scalar.Create(newValue, checkAscii: false).AsSpan());
+                U8Scalar.Create(oldValue).AsSpan(),
+                U8Scalar.Create(newValue).AsSpan());
     }
 
     internal static U8String Replace(U8String source, ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
