@@ -17,9 +17,7 @@ public static class U8Info
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiLetter(in byte value)
     {
-        return value
-            is (>= (byte)'A' and <= (byte)'Z')
-            or (>= (byte)'a' and <= (byte)'z');
+        return (uint)((value | 0x20) - 'a') <= 'z' - 'a';
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
