@@ -496,6 +496,12 @@ public readonly struct ConfiguredU8Split :
         return this.ElementAtOrDefault<ConfiguredU8Split, Enumerator, U8String>(index);
     }
 
+    public U8String[] ToArray()
+    {
+        var hint = U8Searching.Count(_value, _separator);
+        return this.ToArrayUnsized<ConfiguredU8Split, Enumerator, U8String>(hint);
+    }
+
     public List<U8String> ToList()
     {
         var hint = U8Searching.Count(_value, _separator);
@@ -610,6 +616,12 @@ public readonly struct ConfiguredU8Split<TSeparator> :
     public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(index);
+    }
+
+    public U8String[] ToArray()
+    {
+        var hint = U8Searching.Count(_value, _separator);
+        return this.ToArrayUnsized<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(hint);
     }
 
     public List<U8String> ToList()

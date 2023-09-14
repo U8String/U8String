@@ -154,6 +154,9 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
                 // Create ASCII uppercase letters eqmasks
                 // TODO: Do we really need to do 2(CMHSx2+AND) here?
+                // Try: mask out all except letter + ascii indicator bits,
+                // then produce an inverted case vector and compare both
+                // against rvec, maybe applying xor?
                 var lcmask = mask
                     & lvec.Gte(upperStart)
                     & lvec.Lte(upperEnd);

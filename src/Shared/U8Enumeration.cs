@@ -187,14 +187,29 @@ internal static class U8Enumeration
         return result;
     }
 
-    internal static List<U> ToListUnsized<T, E, U>(this T source, int sizeHint)
+    internal static U[] ToArrayUnsized<T, E, U>(this T source, int maxLength)
         where T : struct, IEnumerable<U, E>
         where E : struct, IEnumerator<U>
         where U : struct
     {
-        var result = new List<U>(sizeHint);
+        var result = new U[maxLength];
+        var count = source.FillUnchecked<T, E, U>(result);
+        if (count != maxLength)
+        {
+            Array.Resize(ref result, count);
+        }
 
-        CollectionsMarshal.SetCount(result, sizeHint);
+        return result;
+    }
+
+    internal static List<U> ToListUnsized<T, E, U>(this T source, int maxLength)
+        where T : struct, IEnumerable<U, E>
+        where E : struct, IEnumerator<U>
+        where U : struct
+    {
+        var result = new List<U>(maxLength);
+
+        CollectionsMarshal.SetCount(result, maxLength);
         var span = CollectionsMarshal.AsSpan(result);
         var count = source.FillUnchecked<T, E, U>(span);
         CollectionsMarshal.SetCount(result, count);
