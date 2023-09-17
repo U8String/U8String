@@ -43,7 +43,7 @@ public static class U8HttpExtensions
     public static async Task<U8String> GetU8StringAsync(
         this HttpClient client, Uri? requestUri, CancellationToken cancellationToken)
     {
-        var bytes = await client.GetByteArrayAsync(requestUri, cancellationToken);
+        var bytes = await client.GetByteArrayAsync(requestUri, cancellationToken).ConfigureAwait(false);
 
         U8String.Validate(bytes);
         return new(bytes, 0, bytes.Length);
@@ -67,7 +67,7 @@ public static class U8HttpExtensions
     public static async Task<U8String> ReadAsU8StringAsync(
         this HttpContent content, CancellationToken cancellationToken)
     {
-        var bytes = await content.ReadAsByteArrayAsync(cancellationToken);
+        var bytes = await content.ReadAsByteArrayAsync(cancellationToken).ConfigureAwait(false);
 
         U8String.Validate(bytes);
         return new(bytes, 0, bytes.Length);

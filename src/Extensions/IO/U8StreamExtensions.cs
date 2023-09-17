@@ -35,7 +35,7 @@ public static class U8StreamExtensions
         if (length > 0)
         {
             var buffer = new byte[(int)length];
-            var bytesRead = await stream.ReadAsync(buffer, ct);
+            var bytesRead = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
 
             U8String.Validate(buffer.SliceUnsafe(0, bytesRead));
             return new U8String(buffer, 0, bytesRead);
