@@ -49,7 +49,6 @@ public readonly partial struct U8String :
     IEquatable<byte[]?>,
     IComparable<U8String>,
     IComparable<U8String?>,
-    IComparable<byte[]?>,
     IList<byte>,
     ICloneable,
     ISpanParsable<U8String>,
@@ -107,10 +106,7 @@ public readonly partial struct U8String :
     public int RuneCount
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            return !IsEmpty ? U8Searching.CountRunes(ref UnsafeRef, (nuint)Length) : 0;
-        }
+        get => !IsEmpty ? U8Searching.CountRunes(ref UnsafeRef, (nuint)Length) : 0;
     }
 
     /// <inheritdoc/>
@@ -190,12 +186,7 @@ public readonly partial struct U8String :
             return U8Info.IsAsciiByte(value[0]);
         }
 
-        if (value.Length != 0)
-        {
-            return Utf8.IsValid(value);
-        }
-
-        return true;
+        return value.Length is 0 || Utf8.IsValid(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

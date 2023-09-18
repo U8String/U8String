@@ -3,7 +3,7 @@ using U8Primitives.Abstractions;
 namespace U8Primitives;
 
 public readonly struct U8OrdinalComparer :
-    IComparer<U8String>,
+    IU8Comparer,
     IU8EqualityComparer,
     IU8ContainsOperator,
     IU8CountOperator,
@@ -20,16 +20,20 @@ public readonly struct U8OrdinalComparer :
             {
                 var left = x.UnsafeSpan;
                 var right = y.UnsafeSpan;
-                var result = left.SequenceCompareTo(right);
 
-                // Clamp between -1 and 1
-                return (result >> 31) | (int)((uint)-result >> 31);
+                return Compare(left, right);
             }
 
             return 1;
         }
 
         return y.IsEmpty ? 0 : -1;
+    }
+
+    public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+    {
+        // TODO: Does this need to be clamped?
+        return x.SequenceCompareTo(y);
     }
 
     public bool Contains(ReadOnlySpan<byte> source, byte value)
@@ -57,9 +61,9 @@ public readonly struct U8OrdinalComparer :
         return x.Equals(y);
     }
 
-    public bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+    public bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
-        return left.SequenceEqual(right);
+        return x.SequenceEqual(y);
     }
 
     public int GetHashCode(U8String obj)

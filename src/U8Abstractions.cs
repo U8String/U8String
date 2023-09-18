@@ -30,9 +30,14 @@ public interface IU8LastIndexOfOperator
     (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
 }
 
+public interface IU8Comparer : IComparer<U8String>
+{
+    int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y);
+}
+
 public interface IU8EqualityComparer : IEqualityComparer<U8String>
 {
-    bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right);
+    bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y);
     int GetHashCode(ReadOnlySpan<byte> obj);
 }
 

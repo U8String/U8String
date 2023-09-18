@@ -7,6 +7,28 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
+    public static int Compare(U8String x, U8String y)
+    {
+        return U8Comparison.Ordinal.Compare(x, y);
+    }
+
+    public static int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+    {
+        return U8Comparison.Ordinal.Compare(x, y);
+    }
+
+    public static int Compare<T>(U8String x, U8String y, T comparer)
+        where T : IComparer<U8String>
+    {
+        return comparer.Compare(x, y);
+    }
+
+    public static int Compare<T>(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y, T comparer)
+        where T : IU8Comparer
+    {
+        return comparer.Compare(x, y);
+    }
+
     /// <summary>
     /// Compares two <see cref="U8String"/> instances using lexicographical semantics and returns
     /// an integer that indicates whether the first instance precedes, follows, or occurs in the same
@@ -19,21 +41,23 @@ public readonly partial struct U8String
 
     public int CompareTo(U8String? other)
     {
+        // Supposedly, this is for collections which opt to store 'U8String?'
         return other.HasValue ? CompareTo(other.Value) : 1;
     }
 
-    public int CompareTo(byte[]? other)
+    public int CompareTo(ReadOnlySpan<byte> other)
     {
-        if (other != null)
-        {
-            return CompareTo(new U8String(other, 0, other.Length));
-        }
-
-        return 1;
+        return U8Comparison.Ordinal.Compare(this, other);
     }
 
     public int CompareTo<T>(U8String other, T comparer)
         where T : IComparer<U8String>
+    {
+        return comparer.Compare(this, other);
+    }
+
+    public int CompareTo<T>(ReadOnlySpan<byte> other, T comparer)
+        where T : IU8Comparer
     {
         return comparer.Compare(this, other);
     }

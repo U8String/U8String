@@ -9,6 +9,17 @@ namespace U8Primitives;
 public static class U8Info
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsAscii(ReadOnlySpan<byte> value)
+    {
+        if (value.Length is 1)
+        {
+            return IsAsciiByte(in value[0]);
+        }
+
+        return Ascii.IsValid(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiByte(in byte value)
     {
         return value <= 0x7F;

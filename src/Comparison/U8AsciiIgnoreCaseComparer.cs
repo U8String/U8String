@@ -8,16 +8,13 @@ namespace U8Primitives;
 
 // TODO: Optimize impls.
 public readonly struct U8AsciiIgnoreCaseComparer :
-    IComparer<U8String>,
+    IU8Comparer,
     IU8EqualityComparer,
     IU8ContainsOperator,
     IU8CountOperator,
     IU8IndexOfOperator,
     IU8LastIndexOfOperator
 {
-    static readonly SearchValues<byte> AsciiLetters =
-        SearchValues.Create("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"u8);
-
     [ThreadStatic]
     static XxHash3? Hasher;
 
@@ -25,14 +22,60 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public int Compare(U8String x, U8String y)
     {
-        throw new NotImplementedException();
+        if (!x.IsEmpty)
+        {
+            if (!y.IsEmpty)
+            {
+                var left = x.UnsafeSpan;
+                var right = y.UnsafeSpan;
+
+                return Compare(left, right);
+            }
+
+            return 1;
+        }
+
+        return y.IsEmpty ? 0 : -1;
+    }
+
+    public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
+    {
+        var offset = x.CommonPrefixLength(y);
+        var length = Math.Min(x.Length, y.Length);
+
+        ref var xptr = ref x.AsRef();
+        ref var yptr = ref y.AsRef();
+
+        while (offset < length)
+        {
+            var xval = xptr.Add(offset);
+            var yval = yptr.Add(offset);
+
+            if (xval != yval)
+            {
+                xval = U8Info.IsAsciiLetter(xval) ? (byte)(xval | 0x20) : xval;
+                yval = U8Info.IsAsciiLetter(yval) ? (byte)(yval | 0x20) : yval;
+                if (xval != yval)
+                {
+                    return xval - yval;
+                }
+            }
+
+            offset++;
+        }
+
+        // TODO: Does this need to be clamped?
+        return x.Length - y.Length;
     }
 
     public bool Contains(ReadOnlySpan<byte> source, byte value)
     {
-        return U8Info.IsAsciiLetter(value)
-            ? source.ContainsAny(value, (byte)(value ^ 0x20))
-            : source.Contains(value);
+        if (!U8Info.IsAsciiLetter(value))
+        {
+            return source.Contains(value);
+        }
+
+        return source.ContainsAny(value, (byte)(value ^ 0x20));
     }
 
     public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
@@ -42,21 +85,54 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             return Contains(source, value[0]);
         }
 
-        // TODO: options
-        // - Check if input has ascii letters, then use default search or custom masked simd search
-        // - Use custom masked simd search from the get go
-        // - Probably call into IndexOf like in other locations
-        throw new NotImplementedException();
+        return IndexOf(source, value).Offset >= 0;
     }
 
     public int Count(ReadOnlySpan<byte> source, byte value)
     {
-        throw new NotImplementedException();
+        if (!U8Info.IsAsciiLetter(value))
+        {
+            return source.Count(value);
+        }
+
+        int index;
+        var count = 0;
+        while (true)
+        {
+            index = source.IndexOfAny(value, (byte)(value ^ 0x20));
+            if (index < 0) break;
+
+            count++;
+            source = source.SliceUnsafe(index + 1);
+        }
+
+        return count;
     }
 
     public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        throw new NotImplementedException();
+        if (value.Length is 0)
+        {
+            return 0;
+        }
+
+        if (value.Length is 1)
+        {
+            return Count(source, value[0]);
+        }
+
+        int index;
+        var count = 0;
+        while (true)
+        {
+            index = IndexOf(source, value).Offset;
+            if (index < 0) break;
+
+            count++;
+            source = source.SliceUnsafe(index + value.Length);
+        }
+
+        return count;
     }
 
     public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)
@@ -71,17 +147,33 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        // Strategy:
-        // - Iterate through candidates which are determined by the first needle byte match
-        // or the first needle vector match (to avoid examining candidates byte-by-byte)
-        // - For each candidate, slice the source to the same length as the needle
-        // if remainder.Length > value.Length and then delegate comparison to
-        // EqualsAsciiIgnoreCase implementation
-        // TODO: specialize sub-needle lengths to perform masked search instead?
-        var needleHead = value[..value.IndexOfAny(AsciiLetters)];
-        var needleAscii = value[needleHead.Length..];
+        if (value.Length is 0 || value.Length > source.Length)
+        {
+            return (-1, 0);
+        }
 
-        throw new NotImplementedException();
+        // Performance of this implementation jumps off a cliff on sequences of repeated
+        // needle candidates, e.g. "aaaaa". The comparer itself is probably a stop-gap measure
+        // until there is proper U8OrdinalIgnoreCaseComparer implementation.
+        int index;
+        var candidate = value[0];
+        while (true)
+        {
+            index = IndexOf(source, candidate).Offset;
+            if (index < 0) break;
+
+            source = source.SliceUnsafe(index);
+            if (source.Length < value.Length) break;
+
+            if (Equals(source.SliceUnsafe(0, value.Length), value))
+            {
+                return (index, value.Length);
+            }
+
+            source = source.SliceUnsafe(value.Length);
+        }
+
+        return (-1, 0);
     }
 
     public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, byte value)
@@ -96,7 +188,30 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        throw new NotImplementedException();
+        if (value.Length is 0 || value.Length > source.Length)
+        {
+            return (-1, 0);
+        }
+
+        int index;
+        var candidate = value[0];
+        while (true)
+        {
+            index = LastIndexOf(source, candidate).Offset;
+            if (index < 0) break;
+
+            var candidateValue = source.SliceUnsafe(index);
+            if (candidateValue.Length < value.Length) break;
+
+            if (Equals(candidateValue.SliceUnsafe(0, value.Length), value))
+            {
+                return (index, value.Length);
+            }
+
+            source = source.SliceUnsafe(0, index);
+        }
+
+        return (-1, 0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -118,16 +233,16 @@ public readonly struct U8AsciiIgnoreCaseComparer :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool Equals(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+    public bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
-        if (left.Length == right.Length)
+        if (x.Length == y.Length)
         {
-            ref var lptr = ref left.AsRef();
-            ref var rptr = ref right.AsRef();
+            ref var lptr = ref x.AsRef();
+            ref var rptr = ref y.AsRef();
 
             if (!Unsafe.AreSame(ref lptr, ref rptr))
             {
-                return EqualsCore(ref lptr, ref rptr, (nuint)left.Length);
+                return EqualsCore(ref lptr, ref rptr, (nuint)x.Length);
             }
 
             return true;

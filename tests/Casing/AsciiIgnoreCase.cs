@@ -1,0 +1,1 @@
+namespace U8Primitives.Tests.Casing;

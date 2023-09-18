@@ -20,6 +20,14 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref T AsRef<T>(this ReadOnlySpan<T> value, int offset)
+        where T : struct
+    {
+        Debug.Assert((uint)offset < (uint)value.Length);
+        return ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this T[] value, int offset)
         where T : struct
     {
