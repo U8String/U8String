@@ -66,14 +66,14 @@ public readonly struct U8OrdinalComparer :
         return x.SequenceEqual(y);
     }
 
-    public int GetHashCode(U8String obj)
+    public int GetHashCode(U8String value)
     {
-        return U8String.GetHashCode(obj);
+        return U8String.GetHashCode(value);
     }
 
-    public int GetHashCode(ReadOnlySpan<byte> obj)
+    public int GetHashCode(ReadOnlySpan<byte> value)
     {
-        return U8String.GetHashCode(obj);
+        return U8String.GetHashCode(value);
     }
 
     public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)

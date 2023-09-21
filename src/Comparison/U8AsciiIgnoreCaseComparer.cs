@@ -64,7 +64,6 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             offset++;
         }
 
-        // TODO: Does this need to be clamped?
         return x.Length - y.Length;
     }
 
@@ -80,16 +79,13 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public bool Contains(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        if (value.Length is 1)
-        {
-            return Contains(source, value[0]);
-        }
-
         return IndexOf(source, value).Offset >= 0;
     }
 
     public int Count(ReadOnlySpan<byte> source, byte value)
     {
+        // Maybe it's faster to just do Count(value) + Count(inverted)?
+        // TODO: Benchmark alternatives
         if (!U8Info.IsAsciiLetter(value))
         {
             return source.Count(value);
@@ -165,7 +161,10 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             source = source.SliceUnsafe(index);
             if (source.Length < value.Length) break;
 
-            if (Equals(source.SliceUnsafe(0, value.Length), value))
+            if (EqualsCore(
+                ref source.AsRef(),
+                ref value.AsRef(),
+                (nuint)value.Length))
             {
                 return (index, value.Length);
             }
@@ -194,16 +193,19 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         }
 
         int index;
-        var candidate = value[0];
+        var firstByte = value[0];
         while (true)
         {
-            index = LastIndexOf(source, candidate).Offset;
+            index = LastIndexOf(source, firstByte).Offset;
             if (index < 0) break;
 
-            var candidateValue = source.SliceUnsafe(index);
-            if (candidateValue.Length < value.Length) break;
+            var candidate = source.SliceUnsafe(index);
+            if (candidate.Length < value.Length) break;
 
-            if (Equals(candidateValue.SliceUnsafe(0, value.Length), value))
+            if (EqualsCore(
+                ref candidate.AsRef(),
+                ref value.AsRef(),
+                (nuint)value.Length))
             {
                 return (index, value.Length);
             }
@@ -214,7 +216,6 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         return (-1, 0);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String x, U8String y)
     {
         if (x.Length == y.Length)
@@ -232,7 +233,6 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         return false;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
         if (x.Length == y.Length)
@@ -336,22 +336,22 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         return true;
     }
 
-    public int GetHashCode(U8String obj) => GetHashCode(obj.AsSpan());
+    public int GetHashCode(U8String value) => GetHashCode(value.AsSpan());
 
-    public int GetHashCode(ReadOnlySpan<byte> obj)
+    public int GetHashCode(ReadOnlySpan<byte> value)
     {
         var buffer = new InlineBuffer().AsSpan();
-        if (obj.Length <= buffer.Length)
+        if (value.Length <= buffer.Length)
         {
-            U8AsciiCaseConverter.ToLowerCore(
-                src: ref obj.AsRef(),
+            U8AsciiCaseConverter.ToUpperCore(
+                src: ref value.AsRef(),
                 dst: ref buffer.AsRef(),
-                (nuint)obj.Length);
+                (nuint)value.Length);
 
-            return U8String.GetHashCode(buffer.SliceUnsafe(0, obj.Length));
+            return U8String.GetHashCode(buffer.SliceUnsafe(0, value.Length));
         }
 
-        return GetHashCodeLarge(ref obj.AsRef(), (nuint)obj.Length, buffer);
+        return GetHashCodeLarge(ref value.AsRef(), (nuint)value.Length, buffer);
     }
 
     static int GetHashCodeLarge(ref byte src, nuint length, ReadOnlySpan<byte> buffer)
@@ -363,7 +363,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         {
             var remainder = Math.Min(length, (uint)buffer.Length);
 
-            U8AsciiCaseConverter.ToLowerCore(
+            U8AsciiCaseConverter.ToUpperCore(
                 src: ref src,
                 dst: ref buffer.AsRef(),
                 remainder);

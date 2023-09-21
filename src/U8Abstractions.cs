@@ -38,7 +38,7 @@ public interface IU8Comparer : IComparer<U8String>
 public interface IU8EqualityComparer : IEqualityComparer<U8String>
 {
     bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y);
-    int GetHashCode(ReadOnlySpan<byte> obj);
+    int GetHashCode(ReadOnlySpan<byte> value);
 }
 
 // TODO: Member naming?
