@@ -42,7 +42,7 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches(this Vector256<byte> mask)
+    internal static int CountMatches<T>(this Vector256<T> mask)
     {
         if (Vector256.IsHardwareAccelerated)
         {
@@ -57,27 +57,24 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches(this Vector128<byte> mask)
+    internal static int CountMatches<T>(this Vector128<T> mask)
     {
-        // Is there really no way to use AddAcross here?
         if (AdvSimd.Arm64.IsSupported)
         {
-            var matches = AdvSimd
-                .ShiftRightLogicalNarrowingLower(mask.AsUInt16(), 4)
-                .AsByte();
-
             return AdvSimd.Arm64
-                .AddAcross(AdvSimd.PopCount(matches))
-                .ToScalar() >> 2;
+                .AddAcross(AdvSimd.PopCount(mask.AsByte()))
+                .ToScalar() / (8 * Unsafe.SizeOf<T>());
         }
 
         return BitOperations.PopCount(mask.ExtractMostSignificantBits());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches(this Vector64<byte> mask)
+    internal static int CountMatches<T>(this Vector64<T> mask)
     {
-        return AdvSimd.Arm64.AddAcross(AdvSimd.PopCount(mask)).ToScalar() / 8;
+        return AdvSimd.Arm64
+            .AddAcross(AdvSimd.PopCount(mask.AsByte()))
+            .ToScalar() / (8 * Unsafe.SizeOf<T>());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

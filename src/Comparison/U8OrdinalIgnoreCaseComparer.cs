@@ -34,9 +34,17 @@ public readonly struct U8OrdinalIgnoreCaseComparer :
         return y.IsEmpty ? 0 : -1;
     }
 
+    // TODO: Optimize. Likely depends on high effort multi-level LUT approach.
+    // In fact, there's a chance we can put all canonical implementations in the ground,
+    // outperforming them by a wide margin by statistically sampling character frequencies and/or
+    // bitwise case folding patterns and implementing vectorized second level LUT based on
+    // TBLn/TBXn instructions on ARM64 and shuffles/vpternlogs on x86_64.
+    // With that said, even the naive implementation below is just 3 times slower than
+    // built-in Windows implementation of OrdinalIgnoreCase.
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
+        // TODO: Drain common prefix using case-insensitive ASCII comparison instead.
         var prefix = x.CommonPrefixLength(y);
         var length = Math.Min(x.Length, y.Length);
 
@@ -118,19 +126,17 @@ public readonly struct U8OrdinalIgnoreCaseComparer :
 
     public bool Equals(U8String x, U8String y)
     {
+        // TODO: Disambiguate ordinal vs invariant and fix comparer name.
         if (x.Length == y.Length)
         {
-            if (x.Length != 0 && (
-                x.Offset != y.Offset || !x.SourceEquals(y)))
+            if (x.Length is 0 || (
+                x.Offset == y.Offset && x.SourceEquals(y)))
             {
-                return EqualsCore(
-                    ref x.UnsafeRef, ref y.UnsafeRef, (nuint)x.Length);
+                return true;
             }
-
-            return true;
         }
 
-        return false;
+        return EqualsCore(x, y);
     }
 
     public bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
@@ -140,36 +146,72 @@ public readonly struct U8OrdinalIgnoreCaseComparer :
             ref var lptr = ref x.AsRef();
             ref var rptr = ref y.AsRef();
 
-            if (!Unsafe.AreSame(ref lptr, ref rptr))
+            if (Unsafe.AreSame(ref lptr, ref rptr))
             {
-                return EqualsCore(ref lptr, ref rptr, (nuint)x.Length);
+                return true;
             }
-
-            return true;
         }
 
-        return false;
+        return EqualsCore(x, y);
     }
 
-    static bool EqualsCore(ref byte left, ref byte right, nuint length)
+    /// <summary>
+    /// Contract: both strings must start at non-continuation byte.
+    /// </summary>
+    static bool EqualsCore(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
-        throw new NotImplementedException();
-    }
+        // TODO: Drain common prefix using case-insensitive ASCII comparison instead.
+        var prefix = x.CommonPrefixLength(y);
 
-    public int GetHashCode(U8String value) => GetHashCode(value.AsSpan());
+        ref var xptr = ref x.AsRef();
+        ref var yptr = ref y.AsRef();
 
-    public int GetHashCode(ReadOnlySpan<byte> value)
-    {
-        throw new NotImplementedException();
+        var (xoffset, xlength) = (prefix, x.Length);
+        var (yoffset, ylength) = (prefix, y.Length);
+
+        while (U8Info.IsContinuationByte(in xptr.Add(xoffset)))
+            xoffset--;
+
+        while (U8Info.IsContinuationByte(in yptr.Add(yoffset)))
+            yoffset--;
+
+        while (xoffset < xlength)
+        {
+            if (yoffset >= ylength)
+            {
+                return false;
+            }
+
+            var xrune = U8Conversions.CodepointToRune(ref xptr.Add(xoffset), out var xlen);
+            var yrune = U8Conversions.CodepointToRune(ref yptr.Add(yoffset), out var ylen);
+
+            if (xrune != yrune)
+            {
+                xrune = Rune.ToUpperInvariant(xrune);
+                yrune = Rune.ToUpperInvariant(yrune);
+
+                if (xrune != yrune)
+                {
+                    return false;
+                }
+            }
+
+            xoffset += xlen;
+            yoffset += ylen;
+        }
+
+        return true;
     }
 
     public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, byte value)
     {
+        // Absolute pain because maybe ASCII letter can match to non-ASCII one?
         throw new NotImplementedException();
     }
 
     public (int Offset, int Length) IndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
+        // Even more pain because we need to match against two character candidate sequences
         throw new NotImplementedException();
     }
 
@@ -179,6 +221,13 @@ public readonly struct U8OrdinalIgnoreCaseComparer :
     }
 
     public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public int GetHashCode(U8String value) => GetHashCode(value.AsSpan());
+
+    public int GetHashCode(ReadOnlySpan<byte> value)
     {
         throw new NotImplementedException();
     }

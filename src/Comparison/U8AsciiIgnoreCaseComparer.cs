@@ -48,6 +48,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
         while (offset < length)
         {
+            // TODO: Vectorize?
             var xval = xptr.Add(offset);
             var yval = yptr.Add(offset);
 
@@ -162,9 +163,9 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             if (source.Length < value.Length) break;
 
             if (EqualsCore(
-                ref source.AsRef(),
-                ref value.AsRef(),
-                (nuint)value.Length))
+                    ref source.AsRef(),
+                    ref value.AsRef(),
+                    (nuint)value.Length))
             {
                 return (index, value.Length);
             }
@@ -203,9 +204,9 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             if (candidate.Length < value.Length) break;
 
             if (EqualsCore(
-                ref candidate.AsRef(),
-                ref value.AsRef(),
-                (nuint)value.Length))
+                    ref candidate.AsRef(),
+                    ref value.AsRef(),
+                    (nuint)value.Length))
             {
                 return (index, value.Length);
             }
@@ -267,11 +268,6 @@ public readonly struct U8AsciiIgnoreCaseComparer :
                 var lvec = Vector256.LoadUnsafe(ref left, offset);
                 var rvec = Vector256.LoadUnsafe(ref right, offset);
 
-                // Create ASCII uppercase letters eqmasks
-                // TODO: Do we really need to do 2(CMHSx2+AND) here?
-                // Try: mask out all except letter + ascii indicator bits,
-                // then produce an inverted case vector and compare both
-                // against rvec, maybe applying xor?
                 var lcmask = mask
                     & lvec.Gte(upperStart)
                     & lvec.Lte(upperEnd);
