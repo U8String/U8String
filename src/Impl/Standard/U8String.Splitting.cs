@@ -32,9 +32,17 @@ public readonly partial struct U8String
         return default;
     }
 
-    public U8SplitPair SplitFirst(char separator) => char.IsAscii(separator)
-        ? SplitFirst((byte)separator)
-        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+    public U8SplitPair SplitFirst(char separator)
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        return char.IsAscii(separator)
+            ? SplitFirst((byte)separator)
+            : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+    }
 
     public U8SplitPair SplitFirst(Rune separator) => separator.IsAscii
         ? SplitFirst((byte)separator.Value)
@@ -254,9 +262,17 @@ public readonly partial struct U8String
         return default;
     }
 
-    public U8SplitPair SplitLast(char separator) => char.IsAscii(separator)
-        ? SplitLast((byte)separator)
-        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+    public U8SplitPair SplitLast(char separator)
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        return char.IsAscii(separator)
+            ? SplitLast((byte)separator)
+            : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+    }
 
     public U8SplitPair SplitLast(Rune separator) => separator.IsAscii
         ? SplitLast((byte)separator.Value)

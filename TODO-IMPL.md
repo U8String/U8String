@@ -14,6 +14,7 @@
     - [ ] `U8Searcher<T>` where T is byte or char or Rune
     - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
+- [ ] Consider centralizing `new byte[length]` allocations to control null-termination and zeroing
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
 - [ ] Null-terminate odd-sized arrays?
 - [ ] Optimize .Replace methods

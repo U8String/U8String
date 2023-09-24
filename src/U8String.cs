@@ -97,6 +97,15 @@ public readonly partial struct U8String :
         get => _value is null;
     }
 
+    public bool IsNullTerminated
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            return !IsEmpty && UnsafeRefAdd(Length - 1) is 0;
+        }
+    }
+
     /// <summary>
     /// The number of UTF-8 code points in the current <see cref="U8String"/>.
     /// </summary>
@@ -126,9 +135,8 @@ public readonly partial struct U8String :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var value = _value;
             ref var reference = ref Unsafe.NullRef<byte>();
-            if (value != null) reference = ref MemoryMarshal.GetArrayDataReference(value);
+            if (_value != null) reference = ref MemoryMarshal.GetArrayDataReference(_value);
             reference = ref Unsafe.Add(ref reference, Offset);
             return ref reference;
         }
@@ -181,12 +189,17 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValid(ReadOnlySpan<byte> value)
     {
+        if (value.Length > 1)
+        {
+            return Utf8.IsValid(value);
+        }
+
         if (value.Length is 1)
         {
             return U8Info.IsAsciiByte(value[0]);
         }
 
-        return value.Length is 0 || Utf8.IsValid(value);
+        return true;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

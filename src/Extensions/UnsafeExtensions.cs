@@ -28,6 +28,13 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref T AsRef<T>(this T[] value)
+        where T : struct
+    {
+        return ref MemoryMarshal.GetArrayDataReference(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this T[] value, int offset)
         where T : struct
     {
@@ -59,8 +66,20 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void CopyToUnsafe(this ReadOnlySpan<byte> source, ref byte destination)
+    {
+        // TODO: Is this better than source.CopyTo(destination.SliceUnsafe(0, source.Length))?
+        // Unsafe.CopyBlock(
+        //     destination: ref destination,
+        //     source: ref MemoryMarshal.GetReference(source),
+        //     byteCount: (uint)source.Length);
+
+        source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this T[] value, int start)
-        where T : unmanaged
+        where T : struct
     {
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)start),
@@ -69,7 +88,7 @@ internal static class UnsafeExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this T[] value, int offset, int length)
-        where T : unmanaged
+        where T : struct
     {
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)offset), length);
@@ -77,7 +96,7 @@ internal static class UnsafeExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this Span<T> value, int start)
-        where T : unmanaged
+        where T : struct
     {
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)start),
@@ -86,7 +105,7 @@ internal static class UnsafeExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this Span<T> value, int offset, int length)
-        where T : unmanaged
+        where T : struct
     {
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset), length);
@@ -94,7 +113,7 @@ internal static class UnsafeExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> value, int start)
-        where T : unmanaged
+        where T : struct
     {
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)start),
@@ -103,7 +122,7 @@ internal static class UnsafeExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> value, int offset, int length)
-        where T : unmanaged
+        where T : struct
     {
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset), length);

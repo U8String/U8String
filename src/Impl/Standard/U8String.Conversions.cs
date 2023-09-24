@@ -58,7 +58,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return _value != null ? _value.AsMemory(Offset, Length) : default;
+        return _value.AsMemory(Offset, Length);
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
@@ -178,16 +178,10 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        var length = Length;
-        if (length <= utf8Destination.Length)
-        {
-            AsSpan().CopyTo(utf8Destination);
-            bytesWritten = length;
-            return true;
-        }
+        var result = AsSpan().TryCopyTo(utf8Destination);
 
-        bytesWritten = 0;
-        return false;
+        bytesWritten = result ? Length : 0;
+        return result;
     }
 
     /// <summary>

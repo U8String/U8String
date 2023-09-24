@@ -1,13 +1,19 @@
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
+
 using Microsoft.Win32.SafeHandles;
+
 using U8Primitives.InteropServices;
 using U8Primitives.IO;
 
 namespace U8Primitives;
 
+// Policy:
+// - Constructors must drop the reference if the length is 0.
+// - Constructors must not initialize or assign byte[] reference if the length is 0.
+// - Constructors must null-terminate the string on allocation of the underlying buffer.
 public readonly partial struct U8String
 {
     /// <summary>
@@ -24,8 +30,15 @@ public readonly partial struct U8String
         // byte[] Value *must* remain null if the length is 0.
         if (value.Length > 0)
         {
+            var nullTerminate = value[^1] != 0;
+
             Validate(value);
-            _value = value.ToArray();
+            var bytes = new byte[value.Length + (nullTerminate ? 1 : 0)];
+            var buffer = bytes.SliceUnsafe(0, value.Length);
+
+            value.CopyTo(buffer);
+
+            _value = bytes;
             _inner = new U8Range(0, value.Length);
         }
     }
@@ -112,8 +125,18 @@ public readonly partial struct U8String
     {
         Debug.Assert(skipValidation);
 
-        if (value.Length > 0) _value = value.ToArray();
-        _inner = new U8Range(0, value.Length);
+        if (value.Length > 0)
+        {
+            var nullTerminate = value[^1] != 0;
+            var bytes = new byte[value.Length + (nullTerminate ? 1 : 0)];
+            var buffer = bytes.SliceUnsafe(0, value.Length);
+
+            value.CopyTo(buffer);
+            if (nullTerminate) buffer.AsRef(value.Length) = 0;
+
+            _value = bytes;
+            _inner = new U8Range(0, value.Length);
+        }
 
         Debug.Assert(Offset >= 0);
         Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);

@@ -77,6 +77,34 @@ public readonly partial struct U8String
         return default;
     }
 
+    public static U8String Concat(ReadOnlySpan<U8String> values)
+    {
+        if (values.Length > 1)
+        {
+            var length = 0;
+            foreach (var value in values)
+            {
+                length += value.Length;
+            }
+
+            if (length != 0)
+            {
+                var value = new byte[length + 1];
+                ref var dst = ref value.AsRef();
+
+                foreach (var source in values)
+                {
+                    source.AsSpan().CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(source.Length);
+                }
+
+                return new U8String(value, 0, length);
+            }
+        }
+
+        return values.Length is 1 ? values[0] : default;
+    }
+
     /// <inheritdoc />
     public void CopyTo(byte[] destination, int index)
     {
@@ -88,6 +116,71 @@ public readonly partial struct U8String
         }
 
         src.UnsafeSpan.CopyTo(dst);
+    }
+
+    public static U8String Join(byte separator, ReadOnlySpan<U8String> values)
+    {
+        if (!U8Info.IsAsciiByte(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        if (values.Length > 1)
+        {
+            return U8Manipulation.JoinUnchecked(separator, values);
+        }
+
+        return values.Length is 1 ? values[0] : default;
+    }
+
+    public static U8String Join(char separator, ReadOnlySpan<U8String> values)
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        return char.IsAscii(separator)
+            ? Join((byte)separator, values)
+            : JoinUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values);
+    }
+
+    public static U8String Join(Rune separator, ReadOnlySpan<U8String> values)
+    {
+        return separator.IsAscii
+            ? Join((byte)separator.Value, values)
+            : JoinUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values);
+    }
+
+    public static U8String Join(U8String separator, ReadOnlySpan<U8String> values)
+    {
+        return JoinUnchecked(separator, values);
+    }
+
+    public static U8String Join(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
+    {
+        Validate(separator);
+
+        return JoinUnchecked(separator, values);
+    }
+
+    internal static U8String JoinUnchecked(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
+    {
+        if (values.Length > 1)
+        {
+            if (separator.Length > 1)
+            {
+                return U8Manipulation.JoinUnchecked(separator, values);
+            }
+            else if (separator.Length is 1)
+            {
+                return U8Manipulation.JoinUnchecked(separator[0], values);
+            }
+
+            return Concat(values);
+        }
+
+        return values.Length is 1 ? values[0] : default;
     }
 
     /// <summary>
@@ -184,8 +277,7 @@ public readonly partial struct U8String
     public U8String Slice(int start)
     {
         var source = this;
-        // From ReadOnly/Span<T> Slice(int) implementation
-        if ((ulong)(uint)start > (ulong)(uint)source.Length)
+        if ((uint)start > (uint)source.Length)
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
@@ -221,26 +313,25 @@ public readonly partial struct U8String
     {
         var source = this;
         // From ReadOnly/Span<T> Slice(int, int) implementation
-        if ((ulong)(uint)start + (ulong)(uint)length > (ulong)(uint)source.Length)
+        if ((uint)(start + length) > (uint)source.Length)
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        var result = default(U8String);
         if (length > 0)
         {
             // TODO: Is there really no way to get rid of length < source.Length when checking the last+1 byte?
-            if ((start > 0 && U8Info.IsContinuationByte(source.UnsafeRefAdd(start))) || (
+            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
                 length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
                 // TODO: Exception message UX
                 ThrowHelpers.InvalidSplit();
             }
 
-            result = new(source._value, source.Offset + start, length);
+            return new(source._value, source.Offset + start, length);
         }
 
-        return result;
+        return default;
     }
 
     /// <summary>
