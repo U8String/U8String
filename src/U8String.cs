@@ -99,10 +99,17 @@ public readonly partial struct U8String :
 
     public bool IsNullTerminated
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            return !IsEmpty && UnsafeRefAdd(Length - 1) is 0;
+            // Not exactly rosy codegen but will do for now.
+            if (!IsEmpty)
+            {
+                ref var ptr = ref UnsafeRef;
+                return ptr.Add(Length - 1) is 0 || (
+                    (uint)(Offset + Length) < (uint)_value!.Length && ptr.Add(Length) is 0);
+            }
+
+            return false;
         }
     }
 
