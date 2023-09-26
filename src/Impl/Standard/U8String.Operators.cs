@@ -91,6 +91,9 @@ public readonly partial struct U8String
     public static explicit operator U8String(ReadOnlySpan<char> value) => new(value);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static explicit operator string(U8String value) => value.ToString();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static implicit operator ReadOnlySpan<byte>(U8String value) => value.AsSpan();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

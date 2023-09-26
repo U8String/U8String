@@ -200,6 +200,6 @@ public readonly partial struct U8String
     /// </summary>
     public override string ToString()
     {
-        return _value != null ? Encoding.UTF8.GetString(this) : string.Empty;
+        return !IsEmpty ? Encoding.UTF8.GetString(this) : string.Empty;
     }
 }

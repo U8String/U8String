@@ -29,7 +29,7 @@ internal static class U8Manipulation
     }
 
     // Contract:
-    // - values.Length is greater than 0
+    // - values.Length is greater than 1
     // - separator is a non-ascii byte, char, Rune or U8Scalar
     internal static U8String JoinUnchecked(byte separator, ReadOnlySpan<U8String> value)
     {

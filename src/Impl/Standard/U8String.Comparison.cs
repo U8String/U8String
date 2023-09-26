@@ -157,6 +157,12 @@ public readonly partial struct U8String
         return GetHashCode(AsSpan());
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public int GetHashCode<T>(T comparer) where T : IEqualityComparer<U8String>
+    {
+        return comparer.GetHashCode(this);
+    }
+
     /// <summary>
     /// Returns a hash code for this instance.
     /// </summary>
@@ -169,5 +175,11 @@ public readonly partial struct U8String
         var hash = XxHash3.HashToUInt64(value, U8Constants.DefaultHashSeed);
 
         return ((int)hash) ^ (int)(hash >> 32);
+    }
+
+    public static int GetHashCode<T>(ReadOnlySpan<byte> value, T comparer)
+        where T : IU8EqualityComparer
+    {
+        return comparer.GetHashCode(value);
     }
 }
