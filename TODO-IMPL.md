@@ -16,7 +16,7 @@
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
 - [ ] Consider centralizing `new byte[length]` allocations to control null-termination and zeroing
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
-- [ ] Null-terminate odd-sized arrays?
+- [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [ ] Optimize .Replace methods
 - [ ] Mirror caching of certain types which cache ToString() with ConditionalWeakTable?
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search

@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 namespace U8Primitives.InteropServices;
 
 /// <summary>
@@ -45,6 +47,27 @@ public static class U8Marshal
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Create(byte[] value, int offset, int length) => new(value, offset, length);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe U8String CreateFromNullTerminated(byte* ptr)
+    {
+        return CreateFromNullTerminated(ref Unsafe.AsRef<byte>(ptr));
+    }
+
+    public static U8String CreateFromNullTerminated(ref byte ptr)
+    {
+        // Does this have to throw on not found?
+        var span = MemoryMarshal.CreateReadOnlySpan(ref ptr, int.MaxValue);
+        var length = span.IndexOf((byte)'\0');
+
+        var result = default(U8String);
+        if (length > 0)
+        {
+            result = new(span.SliceUnsafe(0, length), skipValidation: true);
+        }
+
+        return result;
+    }
 
     /// <summary>
     /// Creates a new <see cref="U8SplitPair"/> representing a split of the given <paramref name="value"/>

@@ -51,6 +51,8 @@
     - [ ] LastIndexOf (+`T where T : IU8Comparer`?)
     - [x] Equals
 - [ ] Manipulation
+    - [x] Concat
+    - [ ] Join
     - [x] Trim, TrimStart, TrimEnd
     - [x] TrimAscii, TrimStartAscii, TrimEndAscii
     - [x] Replace(byte)
