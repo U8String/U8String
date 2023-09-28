@@ -56,17 +56,15 @@ public static class U8Marshal
 
     public static U8String CreateFromNullTerminated(ref byte ptr)
     {
-        // Does this have to throw on not found?
         var span = MemoryMarshal.CreateReadOnlySpan(ref ptr, int.MaxValue);
         var length = span.IndexOf((byte)'\0');
-
-        var result = default(U8String);
-        if (length > 0)
+        if (length < 0)
         {
-            result = new(span.SliceUnsafe(0, length), skipValidation: true);
+            // TODO: EH UX
+            ThrowHelpers.ArgumentOutOfRange();
         }
 
-        return result;
+        return new(span.SliceUnsafe(0, length), skipValidation: true);
     }
 
     /// <summary>

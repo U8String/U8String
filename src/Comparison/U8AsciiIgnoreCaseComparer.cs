@@ -48,14 +48,14 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
         while (offset < length)
         {
-            // TODO: Vectorize?
+            // TODO: Vectorize
             var xval = xptr.Add(offset);
             var yval = yptr.Add(offset);
 
             if (xval != yval)
             {
-                xval = U8Info.IsAsciiLetter(xval) ? (byte)(xval | 0x20) : xval;
-                yval = U8Info.IsAsciiLetter(yval) ? (byte)(yval | 0x20) : yval;
+                xval = U8Info.IsAsciiLetter(xval) ? (byte)(xval & 0b11011111) : xval;
+                yval = U8Info.IsAsciiLetter(yval) ? (byte)(yval & 0b11011111) : yval;
                 if (xval != yval)
                 {
                     return xval - yval;

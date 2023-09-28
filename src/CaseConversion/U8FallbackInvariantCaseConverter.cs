@@ -5,7 +5,7 @@ using U8Primitives.Abstractions;
 namespace U8Primitives;
 
 // TODO: This is a long type name. Consider renaming?
-public readonly struct U8FallbackInvariantCaseConverter : IU8CaseConverter
+internal readonly struct U8FallbackInvariantCaseConverter : IU8CaseConverter
 {
     public static U8FallbackInvariantCaseConverter Instance => default;
 

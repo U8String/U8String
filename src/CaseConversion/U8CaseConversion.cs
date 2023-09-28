@@ -6,9 +6,9 @@ public static class U8CaseConversion
 {
     public static U8AsciiCaseConverter Ascii => default;
 
-    public static U8FallbackInvariantCaseConverter FallbackInvariant => default;
+    internal static U8FallbackInvariantCaseConverter FallbackInvariant => default;
 
-    public static bool IsTrustedImplementation<T>(T converter)
+    internal static bool IsTrustedImplementation<T>(T converter)
         where T : IU8CaseConverter
     {
         return converter is

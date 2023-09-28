@@ -41,7 +41,8 @@ public readonly partial struct U8String
             && !U8Info.IsContinuationByte(UnsafeRefAdd(index));
     }
 
-    public int NextRuneIndex(int index)
+    // TODO: NextRuneIndex/LastRuneIndex/RoundToRuneIndex (Boundary?)
+    internal int NextRuneIndex(int index)
     {
         var deref = this;
         if ((uint)index >= (uint)deref.Length)
@@ -50,10 +51,8 @@ public readonly partial struct U8String
         }
 
         var span = deref.UnsafeSpan;
-        while (index < span.Length && U8Info.IsContinuationByte(span[index]))
-        {
-            index++;
-        }
+        while (++index < span.Length
+            && U8Info.IsContinuationByte(span[index]));
 
         return index;
     }
@@ -67,12 +66,15 @@ public readonly partial struct U8String
             ThrowHelpers.IndexOutOfRange();
         }
 
-        if (U8Info.IsContinuationByte(deref.UnsafeRefAdd(index)))
+        ref var ptr = ref deref.UnsafeRefAdd(index);
+        var b0 = ptr;
+
+        if (U8Info.IsContinuationByte(b0))
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        return U8Conversions.CodepointToRune(ref deref.UnsafeRefAdd(index), out _);
+        return U8Conversions.CodepointToRune(ref ptr, out _);
     }
 
     public bool TryGetRuneAt(int index, out Rune rune)
@@ -80,11 +82,9 @@ public readonly partial struct U8String
         var deref = this;
         if ((uint)index < (uint)deref.Length)
         {
-            // TODO: Better codegen shape with dedicated method? (which won't dereference first byte twice,
-            // or at least will optimize with dereferincing an entire word instead?)
-            // TODO: Guard against surrogate values(if applicable)/range of values not accepted by Rune?
-            rune = U8Conversions.CodepointToRune(ref deref.UnsafeRefAdd(index), out _);
-            return !U8Info.IsContinuationByte(deref.UnsafeRefAdd(index));
+            ref var ptr = ref deref.UnsafeRefAdd(index);
+            rune = U8Conversions.CodepointToRune(ref ptr, out _);
+            return !U8Info.IsContinuationByte(ptr);
         }
 
         rune = default;

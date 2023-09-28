@@ -1,6 +1,6 @@
 namespace U8Primitives.IO;
 
-public static class U8StreamExtensions
+internal static class U8StreamExtensions
 {
     public static U8String ReadToU8String(this Stream stream)
     {

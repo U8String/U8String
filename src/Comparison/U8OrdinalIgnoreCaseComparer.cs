@@ -8,7 +8,7 @@ namespace U8Primitives;
 // case folding. What should be the policy for 54 characters that are affected by this?
 // TODO: Double check if there are non-ascii characters that would evaluate to ascii
 // characters when case-folded. Maybe it is fine since this is ordinal and not invariant?
-public readonly struct U8OrdinalIgnoreCaseComparer :
+internal readonly struct U8OrdinalIgnoreCaseComparer :
     IU8Comparer,
     IU8EqualityComparer,
     IU8ContainsOperator,

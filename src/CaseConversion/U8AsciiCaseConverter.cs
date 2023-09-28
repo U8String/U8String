@@ -125,7 +125,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         while (offset < length)
         {
             var b = src.Add(offset);
-            if (b is >= (byte)'A' and <= (byte)'Z')
+            if (U8Info.IsAsciiLetter(b))
             {
                 b |= 0x20;
             }
@@ -242,9 +242,9 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         while (offset < length)
         {
             var b = src.Add(offset);
-            if (b is >= (byte)'a' and <= (byte)'z')
+            if (U8Info.IsAsciiLetter(b))
             {
-                b ^= 0x20;
+                b &= 0b11011111; // (byte)~0x20
             }
 
             dst.Add(offset) = b;

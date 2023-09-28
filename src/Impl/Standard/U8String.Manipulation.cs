@@ -108,14 +108,12 @@ public readonly partial struct U8String
     /// <inheritdoc />
     public void CopyTo(byte[] destination, int index)
     {
-        var src = this;
-        var dst = destination.AsSpan()[index..];
-        if (src.Length > dst.Length)
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(index));
-        }
+        AsSpan().CopyTo(destination.AsSpan()[index..]);
+    }
 
-        src.UnsafeSpan.CopyTo(dst);
+    public void CopyTo(Span<byte> destination)
+    {
+        AsSpan().CopyTo(destination);
     }
 
     public static U8String Join(byte separator, ReadOnlySpan<U8String> values)

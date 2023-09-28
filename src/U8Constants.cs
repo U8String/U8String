@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
@@ -7,9 +6,6 @@ namespace U8Primitives;
 
 public static class U8Constants
 {
-    public static SearchValues<byte> AsciiWhitespace { get; } =
-        SearchValues.Create("\t\n\v\f\r "u8);
-
     public static U8String NewLine { get; } = new U8String(
         OperatingSystem.IsWindows() ? "\r\n"u8 : "\n"u8, skipValidation: true);
 

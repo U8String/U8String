@@ -14,18 +14,17 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
     /// <inheritdoc/>
     public override U8String Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
-        var readerValue = reader; // Dereference once
-        if (readerValue.TokenType is JsonTokenType.String)
+        if (reader.TokenType is JsonTokenType.String)
         {
-            var buffer = !readerValue.HasValueSequence
-                ? readerValue.ValueSpan.ToArray()
-                : readerValue.ValueSequence.ToArray();
+            var buffer = !reader.HasValueSequence
+                ? reader.ValueSpan.ToArray()
+                : reader.ValueSequence.ToArray();
             var length = buffer.Length;
 
             return new(buffer, 0, length);
         }
 
-        return JsonException(readerValue.TokenType);
+        return JsonException(reader.TokenType);
     }
 
     /// <inheritdoc/>
