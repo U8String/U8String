@@ -7,23 +7,42 @@ internal static class U8Manipulation
 {
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, byte right)
     {
-        var length = left.Length + 1;
-        var value = new byte[length];
-        var span = value.AsSpan();
+        Debug.Assert(U8Info.IsAsciiByte(right));
 
-        left.CopyTo(span.SliceUnsafe(0, left.Length));
-        span.AsRef(length - 1) = right;
+        var length = left.Length + 1;
+        var value = new byte[length + 1];
+
+        ref var dst = ref value.AsRef();
+        left.CopyToUnsafe(ref dst);
+        dst.Add(left.Length) = right;
+
+        return new U8String(value, 0, length);
+    }
+
+    internal static U8String ConcatUnchecked(byte left , ReadOnlySpan<byte> right)
+    {
+        Debug.Assert(U8Info.IsAsciiByte(left));
+
+        var length = right.Length + 1;
+        var value = new byte[length + 1];
+
+        ref var dst = ref value.AsRef();
+        dst = left;
+        right.CopyToUnsafe(ref dst.Add(1));
 
         return new U8String(value, 0, length);
     }
 
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
-        var length = left.Length + right.Length;
-        var value = new byte[length];
+        Debug.Assert(!left.IsEmpty && !right.IsEmpty);
 
-        left.CopyTo(value.SliceUnsafe(0, left.Length));
-        right.CopyTo(value.SliceUnsafe(left.Length, right.Length));
+        var length = left.Length + right.Length;
+        var value = new byte[length + 1];
+
+        ref var dst = ref value.AsRef();
+        left.CopyToUnsafe(ref dst);
+        right.CopyToUnsafe(ref dst.Add(left.Length));
 
         return new U8String(value, 0, length);
     }
@@ -175,7 +194,7 @@ internal static class U8Manipulation
                 return source;
             }
 
-            var replaced = new byte[source.Length];
+            var replaced = new byte[source.Length + 1];
             var destination = replaced.AsSpan();
 
             current

@@ -15,7 +15,8 @@ public static class U8FileExtensions
 
         if (length > 0)
         {
-            var buffer = new byte[(int)length];
+            // TODO: Should we just read the first int.MaxValue bytes?
+            var buffer = new byte[(int)length + 1];
             var bytesRead = RandomAccess.Read(handle, buffer, offset);
 
             U8String.Validate(buffer.SliceUnsafe(0, bytesRead));
@@ -38,7 +39,7 @@ public static class U8FileExtensions
 
         if (length > 0)
         {
-            var buffer = new byte[(int)length];
+            var buffer = new byte[(int)length + 1];
             var bytesRead = await RandomAccess.ReadAsync(handle, buffer, offset, ct).ConfigureAwait(false);
 
             U8String.Validate(buffer.SliceUnsafe(0, bytesRead));

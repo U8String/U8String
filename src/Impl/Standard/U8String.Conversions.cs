@@ -117,12 +117,19 @@ public readonly partial struct U8String
     {
         // Double traversal becomes the favourable tradeoff at longer lengths,
         // and at shorter lengths the overhead is negligible.
-        var length = Encoding.UTF8.GetByteCount(s);
-        var value = new byte[length];
-
-        if (Encoding.UTF8.TryGetBytes(s, value, out var bytesWritten))
+        if (s.Length > 0)
         {
-            result = new U8String(value, 0, bytesWritten);
+            var nullTerminate = s[^1] != 0;
+            var length = Encoding.UTF8.GetByteCount(s);
+            var value = new byte[nullTerminate ? length + 1 : length];
+
+            if (Encoding.UTF8.TryGetBytes(s, value, out var bytesWritten))
+            {
+                result = new U8String(value, 0, bytesWritten);
+                return true;
+            }
+
+            result = default;
             return true;
         }
 

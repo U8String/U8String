@@ -9,6 +9,64 @@ namespace U8Primitives;
 #pragma warning disable IDE0046, IDE0057 // Why: range slicing and ternary expressions do not produce desired codegen
 public readonly partial struct U8String
 {
+    public static U8String Concat(U8String left, byte right)
+    {
+        if (!U8Info.IsAsciiByte(right))
+        {
+            ThrowHelpers.InvalidUtf8();
+        }
+
+        return U8Manipulation.ConcatUnchecked(left, right);
+    }
+
+    public static U8String Concat(U8String left, char right)
+    {
+        if (char.IsSurrogate(right))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(right));
+        }
+
+        return char.IsAscii(right)
+            ? U8Manipulation.ConcatUnchecked(left, (byte)right)
+            : U8Manipulation.ConcatUnchecked(left, U8Scalar.Create(right, checkAscii: false).AsSpan());
+    }
+
+    public static U8String Concat(U8String left, Rune right)
+    {
+        return right.IsAscii
+            ? U8Manipulation.ConcatUnchecked(left, (byte)right.Value)
+            : U8Manipulation.ConcatUnchecked(left, U8Scalar.Create(right, checkAscii: false).AsSpan());
+    }
+
+    public static U8String Concat(byte left, U8String right)
+    {
+        if (!U8Info.IsAsciiByte(left))
+        {
+            ThrowHelpers.InvalidUtf8();
+        }
+
+        return U8Manipulation.ConcatUnchecked(left, right);
+    }
+
+    public static U8String Concat(char left, U8String right)
+    {
+        if (char.IsSurrogate(left))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(left));
+        }
+
+        return char.IsAscii(left)
+            ? U8Manipulation.ConcatUnchecked((byte)left, right)
+            : U8Manipulation.ConcatUnchecked(U8Scalar.Create(left, checkAscii: false).AsSpan(), right);
+    }
+
+    public static U8String Concat(Rune left, U8String right)
+    {
+        return left.IsAscii
+            ? U8Manipulation.ConcatUnchecked((byte)left.Value, right)
+            : U8Manipulation.ConcatUnchecked(U8Scalar.Create(left, checkAscii: false).AsSpan(), right);
+    }
+
     // TODO: Optimize/deduplicate Concat variants
     // TODO: Investigate if it is possible fold validation for u8 literals
     public static U8String Concat(U8String left, U8String right)
@@ -25,7 +83,7 @@ public readonly partial struct U8String
             return left;
         }
 
-        return default;
+        return right;
     }
 
     public static U8String Concat(U8String left, ReadOnlySpan<byte> right)
@@ -41,7 +99,7 @@ public readonly partial struct U8String
             return new U8String(right, skipValidation: true);
         }
 
-        return default;
+        return left;
     }
 
     public static U8String Concat(ReadOnlySpan<byte> left, U8String right)
@@ -57,15 +115,15 @@ public readonly partial struct U8String
             return new U8String(left, skipValidation: true);
         }
 
-        return default;
+        return right;
     }
 
     public static U8String Concat(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
         var length = left.Length + right.Length;
-        if (length != 0)
+        if (length > 0)
         {
-            var value = new byte[length];
+            var value = new byte[length + 1];
 
             left.CopyTo(value);
             right.CopyTo(value.SliceUnsafe(left.Length, right.Length));
@@ -87,15 +145,16 @@ public readonly partial struct U8String
                 length += value.Length;
             }
 
-            if (length != 0)
+            if (length > 0)
             {
                 var value = new byte[length + 1];
-                ref var dst = ref value.AsRef();
 
+                var offset = 0;
+                ref var dst = ref value.AsRef();
                 foreach (var source in values)
                 {
-                    source.AsSpan().CopyToUnsafe(ref dst);
-                    dst = ref dst.Add(source.Length);
+                    source.AsSpan().CopyToUnsafe(ref dst.Add(offset));
+                    offset += source.Length;
                 }
 
                 return new U8String(value, 0, length);
@@ -537,7 +596,7 @@ public readonly partial struct U8String
             int convertedLength;
             if ((uint)replaceStart < (uint)source.Length)
             {
-                var lowercase = new byte[resultLength];
+                var lowercase = new byte[resultLength + 1];
                 var destination = lowercase.AsSpan();
 
                 if (trusted)
@@ -587,7 +646,7 @@ public readonly partial struct U8String
             int convertedLength;
             if ((uint)replaceStart < (uint)source.Length)
             {
-                var uppercase = new byte[resultLength];
+                var uppercase = new byte[resultLength + 1];
                 var destination = uppercase.AsSpan();
 
                 if (trusted)

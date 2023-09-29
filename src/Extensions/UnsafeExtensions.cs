@@ -66,14 +66,16 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void CopyToUnsafe(this ReadOnlySpan<byte> source, ref byte destination)
+    internal static void CopyToUnsafe<T>(this Span<T> source, ref T destination)
+        where T : struct
     {
-        // TODO: Is this better than source.CopyTo(destination.SliceUnsafe(0, source.Length))?
-        // Unsafe.CopyBlock(
-        //     destination: ref destination,
-        //     source: ref MemoryMarshal.GetReference(source),
-        //     byteCount: (uint)source.Length);
+        source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
+    }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void CopyToUnsafe<T>(this ReadOnlySpan<T> source, ref T destination)
+        where T : struct
+    {
         source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
     }
 

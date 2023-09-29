@@ -14,7 +14,7 @@ internal static class U8StreamExtensions
         if (length > 0)
         {
             // TODO: Verify correct implementation behavior
-            var buffer = new byte[(int)length];
+            var buffer = new byte[(int)length + 1];
             var bytesRead = stream.Read(buffer);
 
             U8String.Validate(buffer.SliceUnsafe(0, bytesRead));
@@ -34,7 +34,7 @@ internal static class U8StreamExtensions
 
         if (length > 0)
         {
-            var buffer = new byte[(int)length];
+            var buffer = new byte[(int)length + 1];
             var bytesRead = await stream.ReadAsync(buffer, ct).ConfigureAwait(false);
 
             U8String.Validate(buffer.SliceUnsafe(0, bytesRead));
