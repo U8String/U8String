@@ -104,19 +104,40 @@ public readonly partial struct U8String
 
     public bool Equals(byte[]? other)
     {
-        return other != null && AsSpan().SequenceEqual(other);
+        return other != null && Equals(other.AsSpan());
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(Span<byte> other)
     {
-        return AsSpan().SequenceEqual(other);
+        var deref = this;
+        if (deref.Length == other.Length)
+        {
+            if (deref.Length != 0)
+            {
+                return deref.UnsafeSpan.SequenceEqual(other);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ReadOnlySpan<byte> other)
     {
-        return AsSpan().SequenceEqual(other);
+        var deref = this;
+        if (deref.Length == other.Length)
+        {
+            if (deref.Length != 0)
+            {
+                return deref.UnsafeSpan.SequenceEqual(other);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     public bool Equals<T>(U8String other, T comparer)

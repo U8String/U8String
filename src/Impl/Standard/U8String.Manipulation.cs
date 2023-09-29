@@ -204,13 +204,17 @@ public readonly partial struct U8String
         : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan());
 
     /// <inheritdoc cref="Remove(U8String)"/>
-    public U8String Remove(ReadOnlySpan<byte> value) => U8Manipulation.Remove(this, value);
+    public U8String Remove(ReadOnlySpan<byte> value) => value.Length is 1
+        ? U8Manipulation.Remove(this, value[0])
+        : U8Manipulation.Remove(this, value);
 
     /// <summary>
     /// Removes all occurrences of <paramref name="value"/> from the current <see cref="U8String"/>.
     /// </summary>
     /// <param name="value">The element to remove from the current <see cref="U8String"/>.</param>
-    public U8String Remove(U8String value) => U8Manipulation.Remove(this, value, validate: false);
+    public U8String Remove(U8String value) => value.Length is 1
+        ? U8Manipulation.Remove(this, value.UnsafeRef)
+        : U8Manipulation.Remove(this, value, validate: false);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Replace(byte oldValue, byte newValue)

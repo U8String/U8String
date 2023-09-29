@@ -294,29 +294,57 @@ internal static class U8Manipulation
         Debug.Assert(oldValue.Length is not 1 && newValue.Length is not 1);
 
         var count = source.UnsafeSpan.Count(oldValue);
-        if (count is not 0)
+        if (count > 0)
         {
             var length = source.Length - (oldValue.Length * count) + (newValue.Length * count);
 
-            var result = new byte[length];
-            var destination = result.AsSpan();
+            var result = new byte[length + 1];
 
+            var offset = 0;
+            ref var dst = ref result.AsRef();
             foreach (var segment in new U8RefSplit(source, oldValue))
             {
-                segment.AsSpan().CopyTo(destination.SliceUnsafe(0, segment.Length));
-                destination = destination.SliceUnsafe(segment.Length);
-                if (destination.Length is 0)
+                segment.AsSpan().CopyToUnsafe(ref dst.Add(offset));
+
+                if ((offset += segment.Length) >= length)
                 {
                     break;
                 }
 
-                newValue.CopyTo(destination.SliceUnsafe(0, newValue.Length));
-                destination = destination.SliceUnsafe(newValue.Length);
+                newValue.CopyToUnsafe(ref dst.Add(offset));
+                offset += newValue.Length;
             }
 
             if (validate)
             {
-                U8String.Validate(destination);
+                U8String.Validate(result);
+            }
+
+            return new(result, 0, result.Length);
+        }
+
+        return source;
+    }
+
+    internal static U8String Remove(U8String source, byte value)
+    {
+        var count = source.AsSpan().Count(value);
+        if (count > 0)
+        {
+            var length = source.Length - count;
+            var result = new byte[length + 1];
+
+            var offset = 0;
+            ref var dst = ref result.AsRef();
+            foreach (var segment in new U8Split<byte>(source, value))
+            {
+                segment.AsSpan().CopyToUnsafe(ref dst.Add(offset));
+                offset += segment.Length;
+            }
+
+            if (!U8Info.IsAsciiByte(value))
+            {
+                U8String.Validate(result);
             }
 
             return new(result, 0, result.Length);
@@ -328,46 +356,23 @@ internal static class U8Manipulation
     internal static U8String Remove(U8String source, ReadOnlySpan<byte> value, bool validate = true)
     {
         var count = source.AsSpan().Count(value);
-        if (count is not 0)
+        if (count > 0)
         {
-            var result = new byte[source.Length - (value.Length * count)];
-            var destination = result.AsSpan();
+            var length = source.Length - (value.Length * count);
+            var result = new byte[length + 1];
 
+            var offset = 0;
+            ref var dst = ref result.AsRef();
             foreach (var segment in new U8RefSplit(source, value))
             {
-                segment.AsSpan().CopyTo(destination.SliceUnsafe(0, segment.Length));
-                destination = destination.SliceUnsafe(segment.Length);
+                segment.AsSpan().CopyToUnsafe(ref dst.Add(offset));
+                offset += segment.Length;
             }
 
             if (validate)
             {
-                U8String.Validate(destination);
+                U8String.Validate(result);
             }
-            return new(result, 0, result.Length);
-        }
-
-        return source;
-    }
-
-    internal static U8String Remove(U8String source, byte value)
-    {
-        var count = source.AsSpan().Count(value);
-        if (count is not 0)
-        {
-            var result = new byte[source.Length - count];
-            var destination = result.AsSpan();
-
-            foreach (var segment in new U8Split<byte>(source, value))
-            {
-                segment.AsSpan().CopyTo(destination.SliceUnsafe(0, segment.Length));
-                destination = destination.SliceUnsafe(segment.Length);
-            }
-
-            if (!U8Info.IsAsciiByte(value))
-            {
-                U8String.Validate(destination);
-            }
-
             return new(result, 0, result.Length);
         }
 
