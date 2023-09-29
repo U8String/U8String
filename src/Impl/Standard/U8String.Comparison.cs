@@ -81,15 +81,12 @@ public readonly partial struct U8String
         return other.HasValue && Equals(other.Value);
     }
 
-    // It seems we really must aggressively inline this. Otherwise, it will always be kept as
-    // not inlined, having to pay the full price of comparisons on every call, unlike string.
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String other)
     {
         var deref = this;
         if (deref.Length == other.Length)
         {
-            if (deref.Length != 0 && (
+            if (deref.Length > 0 && (
                 deref.Offset != other.Offset || !deref.SourceEquals(other)))
             {
                 return deref.UnsafeSpan.SequenceEqual(
@@ -112,7 +109,7 @@ public readonly partial struct U8String
         var deref = this;
         if (deref.Length == other.Length)
         {
-            if (deref.Length != 0)
+            if (deref.Length > 0)
             {
                 return deref.UnsafeSpan.SequenceEqual(other);
             }
@@ -129,7 +126,7 @@ public readonly partial struct U8String
         var deref = this;
         if (deref.Length == other.Length)
         {
-            if (deref.Length != 0)
+            if (deref.Length > 0)
             {
                 return deref.UnsafeSpan.SequenceEqual(other);
             }

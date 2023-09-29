@@ -47,10 +47,10 @@ public readonly partial struct U8String
         return U8Searching.Contains(this, value, comparer);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(byte value)
     {
-        var span = AsSpan();
-        return span.Length > 0 && span[0] == value;
+        return Length > 0 && UnsafeRef == value;
     }
 
     public bool StartsWith(char value) => char.IsAscii(value)
@@ -61,14 +61,58 @@ public readonly partial struct U8String
         ? StartsWith((byte)value.Value)
         : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool StartsWith(U8String value) => AsSpan().StartsWith(value);
+    public bool StartsWith(U8String value)
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            if (deref.Length > 0)
+            {
+                return deref.UnsafeSpan
+                    .SliceUnsafe(0, value.Length)
+                    .SequenceEqual(value.UnsafeSpan);
+            }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool StartsWith(ReadOnlySpan<byte> value) => AsSpan().StartsWith(value);
+            return true;
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        return false;
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> value)
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            if (deref.Length > 0)
+            {
+                return deref.UnsafeSpan
+                    .SliceUnsafe(0, value.Length)
+                    .SequenceEqual(value);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // !! Invalid Code for invariant comparison on non-matching lengths !!
     public bool StartsWith<T>(U8String value, T comparer)
+        where T : IU8EqualityComparer
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            return U8Marshal
+                .Slice(deref, 0, value.Length)
+                .Equals(value, comparer);
+        }
+
+        return false;
+    }
+
+    public bool StartsWith<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8EqualityComparer
     {
         var deref = this;
@@ -85,11 +129,9 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(byte value)
     {
-        var span = AsSpan();
-        return span.Length > 0 && span[^1] == value;
+        return Length > 0 && UnsafeRefAdd(Length - 1) == value;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(char value) => char.IsAscii(value)
         ? EndsWith((byte)value)
         : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
@@ -98,15 +140,59 @@ public readonly partial struct U8String
         ? EndsWith((byte)value.Value)
         : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool EndsWith(U8String value) => AsSpan().EndsWith(value);
+    public bool EndsWith(U8String value)
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            if (deref.Length > 0)
+            {
+                return deref.UnsafeSpan
+                    .SliceUnsafe(deref.Length - value.Length)
+                    .SequenceEqual(value.UnsafeSpan);
+            }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool EndsWith(ReadOnlySpan<byte> value) => AsSpan().EndsWith(value);
+            return true;
+        }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        return false;
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> value)
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            if (deref.Length > 0)
+            {
+                return deref.UnsafeSpan
+                    .SliceUnsafe(deref.Length - value.Length)
+                    .SequenceEqual(value);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    // !! Invalid Code for invariant comparison on non-matching lengths !!
     public bool EndsWith<T>(U8String value, T comparer)
         where T : IEqualityComparer<U8String>
+    {
+        var deref = this;
+        if (deref.Length >= value.Length)
+        {
+            return U8Marshal
+                .Slice(deref, deref.Length - value.Length)
+                .Equals(value, comparer);
+        }
+
+        return false;
+    }
+
+    public bool EndsWith<T>(ReadOnlySpan<byte> value, T comparer)
+        where T : IU8EqualityComparer
     {
         var deref = this;
         if (deref.Length >= value.Length)
