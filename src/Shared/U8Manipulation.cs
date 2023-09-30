@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace U8Primitives;
@@ -87,12 +88,12 @@ internal static class U8Manipulation
     }
 
     // Contract:
-    // - values.Length is greater than 0
+    // - values.Length is greater than 1
     // - separator is a non-ascii byte, char, Rune or U8Scalar
     internal static U8String JoinUnchecked(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
     {
         Debug.Assert(values.Length > 1);
-        Debug.Assert(separator.Length > 0);
+        Debug.Assert(separator.Length > 1);
 
         var length = separator.Length * (values.Length - 1);
         foreach (var value in values)
@@ -177,6 +178,100 @@ internal static class U8Manipulation
                 dst = ref dst.Add(value.Length);
             }
         }
+    }
+
+    internal static U8String JoinUnchecked<T>(
+        byte separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        Debug.Assert(values.Length > 1);
+
+        using var builder = new ArrayBuilder();
+        var first = MemoryMarshal.GetReference(values);
+        builder.Write(first, format, provider);
+
+        foreach (var value in values[1..])
+        {
+            builder.Write(separator);
+            builder.Write(value, format, provider);
+        }
+
+        return new U8String(builder.Written, skipValidation: true);
+    }
+
+    internal static U8String JoinUnchecked<T>(
+        ReadOnlySpan<byte> separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        Debug.Assert(separator.Length > 1);
+        Debug.Assert(values.Length > 1);
+
+        using var builder = new ArrayBuilder();
+        var first = MemoryMarshal.GetReference(values);
+        builder.Write(first, format, provider);
+
+        foreach (var value in values[1..])
+        {
+            builder.Write(separator);
+            builder.Write(value, format, provider);
+        }
+
+        return new U8String(builder.Written, skipValidation: true);
+    }
+
+    internal static U8String JoinUnchecked<T>(
+        byte separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        Debug.Assert(values is not (T[] or List<T>));
+
+        using var builder = new ArrayBuilder();
+        using var enumerator = values.GetEnumerator();
+
+        if (enumerator.MoveNext())
+        {
+            builder.Write(enumerator.Current, format, provider);
+
+            while (enumerator.MoveNext())
+            {
+                builder.Write(separator);
+                builder.Write(enumerator.Current, format, provider);
+            }
+        }
+
+        return new U8String(builder.Written, skipValidation: true);
+    }
+
+    internal static U8String JoinUnchecked<T>(
+        ReadOnlySpan<byte> separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        Debug.Assert(separator.Length > 1);
+        Debug.Assert(values is not (T[] or List<T>));
+
+        using var builder = new ArrayBuilder();
+        using var enumerator = values.GetEnumerator();
+
+        if (enumerator.MoveNext())
+        {
+            builder.Write(enumerator.Current, format, provider);
+
+            while (enumerator.MoveNext())
+            {
+                builder.Write(separator);
+                builder.Write(enumerator.Current, format, provider);
+            }
+        }
+
+        return new U8String(builder.Written, skipValidation: true);
     }
 
     internal static U8String Replace(

@@ -164,6 +164,70 @@ public readonly partial struct U8String
         return values.Length is 1 ? values[0] : default;
     }
 
+    public static U8String Concat<T>(/* params */ ReadOnlySpan<T> values)
+        where T : IUtf8SpanFormattable
+    {
+        return Concat(values, default, null);
+    }
+
+    public static U8String Concat<T>(
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        // It would be nice to do this but 'struct' constraint on .Cast() does not allow for it
+        // if (typeof(T) == typeof(U8String))
+        // {
+        //     return Concat(MemoryMarshal.Cast<T, U8String>(values));
+        // }
+
+        if (values.Length > 1)
+        {
+            using var builder = new ArrayBuilder();
+            foreach (var value in values)
+            {
+                builder.Write(value, format, provider);
+            }
+
+            return new U8String(builder.Written, skipValidation: true);
+        }
+
+        return values.Length is 1 ? Create(values[0], format, provider) : default;
+    }
+
+    public static U8String Concat<T>(IEnumerable<T> values)
+        where T : IUtf8SpanFormattable
+    {
+        return Concat(values, default, null);
+    }
+
+    public static U8String Concat<T>(
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        if (values is T[] array)
+        {
+            return Concat(array, format, provider);
+        }
+        else if (values is List<T> list)
+        {
+            return Concat(list, format, provider);
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count) && count is 1)
+        {
+            return Create(values.First(), format, provider);
+        }
+
+        using var builder = new ArrayBuilder();
+        foreach (var value in values)
+        {
+            builder.Write(value, format, provider);
+        }
+
+        return new U8String(builder.Written, skipValidation: true);
+    }
+
     /// <inheritdoc />
     public void CopyTo(byte[] destination, int index)
     {
@@ -219,6 +283,150 @@ public readonly partial struct U8String
         Validate(separator);
 
         return JoinUnchecked(separator, values);
+    }
+
+    public static U8String Join<T>(
+        byte separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        if (!U8Info.IsAsciiByte(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        if (values.Length > 1)
+        {
+            return U8Manipulation.JoinUnchecked(separator, values, format, provider);
+        }
+
+        return values.Length is 1 ? Create(values[0]) : default;
+    }
+
+    public static U8String Join<T>(
+        char separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        return char.IsAscii(separator)
+            ? U8Manipulation.JoinUnchecked((byte)separator, values, format, provider)
+            : U8Manipulation.JoinUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+    }
+
+    public static U8String Join<T>(
+        Rune separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return separator.IsAscii
+            ? U8Manipulation.JoinUnchecked((byte)separator.Value, values, format, provider)
+            : U8Manipulation.JoinUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+    }
+
+    public static U8String Join<T>(
+        ReadOnlySpan<byte> separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        Validate(separator);
+
+        if (values.Length > 1)
+        {
+            return U8Manipulation.JoinUnchecked(separator, values, format, provider);
+        }
+
+        return values.Length is 1 ? Create(values[0], format, provider) : default;
+    }
+
+    public static U8String Join<T>(
+        byte separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        if (!U8Info.IsAsciiByte(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        if (values is T[] array)
+        {
+            return Join(separator, array, format, provider);
+        }
+        else if (values is List<T> list)
+        {
+            return Join(separator, list, format, provider);
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count) && count is 1)
+        {
+            return Create(values.First(), format, provider);
+        }
+        else
+        {
+            return U8Manipulation.JoinUnchecked(separator, values, format, provider);
+        }
+    }
+
+    public static U8String Join<T>(
+        char separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        if (char.IsSurrogate(separator))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
+        }
+
+        return char.IsAscii(separator)
+            ? Join((byte)separator, values, format, provider)
+            : Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+    }
+
+    public static U8String Join<T>(
+        Rune separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return separator.IsAscii
+            ? Join((byte)separator.Value, values, format, provider)
+            : Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+    }
+
+    public static U8String Join<T>(
+        ReadOnlySpan<byte> separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        Validate(separator);
+
+        if (values is T[] array)
+        {
+            return Join(separator, array, format, provider);
+        }
+        else if (values is List<T> list)
+        {
+            return Join(separator, list, format, provider);
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count) && count is 1)
+        {
+            return Create(values.First(), format, provider);
+        }
+        else
+        {
+            return U8Manipulation.JoinUnchecked(separator, values, format, provider);
+        }
     }
 
     internal static U8String JoinUnchecked(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)

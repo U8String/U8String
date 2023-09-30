@@ -1,58 +1,160 @@
-// Implementation by Neuecc from https://github.com/dotnet/runtime/pull/90459
+using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
+using System.Runtime.InteropServices;
 
 namespace U8Primitives;
 
-internal struct ToArrayHelper<T>
+[InlineArray(Size)]
+internal struct InlineBuffer128
 {
-    [InlineArray(29)]
-    private partial struct ArrayBlock
+    public const int Size = 128;
+
+    byte _element0;
+
+    [UnscopedRef, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref byte AsRef(int index)
     {
-    #pragma warning disable CA1823 // Avoid unused private fields
-    #pragma warning disable IDE0044 // Add readonly modifier
-    #pragma warning disable IDE0051 // Remove unused private members
-        private T[] _array;
-    #pragma warning restore IDE0051 // Remove unused private members
-    #pragma warning restore IDE0044 // Add readonly modifier
-    #pragma warning restore CA1823 // Avoid unused private fields
+        return ref _element0.Add(index);
     }
 
-    int _index;
-    int _count;
-    T[] _currentBlock;
-    ArrayBlock _blocks;
-
-    public ToArrayHelper(int initialCapacity)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal Span<byte> AsSpan()
     {
-        _blocks = default;
-        _currentBlock = _blocks[0] = new T[initialCapacity];
+        return MemoryMarshal.CreateSpan(ref _element0, Size);
+    }
+}
+
+[InlineArray(Size)]
+internal struct InlineBuffer256
+{
+    public const int Size = 256;
+
+    byte _element0;
+
+    [UnscopedRef, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal ref byte AsRef(int index)
+    {
+        return ref _element0.Add(index);
     }
 
-    public Span<T> CurrentSpan => _currentBlock;
-
-    public void AllocateNextBlock()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal Span<byte> AsSpan()
     {
-        _index++;
-        _count += _currentBlock.Length;
+        return MemoryMarshal.CreateSpan(ref _element0, Size);
+    }
+}
 
-        int nextSize = unchecked(_currentBlock.Length * 2);
-        if (nextSize < 0 || Array.MaxLength < (_count + nextSize))
+internal struct ArrayBuilder : IDisposable
+{
+    InlineBuffer256 _inline;
+    byte[]? _array;
+
+    public int BytesWritten { get; private set; }
+
+    public Span<byte> Written
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (_array is null ? _inline.AsSpan() : _array.AsSpan()).SliceUnsafe(0, BytesWritten);
+    }
+
+    public Span<byte> Free
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (_array is null ? _inline.AsSpan() : _array.AsSpan()).SliceUnsafe(BytesWritten);
+    }
+
+    public void Write(byte value)
+    {
+        if (Free.Length <= 0)
         {
-            nextSize = Array.MaxLength - _count;
+            Grow();
         }
 
-        _currentBlock = _blocks[_index] = new T[nextSize];
+        Free.AsRef() = value;
+        BytesWritten++;
     }
 
-    public T[] ToArray(int lastBlockCount)
+    public void Write<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
+        where T : IUtf8SpanFormattable
     {
-        T[] array = GC.AllocateUninitializedArray<T>(_count + lastBlockCount);
-        Span<T> dest = array.AsSpan();
-        for (int i = 0; i < _index; i++)
+        int written;
+        while (!value.TryFormat(Free, out written, format, provider))
         {
-            _blocks[i].CopyTo(dest);
-            dest = dest.Slice(_blocks[i].Length);
+            Grow();
         }
-        _currentBlock.AsSpan(0, lastBlockCount).CopyTo(dest);
-        return array;
+
+        BytesWritten += written;
+    }
+
+    public void Write(ReadOnlySpan<byte> span)
+    {
+        if (span.Length > 0)
+        {
+            if (TryWriteInline(span))
+            {
+                return;
+            }
+
+            while (!TryWriteArray(span))
+            {
+                Grow();
+            }
+        }
+    }
+
+    bool TryWriteInline(ReadOnlySpan<byte> span)
+    {
+        if ((uint)span.Length <= (uint)(InlineBuffer256.Size - BytesWritten))
+        {
+            span.CopyToUnsafe(ref _inline.AsRef(BytesWritten));
+            BytesWritten += span.Length;
+            return true;
+        }
+
+        return false;
+    }
+
+    bool TryWriteArray(ReadOnlySpan<byte> span)
+    {
+        if (_array != null && (
+            (uint)span.Length <= (uint)(_array.Length - BytesWritten)))
+        {
+            span.CopyToUnsafe(ref _array.AsRef(BytesWritten));
+            BytesWritten += span.Length;
+            return true;
+        }
+
+        return false;
+    }
+
+    void Grow()
+    {
+        var arrayPool = ArrayPool<byte>.Shared;
+        if (_array is null)
+        {
+            var next = arrayPool.Rent(InlineBuffer256.Size * 2);
+
+            _inline.AsSpan().CopyToUnsafe(ref next.AsRef());
+            _array = next;
+        }
+        else
+        {
+            var last = _array;
+            var length = last.Length * 2;
+            var next = arrayPool.Rent(length);
+
+            last.AsSpan().CopyToUnsafe(ref next.AsRef());
+            _array = next;
+
+            arrayPool.Return(last, clearArray: true);
+        }
+    }
+
+    public readonly void Dispose()
+    {
+       if (_array != null)
+       {
+           ArrayPool<byte>.Shared.Return(_array, clearArray: true);
+       }
     }
 }

@@ -336,7 +336,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public int GetHashCode(ReadOnlySpan<byte> value)
     {
-        var buffer = new InlineBuffer().AsSpan();
+        var buffer = new InlineBuffer128().AsSpan();
         if (value.Length <= buffer.Length)
         {
             U8AsciiCaseConverter.ToUpperCore(
