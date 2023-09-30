@@ -341,7 +341,9 @@ public readonly partial struct U8String
 
         if (values.Length > 1)
         {
-            return U8Manipulation.JoinUnchecked(separator, values, format, provider);
+            return separator.Length is 1
+                ? U8Manipulation.JoinUnchecked(separator[0], values, format, provider)
+                : U8Manipulation.JoinUnchecked(separator, values, format, provider);
         }
 
         return values.Length is 1 ? Create(values[0], format, provider) : default;
@@ -360,11 +362,11 @@ public readonly partial struct U8String
 
         if (values is T[] array)
         {
-            return Join(separator, array, format, provider);
+            return Join<T>(separator, array.AsSpan(), format, provider);
         }
         else if (values is List<T> list)
         {
-            return Join(separator, list, format, provider);
+            return Join<T>(separator, CollectionsMarshal.AsSpan(list), format, provider);
         }
         else if (values.TryGetNonEnumeratedCount(out var count) && count is 1)
         {
@@ -413,11 +415,11 @@ public readonly partial struct U8String
 
         if (values is T[] array)
         {
-            return Join(separator, array, format, provider);
+            return Join<T>(separator, array.AsSpan(), format, provider);
         }
         else if (values is List<T> list)
         {
-            return Join(separator, list, format, provider);
+            return Join<T>(separator, CollectionsMarshal.AsSpan(list), format, provider);
         }
         else if (values.TryGetNonEnumeratedCount(out var count) && count is 1)
         {
