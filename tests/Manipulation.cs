@@ -1,5 +1,5 @@
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
+
 using U8Primitives.InteropServices;
 
 namespace U8Primitives.Tests;
@@ -16,12 +16,15 @@ public class Manipulation
     static readonly Rune ThreeByteRune = new(ThreeByteChar);
     static readonly Rune FourByteRune = "😂".EnumerateRunes().First();
 
+    static readonly byte[] Empty = Array.Empty<byte>();
     static readonly byte[] Latin = "Hello, World"u8.ToArray();
     static readonly byte[] Cyrillic = "Привіт, Всесвіт"u8.ToArray();
     static readonly byte[] Japanese = "こんにちは、世界"u8.ToArray();
     static readonly byte[] Emoji = "📈📈📈📈📈"u8.ToArray();
+    static readonly byte[] Mixed = "HelloПривітこんにちは📈"u8.ToArray();
+    static readonly byte[] Invalid = new byte[] { 0x80, 0x80, 0x80, 0x80 };
 
-    public static readonly object[][] Strings = [[Latin], [Cyrillic], [Japanese], [Emoji]];
+    public static readonly object[][] Strings = [[Empty], [Latin], [Cyrillic], [Japanese], [Emoji], [Mixed]];
 
     [Theory, MemberData(nameof(Strings))]
     public void ConcatByte_ProducesCorrectValue(byte[] source)
@@ -120,5 +123,140 @@ public class Manipulation
 
         Assert.True(actualLeft.Equals(expectedLeft));
         Assert.True(actualLeft.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatString_ProducesCorrectValue()
+    {
+        var u8str = U8Marshal.Create(Mixed);
+        var actual = u8str + u8str;
+        var expected = Mixed.Concat(Mixed).ToArray();
+
+        Assert.True(actual.Equals(expected));
+        Assert.True(actual.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatString_LeftEmptyReturnsRight()
+    {
+        var left = (U8String)""u8;
+        var right = (U8String)"Hello, World!"u8;
+
+        var result = left + right;
+
+        Assert.True(result.Equals(right));
+        Assert.True(result.SourceEquals(right));
+    }
+
+    [Fact]
+    public void ConcatString_RightEmptyReturnsLeft()
+    {
+        var left = (U8String)"Hello, World!"u8;
+        var right = (U8String)""u8;
+
+        var result = left + right;
+
+        Assert.True(result.Equals(left));
+        Assert.True(result.SourceEquals(left));
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void ConcatArray_ProducesCorrectValue(byte[] source)
+    {
+        var u8str = U8Marshal.Create(source);
+        var actualRight = u8str + Mixed;
+        var expectedRight = source.Concat(Mixed).ToArray();
+
+        Assert.True(actualRight.Equals(expectedRight));
+        Assert.True(actualRight.IsNullTerminated);
+
+        var actualLeft = Mixed + u8str;
+        var expectedLeft = Mixed.Concat(source).ToArray();
+
+        Assert.True(actualLeft.Equals(expectedLeft));
+        Assert.True(actualLeft.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatArray_LeftEmptyReturnsRight()
+    {
+        var left = Array.Empty<byte>();
+        var right = (U8String)"Hello, World!"u8;
+
+        var result = left + right;
+
+        Assert.True(result.Equals(right));
+        Assert.True(result.SourceEquals(right));
+    }
+
+    [Fact]
+    public void ConcatArray_RightEmptyReturnsLeft()
+    {
+        var left = (U8String)"Hello, World!"u8;
+        var right = Array.Empty<byte>();
+
+        var result = left + right;
+
+        Assert.True(result.Equals(left));
+        Assert.True(result.SourceEquals(left));
+    }
+
+    [Fact]
+    public void ConcatArray_ThrowsOnInvalid()
+    {
+        var u8str = (U8String)"Hello, World!"u8;
+
+        Assert.Throws<FormatException>(() => u8str + Invalid);
+        Assert.Throws<FormatException>(() => Invalid + u8str);
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void ConcatSpan_ProducesCorrectValue(byte[] source)
+    {
+        var u8str = U8Marshal.Create(source);
+        var actualRight = u8str + Mixed.AsSpan();
+        var expectedRight = source.Concat(Mixed).ToArray().AsSpan();
+
+        Assert.True(actualRight.Equals(expectedRight));
+        Assert.True(actualRight.IsNullTerminated);
+
+        var actualLeft = Mixed.AsSpan() + u8str;
+        var expectedLeft = Mixed.Concat(source).ToArray().AsSpan();
+
+        Assert.True(actualLeft.Equals(expectedLeft));
+        Assert.True(actualLeft.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatSpan_LeftEmptyReturnsRight()
+    {
+        var left = Span<byte>.Empty;
+        var right = (U8String)"Hello, World!"u8;
+
+        var result = left + right;
+
+        Assert.True(result.Equals(right));
+        Assert.True(result.SourceEquals(right));
+    }
+
+    [Fact]
+    public void ConcatSpan_RightEmptyReturnsLeft()
+    {
+        var left = (U8String)"Hello, World!"u8;
+        var right = Span<byte>.Empty;
+
+        var result = left + right;
+
+        Assert.True(result.Equals(left));
+        Assert.True(result.SourceEquals(left));
+    }
+
+    [Fact]
+    public void ConcatSpan_ThrowsOnInvalid()
+    {
+        var u8str = (U8String)"Hello, World!"u8;
+
+        Assert.Throws<FormatException>(() => u8str + Invalid.AsSpan());
+        Assert.Throws<FormatException>(() => Invalid.AsSpan() + u8str);
     }
 }

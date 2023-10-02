@@ -104,22 +104,6 @@ public readonly partial struct U8String
         return other != null && Equals(other.AsSpan());
     }
 
-    public bool Equals(Span<byte> other)
-    {
-        var deref = this;
-        if (deref.Length == other.Length)
-        {
-            if (deref.Length > 0)
-            {
-                return deref.UnsafeSpan.SequenceEqual(other);
-            }
-
-            return true;
-        }
-
-        return false;
-    }
-
     //[MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ReadOnlySpan<byte> other)
     {
