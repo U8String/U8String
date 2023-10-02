@@ -13,7 +13,7 @@ public readonly partial struct U8String
     {
         if (!U8Info.IsAsciiByte(right))
         {
-            ThrowHelpers.InvalidUtf8();
+            ThrowHelpers.ArgumentOutOfRange(nameof(right));
         }
 
         return U8Manipulation.ConcatUnchecked(left, right);
@@ -42,7 +42,7 @@ public readonly partial struct U8String
     {
         if (!U8Info.IsAsciiByte(left))
         {
-            ThrowHelpers.InvalidUtf8();
+            ThrowHelpers.ArgumentOutOfRange(nameof(left));
         }
 
         return U8Manipulation.ConcatUnchecked(left, right);
@@ -463,9 +463,17 @@ public readonly partial struct U8String
     public U8String Remove(byte value) => U8Manipulation.Remove(this, value);
 
     /// <inheritdoc cref="Remove(U8String)"/>
-    public U8String Remove(char value) => char.IsAscii(value)
-        ? U8Manipulation.Remove(this, (byte)value)
-        : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan());
+    public U8String Remove(char value)
+    {
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(value));
+        }
+
+        return char.IsAscii(value)
+            ? U8Manipulation.Remove(this, (byte)value)
+            : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan(), validate: false);
+    }
 
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(Rune value) => value.IsAscii

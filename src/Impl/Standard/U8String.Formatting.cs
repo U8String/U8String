@@ -44,7 +44,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format, T value, IFormatProvider? provider)
             where T : IUtf8SpanFormattable
     {
-        // TODO: Additional length-resolving heuristics or a stack-allocated into arraypool buffer
+        // TODO: Maybe it's okay to steal from array pool?
         int length;
         var buffer = new byte[64];
         while (!value.TryFormat(buffer, out length, format, provider))
