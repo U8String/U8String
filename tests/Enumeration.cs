@@ -69,8 +69,8 @@ public class Enumeration
             }
             else
             {
-                Assert.False(u8chars.Contains(c));
-                Assert.False(((IEnumerable<char>)u8chars).Contains(c));
+                Assert.Throws<ArgumentOutOfRangeException>(() => u8chars.Contains(c));
+                Assert.Throws<ArgumentOutOfRangeException>(() => ((IEnumerable<char>)u8chars).Contains(c));
             }
         }
     }
