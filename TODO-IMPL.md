@@ -14,7 +14,8 @@
     - [ ] `U8Searcher<T>` where T is byte or char or Rune
     - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
-- [ ] Consider centralizing `new byte[length]` allocations to control null-termination and zeroing
+- [x] ~~Consider centralizing `new byte[length]` allocations to control null-termination and zeroing~~ too problematic to inline the conditionals that would determine the alloc size, after all, it's opprtunistic null-termination
+- [ ] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [ ] Optimize .Replace methods
@@ -22,17 +23,17 @@
 - [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
 - [ ] Use https://developer.arm.com/documentation/ddi0596/2020-12/SIMD-FP-Instructions/TBX--Table-vector-lookup-extension- to speed-up case conversions
 - [ ] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
-- [ ] Choose scope for 1.0.0 release - there is simply too much to do
-- [ ] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
-- [ ] Turns out that `(int)nint` cast does not "reverse-sign-extend" and produces -1 - audit the code and fix that via `int.CreateSaturating` and investigate if there's a way to improve codegen for this
-- [ ] Reconsider opportunistic null-termination on U8String itself rather than having to always re-allocate
-- [ ] Reconsider the choice to scan split sequences for the element count when separator is more than 1 byte long when materializing to `List<U8String>` - maybe it's a better trade-off to just keep growing the list allowing it to re-allocate? Might be fixed with InlineArray builder too
-- [ ] Port InlineArray-based array builder from neuecc's https://github.com/dotnet/runtime/pull/90459
-- [ ] Argument validation consistency:
-    - [ ] Ensure .Contains, .IndexOf, .StartsWith, etc. can handle surrogates, specifically the Rune and char overloads
+- [x] Choose scope for 1.0.0 release - there is simply too much to do
+- [x] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
+- [x] Turns out that `(int)nint` cast does not "reverse-sign-extend" and produces -1 - audit the code and fix that via `int.CreateSaturating` and investigate if there's a way to improve codegen for this
+- [x] Reconsider opportunistic null-termination on U8String itself rather than having to always re-allocate
+- [x] Reconsider the choice to scan split sequences for the element count when separator is more than 1 byte long when materializing to `List<U8String>` - maybe it's a better trade-off to just keep growing the list allowing it to re-allocate? Might be fixed with InlineArray builder too
+- [x] ~~Port InlineArray-based array builder from neuecc's https://github.com/dotnet/runtime/pull/90459~~ It sadly does not fit very well for byte range insertions, so use a more traditional array builder approach
+- [x] Argument validation consistency:
+    - [x] Ensure .Contains, .IndexOf, .StartsWith, etc. can handle surrogates, specifically the Rune and char overloads
     - [x] Ensure .Concat, .Join, .Split{First,Last} reject surrogates if those produce invalid UTF-8 (double-check)
 - [x] Investigate if there is a bug in AsciiUtils where Vector128 _Vectorized path is never exercised on ARM64 Preliminary: yes, it is a bug, 40% perf is left on the table for ARM64. https://github.com/dotnet/runtime/issues/89924
-- [ ] Refactor internal extensions and helper methods into separate classes
+- [x] Refactor internal extensions and helper methods into separate classes
 - [x] ~~Look into MakeSeparatorListVectorized impl. in CoreLib and adopt its approach if applicable~~
 - [x] Refactor and generalize large chunks into separate utility classes
 - [ ] Optimize Split(..., U8SplitOptions)
@@ -46,7 +47,7 @@
 - [ ] Author exception types and messages for malformed UTF-8 (use FormatException or U8FormatException?)
 - [ ] Author documentation
 - [x] Reconsider the `.Lines` behavior - restrict to `\n` or `\r\n` only or all newline codepoints? +Add remarks to docs
-- [ ] Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods
+- [x] ~~Investigate the exact requirements for accessing pre-converted UtF-8 values of string literals and consolidate/clean up all conversion methods~~ Focus on an analyzer that would nudge the users to use proper u8 literals
 - [x] Optimize AsSpan() overloads
 - [x] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do. Done: now non-ascii chars are simply ignored
 - [x] Debugger View and ToString

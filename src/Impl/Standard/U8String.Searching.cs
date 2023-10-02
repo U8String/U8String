@@ -9,7 +9,16 @@ public readonly partial struct U8String
     public bool Contains(byte value) => U8Searching.Contains(this, value);
 
     // TODO: Decide whether to throw on surrogate chars here or just return false (as right now)
-    public bool Contains(char value) => U8Searching.Contains(this, value);
+    public bool Contains(char value)
+    {
+        if (char.IsSurrogate(value))
+        {
+            // TODO: EH UX
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return U8Searching.Contains(this, value);
+    }
 
     public bool Contains(Rune value) => U8Searching.Contains(this, value);
 
@@ -53,9 +62,17 @@ public readonly partial struct U8String
         return Length > 0 && UnsafeRef == value;
     }
 
-    public bool StartsWith(char value) => char.IsAscii(value)
-        ? StartsWith((byte)value)
-        : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+    public bool StartsWith(char value)
+    {
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return char.IsAscii(value)
+            ? StartsWith((byte)value)
+            : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+    }
 
     public bool StartsWith(Rune value) => value.IsAscii
         ? StartsWith((byte)value.Value)
@@ -132,9 +149,17 @@ public readonly partial struct U8String
         return Length > 0 && UnsafeRefAdd(Length - 1) == value;
     }
 
-    public bool EndsWith(char value) => char.IsAscii(value)
-        ? EndsWith((byte)value)
-        : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+    public bool EndsWith(char value)
+    {
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return char.IsAscii(value)
+            ? EndsWith((byte)value)
+            : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+    }
 
     public bool EndsWith(Rune value) => value.IsAscii
         ? EndsWith((byte)value.Value)
@@ -207,7 +232,15 @@ public readonly partial struct U8String
 
     public int IndexOf(byte value) => U8Searching.IndexOf(this, value).Offset;
 
-    public int IndexOf(char value) => U8Searching.IndexOf(this, value).Offset;
+    public int IndexOf(char value)
+    {
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return U8Searching.IndexOf(this, value).Offset;
+    }
 
     public int IndexOf(Rune value) => U8Searching.IndexOf(this, value).Offset;
 
@@ -226,6 +259,11 @@ public readonly partial struct U8String
     public int IndexOf<T>(char value, T comparer)
         where T : IU8IndexOfOperator
     {
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
         return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
@@ -249,22 +287,60 @@ public readonly partial struct U8String
         return U8Searching.IndexOf(this, value, comparer).Offset;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LastIndexOf(byte value) => AsSpan().LastIndexOf(value);
+    public int LastIndexOf(byte value) => U8Searching.LastIndexOf(this, value).Offset;
 
     public int LastIndexOf(char value)
     {
-        return AsSpan().LastIndexOf(U8Scalar.Create(value).AsSpan());
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return U8Searching.LastIndexOf(this, value).Offset;
     }
 
-    public int LastIndexOf(Rune value)
+    public int LastIndexOf(Rune value) => U8Searching.LastIndexOf(this, value).Offset;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int LastIndexOf(U8String value) => U8Searching.LastIndexOf(this, value).Offset;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int LastIndexOf(ReadOnlySpan<byte> value) => U8Searching.LastIndexOf(this, value);
+
+    public int LastIndexOf<T>(byte value, T comparer)
+        where T : IU8LastIndexOfOperator
     {
-        return AsSpan().LastIndexOf(U8Scalar.Create(value).AsSpan());
+        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+    }
+
+    public int LastIndexOf<T>(char value, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        if (char.IsSurrogate(value))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+    }
+
+    public int LastIndexOf<T>(Rune value, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        return U8Searching.LastIndexOf(this, value, comparer).Offset;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LastIndexOf(U8String value) => AsSpan().LastIndexOf(value);
+    public int LastIndexOf<T>(U8String value, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LastIndexOf(ReadOnlySpan<byte> value) => AsSpan().LastIndexOf(value);
+    public int LastIndexOf<T>(ReadOnlySpan<byte> value, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+    }
 }

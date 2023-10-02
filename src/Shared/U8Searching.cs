@@ -31,7 +31,7 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? source.Contains((byte)c)
-                : !char.IsSurrogate(c) &&
+                : !char.IsSurrogate(c) && // Remove once all call-sites have guards
                     source.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
 
             Rune r => r.IsAscii
@@ -370,6 +370,51 @@ internal static class U8Searching
         return value.Length is 1
             ? comparer.IndexOf(source, value[0])
             : comparer.IndexOf(source, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static (int Offset, int Length) LastIndexOf<T>(ReadOnlySpan<byte> source, T value)
+        where T : struct
+    {
+        Debug.Assert(value is not char i || !char.IsSurrogate(i));
+        Debug.Assert(value is byte or char or Rune or U8String);
+
+        switch (value)
+        {
+            case byte b:
+                return (source.LastIndexOf(b), 1);
+
+            case char c:
+                if (char.IsAscii(c))
+                {
+                    return (source.LastIndexOf((byte)c), 1);
+                }
+
+                var scalar = U8Scalar.Create(c, checkAscii: false);
+                return (source.LastIndexOf(scalar.AsSpan()), scalar.Length);
+
+            case Rune r:
+                if (r.IsAscii)
+                {
+                    return (source.LastIndexOf((byte)r.Value), 1);
+                }
+
+                var rune = U8Scalar.Create(r, checkAscii: false);
+                return (source.LastIndexOf(rune.AsSpan()), rune.Length);
+
+            case U8String str:
+                var span = str.AsSpan();
+                return (LastIndexOf(source, span), span.Length);
+
+            default:
+                return ThrowHelpers.Unreachable<(int, int)>();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        return value.Length is 1 ? source.LastIndexOf(value[0]) : source.LastIndexOf(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -394,7 +394,7 @@ internal static class U8Manipulation
     /// <para>- <paramref name="source"/> is not empty</para>
     /// <para>- <paramref name="oldValue"/> is not empty</para>
     /// <para>- <paramref name="newValue"/> is not empty</para>
-    /// <para>- <paramref name="oldValue"/> and <paramref name="newValue"/> lengths are not 1</para>
+    /// <para>- <paramref name="oldValue"/> and <paramref name="newValue"/> lengths are greater than 1</para>
     /// </summary>
     internal static U8String ReplaceCore(
         U8String source,
@@ -405,7 +405,8 @@ internal static class U8Manipulation
         Debug.Assert(!source.IsEmpty);
         Debug.Assert(!oldValue.IsEmpty);
         Debug.Assert(!newValue.IsEmpty);
-        Debug.Assert(oldValue.Length is not 1 && newValue.Length is not 1);
+        Debug.Assert(oldValue.Length != 0 && newValue.Length != 0);
+        Debug.Assert(oldValue.Length >= 1 || newValue.Length >= 1);
 
         var count = source.UnsafeSpan.Count(oldValue);
         if (count > 0)

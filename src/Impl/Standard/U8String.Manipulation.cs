@@ -526,11 +526,19 @@ public readonly partial struct U8String
                     source, "\r\n"u8, "\n"u8, validate: false);
             }
 
-            // This needs manual loop which is sad
-            throw new NotImplementedException();
+            return ToCRLF();
         }
 
         return source;
+
+        static U8String ToCRLF()
+        {
+            // TODO:
+            // - Scan for LFs, find first one without CR
+            // - Count LFs past first match and calculate max length
+            // - Copy the first half before match, then split and insert segments from the second half
+            throw new NotImplementedException();
+        }
     }
 
     /// <summary>

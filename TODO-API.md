@@ -20,7 +20,7 @@
     - [ ] Investigate if it's possible to access and reuse internal ICU/NLS/Hybrid bindings. Note: 1. CoreLib seems to rely on unchanging length case folding; 2. CoreLib scans if string is ASCII only (do better: scan and convert in place, then contribute this back) and then either calls out to ASCII or invariant logic (which uses platform-specific globalization provider)
     - [x] Figure out a proper abstraction to distribute external packages that use ICU, NLS, etc. and implement appropriate U8Comparers (see U8Abstractions, U8Comparison and U8CaseConversion)
     - [x] ~~Map and allow explicit opt into using CultureInfo?~~ (comparer implementation-defined)
-    - [ ] Finish implementing AsciiIgnoreCase comparer
+    - [x] Finish implementing AsciiIgnoreCase comparer
     - [x] Adopt the abstraction for .Contains, .IndexOf, etc.
 - [x] IList, IEnumerable
 - [x] Comparison
@@ -32,7 +32,6 @@
 - [x] Chars view (same as above)
     - [ ] Optimize `U8Chars.Enumerator` and contribute to dotnet/runtime
 - [x] Lines view
-- [ ] Join
 - [ ] Splitting
     - [x] Split (byte, char, Rune)
     - [x] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
@@ -46,13 +45,13 @@
     - [x] Contains (+`T where T : IU8Comparer`?)
     - [x] StartsWith
     - [x] EndsWith
-    - [ ] Starts/EndsWith (+ `T where T : IU8Comparer`) overloads
+    - [x] Starts/EndsWith (+ `T where T : IU8Comparer`) overloads
     - [x] IndexOf (+`T where T : IU8Comparer`?)
-    - [ ] LastIndexOf (+`T where T : IU8Comparer`?)
+    - [x] LastIndexOf (+`T where T : IU8Comparer`?)
     - [x] Equals
 - [ ] Manipulation
     - [x] Concat
-    - [ ] Join
+    - [x] Join
     - [x] Trim, TrimStart, TrimEnd
     - [x] TrimAscii, TrimStartAscii, TrimEndAscii
     - [x] Replace(byte)

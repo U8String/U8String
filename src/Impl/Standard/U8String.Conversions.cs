@@ -4,7 +4,8 @@ using System.Text;
 
 namespace U8Primitives;
 
-#pragma warning disable RCS1206, IDE0057 // Simplify conditional and slice expressions. Why: codegen quality.
+// Simplify conditional and slice expressions; use braces. Why: style + ensuring right branch ordering.
+#pragma warning disable RCS1003, RCS1206, IDE0057
 public readonly partial struct U8String
 {
     /// <summary>
@@ -62,14 +63,12 @@ public readonly partial struct U8String
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Parse(string s, IFormatProvider? provider = null)
     {
         return Parse(s.AsSpan(), provider);
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Parse(ReadOnlySpan<char> s, IFormatProvider? provider = null)
     {
         // TODO: Decide when/how TryParse could fail, factor in the required codegen shape
@@ -85,7 +84,6 @@ public readonly partial struct U8String
     /// <param name="provider">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
     /// <returns>A new <see cref="U8String"/> created from <paramref name="utf8Text"/>.</returns>
     /// <exception cref="ArgumentException"> Thrown when <paramref name="utf8Text"/> contains invalid UTF-8.</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? provider = null)
     {
         if (!TryParse(utf8Text, provider, out var result))
@@ -97,7 +95,6 @@ public readonly partial struct U8String
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool TryParse(
         [NotNullWhen(true)] string? s,
         IFormatProvider? provider,
@@ -167,27 +164,46 @@ public readonly partial struct U8String
     /// <param name="format">Defined by <see cref="ISpanFormattable"/> but not applicable to this type.</param>
     /// <param name="provider">Defined by <see cref="ISpanFormattable"/> but not applicable to this type.</param>
     /// <returns>True if the UTF-16 representation was successfully written to <paramref name="destination"/>, otherwise false.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryFormat(
         Span<char> destination,
         out int charsWritten,
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        return Encoding.UTF8.TryGetChars(this, destination, out charsWritten);
+        if (!IsEmpty)
+        {
+            return Encoding.UTF8.TryGetChars(UnsafeSpan, destination, out charsWritten);
+        }
+
+        charsWritten = 0;
+        return true;
     }
 
     /// <inheritdoc />
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool TryFormat(
         Span<byte> utf8Destination,
         out int bytesWritten,
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        var result = AsSpan().TryCopyTo(utf8Destination);
+        var source = this;
 
-        bytesWritten = result ? Length : 0;
+        bool result;
+        var written = 0;
+        if (!source.IsEmpty)
+        {
+            if (utf8Destination.Length >= source.Length)
+            {
+                source.UnsafeSpan.CopyToUnsafe(ref utf8Destination.AsRef());
+
+                written = source.Length;
+                result = true;
+            }
+            else result = false;
+        }
+        else result = true;
+
+        bytesWritten = written;
         return result;
     }
 
@@ -195,11 +211,17 @@ public readonly partial struct U8String
     /// Returns a <see cref="byte"/> array containing the current <see cref="U8String"/>'s bytes.
     /// </summary>
     /// <returns>A new <see cref="byte"/> array to which the current <see cref="U8String"/>'s bytes were copied.</returns>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public byte[] ToArray() => AsSpan().ToArray();
+    public byte[] ToArray()
+    {
+        if (!IsEmpty)
+        {
+            return UnsafeSpan.ToArray();
+        }
+
+        return Array.Empty<byte>();
+    }
 
     /// <inheritdoc cref="ToString()"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
 
     /// <summary>
@@ -207,6 +229,11 @@ public readonly partial struct U8String
     /// </summary>
     public override string ToString()
     {
-        return !IsEmpty ? Encoding.UTF8.GetString(this) : string.Empty;
+        if (!IsEmpty)
+        {
+            return Encoding.UTF8.GetString(UnsafeSpan);
+        }
+
+        return string.Empty;
     }
 }

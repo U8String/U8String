@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
@@ -158,29 +157,43 @@ public readonly partial struct U8String
     public static U8String Create<T>(T value)
         where T : IUtf8SpanFormattable
     {
-        // TODO: Invert where the implementation lives?
-        return value.ToU8String();
+        return Create(value, default, null);
     }
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, ReadOnlySpan{char})"/>
     public static U8String Create<T>(T value, ReadOnlySpan<char> format)
         where T : IUtf8SpanFormattable
     {
-        return value.ToU8String(format);
+        return Create(value, format, null);
     }
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, IFormatProvider?)"/>
     public static U8String Create<T>(T value, IFormatProvider? provider)
         where T : IUtf8SpanFormattable
     {
-        return value.ToU8String(provider);
+        return Create(value, default, provider);
     }
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, ReadOnlySpan{char}, IFormatProvider?)"/>
     public static U8String Create<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
         where T : IUtf8SpanFormattable
     {
-        return value.ToU8String(format, provider);
+        if (value is not U8String u8str)
+        {
+            // if (TryGetInterned(value, out u8str))
+            // {
+            //    return u8str;
+            // }
+
+            if (TryFormatPresized(format, value, provider, out var result))
+            {
+                return result;
+            }
+
+            return FormatUnsized(format, value, provider);
+        }
+
+        return u8str;
     }
 
     /// <summary>
@@ -224,7 +237,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Read(Stream stream)
+    internal static U8String Read(Stream stream)
     {
         return stream.ReadToU8String();
     }
@@ -236,7 +249,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Task<U8String> ReadAsync(Stream stream, CancellationToken ct = default)
+    internal static Task<U8String> ReadAsync(Stream stream, CancellationToken ct = default)
     {
         return stream.ReadToU8StringAsync(ct);
     }
