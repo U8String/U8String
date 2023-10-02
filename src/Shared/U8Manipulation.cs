@@ -36,7 +36,7 @@ internal static class U8Manipulation
 
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
-        Debug.Assert(!left.IsEmpty && !right.IsEmpty);
+        Debug.Assert(!left.IsEmpty || !right.IsEmpty);
 
         var length = left.Length + right.Length;
         var value = new byte[length + 1];
