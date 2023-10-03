@@ -125,8 +125,9 @@ public readonly partial struct U8String
         {
             var value = new byte[length + 1];
 
-            left.CopyTo(value);
-            right.CopyTo(value.SliceUnsafe(left.Length, right.Length));
+            ref var dst = ref value.AsRef();
+            left.CopyToUnsafe(ref dst);
+            right.CopyToUnsafe(ref dst.Add(left.Length));
 
             Validate(value);
             return new U8String(value, 0, length);
@@ -183,13 +184,16 @@ public readonly partial struct U8String
 
         if (values.Length > 1)
         {
-            using var builder = new ArrayBuilder();
+            var builder = new ArrayBuilder();
             foreach (var value in values)
             {
                 builder.Write(value, format, provider);
             }
 
-            return new U8String(builder.Written, skipValidation: true);
+            var result = new U8String(builder.Written, skipValidation: true);
+
+            builder.Dispose();
+            return result;
         }
 
         return values.Length is 1 ? Create(values[0], format, provider) : default;
@@ -219,13 +223,16 @@ public readonly partial struct U8String
             return Create(values.First(), format, provider);
         }
 
-        using var builder = new ArrayBuilder();
+        var builder = new ArrayBuilder();
         foreach (var value in values)
         {
             builder.Write(value, format, provider);
         }
 
-        return new U8String(builder.Written, skipValidation: true);
+        var result = new U8String(builder.Written, skipValidation: true);
+
+        builder.Dispose();
+        return result;
     }
 
     /// <inheritdoc />

@@ -25,9 +25,9 @@ internal struct InlineBuffer128
 }
 
 [InlineArray(Size)]
-internal struct InlineBuffer256
+internal struct InlineBuffer240
 {
-    public const int Size = 256;
+    public const int Size = 240;
 
     byte _element0;
 
@@ -46,7 +46,7 @@ internal struct InlineBuffer256
 
 internal struct ArrayBuilder : IDisposable
 {
-    InlineBuffer256 _inline;
+    InlineBuffer240 _inline;
     byte[]? _array;
 
     public int BytesWritten { get; private set; }
@@ -104,7 +104,7 @@ internal struct ArrayBuilder : IDisposable
 
     bool TryWriteInline(ReadOnlySpan<byte> span)
     {
-        if ((uint)span.Length <= (uint)(InlineBuffer256.Size - BytesWritten))
+        if ((uint)span.Length <= (uint)(InlineBuffer240.Size - BytesWritten))
         {
             span.CopyToUnsafe(ref _inline.AsRef(BytesWritten));
             BytesWritten += span.Length;
@@ -132,7 +132,7 @@ internal struct ArrayBuilder : IDisposable
         var arrayPool = ArrayPool<byte>.Shared;
         if (_array is null)
         {
-            var next = arrayPool.Rent(InlineBuffer256.Size * 2);
+            var next = arrayPool.Rent(InlineBuffer240.Size * 2);
 
             _inline.AsSpan().CopyToUnsafe(ref next.AsRef());
             _array = next;
