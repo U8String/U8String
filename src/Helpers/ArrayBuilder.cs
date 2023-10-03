@@ -104,27 +104,29 @@ internal struct ArrayBuilder : IDisposable
 
     bool TryWriteInline(ReadOnlySpan<byte> span)
     {
+        var result = false;
         if ((uint)span.Length <= (uint)(InlineBuffer240.Size - BytesWritten))
         {
             span.CopyToUnsafe(ref _inline.AsRef(BytesWritten));
             BytesWritten += span.Length;
-            return true;
+            result = true;
         }
 
-        return false;
+        return result;
     }
 
     bool TryWriteArray(ReadOnlySpan<byte> span)
     {
+        var result = false;
         if (_array != null && (
             (uint)span.Length <= (uint)(_array.Length - BytesWritten)))
         {
             span.CopyToUnsafe(ref _array.AsRef(BytesWritten));
             BytesWritten += span.Length;
-            return true;
+            result = true;
         }
 
-        return false;
+        return result;
     }
 
     void Grow()
