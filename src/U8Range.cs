@@ -4,8 +4,8 @@ namespace U8Primitives;
 
 public readonly struct U8Range
 {
-    internal readonly int Offset;
-    internal readonly int Length;
+    internal int Offset { get; }
+    public int Length { get; }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Range(int offset, int length)
