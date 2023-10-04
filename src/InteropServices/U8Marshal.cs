@@ -121,6 +121,9 @@ public static class U8Marshal
         return new(value._value, value.Offset + start, end - start);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Slice(U8Source source, U8Range range) => new(source.Value, range);
+
     /// <summary>
     /// Unholy reverse of <see cref="U8String.Slice(int, int)"/> which
     /// restores internal offsets of the provided <see cref="U8String"/>

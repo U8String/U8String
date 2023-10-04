@@ -10,22 +10,6 @@ using U8Primitives.Serialization;
 #pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
 namespace U8Primitives;
 
-internal readonly struct U8Range
-{
-    internal readonly int Offset;
-    internal readonly int Length;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8Range(int offset, int length)
-    {
-        Debug.Assert((uint)offset <= int.MaxValue);
-        Debug.Assert((uint)length <= int.MaxValue);
-
-        Offset = offset;
-        Length = length;
-    }
-}
-
 /// <summary>
 /// Represents a UTF-8 encoded string.
 /// </summary>
@@ -113,6 +97,12 @@ public readonly partial struct U8String :
         }
     }
 
+    public U8Range Range
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _inner;
+    }
+
     /// <summary>
     /// The number of UTF-8 code points in the current <see cref="U8String"/>.
     /// </summary>
@@ -123,6 +113,12 @@ public readonly partial struct U8String :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => !IsEmpty ? U8Searching.CountRunes(ref UnsafeRef, (nuint)Length) : 0;
+    }
+
+    public U8Source Source
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(_value);
     }
 
     /// <inheritdoc/>
