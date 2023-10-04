@@ -16,4 +16,21 @@ public readonly struct U8Range
         Offset = offset;
         Length = length;
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8Range Slice(U8String value, int start)
+    {
+        Debug.Assert((uint)start <= int.MaxValue);
+
+        return new(value.Offset + start, value.Length - start);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8Range Slice(U8String value, int start, int length)
+    {
+        Debug.Assert((uint)start <= int.MaxValue);
+        Debug.Assert((uint)length <= int.MaxValue);
+
+        return new(value.Offset + start, length);
+    }
 }

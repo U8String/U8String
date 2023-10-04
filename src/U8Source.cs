@@ -24,13 +24,12 @@ public readonly struct U8Source
 
         if (range.Length > 0)
         {
-            if ((uint)(range.Offset + range.Length) > (uint)source!.Length)
+            var end = range.Offset + range.Length;
+            if ((uint)end > (uint)source!.Length)
             {
                 ThrowHelpers.ArgumentOutOfRange(nameof(range));
             }
 
-            // TODO: Is there really no way to get rid of length < source.Length when checking the last+1 byte?
-            var end = range.Offset + range.Length;
             if (U8Info.IsContinuationByte(in source.AsRef(range.Offset))
                 || ((uint)end < (uint)source.Length && U8Info.IsContinuationByte(in source.AsRef(end))))
             {
