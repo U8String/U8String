@@ -81,6 +81,7 @@ public readonly partial struct U8String
         return other.HasValue && Equals(other.Value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String other)
     {
         var deref = this;
@@ -104,7 +105,7 @@ public readonly partial struct U8String
         return other != null && Equals(other.AsSpan());
     }
 
-    //[MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ReadOnlySpan<byte> other)
     {
         var deref = this;
