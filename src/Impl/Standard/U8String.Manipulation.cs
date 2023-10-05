@@ -136,6 +136,11 @@ public readonly partial struct U8String
         return default;
     }
 
+    public static U8String Concat(U8String[] values)
+    {
+        return Concat(values.AsSpan());
+    }
+
     public static U8String Concat(ReadOnlySpan<U8String> values)
     {
         if (values.Length > 1)
@@ -165,10 +170,24 @@ public readonly partial struct U8String
         return values.Length is 1 ? values[0] : default;
     }
 
+    public static U8String Concat<T>(T[] values)
+        where T : IUtf8SpanFormattable
+    {
+        return Concat<T>(values.AsSpan(), default, null);
+    }
+
     public static U8String Concat<T>(/* params */ ReadOnlySpan<T> values)
         where T : IUtf8SpanFormattable
     {
         return Concat(values, default, null);
+    }
+
+    public static U8String Concat<T>(
+        T[] values,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return Concat<T>(values.AsSpan(), format, provider);
     }
 
     public static U8String Concat<T>(
@@ -581,7 +600,7 @@ public readonly partial struct U8String
         {
             if (U8Info.IsContinuationByte(in source.UnsafeRefAdd(start)))
             {
-                ThrowHelpers.InvalidSplit();
+                ThrowHelpers.ArgumentOutOfRange();
             }
 
             return new(source._value, source.Offset + start, length);
@@ -614,12 +633,10 @@ public readonly partial struct U8String
 
         if (length > 0)
         {
-            // TODO: Is there really no way to get rid of length < source.Length when checking the last+1 byte?
             if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
                 length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
-                // TODO: Exception message UX
-                ThrowHelpers.InvalidSplit();
+                ThrowHelpers.ArgumentOutOfRange();
             }
 
             return new(source._value, source.Offset + start, length);
