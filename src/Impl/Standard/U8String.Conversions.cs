@@ -20,7 +20,7 @@ public readonly partial struct U8String
         var (value, offset, length) = this;
         ref var reference = ref Unsafe.NullRef<byte>();
         if (value != null) reference = ref MemoryMarshal.GetArrayDataReference(value);
-        reference = ref Unsafe.Add(ref reference, offset);
+        reference = ref Unsafe.Add(ref reference, (nint)(uint)offset);
         return MemoryMarshal.CreateReadOnlySpan(ref reference, length);
     }
 
