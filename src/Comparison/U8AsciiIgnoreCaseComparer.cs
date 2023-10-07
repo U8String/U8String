@@ -165,7 +165,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             if (EqualsCore(
                     ref source.AsRef(),
                     ref value.AsRef(),
-                    (nuint)value.Length))
+                    (uint)value.Length))
             {
                 return (index, value.Length);
             }
@@ -225,7 +225,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
                 x.Offset != y.Offset || !x.SourceEquals(y)))
             {
                 return EqualsCore(
-                    ref x.UnsafeRef, ref y.UnsafeRef, (nuint)x.Length);
+                    ref x.UnsafeRef, ref y.UnsafeRef, (uint)x.Length);
             }
 
             return true;
@@ -243,7 +243,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
             if (!Unsafe.AreSame(ref lptr, ref rptr))
             {
-                return EqualsCore(ref lptr, ref rptr, (nuint)x.Length);
+                return EqualsCore(ref lptr, ref rptr, (uint)x.Length);
             }
 
             return true;
@@ -342,12 +342,12 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             U8AsciiCaseConverter.ToUpperCore(
                 src: ref value.AsRef(),
                 dst: ref buffer.AsRef(),
-                (nuint)value.Length);
+                (uint)value.Length);
 
             return U8String.GetHashCode(buffer.SliceUnsafe(0, value.Length));
         }
 
-        return GetHashCodeLarge(ref value.AsRef(), (nuint)value.Length, buffer);
+        return GetHashCodeLarge(ref value.AsRef(), (uint)value.Length, buffer);
     }
 
     static int GetHashCodeLarge(ref byte src, nuint length, ReadOnlySpan<byte> buffer)

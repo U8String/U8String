@@ -40,6 +40,7 @@ public readonly partial struct U8String
         else return 32;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     static U8String FormatUnsized<T>(
         ReadOnlySpan<char> format, T value, IFormatProvider? provider)
             where T : IUtf8SpanFormattable

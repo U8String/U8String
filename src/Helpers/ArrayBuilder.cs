@@ -11,12 +11,6 @@ internal struct InlineBuffer128
 
     byte _element0;
 
-    [UnscopedRef, MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref byte AsRef(int index)
-    {
-        return ref _element0.Add(index);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Span<byte> AsSpan()
     {

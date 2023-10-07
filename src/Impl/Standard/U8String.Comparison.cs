@@ -167,10 +167,11 @@ public readonly partial struct U8String
     /// <inheritdoc cref="GetHashCode(ReadOnlySpan{byte})"/>
     public override int GetHashCode()
     {
-        return GetHashCode(AsSpan());
+        var hash = XxHash3.HashToUInt64(this, U8Constants.DefaultHashSeed);
+
+        return ((int)hash) ^ (int)(hash >> 32);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public int GetHashCode<T>(T comparer) where T : IEqualityComparer<U8String>
     {
         return comparer.GetHashCode(this);

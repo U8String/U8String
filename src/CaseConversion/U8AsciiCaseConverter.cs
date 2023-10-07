@@ -26,7 +26,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        ToLowerCore(ref source.AsRef(), ref destination.AsRef(), (nuint)source.Length);
+        ToLowerCore(ref source.AsRef(), ref destination.AsRef(), (uint)source.Length);
         return source.Length;
     }
 
@@ -143,7 +143,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        ToUpperCore(ref source.AsRef(), ref destination.AsRef(), (nuint)source.Length);
+        ToUpperCore(ref source.AsRef(), ref destination.AsRef(), (uint)source.Length);
         return source.Length;
     }
 
