@@ -128,9 +128,8 @@ public readonly partial struct U8String
         {
             var nullTerminate = value[^1] != 0;
             var bytes = new byte[value.Length + (nullTerminate ? 1 : 0)];
-            var buffer = bytes.SliceUnsafe(0, value.Length);
 
-            value.CopyTo(buffer);
+            value.CopyToUnsafe(ref bytes.AsRef());
 
             _value = bytes;
             _inner = new U8Range(0, value.Length);

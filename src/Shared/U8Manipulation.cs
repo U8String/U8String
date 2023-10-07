@@ -188,7 +188,7 @@ internal static class U8Manipulation
     {
         Debug.Assert(values.Length > 1);
 
-        using var builder = new ArrayBuilder();
+        var builder = new ArrayBuilder();
         var first = MemoryMarshal.GetReference(values);
         builder.Write(first, format, provider);
 
@@ -198,7 +198,10 @@ internal static class U8Manipulation
             builder.Write(value, format, provider);
         }
 
-        return new U8String(builder.Written, skipValidation: true);
+        var result = new U8String(builder.Written, skipValidation: true);
+
+        builder.Dispose();
+        return result;
     }
 
     internal static U8String JoinUnchecked<T>(
@@ -210,7 +213,7 @@ internal static class U8Manipulation
         Debug.Assert(separator.Length > 1);
         Debug.Assert(values.Length > 1);
 
-        using var builder = new ArrayBuilder();
+        var builder = new ArrayBuilder();
         var first = MemoryMarshal.GetReference(values);
         builder.Write(first, format, provider);
 
@@ -220,7 +223,10 @@ internal static class U8Manipulation
             builder.Write(value, format, provider);
         }
 
-        return new U8String(builder.Written, skipValidation: true);
+        var result = new U8String(builder.Written, skipValidation: true);
+
+        builder.Dispose();
+        return result;
     }
 
     internal static U8String JoinUnchecked<T>(
@@ -231,8 +237,8 @@ internal static class U8Manipulation
     {
         Debug.Assert(values is not (T[] or List<T>));
 
-        using var builder = new ArrayBuilder();
         using var enumerator = values.GetEnumerator();
+        var builder = new ArrayBuilder();
 
         if (enumerator.MoveNext())
         {
@@ -245,7 +251,10 @@ internal static class U8Manipulation
             }
         }
 
-        return new U8String(builder.Written, skipValidation: true);
+        var result = new U8String(builder.Written, skipValidation: true);
+
+        builder.Dispose();
+        return result;
     }
 
     internal static U8String JoinUnchecked<T>(
@@ -257,8 +266,8 @@ internal static class U8Manipulation
         Debug.Assert(separator.Length > 1);
         Debug.Assert(values is not (T[] or List<T>));
 
-        using var builder = new ArrayBuilder();
         using var enumerator = values.GetEnumerator();
+        var builder = new ArrayBuilder();
 
         if (enumerator.MoveNext())
         {
@@ -271,7 +280,10 @@ internal static class U8Manipulation
             }
         }
 
-        return new U8String(builder.Written, skipValidation: true);
+        var result = new U8String(builder.Written, skipValidation: true);
+
+        builder.Dispose();
+        return result;
     }
 
     internal static U8String Replace(

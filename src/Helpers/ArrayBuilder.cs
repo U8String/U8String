@@ -48,23 +48,25 @@ internal struct ArrayBuilder : IDisposable
     public Span<byte> Written
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (_array is null ? _inline.AsSpan() : _array.AsSpan()).SliceUnsafe(0, BytesWritten);
+        get => (_array is null ? _inline.AsSpan() : _array).SliceUnsafe(0, BytesWritten);
     }
 
     public Span<byte> Free
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => (_array is null ? _inline.AsSpan() : _array.AsSpan()).SliceUnsafe(BytesWritten);
+        get => (_array is null ? _inline.AsSpan() : _array).SliceUnsafe(BytesWritten);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(byte value)
     {
-        if (Free.Length <= 0)
+        var free = Free;
+        if (free.Length <= 0)
         {
             Grow();
         }
 
-        Free.AsRef() = value;
+        free.AsRef() = value;
         BytesWritten++;
     }
 
@@ -80,8 +82,10 @@ internal struct ArrayBuilder : IDisposable
         BytesWritten += written;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(ReadOnlySpan<byte> span)
     {
+        // TODO: Change to check Free -> Grow -> CopyToUnsafe
         if (span.Length > 0)
         {
             if (TryWriteInline(span))
@@ -123,6 +127,7 @@ internal struct ArrayBuilder : IDisposable
         return result;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     void Grow()
     {
         var arrayPool = ArrayPool<byte>.Shared;

@@ -170,7 +170,7 @@ public readonly partial struct U8String
         return values.Length is 1 ? values[0] : default;
     }
 
-    public static U8String Concat<T>(T[] values)
+    public static U8String Concat<T>(T[]? values)
         where T : IUtf8SpanFormattable
     {
         return Concat<T>(values.AsSpan(), default, null);
@@ -183,7 +183,7 @@ public readonly partial struct U8String
     }
 
     public static U8String Concat<T>(
-        T[] values,
+        T[]? values,
         ReadOnlySpan<char> format,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
@@ -309,6 +309,42 @@ public readonly partial struct U8String
         Validate(separator);
 
         return JoinUnchecked(separator, values);
+    }
+
+    public static U8String Join<T>(
+        byte separator,
+        T[]? values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return Join<T>(separator, values.AsSpan(), format, provider);
+    }
+
+    public static U8String Join<T>(
+        char separator,
+        T[]? values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return Join<T>(separator, values.AsSpan(), format, provider);
+    }
+
+    public static U8String Join<T>(
+        Rune separator,
+        T[]? values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return Join<T>(separator, values.AsSpan(), format, provider);
+    }
+
+    public static U8String Join<T>(
+        ReadOnlySpan<byte> separator,
+        T[]? values,
+        ReadOnlySpan<char> format = default,
+        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+    {
+        return Join<T>(separator, values.AsSpan(), format, provider);
     }
 
     public static U8String Join<T>(
