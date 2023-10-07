@@ -76,11 +76,13 @@ public readonly partial struct U8String
         };
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String? other)
     {
         return other.HasValue && Equals(other.Value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String other)
     {
         var deref = this;
@@ -99,11 +101,13 @@ public readonly partial struct U8String
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(byte[]? other)
     {
         return other != null && Equals(other.AsSpan());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(ReadOnlySpan<byte> other)
     {
         var deref = this;
@@ -120,12 +124,14 @@ public readonly partial struct U8String
         return false;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals<T>(U8String other, T comparer)
         where T : IEqualityComparer<U8String>
     {
         return comparer.Equals(this, other);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals<T>(ReadOnlySpan<byte> other, T comparer)
         where T : IU8EqualityComparer
     {

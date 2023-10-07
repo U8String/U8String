@@ -112,7 +112,15 @@ public readonly partial struct U8String :
     public int RuneCount
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => !IsEmpty ? U8Searching.CountRunes(ref UnsafeRef, (nuint)Length) : 0;
+        get
+        {
+            if (!IsEmpty)
+            {
+                return U8Searching.CountRunes(ref UnsafeRef, (uint)Length);
+            }
+
+            return 0;
+        }
     }
 
     public U8Source Source
@@ -139,8 +147,9 @@ public readonly partial struct U8String :
         get
         {
             ref var reference = ref Unsafe.NullRef<byte>();
-            if (_value != null) reference = ref MemoryMarshal.GetArrayDataReference(_value);
-            reference = ref Unsafe.Add(ref reference, Offset);
+            var (value, offset) = (_value, (nint)(uint)Offset);
+            if (value != null) reference = ref MemoryMarshal.GetArrayDataReference(value);
+            reference = ref Unsafe.Add(ref reference, offset);
             return ref reference;
         }
     }
