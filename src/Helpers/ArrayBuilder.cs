@@ -73,58 +73,33 @@ internal struct ArrayBuilder : IDisposable
     public void Write<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
         where T : IUtf8SpanFormattable
     {
+        Retry:
         int written;
-        while (!value.TryFormat(Free, out written, format, provider))
+        if (value.TryFormat(Free, out written, format, provider))
         {
-            Grow();
+            BytesWritten += written;
+            return;
         }
 
-        BytesWritten += written;
+        Grow();
+        goto Retry;       
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(ReadOnlySpan<byte> span)
     {
         // TODO: Change to check Free -> Grow -> CopyToUnsafe
-        if (span.Length > 0)
+        Retry:
+        var free = Free;
+        if (free.Length >= span.Length)
         {
-            if (TryWriteInline(span))
-            {
-                return;
-            }
-
-            while (!TryWriteArray(span))
-            {
-                Grow();
-            }
-        }
-    }
-
-    bool TryWriteInline(ReadOnlySpan<byte> span)
-    {
-        var result = false;
-        if ((uint)span.Length <= (uint)(InlineBuffer240.Size - BytesWritten))
-        {
-            span.CopyToUnsafe(ref _inline.AsRef(BytesWritten));
+            span.CopyToUnsafe(ref free.AsRef());
             BytesWritten += span.Length;
-            result = true;
+            return;
         }
-
-        return result;
-    }
-
-    bool TryWriteArray(ReadOnlySpan<byte> span)
-    {
-        var result = false;
-        if (_array != null && (
-            (uint)span.Length <= (uint)(_array.Length - BytesWritten)))
-        {
-            span.CopyToUnsafe(ref _array.AsRef(BytesWritten));
-            BytesWritten += span.Length;
-            result = true;
-        }
-
-        return result;
+        
+        Grow();
+        goto Retry;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
