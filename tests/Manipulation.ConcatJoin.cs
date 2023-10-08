@@ -4,7 +4,7 @@ using U8Primitives.InteropServices;
 
 namespace U8Primitives.Tests;
 
-public class Manipulation
+public partial class Manipulation
 {
     const byte Byte = (byte)'!';
     const char OneByteChar = 'A';

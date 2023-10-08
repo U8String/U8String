@@ -414,13 +414,12 @@ internal static class U8Manipulation
         ReadOnlySpan<byte> newValue,
         bool validate = true)
     {
-        Debug.Assert(!source.IsEmpty);
         Debug.Assert(!oldValue.IsEmpty);
         Debug.Assert(!newValue.IsEmpty);
         Debug.Assert(oldValue.Length != 0 && newValue.Length != 0);
         Debug.Assert(oldValue.Length >= 1 || newValue.Length >= 1);
 
-        var count = source.UnsafeSpan.Count(oldValue);
+        var count = source.AsSpan().Count(oldValue);
         if (count > 0)
         {
             var length = source.Length - (oldValue.Length * count) + (newValue.Length * count);
@@ -501,6 +500,126 @@ internal static class U8Manipulation
                 U8String.Validate(result);
             }
             return new(result, 0, result.Length);
+        }
+
+        return source;
+    }
+
+    internal static U8String StripLineEndings(U8String source)
+    {
+        var lines = source.Lines;
+        if (lines.Count > 1)
+        {
+            var builder = new ArrayBuilder();
+            foreach (var line in lines)
+            {
+                if (!line.IsEmpty)
+                {
+                    builder.Write(line.UnsafeSpan);
+                }
+            }
+
+            var result = new U8String(builder.Written, skipValidation: true);
+
+            builder.Dispose();
+            return result;
+        }
+
+        return source;
+    }
+
+    internal static U8String LineEndingsToLF(U8String source)
+    {
+        return ReplaceCore(source, "\r\n"u8, "\n"u8, validate: false);
+    }
+
+    internal static U8String LineEndingsToCRLF(U8String source)
+    {
+        if (!source.IsEmpty)
+        {
+            // This method operates on absolute offsets
+            var array = source._value!;
+            var range = source.Range;
+
+            while (true)
+            {
+                var span = array.SliceUnsafe(range);
+                var offset = span.IndexOf((byte)'\n');
+
+                if ((uint)offset < (uint)span.Length)
+                {
+                    range = new(
+                        range.Offset + offset + 1,
+                        range.Length - offset - 1);
+
+                    if (offset > 0 && span[offset - 1] is (byte)'\r')
+                    {
+
+                        continue;
+                    }
+                    // Range is now the slice after the first LF -> CRLF replacement
+                    else goto Replace;
+                }
+
+                return source;
+            }
+
+        Replace:
+            var firstReplace = range.Offset - 1;
+            var builder = new ArrayBuilder();
+
+            // Copy the first part of the string before the first LF -> CRLF
+            builder.Write(array.SliceUnsafe(
+                source.Range.Offset, firstReplace - source.Range.Offset));
+            builder.Write("\r\n"u8);
+
+            foreach (var line in new U8String(array, range).Lines)
+            {
+                if (!line.IsEmpty)
+                    builder.Write(line.UnsafeSpan);
+                builder.Write("\r\n"u8);
+            }
+
+            var result = new U8String(builder.Written, skipValidation: true);
+
+            builder.Dispose();
+            return result;
+        }
+
+        return default;
+    }
+
+    internal static U8String LineEndingsToCustom(U8String source, ReadOnlySpan<byte> lineEnding)
+    {
+        Debug.Assert(lineEnding.Length > 0);
+
+        var lines = source.Lines;
+        if (lines.Count > 1)
+        {
+            var builder = new ArrayBuilder();
+            var enumerator = lines.GetEnumerator();
+
+            enumerator.MoveNext();
+            var line = enumerator.Current;
+            if (!line.IsEmpty)
+            {
+                builder.Write(line.UnsafeSpan);
+            }
+
+            while (enumerator.MoveNext())
+            {
+                builder.Write(lineEnding);
+                line = enumerator.Current;
+                if (!line.IsEmpty)
+                {
+                    builder.Write(line.UnsafeSpan);
+                }
+            }
+
+            var result = new U8String(builder.Written, skipValidation: true);
+
+            builder.Dispose();
+            return result;
         }
 
         return source;

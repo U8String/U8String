@@ -585,29 +585,35 @@ public readonly partial struct U8String
         return U8Manipulation.Replace(this, oldValue, newValue);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String ReplaceLineEndings()
     {
-        var source = this;
-        if (!source.IsEmpty)
-        {
-            if (!OperatingSystem.IsWindows())
-            {
-                return U8Manipulation.ReplaceCore(
-                    source, "\r\n"u8, "\n"u8, validate: false);
-            }
+        return OperatingSystem.IsWindows()
+            ? U8Manipulation.LineEndingsToCRLF(this)
+            : U8Manipulation.LineEndingsToLF(this);
+    }
 
-            return ToCRLF();
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String ReplaceLineEndings(ReadOnlySpan<byte> lineEnding)
+    {
+        if (lineEnding.IsEmpty)
+        {
+            return U8Manipulation.StripLineEndings(this);
         }
-
-        return source;
-
-        static U8String ToCRLF()
+        else if (lineEnding is [(byte)'\n'])
         {
-            // TODO:
-            // - Scan for LFs, find first one without CR
-            // - Count LFs past first match and calculate max length
-            // - Copy the first half before match, then split and insert segments from the second half
-            throw new NotImplementedException();
+            return U8Manipulation.LineEndingsToLF(this);
+        }
+        //else if (lineEnding is [(byte)'\r', (byte)'\n'])
+        else if (lineEnding.Length is 2
+            && lineEnding.AsRef().Cast<byte, ushort>() is 0xA0D)
+        {
+            return U8Manipulation.LineEndingsToCRLF(this);
+        }
+        else
+        {
+            Validate(lineEnding);
+            return U8Manipulation.LineEndingsToCustom(this, lineEnding);
         }
     }
 

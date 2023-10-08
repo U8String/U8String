@@ -66,6 +66,15 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref U Cast<T, U>(this ref T value)
+        where T : unmanaged
+        where U : unmanaged
+    {
+        return ref Unsafe.As<T, U>(ref value);
+    }
+
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyToUnsafe<T>(this Span<T> source, ref T destination)
         where T : struct
     {
@@ -94,6 +103,14 @@ internal static class UnsafeExtensions
     {
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)offset), length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Span<byte> SliceUnsafe(this byte[] value, U8Range range)
+    {
+        return MemoryMarshal.CreateSpan(
+            ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)range.Offset),
+            range.Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
