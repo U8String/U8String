@@ -48,6 +48,250 @@ internal static class U8Manipulation
         return new U8String(value, 0, length);
     }
 
+    internal static U8String Join(byte separator, ReadOnlySpan<U8String> values)
+    {
+        if (values.Length > 1)
+        {
+            return JoinUnchecked(separator, values);
+        }
+        else if (values.Length is 1)
+        {
+            return values[0];
+        }
+            
+        return default;
+    }
+
+    internal static U8String Join(byte separator, IEnumerable<U8String> values)
+    {
+        if (values is U8String[] array)
+        {
+            return Join(separator, array.AsSpan());
+        }
+        else if (values is List<U8String> list)
+        {
+            return Join(separator, CollectionsMarshal.AsSpan(list));
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count))
+        {
+            if (count is 1)
+            {
+                return values.First();
+            }
+            else if (count is 0)
+            {
+                return default;
+            }
+        }
+        
+        return JoinEnumerable(separator, values);
+
+        static U8String JoinEnumerable(byte separator, IEnumerable<U8String> values)
+        {
+            using var enumerator = values.GetEnumerator();
+            var builder = new ArrayBuilder();
+
+            if (enumerator.MoveNext())
+            {
+                builder.Write(enumerator.Current.AsSpan());
+
+                while (enumerator.MoveNext())
+                {
+                    builder.Write(separator);
+
+                    var current = enumerator.Current;
+                    if (!current.IsEmpty)
+                    {
+                        builder.Write(current.UnsafeSpan);
+                    }
+                }
+            }
+
+            var result = new U8String(builder.Written, skipValidation: true);
+
+            builder.Dispose();
+            return result;
+        }
+    }
+
+    internal static U8String Join(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
+    {
+        if (values.Length > 1)
+        {
+            if (separator.Length > 1)
+            {
+                return JoinUnchecked(separator, values);
+            }
+            else if (separator.Length is 1)
+            {
+                return JoinUnchecked(separator[0], values);
+            }
+
+            return U8String.Concat(values);
+        }
+        else if (values.Length is 1)
+        {
+            return values[0];
+        }
+        
+        return default;
+    }
+
+    internal static U8String Join(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
+    {
+        if (values is U8String[] array)
+        {
+            return Join(separator, array.AsSpan());
+        }
+        else if (values is List<U8String> list)
+        {
+            return Join(separator, CollectionsMarshal.AsSpan(list));
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count))
+        {
+            if (count is 1)
+            {
+                return values.First();
+            }
+            else if (count is 0)
+            {
+                return default;
+            }
+        }
+
+        return JoinEnumerable(separator, values);
+
+        static U8String JoinEnumerable(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
+        {
+            using var enumerator = values.GetEnumerator();
+            var builder = new ArrayBuilder();
+
+            if (enumerator.MoveNext())
+            {
+                builder.Write(enumerator.Current.AsSpan());
+
+                while (enumerator.MoveNext())
+                {
+                    builder.Write(separator);
+
+                    var current = enumerator.Current;
+                    if (!current.IsEmpty)
+                    {
+                        builder.Write(current.UnsafeSpan);
+                    }
+                }
+            }
+
+            var result = new U8String(builder.Written, skipValidation: true);
+
+            builder.Dispose();
+            return result;
+        }
+    }
+
+    internal static U8String Join<T>(
+        byte separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider) where T : IUtf8SpanFormattable
+    {
+        if (values.Length > 1)
+        {
+            return JoinUnchecked(separator, values, format, provider);
+        }
+        else if (values.Length is 1)
+        {
+            return U8String.Create(values[0], format, provider);
+        }
+        
+        return default;
+    }
+
+    internal static U8String Join<T>(
+        byte separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider) where T : IUtf8SpanFormattable
+    {
+        if (values is T[] array)
+        {
+            return Join<T>(separator, array.AsSpan(), format, provider);
+        }
+        else if (values is List<T> list)
+        {
+            return Join<T>(separator, CollectionsMarshal.AsSpan(list), format, provider);
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count))
+        {
+            if (count is 1)
+            {
+                return U8String.Create(values.First(), format, provider);
+            }
+            else if (count is 0)
+            {
+                return default;
+            }
+        }
+
+        return JoinUnchecked(separator, values, format, provider);
+    }
+
+    internal static U8String Join<T>(
+        ReadOnlySpan<byte> separator,
+        ReadOnlySpan<T> values,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider) where T : IUtf8SpanFormattable
+    {
+        if (values.Length > 1)
+        {
+            if (separator.Length > 1)
+            {
+                return JoinUnchecked(separator, values, format, provider);
+            }
+            else if (separator.Length is 1)
+            {
+                return JoinUnchecked(separator[0], values, format, provider);
+            }
+
+            return U8String.Concat(values, format, provider);
+        }
+        else if (values.Length is 1)
+        {
+            return U8String.Create(values[0], format, provider);
+        }
+        
+        return default;
+    }
+
+    internal static U8String Join<T>(
+        ReadOnlySpan<byte> separator,
+        IEnumerable<T> values,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider) where T : IUtf8SpanFormattable
+    {
+        if (values is T[] array)
+        {
+            return Join<T>(separator, array.AsSpan(), format, provider);
+        }
+        else if (values is List<T> list)
+        {
+            return Join<T>(separator, CollectionsMarshal.AsSpan(list), format, provider);
+        }
+        else if (values.TryGetNonEnumeratedCount(out var count))
+        {
+            if (count is 1)
+            {
+                return U8String.Create(values.First(), format, provider);
+            }
+            else if (count is 0)
+            {
+                return default;
+            }
+        }
+
+        return JoinUnchecked(separator, values, format, provider);
+    }
+
     // Contract:
     // - values.Length is greater than 1
     // - separator is a non-ascii byte, char, Rune or U8Scalar

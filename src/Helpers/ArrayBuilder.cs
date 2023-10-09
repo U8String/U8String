@@ -19,9 +19,10 @@ internal struct InlineBuffer128
 }
 
 [InlineArray(Length)]
-internal struct InlineBuffer240
+internal struct InlineBuffer376
 {
-    public const int Length = 240;
+    // To account for alignment with byte[] in ArrayBuilder
+    public const int Length = 376;
 
     byte _element0;
 
@@ -40,7 +41,7 @@ internal struct InlineBuffer240
 
 internal struct ArrayBuilder : IDisposable
 {
-    InlineBuffer240 _inline;
+    InlineBuffer376 _inline;
     byte[]? _array;
 
     public int BytesWritten { get; private set; }
@@ -75,7 +76,7 @@ internal struct ArrayBuilder : IDisposable
         BytesWritten++;
     }
 
-    public void Write<T>(T value, ReadOnlySpan<char> format = default, IFormatProvider? provider = null)
+    public void Write<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
         where T : IUtf8SpanFormattable
     {
         Retry:
@@ -93,7 +94,6 @@ internal struct ArrayBuilder : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(ReadOnlySpan<byte> span)
     {
-        // TODO: Change to check Free -> Grow -> CopyToUnsafe
         Retry:
         var free = Free;
         if (free.Length >= span.Length)
@@ -110,7 +110,7 @@ internal struct ArrayBuilder : IDisposable
     [MethodImpl(MethodImplOptions.NoInlining)]
     void Grow()
     {
-        const int initialRentLength = 512;
+        const int initialRentLength = 1024;
 
         var arrayPool = ArrayPool<byte>.Shared;
         var rented = _array;
