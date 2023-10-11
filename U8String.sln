@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "U8String", "src\U8String.csproj", "{56CB88C2-47B9-4AE3-8887-FF24A59C8650}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "U8String", "Sources\U8String.csproj", "{56CB88C2-47B9-4AE3-8887-FF24A59C8650}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "U8String.Benchmarks", "bench\U8String.Benchmarks.csproj", "{466BA558-83E2-4726-AB11-52FFB80D58AD}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "U8String.Benchmarks", "Benchmarks\U8String.Benchmarks.csproj", "{466BA558-83E2-4726-AB11-52FFB80D58AD}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "U8String.Tests", "tests\U8String.Tests.csproj", "{1D418088-3DBA-4D22-B88B-7AE8BE7A9D7A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "U8String.Tests", "Tests\U8String.Tests.csproj", "{1D418088-3DBA-4D22-B88B-7AE8BE7A9D7A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -30,10 +30,14 @@
     - [x] ~~OrdinalIgnoreCaseComparer~~
     - [x] ~~UnicodeNormalizedComparer (all normalization forms)~~
 - [x] Runes view (IEnumerable, or stateful IList?)
+    - [ ] CopyTo(span)
 - [x] Chars view (same as above)
+    - [ ] CopyTo(span)
     - [ ] Optimize `U8Chars.Enumerator` and contribute to dotnet/runtime
 - [x] Lines view
+    - [ ] CopyTo(span)
 - [ ] Splitting
+    - [ ] CopyTo(span)
     - [x] Split (byte, char, Rune)
     - [x] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
     - [ ] `SplitAny (byte, char, Rune, ROS, U8String, SearchValues<byte>, SearchValues<U8String>)`

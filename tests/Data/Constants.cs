@@ -77,14 +77,14 @@ public static class Constants
         Enumerable.Range(0b0000_0000, 128).Select(i => (byte)i).Concat(
         Enumerable.Range(0b1100_0000, 64).Select(i => (byte)i)).ToArray();
 
-    public static readonly Rune[] WhitespaceRunes = new Rune[25]
-    {
+    public static readonly Rune[] WhitespaceRunes =
+    [
         new('\t'), new('\n'), new('\v'), new('\f'), new('\r'), new(' '), // ASCII
         new(0x0085), new(0x00A0), new(0x1680), new(0x2000), new(0x2001), // Unicode
         new(0x2002), new(0x2003), new(0x2004), new(0x2005), new(0x2006),
         new(0x2007), new(0x2008), new(0x2009), new(0x200A), new(0x2028),
         new(0x2029), new(0x202F), new(0x205F), new(0x3000)
-    };
+    ];
 
     public static readonly byte[][] WhitespaceCharBytes =
         WhitespaceRunes.Select(TestExtensions.ToUtf8).ToArray();
