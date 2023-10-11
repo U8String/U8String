@@ -187,6 +187,7 @@ internal static class U8Enumeration
         return result;
     }
 
+    // TODO: Refactor to ArrayBuilder (generic variant)
     internal static U[] ToArrayUnsized<T, E, U>(this T source, int maxLength)
         where T : struct, IEnumerable<U, E>
         where E : struct, IEnumerator<U>

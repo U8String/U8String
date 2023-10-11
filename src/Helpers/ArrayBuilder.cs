@@ -46,6 +46,7 @@ internal struct ArrayBuilder : IDisposable
 
     public int BytesWritten { get; private set; }
 
+    // TODO: add overload with initial capacity
     public ArrayBuilder()
     {
         Unsafe.SkipInit(out _inline);
