@@ -2,7 +2,6 @@ using System.Collections.Immutable;
 
 namespace U8Primitives.Abstractions;
 
-#pragma warning disable IDE0057 // Use range operator. Why: Performance.
 public interface IU8ContainsOperator
 {
     bool Contains(ReadOnlySpan<byte> source, byte value);

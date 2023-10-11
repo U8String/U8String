@@ -36,4 +36,8 @@
 ## 1.1.0
 - [ ] NativeU8String (1.X.X candidate?)
     - [ ] NativeU8Span (?)
-- [ ] `SearchValues<U8String>`
+- [ ] `SearchValues<U8String>` + method overloads that accept it
+- [ ] Extending existing methods
+    - [ ] Replace(..., T comparer), ReplaceAny (both variants)
+    - [ ] Remove(..., T comparer), RemoveAny (both variants)
+    - [ ] SplitAny(..., T comparer)

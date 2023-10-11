@@ -1669,3 +1669,66 @@ public readonly ref struct ConfiguredU8RefSplit<TComparer>
         }
     }
 }
+
+public readonly ref struct U8RefAnySplit
+{
+    readonly U8String _value;
+    readonly ReadOnlySpan<byte> _separators;
+
+    internal U8RefAnySplit(U8String value, ReadOnlySpan<byte> separators)
+    {
+        _value = value;
+        _separators = separators;
+    }
+
+    public Enumerator GetEnumerator() => new(_value, _separators);
+
+    public ref struct Enumerator
+    {
+        readonly byte[]? _value;
+        readonly ReadOnlySpan<byte> _separators;
+        U8Range _current;
+        U8Range _remaining;
+
+        internal Enumerator(U8String value, ReadOnlySpan<byte> separators)
+        {
+            _value = value._value;
+            _separators = separators;
+            _remaining = value.Range;
+        }
+
+        public readonly U8String Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(_value, _current.Offset, _current.Length);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            var remaining = _remaining;
+            if (remaining.Length > 0)
+            {
+                var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
+                var separators = _separators;
+                var index = value.IndexOfAny(separators);
+                if (index >= 0)
+                {
+                    _current = new(remaining.Offset, index);
+                    _remaining = new(
+                        remaining.Offset + index + 1,
+                        remaining.Length - index - 1);
+                }
+                else
+                {
+                    _current = remaining;
+                    _remaining = default;
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+}

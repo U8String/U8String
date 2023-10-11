@@ -15,14 +15,15 @@
     - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
 - [x] ~~Consider centralizing `new byte[length]` allocations to control null-termination and zeroing~~ too problematic to inline the conditionals that would determine the alloc size, after all, it's opprtunistic null-termination
+- [ ] Ensure correct behavior for all Split/Any overlods when supplied with empty separator
 - [ ] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
-- [ ] Optimize .Replace methods
-- [ ] Mirror caching of certain types which cache ToString() with ConditionalWeakTable?
-- [ ] Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search
-- [ ] Use https://developer.arm.com/documentation/ddi0596/2020-12/SIMD-FP-Instructions/TBX--Table-vector-lookup-extension- to speed-up case conversions
-- [ ] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
+- [x] Optimize .Replace methods
+- [x] ~~Mirror caching of certain types which cache ToString() with ConditionalWeakTable?~~ Out of scope for 1.0.0
+- [x] ~~Contains/IndexOf/LastIndexOf on surrogate `char`s -> instead of returning false or -1, implement (vectorized) transcoding search~~ surrogate UTF-16 chars are unrepresentable in UTF-8
+- [x] ~~Use https://developer.arm.com/documentation/ddi0596/2020-12/SIMD-FP-Instructions/TBX--Table-vector-lookup-extension- to speed-up case conversions~~ Out of scope for 1.0.0
+- [x] Consider `NativeU8Span` as the main unmanaged string primitive while `NativeU8String` would represent the original memory owner responsible for its lifecycle, not intended for direct interaction
 - [x] Choose scope for 1.0.0 release - there is simply too much to do
 - [x] Reconsider aggressive inlining choices in regards to top-down compiler reasoning about program state (i.e. a small callee can be inlined and then have calls to large aggressively inlined methods inside - this needs to be double-checked how .NET handles such scenario)
 - [x] Turns out that `(int)nint` cast does not "reverse-sign-extend" and produces -1 - audit the code and fix that via `int.CreateSaturating` and investigate if there's a way to improve codegen for this
