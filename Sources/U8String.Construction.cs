@@ -107,6 +107,7 @@ public readonly partial struct U8String
 
         Debug.Assert(Offset >= 0);
         Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
+        Debug.Assert(value is null || (uint)(offset + length) <= (uint)value.Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -117,6 +118,8 @@ public readonly partial struct U8String
 
         Debug.Assert(Offset >= 0);
         Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
+        Debug.Assert(value is null || (uint)(
+            inner.Offset + inner.Length) <= (uint)value.Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

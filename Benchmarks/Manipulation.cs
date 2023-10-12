@@ -12,6 +12,7 @@ public class Manipulation
         "Hello",
         "Привіт",
         "Hello ",
+        "     ",
         "\t\n\v\f\r 👋🏻🌍\t\n\v\f\r "
     )]
     public string ValueU16 = string.Empty;

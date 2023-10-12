@@ -706,16 +706,33 @@ public readonly partial struct U8String
     /// </returns>
     public U8String Trim()
     {
-        // TODO: Optimize fast path on no whitespace
         // TODO 2: Do not convert to runes and have proper
         // whitespace LUT to evaluate code points in a branchless way
         var source = this;
         if (!source.IsEmpty)
         {
             ref var ptr = ref source.UnsafeRef;
+            var (start, end) = (0, source.Length - 1);
+            var last = ptr.Add(end);
 
-            var start = 0;
-            while (start < source.Length)
+            if (U8Info.IsAsciiByte(in ptr) && !U8Info.IsAsciiWhitespace(in ptr))
+            {
+                if (U8Info.IsAsciiByte(last) && !U8Info.IsAsciiWhitespace(last))
+                {
+                    return source;
+                }
+                else --end;
+            } // Can't increment start because TrimCore expects non-continuation byte
+
+            return TrimCore(source._value, source.Offset + start, end);
+        }
+
+        return default;
+
+        static U8String TrimCore(byte[] source, int start, int end)
+        {
+            ref var ptr = ref source.AsRef();
+            while (start <= end)
             {
                 if (!U8Info.IsWhitespaceRune(ref ptr.Add(start), out var size))
                 {
@@ -724,7 +741,6 @@ public readonly partial struct U8String
                 start += size;
             }
 
-            var end = source.Length - 1;
             for (var endSearch = end; endSearch >= start; endSearch--)
             {
                 var b = ptr.Add(endSearch);
@@ -746,10 +762,8 @@ public readonly partial struct U8String
                 }
             }
 
-            return U8Marshal.Slice(source, start, end - start + 1);
+            return new U8String(source, start, end - start + 1);
         }
-
-        return default;
     }
 
     /// <summary>
@@ -765,12 +779,6 @@ public readonly partial struct U8String
         if (!source.IsEmpty)
         {
             ref var ptr = ref source.UnsafeRef;
-            var b = ptr;
-
-            if (U8Info.IsAsciiByte(b) && !U8Info.IsAsciiWhitespace(b))
-            {
-                return source;
-            }
 
             var start = 0;
             while (start < source.Length)

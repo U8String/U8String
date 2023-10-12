@@ -11,7 +11,7 @@ using U8Primitives.Serialization;
 namespace U8Primitives;
 
 /// <summary>
-/// Represents a UTF-8 encoded string.
+/// UTF-8 encoded string.
 /// </summary>
 /// <remarks>
 /// <para>U8String is an immutable value type that represents a UTF-8 encoded string.</para>
