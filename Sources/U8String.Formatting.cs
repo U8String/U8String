@@ -1,9 +1,119 @@
+using System.Buffers;
 using System.Text;
 
 namespace U8Primitives;
 
+[InterpolatedStringHandler]
+public struct U8InterpolatedStringHandler
+{
+    readonly IFormatProvider? _provider;
+    InlineBuffer128 _inline;
+    byte[]? _rented;
+
+    public int BytesWritten { get; private set; }
+
+    public Span<byte> Written
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (_rented ?? _inline.AsSpan()).SliceUnsafe(0, BytesWritten);
+    }
+
+    public Span<byte> Free
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
+    }
+
+    public U8InterpolatedStringHandler(
+        int literalLength,
+        int formattedCount,
+        IFormatProvider? formatProvider = null)
+    {
+        Unsafe.SkipInit(out _inline);
+
+        var initialLength = literalLength + formattedCount * 12;
+        if (initialLength > InlineBuffer128.Length)
+        {
+            _rented = ArrayPool<byte>.Shared.Rent(initialLength);
+        }
+
+        _provider = formatProvider;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void AppendLiteral(string s)
+    {
+    Retry:
+        if (Encoding.UTF8.TryGetBytes(s, Free, out var written))
+        {
+            BytesWritten += written;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void AppendFormatted<T>(T value, ReadOnlySpan<char> format = default)
+        where T : IUtf8SpanFormattable
+    {
+    Retry:
+        if (value.TryFormat(Free, out var written, format, _provider))
+        {
+            BytesWritten += written;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    void Grow()
+    {
+        const int initialRentLength = 1024;
+
+        var arrayPool = ArrayPool<byte>.Shared;
+        var rented = _rented;
+        var written = (rented ?? _inline.AsSpan())
+            .SliceUnsafe(0, BytesWritten);
+
+        var newLength = rented is null
+            ? initialRentLength
+            : rented.Length * 2;
+
+        var newArr = arrayPool.Rent(newLength);
+
+        written.CopyToUnsafe(ref newArr.AsRef());
+        _rented = newArr;
+
+        if (rented != null)
+        {
+            arrayPool.Return(rented, clearArray: true);
+        }
+    }
+
+    internal readonly void Dispose()
+    {
+        var rented = _rented;
+        if (rented != null)
+        {
+            ArrayPool<byte>.Shared.Return(rented, clearArray: true);
+        }
+    }
+}
+
 public readonly partial struct U8String
 {
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public static U8String Format(ref U8InterpolatedStringHandler handler)
+    {
+        var result = new U8String(handler.Written, skipValidation: true);
+        handler.Dispose();
+        return result;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatPresized<T>(
         ReadOnlySpan<char> format, T value, IFormatProvider? provider, out U8String result)

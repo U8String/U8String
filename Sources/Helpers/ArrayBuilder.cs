@@ -80,9 +80,8 @@ internal struct ArrayBuilder : IDisposable
     public void Write<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
         where T : IUtf8SpanFormattable
     {
-        Retry:
-        int written;
-        if (value.TryFormat(Free, out written, format, provider))
+    Retry:
+        if (value.TryFormat(Free, out var written, format, provider))
         {
             BytesWritten += written;
             return;
@@ -95,7 +94,7 @@ internal struct ArrayBuilder : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Write(ReadOnlySpan<byte> span)
     {
-        Retry:
+    Retry:
         var free = Free;
         if (free.Length >= span.Length)
         {
@@ -103,7 +102,7 @@ internal struct ArrayBuilder : IDisposable
             BytesWritten += span.Length;
             return;
         }
-        
+
         Grow();
         goto Retry;
     }
@@ -135,9 +134,10 @@ internal struct ArrayBuilder : IDisposable
 
     public readonly void Dispose()
     {
-       if (_array != null)
-       {
-           ArrayPool<byte>.Shared.Return(_array, clearArray: true);
-       }
+        var array = _array;
+        if (array != null)
+        {
+            ArrayPool<byte>.Shared.Return(array, clearArray: true);
+        }
     }
 }
