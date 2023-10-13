@@ -576,10 +576,7 @@ internal static class U8Manipulation
 
     internal static U8String Replace(U8String source, char oldValue, char newValue)
     {
-        if (char.IsSurrogate(oldValue) || char.IsSurrogate(newValue))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(oldValue);
 
         return char.IsAscii(oldValue) && char.IsAscii(newValue)
             ? Replace(source, (byte)oldValue, (byte)newValue, validate: false)

@@ -16,7 +16,7 @@
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
 - [x] ~~Consider centralizing `new byte[length]` allocations to control null-termination and zeroing~~ too problematic to inline the conditionals that would determine the alloc size, after all, it's opprtunistic null-termination
 - [ ] Ensure correct behavior for all Split/Any overlods when supplied with empty separator
-- [ ] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
+- [x] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [x] Optimize .Replace methods

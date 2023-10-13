@@ -8,7 +8,9 @@ public readonly struct U8OrdinalComparer :
     IU8ContainsOperator,
     IU8CountOperator,
     IU8IndexOfOperator,
-    IU8LastIndexOfOperator
+    IU8LastIndexOfOperator,
+    IU8StartsWithOperator,
+    IU8EndsWithOperator
 {
     public static U8OrdinalComparer Instance => default;
 
@@ -54,6 +56,26 @@ public readonly struct U8OrdinalComparer :
     public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
         return source.Count(value);
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> source, byte value)
+    {
+        return source.Length > 0 && source[0] == value;
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        return source.StartsWith(value);
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> source, byte value)
+    {
+        return source.Length > 0 && source[^1] == value;
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        return source.EndsWith(value);
     }
 
     public bool Equals(U8String x, U8String y)

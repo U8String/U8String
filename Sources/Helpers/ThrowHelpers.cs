@@ -32,6 +32,12 @@ internal static class ThrowHelpers
     }
 
     [DoesNotReturn, StackTraceHidden]
+    internal static void ArgumentException()
+    {
+        throw new ArgumentException();
+    }
+
+    [DoesNotReturn, StackTraceHidden]
     internal static void ArgumentOutOfRange()
     {
         throw new ArgumentOutOfRangeException();
@@ -47,6 +53,22 @@ internal static class ThrowHelpers
     internal static T ArgumentOutOfRange<T>(string? paramName = null)
     {
         throw new ArgumentOutOfRangeException(paramName);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining), StackTraceHidden]
+    internal static void CheckSurrogate(char value)
+    {
+        if (char.IsSurrogate(value))
+        {
+            SurrogateChar();
+        }
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static void SurrogateChar()
+    {
+        throw new ArgumentException(
+            "The argument is a surrogate character. Surrogate UTF-16 code units are not representable in UTF-8.");
     }
 
     [DoesNotReturn, StackTraceHidden]

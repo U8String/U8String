@@ -192,7 +192,7 @@ public readonly partial struct U8String :
     /// Evaluates if the current <see cref="U8String"/> is normalized to the specified
     /// Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
     /// </summary>
-    public bool IsNormalized(NormalizationForm form = NormalizationForm.FormC) => throw new NotImplementedException();
+    internal bool IsNormalized(NormalizationForm form = NormalizationForm.FormC) => throw new NotImplementedException();
 
     /// <summary>
     /// Validates that the <paramref name="value"/> is a valid UTF-8 byte sequence.
@@ -224,13 +224,6 @@ public readonly partial struct U8String :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ValidateSlice(ReadOnlySpan<byte> value, int offset, int length)
-    {
-        // TODO: Another method which requires like 10 iterations to achieve good codegen.
-        throw new NotImplementedException();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Deconstruct(out byte[]? value, out int offset, out int length)
     {
         value = _value;
@@ -242,9 +235,9 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ref readonly byte GetPinnableReference() => ref DangerousRef;
 
-    void IList<byte>.Insert(int index, byte item) => throw new NotImplementedException();
-    void IList<byte>.RemoveAt(int index) => throw new NotImplementedException();
-    void ICollection<byte>.Add(byte item) => throw new NotImplementedException();
-    void ICollection<byte>.Clear() => throw new NotImplementedException();
-    bool ICollection<byte>.Remove(byte item) => throw new NotImplementedException();
+    void IList<byte>.Insert(int index, byte item) => throw new NotSupportedException();
+    void IList<byte>.RemoveAt(int index) => throw new NotSupportedException();
+    void ICollection<byte>.Add(byte item) => throw new NotSupportedException();
+    void ICollection<byte>.Clear() => throw new NotSupportedException();
+    bool ICollection<byte>.Remove(byte item) => throw new NotSupportedException();
 }

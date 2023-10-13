@@ -12,7 +12,9 @@ public readonly struct U8AsciiIgnoreCaseComparer :
     IU8ContainsOperator,
     IU8CountOperator,
     IU8IndexOfOperator,
-    IU8LastIndexOfOperator
+    IU8LastIndexOfOperator,
+    IU8StartsWithOperator,
+    IU8EndsWithOperator
 {
     [ThreadStatic]
     static XxHash3? Hasher;
@@ -214,6 +216,66 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         }
 
         return (-1, 0);
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> source, byte value)
+    {
+        if (source.Length > 0)
+        {
+            var b0 = source[0];
+
+            return b0 == value || (U8Info.IsAsciiLetter(b0) && (b0 ^ 0x20) == value);
+        }
+
+        return false;
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        if (source.Length >= value.Length)
+        {
+            if (source.Length > 0)
+            {
+                return EqualsCore(
+                    ref source.AsRef(),
+                    ref value.AsRef(),
+                    (uint)value.Length);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> source, byte value)
+    {
+        if (source.Length > 0)
+        {
+            var b0 = source[^1];
+
+            return b0 == value || (U8Info.IsAsciiLetter(b0) && (b0 ^ 0x20) == value);
+        }
+
+        return false;
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        if (source.Length >= value.Length)
+        {
+            if (source.Length > 0)
+            {
+                return EqualsCore(
+                    ref source.AsRef(source.Length - value.Length),
+                    ref value.AsRef(),
+                    (uint)value.Length);
+            }
+
+            return true;
+        }
+
+        return false;
     }
 
     public bool Equals(U8String x, U8String y)

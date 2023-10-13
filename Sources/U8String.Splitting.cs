@@ -34,10 +34,7 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitFirst(char separator)
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return char.IsAscii(separator)
             ? SplitFirst((byte)separator)
@@ -264,10 +261,7 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitLast(char separator)
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return char.IsAscii(separator)
             ? SplitLast((byte)separator)
@@ -384,10 +378,7 @@ public readonly partial struct U8String
 
     public U8Split<char> Split(char separator)
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return new(this, separator);
     }
@@ -421,10 +412,7 @@ public readonly partial struct U8String
 
     public ConfiguredU8Split<char> Split(char separator, U8SplitOptions options)
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return new(this, separator, options);
     }
@@ -451,10 +439,7 @@ public readonly partial struct U8String
     public U8Split<char, T> Split<T>(char separator, T comparer)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return new(this, separator, comparer);
     }
@@ -496,10 +481,7 @@ public readonly partial struct U8String
     public ConfiguredU8Split<char, T> Split<T>(char separator, T comparer, U8SplitOptions options)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return new(this, separator, comparer, options);
     }

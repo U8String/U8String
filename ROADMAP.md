@@ -6,37 +6,44 @@
     - [x] Enumeration
     - [x] Allocation (internal, not for 1.0.0)
 - [ ] U8String
-    - [x] CoreLib `string` non-globalized features parity
+    - [ ] CoreLib `string` non-globalization features parity
         - [x] Split
-        - [x] Slice (done right, superior variant)
+        - [x] Slice
         - [x] Replace, Remove
-        - [x] Enumerations (superior variants)
+        - [x] Enumerations
         - [x] Conversions
-        - [x] Concat
+        - [x] Concat, Join
         - [x] Comparison, Equality and Hashcode
-        - [ ] etc.
-    - [ ] Comparison
+        - [ ] Format
+        - [x] Trim
+        - [x] etc.
+    - [x] Comparison
         - [x] Ordinal
-        - [ ] AsciiIgnoreCase
-        - [ ] OrdinalIgnoreCase
-        - [ ] FallbackInvariant
-        - [ ] FallbackInvariantIgnoreCase (?)
-    - [ ] Case conversion
+        - [x] AsciiIgnoreCase
+        - [x] ~~OrdinalIgnoreCase~~
+        - [x] ~~FallbackInvariant~~
+        - [x] ~~FallbackInvariantIgnoreCase (?)~~
+    - [x] Case conversion
         - [x] Ascii
-        - [ ] Unicode (???)
-        - [ ] FallbackInvariant
+        - [x] ~~FallbackInvariant~~
     - [x] Unsafe (U8Marshal)
 - [ ] Extensions
     - [x] HttpClient (basic variants)
-    - [x] Stream and SafeHandle (basic variants)
-    - [ ] Stream, FileStream and Socket (advanced variants like line iterator, etc.)
+    - [x] ~~Stream~~ and SafeHandle (basic variants)
     - [ ] Console (?)
 - [x] U8Info, U8Scalar
 
 ## 1.1.0
+- [ ] ICU/NLS-dependent features
+    - [ ] U8OrdinalIgnoreCaseComparer
+    - [ ] U8OrdinalCaseConverter
+    - [ ] U8InvariantCaseConverter
+    - [ ] IsNormalized/Normalize(NormalizationForm)
 - [ ] NativeU8String (1.X.X candidate?)
     - [ ] NativeU8Span (?)
 - [ ] `SearchValues<U8String>` + method overloads that accept it
+- [ ] Stream enhancements (bespoke validating stream reader?)
+    - [ ] ReadLine/Async
 - [ ] Extending existing methods
     - [ ] Replace(..., T comparer), ReplaceAny (both variants)
     - [ ] Remove(..., T comparer), RemoveAny (both variants)

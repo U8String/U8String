@@ -8,14 +8,9 @@ public readonly partial struct U8String
 {
     public bool Contains(byte value) => U8Searching.Contains(this, value);
 
-    // TODO: Decide whether to throw on surrogate chars here or just return false (as right now)
     public bool Contains(char value)
     {
-        if (char.IsSurrogate(value))
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return U8Searching.Contains(this, value);
     }
@@ -35,6 +30,8 @@ public readonly partial struct U8String
     public bool Contains<T>(char value, T comparer)
         where T : IU8ContainsOperator
     {
+        ThrowHelpers.CheckSurrogate(value);
+
         return U8Searching.Contains(this, value, comparer);
     }
 
@@ -64,10 +61,7 @@ public readonly partial struct U8String
 
     public bool StartsWith(char value)
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? StartsWith((byte)value)
@@ -114,33 +108,40 @@ public readonly partial struct U8String
         return false;
     }
 
-    // !! Invalid Code for invariant comparison on non-matching lengths !!
-    public bool StartsWith<T>(U8String value, T comparer)
-        where T : IU8EqualityComparer
+    public bool StartsWith<T>(byte value, T comparer)
+        where T : IU8StartsWithOperator
     {
-        var deref = this;
-        if (deref.Length >= value.Length)
-        {
-            return U8Marshal
-                .Slice(deref, 0, value.Length)
-                .Equals(value, comparer);
-        }
+        return comparer.StartsWith(this, value);
+    }
 
-        return false;
+    public bool StartsWith<T>(char value, T comparer)
+        where T : IU8StartsWithOperator
+    {
+        ThrowHelpers.CheckSurrogate(value);
+
+        return char.IsAscii(value)
+            ? StartsWith((byte)value, comparer)
+            : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+    }
+
+    public bool StartsWith<T>(Rune value, T comparer)
+        where T : IU8StartsWithOperator
+    {
+        return value.IsAscii
+            ? StartsWith((byte)value.Value, comparer)
+            : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+    }
+
+    public bool StartsWith<T>(U8String value, T comparer)
+        where T : IU8StartsWithOperator
+    {
+        return comparer.StartsWith(this, value);
     }
 
     public bool StartsWith<T>(ReadOnlySpan<byte> value, T comparer)
-        where T : IU8EqualityComparer
+        where T : IU8StartsWithOperator
     {
-        var deref = this;
-        if (deref.Length >= value.Length)
-        {
-            return U8Marshal
-                .Slice(deref, 0, value.Length)
-                .Equals(value, comparer);
-        }
-
-        return false;
+        return comparer.StartsWith(this, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -151,10 +152,7 @@ public readonly partial struct U8String
 
     public bool EndsWith(char value)
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? EndsWith((byte)value)
@@ -200,44 +198,48 @@ public readonly partial struct U8String
 
         return false;
     }
-
-    // !! Invalid Code for invariant comparison on non-matching lengths !!
-    public bool EndsWith<T>(U8String value, T comparer)
-        where T : IEqualityComparer<U8String>
+    
+    public bool EndsWith<T>(byte value, T comparer)
+        where T : IU8EndsWithOperator
     {
-        var deref = this;
-        if (deref.Length >= value.Length)
-        {
-            return U8Marshal
-                .Slice(deref, deref.Length - value.Length)
-                .Equals(value, comparer);
-        }
+        return comparer.EndsWith(this, value);
+    }
 
-        return false;
+    public bool EndsWith<T>(char value, T comparer)
+        where T : IU8EndsWithOperator
+    {
+        ThrowHelpers.CheckSurrogate(value);
+
+        return char.IsAscii(value)
+            ? EndsWith((byte)value, comparer)
+            : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+    }
+
+    public bool EndsWith<T>(Rune value, T comparer)
+        where T : IU8EndsWithOperator
+    {
+        return value.IsAscii
+            ? EndsWith((byte)value.Value, comparer)
+            : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+    }
+
+    public bool EndsWith<T>(U8String value, T comparer)
+        where T : IU8EndsWithOperator
+    {
+        return comparer.EndsWith(this, value);
     }
 
     public bool EndsWith<T>(ReadOnlySpan<byte> value, T comparer)
-        where T : IU8EqualityComparer
+        where T : IU8EndsWithOperator
     {
-        var deref = this;
-        if (deref.Length >= value.Length)
-        {
-            return U8Marshal
-                .Slice(deref, deref.Length - value.Length)
-                .Equals(value, comparer);
-        }
-
-        return false;
+        return comparer.EndsWith(this, value);
     }
 
     public int IndexOf(byte value) => U8Searching.IndexOf(this, value).Offset;
 
     public int IndexOf(char value)
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return U8Searching.IndexOf(this, value).Offset;
     }
@@ -259,10 +261,7 @@ public readonly partial struct U8String
     public int IndexOf<T>(char value, T comparer)
         where T : IU8IndexOfOperator
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return U8Searching.IndexOf(this, value, comparer).Offset;
     }
@@ -291,10 +290,7 @@ public readonly partial struct U8String
 
     public int LastIndexOf(char value)
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return U8Searching.LastIndexOf(this, value).Offset;
     }
@@ -316,10 +312,7 @@ public readonly partial struct U8String
     public int LastIndexOf<T>(char value, T comparer)
         where T : IU8LastIndexOfOperator
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return U8Searching.LastIndexOf(this, value, comparer).Offset;
     }

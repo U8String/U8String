@@ -1,8 +1,8 @@
 using System.Diagnostics;
-using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
+
 using U8Primitives.Abstractions;
 
 namespace U8Primitives;
@@ -16,7 +16,7 @@ internal static class U8Searching
     /// <remarks>
     /// Designed to be inlined into the caller and optimized away on constants.
     /// <para>
-    /// Contract: when T is char and a surrogate, the return value is false.
+    /// Contract: when T is char, it must never be a surrogate.
     /// </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -31,8 +31,7 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? source.Contains((byte)c)
-                : !char.IsSurrogate(c) && // Remove once all call-sites have guards
-                    source.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
+                : source.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
 
             Rune r => r.IsAscii
                 ? source.Contains((byte)r.Value)
@@ -57,7 +56,7 @@ internal static class U8Searching
         where T : struct
         where C : IU8ContainsOperator
     {
-        // Debug.Assert(value is not char s || !char.IsSurrogate(s));
+        Debug.Assert(value is not char s || !char.IsSurrogate(s));
         Debug.Assert(value is byte or char or Rune or U8String);
 
         return value switch
@@ -66,8 +65,7 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? comparer.Contains(source, (byte)c)
-                : !char.IsSurrogate(c) &&
-                    comparer.Contains(source, U8Scalar.Create(c, checkAscii: false).AsSpan()),
+                : comparer.Contains(source, U8Scalar.Create(c, checkAscii: false).AsSpan()),
 
             Rune r => r.IsAscii
                 ? comparer.Contains(source, (byte)r.Value)
@@ -196,29 +194,6 @@ internal static class U8Searching
         where T : IU8CountOperator
     {
         return comparer.Count(source, value);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int Count(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item, U8SplitOptions options)
-    {
-        if (options is U8SplitOptions.None)
-        {
-            return Count(value, item);
-        }
-
-        return CountSlow(value, item, options);
-    }
-
-    internal static int Count<T>(ReadOnlySpan<byte> value, T item, U8SplitOptions options)
-    {
-        Debug.Assert(options != U8SplitOptions.None);
-        throw new NotImplementedException();
-    }
-
-    internal static int CountSlow(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item, U8SplitOptions options)
-    {
-        Debug.Assert(options != U8SplitOptions.None);
-        throw new NotImplementedException();
     }
 
     // TODO: Count without cast -> lt -> sub vec len?

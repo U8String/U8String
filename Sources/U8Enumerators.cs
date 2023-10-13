@@ -312,9 +312,9 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
     }
 
     readonly bool ICollection<Rune>.IsReadOnly => true;
-    readonly void ICollection<Rune>.Add(Rune item) => throw new NotImplementedException();
-    readonly void ICollection<Rune>.Clear() => throw new NotImplementedException();
-    readonly bool ICollection<Rune>.Remove(Rune item) => throw new NotImplementedException();
+    readonly void ICollection<Rune>.Add(Rune item) => throw new NotSupportedException();
+    readonly void ICollection<Rune>.Clear() => throw new NotSupportedException();
+    readonly bool ICollection<Rune>.Remove(Rune item) => throw new NotSupportedException();
 }
 
 /// <summary>

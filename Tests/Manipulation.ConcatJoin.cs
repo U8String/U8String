@@ -88,8 +88,8 @@ public partial class Manipulation
     {
         var u8str = (U8String)"Hello, World!"u8;
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => u8str + SurrogateChar);
-        Assert.Throws<ArgumentOutOfRangeException>(() => SurrogateChar + u8str);
+        Assert.Throws<ArgumentException>(() => u8str + SurrogateChar);
+        Assert.Throws<ArgumentException>(() => SurrogateChar + u8str);
     }
 
     public static IEnumerable<object[]> RuneConcats()

@@ -21,10 +21,7 @@ public readonly partial struct U8String
 
     public static U8String Concat(U8String left, char right)
     {
-        if (char.IsSurrogate(right))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(right));
-        }
+        ThrowHelpers.CheckSurrogate(right);
 
         return char.IsAscii(right)
             ? U8Manipulation.ConcatUnchecked(left, (byte)right)
@@ -50,10 +47,7 @@ public readonly partial struct U8String
 
     public static U8String Concat(char left, U8String right)
     {
-        if (char.IsSurrogate(left))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(left));
-        }
+        ThrowHelpers.CheckSurrogate(left);
 
         return char.IsAscii(left)
             ? U8Manipulation.ConcatUnchecked((byte)left, right)
@@ -332,10 +326,7 @@ public readonly partial struct U8String
 
     public static U8String Join(char separator, ReadOnlySpan<U8String> values)
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values)
@@ -344,10 +335,7 @@ public readonly partial struct U8String
 
     public static U8String Join(char separator, IEnumerable<U8String> values)
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values)
@@ -436,10 +424,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values, format, provider)
@@ -452,10 +437,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        if (char.IsSurrogate(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckSurrogate(separator);
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values, format, provider)
@@ -526,7 +508,7 @@ public readonly partial struct U8String
     /// Normalizes current <see cref="U8String"/> to the specified Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
     /// </summary>
     /// <returns>A new <see cref="U8String"/> normalized to the specified form.</returns>
-    public U8String Normalize(NormalizationForm form = NormalizationForm.FormC)
+    internal U8String Normalize(NormalizationForm form = NormalizationForm.FormC)
     {
         throw new NotImplementedException();
     }
@@ -537,10 +519,7 @@ public readonly partial struct U8String
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(char value)
     {
-        if (char.IsSurrogate(value))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(value));
-        }
+        ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? U8Manipulation.Remove(this, (byte)value)
