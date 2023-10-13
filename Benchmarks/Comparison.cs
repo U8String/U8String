@@ -41,8 +41,8 @@ public class Comparison
     [Benchmark]
     public bool EqualsAsciiIgnoreCaseUtf16() => Ascii.EqualsIgnoreCase(Left16!, Right16!);
 
-    [Benchmark]
-    public bool EqualsOrdinalIgnoreCase() => Left.Equals(Right, U8Comparison.OrdinalIgnoreCase);
+    // [Benchmark]
+    // public bool EqualsOrdinalIgnoreCase() => Left.Equals(Right, U8Comparison.OrdinalIgnoreCase);
 
     [Benchmark]
     public bool EqualsOrdinalIgnoreCaseUtf16() => Left16!.Equals(Right16!, StringComparison.OrdinalIgnoreCase);
@@ -56,8 +56,8 @@ public class Comparison
     [Benchmark]
     public int CompareAsciiIgnoreCase() => Left.CompareTo(Right, U8Comparison.AsciiIgnoreCase);
 
-    [Benchmark]
-    public int CompareOrdinalIgnoreCase() => U8String.Compare(Left, Right, U8Comparison.OrdinalIgnoreCase);
+    // [Benchmark]
+    // public int CompareOrdinalIgnoreCase() => U8String.Compare(Left, Right, U8Comparison.OrdinalIgnoreCase);
 
     [Benchmark]
     public int CompareOrdinalIgnoreCaseUtf16() => string.Compare(Left16, Right16, StringComparison.OrdinalIgnoreCase);
