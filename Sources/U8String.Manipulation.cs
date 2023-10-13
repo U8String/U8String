@@ -25,14 +25,14 @@ public readonly partial struct U8String
 
         return char.IsAscii(right)
             ? U8Manipulation.ConcatUnchecked(left, (byte)right)
-            : U8Manipulation.ConcatUnchecked(left, U8Scalar.Create(right, checkAscii: false).AsSpan());
+            : U8Manipulation.ConcatUnchecked(left, new U8Scalar(right, checkAscii: false).AsSpan());
     }
 
     public static U8String Concat(U8String left, Rune right)
     {
         return right.IsAscii
             ? U8Manipulation.ConcatUnchecked(left, (byte)right.Value)
-            : U8Manipulation.ConcatUnchecked(left, U8Scalar.Create(right, checkAscii: false).AsSpan());
+            : U8Manipulation.ConcatUnchecked(left, new U8Scalar(right, checkAscii: false).AsSpan());
     }
 
     public static U8String Concat(byte left, U8String right)
@@ -51,14 +51,14 @@ public readonly partial struct U8String
 
         return char.IsAscii(left)
             ? U8Manipulation.ConcatUnchecked((byte)left, right)
-            : U8Manipulation.ConcatUnchecked(U8Scalar.Create(left, checkAscii: false).AsSpan(), right);
+            : U8Manipulation.ConcatUnchecked(new U8Scalar(left, checkAscii: false).AsSpan(), right);
     }
 
     public static U8String Concat(Rune left, U8String right)
     {
         return left.IsAscii
             ? U8Manipulation.ConcatUnchecked((byte)left.Value, right)
-            : U8Manipulation.ConcatUnchecked(U8Scalar.Create(left, checkAscii: false).AsSpan(), right);
+            : U8Manipulation.ConcatUnchecked(new U8Scalar(left, checkAscii: false).AsSpan(), right);
     }
 
     // TODO: Optimize/deduplicate Concat variants
@@ -330,7 +330,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
     }
 
     public static U8String Join(char separator, IEnumerable<U8String> values)
@@ -339,7 +339,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
     }
 
     public static U8String Join(Rune separator, U8String[]? values) => Join(separator, values.AsSpan());
@@ -348,14 +348,14 @@ public readonly partial struct U8String
     {
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
     }
 
     public static U8String Join(Rune separator, IEnumerable<U8String> values)
     {
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
     }
 
     public static U8String Join(ReadOnlySpan<byte> separator, U8String[]? values) => Join(separator, values.AsSpan());
@@ -428,7 +428,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values, format, provider)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
     }
 
     public static U8String Join<T>(
@@ -441,7 +441,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values, format, provider)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
     }
 
     public static U8String Join<T>(
@@ -461,7 +461,7 @@ public readonly partial struct U8String
     {
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values, format, provider)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
     }
 
     public static U8String Join<T>(
@@ -472,7 +472,7 @@ public readonly partial struct U8String
     {
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values, format, provider)
-            : U8Manipulation.Join(U8Scalar.Create(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
     }
 
     public static U8String Join<T>(
@@ -523,13 +523,13 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? U8Manipulation.Remove(this, (byte)value)
-            : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan(), validate: false);
+            : U8Manipulation.Remove(this, new U8Scalar(value, checkAscii: false).AsSpan(), validate: false);
     }
 
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(Rune value) => value.IsAscii
         ? U8Manipulation.Remove(this, (byte)value.Value)
-        : U8Manipulation.Remove(this, U8Scalar.Create(value, checkAscii: false).AsSpan());
+        : U8Manipulation.Remove(this, new U8Scalar(value, checkAscii: false).AsSpan());
 
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(ReadOnlySpan<byte> value) => value.Length is 1

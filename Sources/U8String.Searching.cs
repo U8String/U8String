@@ -65,12 +65,12 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? StartsWith((byte)value)
-            : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+            : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
     public bool StartsWith(Rune value) => value.IsAscii
         ? StartsWith((byte)value.Value)
-        : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+        : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan());
 
     public bool StartsWith(U8String value)
     {
@@ -121,7 +121,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? StartsWith((byte)value, comparer)
-            : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+            : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public bool StartsWith<T>(Rune value, T comparer)
@@ -129,7 +129,7 @@ public readonly partial struct U8String
     {
         return value.IsAscii
             ? StartsWith((byte)value.Value, comparer)
-            : StartsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+            : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public bool StartsWith<T>(U8String value, T comparer)
@@ -156,12 +156,12 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? EndsWith((byte)value)
-            : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+            : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
     public bool EndsWith(Rune value) => value.IsAscii
         ? EndsWith((byte)value.Value)
-        : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan());
+        : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan());
 
     public bool EndsWith(U8String value)
     {
@@ -212,7 +212,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? EndsWith((byte)value, comparer)
-            : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+            : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public bool EndsWith<T>(Rune value, T comparer)
@@ -220,7 +220,7 @@ public readonly partial struct U8String
     {
         return value.IsAscii
             ? EndsWith((byte)value.Value, comparer)
-            : EndsWith(U8Scalar.Create(value, checkAscii: false).AsSpan(), comparer);
+            : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public bool EndsWith<T>(U8String value, T comparer)

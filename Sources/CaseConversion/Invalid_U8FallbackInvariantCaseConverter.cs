@@ -33,7 +33,7 @@ internal readonly struct U8FallbackInvariantCaseConverter : IU8CaseConverter
             // foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
             // {
             //     var lower = Rune.ToLowerInvariant(rune);
-            //     var scalar = U8Scalar.Create(lower);
+            //     var scalar = new U8Scalar(lower);
             //     if (consumed + 4 > destination.Length)
             //     {
             //         [DoesNotReturn]
@@ -69,7 +69,7 @@ internal readonly struct U8FallbackInvariantCaseConverter : IU8CaseConverter
             // foreach (var rune in U8Marshal.Slice(source, consumed).Runes)
             // {
             //     var upper = Rune.ToUpperInvariant(rune);
-            //     var scalar = U8Scalar.Create(upper);
+            //     var scalar = new U8Scalar(upper);
             //     if (consumed + 4 > destination.Length)
             //     {
             //         [DoesNotReturn]

@@ -31,11 +31,11 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? source.Contains((byte)c)
-                : source.IndexOf(U8Scalar.Create(c, checkAscii: false).AsSpan()) >= 0,
+                : source.IndexOf(new U8Scalar(c, checkAscii: false).AsSpan()) >= 0,
 
             Rune r => r.IsAscii
                 ? source.Contains((byte)r.Value)
-                : source.IndexOf(U8Scalar.Create(r, checkAscii: false).AsSpan()) >= 0,
+                : source.IndexOf(new U8Scalar(r, checkAscii: false).AsSpan()) >= 0,
 
             U8String str => Contains(source, str.AsSpan()),
 
@@ -65,11 +65,11 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? comparer.Contains(source, (byte)c)
-                : comparer.Contains(source, U8Scalar.Create(c, checkAscii: false).AsSpan()),
+                : comparer.Contains(source, new U8Scalar(c, checkAscii: false).AsSpan()),
 
             Rune r => r.IsAscii
                 ? comparer.Contains(source, (byte)r.Value)
-                : comparer.Contains(source, U8Scalar.Create(r, checkAscii: false).AsSpan()),
+                : comparer.Contains(source, new U8Scalar(r, checkAscii: false).AsSpan()),
 
             U8String str => Contains(source, str.AsSpan(), comparer),
 
@@ -144,11 +144,11 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? source.Count((byte)c)
-                : source.Count(U8Scalar.Create(c, checkAscii: false).AsSpan()),
+                : source.Count(new U8Scalar(c, checkAscii: false).AsSpan()),
 
             Rune r => r.IsAscii
                 ? source.Count((byte)r.Value)
-                : source.Count(U8Scalar.Create(r, checkAscii: false).AsSpan()),
+                : source.Count(new U8Scalar(r, checkAscii: false).AsSpan()),
 
             U8String str => Count(source, str.AsSpan()),
 
@@ -177,11 +177,11 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? comparer.Count(source, (byte)c)
-                : comparer.Count(source, U8Scalar.Create(c, checkAscii: false).AsSpan()),
+                : comparer.Count(source, new U8Scalar(c, checkAscii: false).AsSpan()),
 
             Rune r => r.IsAscii
                 ? comparer.Count(source, (byte)r.Value)
-                : comparer.Count(source, U8Scalar.Create(r, checkAscii: false).AsSpan()),
+                : comparer.Count(source, new U8Scalar(r, checkAscii: false).AsSpan()),
 
             U8String str => Count(source, str.AsSpan(), comparer),
 
@@ -271,7 +271,7 @@ internal static class U8Searching
                     return (source.IndexOf((byte)c), 1);
                 }
 
-                var scalar = U8Scalar.Create(c, checkAscii: false);
+                var scalar = new U8Scalar(c, checkAscii: false);
                 return (source.IndexOf(scalar.AsSpan()), scalar.Length);
 
             case Rune r:
@@ -280,7 +280,7 @@ internal static class U8Searching
                     return (source.IndexOf((byte)r.Value), 1);
                 }
 
-                var rune = U8Scalar.Create(r, checkAscii: false);
+                var rune = new U8Scalar(r, checkAscii: false);
                 return (source.IndexOf(rune.AsSpan()), rune.Length);
 
             case U8String str:
@@ -317,7 +317,7 @@ internal static class U8Searching
                     return comparer.IndexOf(source, (byte)c);
                 }
 
-                var scalar = U8Scalar.Create(c, checkAscii: false);
+                var scalar = new U8Scalar(c, checkAscii: false);
                 return comparer.IndexOf(source, scalar.AsSpan());
 
             case Rune r:
@@ -326,7 +326,7 @@ internal static class U8Searching
                     return comparer.IndexOf(source, (byte)r.Value);
                 }
 
-                var rune = U8Scalar.Create(r, checkAscii: false);
+                var rune = new U8Scalar(r, checkAscii: false);
                 return comparer.IndexOf(source, rune.AsSpan());
 
             case U8String str:
@@ -365,7 +365,7 @@ internal static class U8Searching
                     return (source.LastIndexOf((byte)c), 1);
                 }
 
-                var scalar = U8Scalar.Create(c, checkAscii: false);
+                var scalar = new U8Scalar(c, checkAscii: false);
                 return (source.LastIndexOf(scalar.AsSpan()), scalar.Length);
 
             case Rune r:
@@ -374,7 +374,7 @@ internal static class U8Searching
                     return (source.LastIndexOf((byte)r.Value), 1);
                 }
 
-                var rune = U8Scalar.Create(r, checkAscii: false);
+                var rune = new U8Scalar(r, checkAscii: false);
                 return (source.LastIndexOf(rune.AsSpan()), rune.Length);
 
             case U8String str:
@@ -411,7 +411,7 @@ internal static class U8Searching
                     return comparer.LastIndexOf(source, (byte)c);
                 }
 
-                var scalar = U8Scalar.Create(c, checkAscii: false);
+                var scalar = new U8Scalar(c, checkAscii: false);
                 return comparer.LastIndexOf(source, scalar.AsSpan());
 
             case Rune r:
@@ -420,7 +420,7 @@ internal static class U8Searching
                     return comparer.LastIndexOf(source, (byte)r.Value);
                 }
 
-                var rune = U8Scalar.Create(r, checkAscii: false);
+                var rune = new U8Scalar(r, checkAscii: false);
                 return comparer.LastIndexOf(source, rune.AsSpan());
 
             case U8String str:

@@ -38,12 +38,12 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? SplitFirst((byte)separator)
-            : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+            : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
     }
 
     public U8SplitPair SplitFirst(Rune separator) => separator.IsAscii
         ? SplitFirst((byte)separator.Value)
-        : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+        : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
 
     public U8SplitPair SplitFirst(U8String separator)
     {
@@ -150,7 +150,7 @@ public readonly partial struct U8String
     {
         return char.IsAscii(separator)
             ? SplitFirst((byte)separator, comparer)
-            : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan(), comparer);
+            : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
     }
 
     public U8SplitPair SplitFirst<T>(Rune separator, T comparer)
@@ -158,7 +158,7 @@ public readonly partial struct U8String
     {
         return separator.IsAscii
             ? SplitFirst((byte)separator.Value, comparer)
-            : SplitFirstUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan(), comparer);
+            : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
     }
 
     internal U8SplitPair SplitFirst<T>(U8String separator, T comparer)
@@ -265,12 +265,12 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? SplitLast((byte)separator)
-            : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+            : SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
     }
 
     public U8SplitPair SplitLast(Rune separator) => separator.IsAscii
         ? SplitLast((byte)separator.Value)
-        : SplitLastUnchecked(U8Scalar.Create(separator, checkAscii: false).AsSpan());
+        : SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
 
     public U8SplitPair SplitLast(U8String separator)
     {
