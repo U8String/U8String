@@ -70,4 +70,12 @@ internal static class ThrowHelpers
     {
         throw new InvalidOperationException($"Unreachable code reached at {path}:{line}.");
     }
+
+    [DoesNotReturn]
+    internal static void NotSupportedBigEndian()
+    {
+        throw new NotSupportedException(
+            "This operation is currently not supported on big-endian systems." +
+            "Please file an issue at https://github.com/U8String/U8String/issues/new.");
+    }
 }

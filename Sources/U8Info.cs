@@ -40,6 +40,11 @@ public static class U8Info
             return value is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
         }
 
+        if (!BitConverter.IsLittleEndian)
+        {
+            ThrowHelpers.NotSupportedBigEndian();
+        }
+
         const ulong mask = 4294983168;
         var x1 = (uint)value < 33 ? 1ul : 0ul;
         var x2 = mask >> value;
@@ -64,10 +69,8 @@ public static class U8Info
                 return IsAsciiWhitespace(b);
             }
 
-            var res = Rune.DecodeFromUtf8(value, out var rune, out _);
-            Debug.Assert(res is OperationStatus.Done);
-
-            return Rune.IsWhiteSpace(rune);
+            return Rune.DecodeFromUtf8(value, out var rune, out _) is OperationStatus.Done
+                && Rune.IsWhiteSpace(rune);
         }
 
         return false;
@@ -88,10 +91,37 @@ public static class U8Info
 
     internal static bool IsNonAsciiWhitespace(ref byte ptr, out int size)
     {
-        var rune = U8Conversions.CodepointToRune(ref ptr, out size, checkAscii: false);
-        Debug.Assert(Rune.IsValid(rune.Value));
+        var b0 = ptr;
+        var b1 = ptr.Add(1);
 
-        return Rune.IsWhiteSpace(rune);
+        // TODO: Consider switch expr. for nicer formatting and maybe better codegen?
+        if (b0 is 0xC2 && (b1 is 0x85 or 0xA0))
+        {
+            size = 2;
+            return true;
+        }
+        else
+        {
+            // If you are wondering why the formating is so weird or why instead of range checks there is
+            // a bespoke pattern match - it's because this makes JIT/AOT produce better branch ordering
+            // and more efficient range checks, and it kind of looks like a table which is easier on the eyes.
+            // (in absolute terms, the codegen quality is still questionable but it's better than converting to rune)
+            var b2 = ptr.Add(2);
+            if ((b0 is 0xE1 && b1 is 0x9A && b2 is 0x80) ||
+                (b0 is 0xE2 && (
+                    (b1 is 0x80 && b2 is 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0x87 or 0x88 or 0x89 or 0x8A or 0xA8 or 0xA9 or 0xAF) ||
+                    (b1 is 0x81 && b2 is 0x9F))) ||
+                (b0 is 0xE3 && b1 is 0x80 && b2 is 0x80))
+            {
+                size = 3;
+                return true;
+            }
+            else
+            {
+                size = RuneLength(b0);
+                return false;
+            }
+        }
     }
 
     // TODO: Is there really no better way to do this?

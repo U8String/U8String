@@ -606,6 +606,11 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String ReplaceLineEndings(ReadOnlySpan<byte> lineEnding)
     {
+        if (!BitConverter.IsLittleEndian)
+        {
+            ThrowHelpers.NotSupportedBigEndian();
+        }
+
         if (lineEnding.IsEmpty)
         {
             return U8Manipulation.StripLineEndings(this);

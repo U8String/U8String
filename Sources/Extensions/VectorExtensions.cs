@@ -6,41 +6,6 @@ namespace U8Primitives;
 
 internal static class VectorExtensions
 {
-    /// <summary>
-    /// Assumes well-formed UTF-8 byte vector.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector256<byte> ToLowerAscii_AdvSimd(this Vector256<byte> ascii)
-    {
-        var (lo, hi) = ascii;
-
-        return Vector256.Create(
-            lo.ToLowerAscii_AdvSimd(),
-            hi.ToLowerAscii_AdvSimd());
-    }
-
-    /// <inheritdoc cref="ToLowerAscii_AdvSimd(Vector256{byte})"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector128<byte> ToLowerAscii_AdvSimd(this Vector128<byte> ascii)
-    {
-        // Does not work???
-        var lut1 = Vector128.Create((byte)
-            0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28,
-            0x29, 0x2A, 0x2B, 0x2D, 0x2E, 0x2F, 0x30, 0x31);
-
-        var lut2 = Vector128.Create((byte)
-            0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
-            0x40, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00);
-
-        var shift = Vector128.Create((byte)'A');
-
-        var original = ascii - shift;
-        var mapped = AdvSimd.Arm64.VectorTableLookupExtension(
-            Vector128<byte>.Zero, (lut1, lut2), original);
-
-        return Vector128.Max(mapped + shift, ascii);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int CountMatches<T>(this Vector256<T> mask)
     {

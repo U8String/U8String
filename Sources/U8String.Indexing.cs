@@ -50,9 +50,9 @@ public readonly partial struct U8String
             return Length;
         }
 
-        var span = deref.UnsafeSpan;
-        while (++index < span.Length
-            && U8Info.IsContinuationByte(span[index]));
+        ref var ptr = ref deref.UnsafeRef;
+        while (++index < deref.Length
+            && U8Info.IsContinuationByte(ptr.Add(index)));
 
         return index;
     }

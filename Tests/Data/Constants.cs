@@ -86,9 +86,6 @@ public static class Constants
         new(0x2029), new(0x202F), new(0x205F), new(0x3000)
     ];
 
-    public static readonly byte[][] WhitespaceCharBytes =
-        WhitespaceRunes.Select(TestExtensions.ToUtf8).ToArray();
-
     // Covers all non-whitespace runes
     public static IEnumerable<Rune> NonWhitespaceRunes => Enumerable
         .Range(0, 0xD7FF + 1).Concat(Enumerable

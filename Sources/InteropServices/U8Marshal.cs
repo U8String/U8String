@@ -26,8 +26,8 @@ public static class U8Marshal
     /// </summary>
     /// <param name="value">UTF-8 buffer to construct U8String around.</param>
     /// <remarks>
-    /// Mutating <paramref name="value"/> after calling this method is undefined behavior
-    /// and may result in data corruption.
+    /// Mutating <paramref name="value"/> after calling this method may result in undefined behavior
+    /// or data corruption.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Create(byte[] value) => new(value, 0, value.Length);
@@ -40,8 +40,8 @@ public static class U8Marshal
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     /// <param name="length">The number of bytes to use from <paramref name="value"/> starting at <paramref name="offset"/>.</param>
     /// <remarks>
-    /// Mutating <paramref name="value"/> after calling this method is undefined behavior
-    /// and may result in data corruption. <paramref name="offset"/> must be less than or equal
+    /// Mutating <paramref name="value"/> after calling this method may result in undefined behavior
+    /// or data corruption. <paramref name="offset"/> must be less than or equal
     /// <paramref name="length"/>. <paramref name="length"/> must be less than or equal to
     /// <paramref name="value"/>.Length - <paramref name="offset"/>.
     /// </remarks>
@@ -69,7 +69,7 @@ public static class U8Marshal
 
     /// <summary>
     /// Creates a new <see cref="U8SplitPair"/> representing a split of the given <paramref name="value"/>
-    /// without performing bounds checking or UTF-8 validation.
+    /// without performing bounds check or UTF-8 validation.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
@@ -86,7 +86,7 @@ public static class U8Marshal
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int)"/> which
-    /// does not perform bounds checking or UTF-8 validation.
+    /// does not perform bounds check or UTF-8 validation.
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
@@ -96,7 +96,7 @@ public static class U8Marshal
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int, int)"/> which
-    /// does not perform bounds checking or UTF-8 validation.
+    /// does not perform bounds check or UTF-8 validation.
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
@@ -107,7 +107,7 @@ public static class U8Marshal
 
     /// <summary>
     /// Unsafe variant of <see cref="U8String.Slice(int, int)"/> which
-    /// does not perform bounds checking or UTF-8 validation.
+    /// does not perform bounds check or UTF-8 validation.
     /// </summary>
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="range">The range of the new substring.</param>
@@ -125,7 +125,7 @@ public static class U8Marshal
     public static U8String Slice(U8Source source, U8Range range) => new(source.Value, range);
 
     /// <summary>
-    /// Unholy reverse of <see cref="U8String.Slice(int, int)"/> which
+    /// Unholy reverse method of <see cref="U8String.Slice(int, int)"/> which
     /// restores internal offsets of the provided <see cref="U8String"/>
     /// to the maximum possible length of its underlying buffer.
     /// </summary>

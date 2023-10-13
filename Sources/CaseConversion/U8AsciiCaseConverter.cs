@@ -75,6 +75,11 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
     internal static void ToLowerCore(ref byte src, ref byte dst, nuint length)
     {
+        if (!BitConverter.IsLittleEndian)
+        {
+            ThrowHelpers.NotSupportedBigEndian();
+        }
+
         nuint offset = 0;
         if (length >= (nuint)Vector256<byte>.Count)
         {
@@ -191,6 +196,11 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
     internal static void ToUpperCore(ref byte src, ref byte dst, nuint length)
     {
+        if (!BitConverter.IsLittleEndian)
+        {
+            ThrowHelpers.NotSupportedBigEndian();
+        }
+
         nuint offset = 0;
         if (length >= (nuint)Vector256<byte>.Count)
         {

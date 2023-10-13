@@ -1,5 +1,7 @@
+using System.Buffers.Binary;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -15,6 +17,11 @@ internal struct U8Scalar
         T value, [ConstantExpected] bool checkAscii = true) where T : unmanaged
     {
         Debug.Assert(value is byte or char or Rune or U8Scalar);
+
+        if (!BitConverter.IsLittleEndian)
+        {
+            ThrowHelpers.NotSupportedBigEndian();
+        }
 
         if (value is U8Scalar self)
         {

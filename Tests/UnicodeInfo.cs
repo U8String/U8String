@@ -56,15 +56,15 @@ public class UnicodeInfo
     [Fact]
     public void IsWhitespaceRune_TrueForWhitespaceRunes()
     {
-        foreach (var whitespace in Constants.WhitespaceCharBytes)
+        foreach (var rune in Constants.WhitespaceRunes)
         {
-            Assert.True(
-                U8Info.IsWhitespaceRune(whitespace),
-                string.Join(",", whitespace.Select(b => $"0x{b:X2}")));
+            var utf8 = rune.ToUtf8();
+            var message = $"Rune: 0x{rune.Value:X4} Bytes: {string.Join(" ", utf8.Select(b => b.ToString("X2")))}";
 
-            Assert.True(
-                U8Info.IsWhitespaceRune(ref whitespace[0], out _),
-                string.Join(",", whitespace.Select(b => $"0x{b:X2}")));
+            Assert.True(U8Info.IsWhitespaceRune(utf8), message);
+            Assert.True(U8Info.IsWhitespaceRune(ref utf8[0], out var length), message);
+            Assert.Equal(rune.Utf8SequenceLength, length);
+            Assert.Equal(rune.Utf8SequenceLength, utf8.Length);
         }
     }
 
@@ -75,10 +75,12 @@ public class UnicodeInfo
         foreach (var rune in Constants.NonWhitespaceRunes)
         {
             var utf8 = rune.ToUtf8();
-            var message = $"0x{rune.Value:X4}";
-
+            var message = $"Rune: 0x{rune.Value:X4} Bytes: {string.Join(" ", utf8.Select(b => b.ToString("X2")))}";
+            
             Assert.False(U8Info.IsWhitespaceRune(utf8), message);
-            Assert.False(U8Info.IsWhitespaceRune(ref utf8[0], out _), message);
+            Assert.False(U8Info.IsWhitespaceRune(ref utf8[0], out var length), message);
+            Assert.Equal(rune.Utf8SequenceLength, length);
+            Assert.Equal(rune.Utf8SequenceLength, utf8.Length);
         }
     }
 

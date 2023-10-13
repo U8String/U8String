@@ -237,8 +237,8 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
 
     public void CopyTo(Rune[] destination, int index)
     {
-        // TODO: Simple SIMD widen ASCII to UTF-32 (ideally widen+validate in place instead of double traversal)
-        // TODO: Consistency and correctness? Implement single-pass vectorized conversion?
+        // TODO: Rely on somewhat unreliable guarantee that Runes are UTF-32 scalar
+        // values and implement bespoke SIMD UTF-8 -> UTF-32 transcoding
         this.CopyTo<U8Runes, Enumerator, Rune>(destination.AsSpan()[index..]);
     }
 
