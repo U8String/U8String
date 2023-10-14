@@ -4,7 +4,7 @@ using System.Text;
 namespace U8Primitives;
 
 [InterpolatedStringHandler]
-public struct U8InterpolatedStringHandler
+public struct InterpolatedU8StringHandler
 {
     readonly IFormatProvider? _provider;
     InlineBuffer128 _inline;
@@ -24,14 +24,14 @@ public struct U8InterpolatedStringHandler
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
     }
 
-    public U8InterpolatedStringHandler(
+    public InterpolatedU8StringHandler(
         int literalLength,
         int formattedCount,
         IFormatProvider? formatProvider = null)
     {
         Unsafe.SkipInit(out _inline);
 
-        var initialLength = literalLength + formattedCount * 12;
+        var initialLength = literalLength + (formattedCount * 12);
         if (initialLength > InlineBuffer128.Length)
         {
             _rented = ArrayPool<byte>.Shared.Rent(initialLength);
@@ -40,8 +40,25 @@ public struct U8InterpolatedStringHandler
         _provider = formatProvider;
     }
 
+    // Reference: https://github.com/dotnet/runtime/issues/93501
+    // Uncomment once inlined TryGetBytes gains UTF8EncodingSealed.ReadUtf8 call
+    // which JIT/AOT can optimize away for string literals, eliding the transcoding.
+    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // public void AppendLiteral(string s)
+    // {
+    // Retry:
+    //    if (Encoding.UTF8.TryGetBytes(s, Free, out var written))
+    //    {
+    //        BytesWritten += written;
+    //        return;
+    //    }
+
+    //    Grow();
+    //    goto Retry;
+    // }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void AppendLiteral(string s)
+    public void AppendLiteral(ReadOnlySpan<char> s)
     {
     Retry:
         if (Encoding.UTF8.TryGetBytes(s, Free, out var written))
@@ -54,6 +71,22 @@ public struct U8InterpolatedStringHandler
         goto Retry;
     }
 
+    public void AppendFormatted(ReadOnlySpan<char> value) => AppendLiteral(value);
+
+    public void AppendFormatted(ReadOnlySpan<byte> value)
+    {
+        U8String.Validate(value);
+        AppendBytes(value);
+    }
+
+    public void AppendFormatted(U8String value)
+    {
+        if (!value.IsEmpty)
+        {
+            AppendBytes(value.UnsafeSpan);
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void AppendFormatted<T>(T value, ReadOnlySpan<char> format = default)
         where T : IUtf8SpanFormattable
@@ -62,6 +95,21 @@ public struct U8InterpolatedStringHandler
         if (value.TryFormat(Free, out var written, format, _provider))
         {
             BytesWritten += written;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    void AppendBytes(ReadOnlySpan<byte> bytes)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length >= bytes.Length)
+        {
+            bytes.CopyToUnsafe(ref free.AsRef());
+            BytesWritten += bytes.Length;
             return;
         }
 
@@ -107,7 +155,7 @@ public struct U8InterpolatedStringHandler
 public readonly partial struct U8String
 {
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public static U8String Format(ref U8InterpolatedStringHandler handler)
+    public static U8String Format(ref InterpolatedU8StringHandler handler)
     {
         var result = new U8String(handler.Written, skipValidation: true);
         handler.Dispose();

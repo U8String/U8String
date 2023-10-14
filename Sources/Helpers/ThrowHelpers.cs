@@ -97,7 +97,7 @@ internal static class ThrowHelpers
     internal static void NotSupportedBigEndian()
     {
         throw new NotSupportedException(
-            "This operation is currently not supported on big-endian systems." +
+            "This operation is currently not supported on big-endian systems. " +
             "Please file an issue at https://github.com/U8String/U8String/issues/new.");
     }
 }
