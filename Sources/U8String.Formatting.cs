@@ -12,13 +12,13 @@ public struct InterpolatedU8StringHandler
 
     public int BytesWritten { get; private set; }
 
-    public Span<byte> Written
+    public ReadOnlySpan<byte> Written
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(0, BytesWritten);
     }
 
-    public Span<byte> Free
+    internal Span<byte> Free
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
@@ -138,7 +138,7 @@ public struct InterpolatedU8StringHandler
 
         if (rented != null)
         {
-            arrayPool.Return(rented, clearArray: true);
+            arrayPool.Return(rented);
         }
     }
 
@@ -147,7 +147,7 @@ public struct InterpolatedU8StringHandler
         var rented = _rented;
         if (rented != null)
         {
-            ArrayPool<byte>.Shared.Return(rented, clearArray: true);
+            ArrayPool<byte>.Shared.Return(rented);
         }
     }
 }
