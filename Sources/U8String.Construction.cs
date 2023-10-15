@@ -187,12 +187,12 @@ public readonly partial struct U8String
             //    return u8str;
             // }
 
-            if (TryFormatPresized(format, value, provider, out var result))
+            if (TryFormatPresized(value, format, provider, out var result))
             {
                 return result;
             }
 
-            return FormatUnsized(format, value, provider);
+            return FormatUnsized(value, format, provider);
         }
 
         return u8str;

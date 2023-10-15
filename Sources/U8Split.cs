@@ -52,42 +52,35 @@ public readonly record struct U8SplitPair
     }
 }
 
-public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
+public readonly struct U8Split(U8String value, U8String separator) :
+    ICollection<U8String>,
+    IU8Enumerable<U8Split.Enumerator>
 {
-    readonly U8String _value;
-    readonly U8String _separator;
-    int _count;
-
-    public U8Split(U8String value, U8String separator)
-    {
-        _value = value;
-        _separator = separator;
-        _count = value.IsEmpty ? 0 : -1;
-    }
+    readonly U8String _value = value;
+    readonly U8String _separator = separator;
 
     public int Count
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var count = _count;
-            if (count >= 0)
+            var deref = this;
+            if (!deref._value.IsEmpty)
             {
-                return count;
+                if (!deref._separator.IsEmpty)
+                {
+                    return U8Searching.Count(
+                        deref._value.UnsafeSpan, deref._separator.UnsafeSpan) + 1;
+                }
+
+                return 1;
             }
 
-            // Matches the behavior of string.Split('\n').Length for "hello\n"
-            // TODO: Should we break consistency and not count the very last segment if it is empty?
-            return _count = Count(_value.UnsafeSpan, _separator) + 1;
-
-            static int Count(ReadOnlySpan<byte> value, ReadOnlySpan<byte> separator)
-            {
-                return U8Searching.Count(value, separator);
-            }
+            return 0;
         }
     }
 
-    public readonly bool Contains(U8String item)
+    public bool Contains(U8String item)
     {
         return U8Searching.SplitContains(_value, _separator, item);
     }
@@ -97,22 +90,22 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
         this.CopyTo<U8Split, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second)
+    public void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Split, Enumerator, U8String>(out first, out second);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Split, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public readonly U8String ElementAt(int index)
+    public U8String ElementAt(int index)
     {
         return this.ElementAt<U8Split, Enumerator, U8String>(index);
     }
 
-    public readonly U8String ElementAtOrDefault(int index)
+    public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Split, Enumerator, U8String>(index);
     }
@@ -124,11 +117,11 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
     /// Returns a <see cref="Enumerator"/> over the provided string.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value, _separator);
+    public Enumerator GetEnumerator() => new(_value, _separator);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    readonly bool ICollection<U8String>.IsReadOnly => true;
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    bool ICollection<U8String>.IsReadOnly => true;
 
     public struct Enumerator : IU8Enumerator
     {
@@ -179,26 +172,25 @@ public struct U8Split : ICollection<U8String>, IU8Enumerable<U8Split.Enumerator>
         readonly void IDisposable.Dispose() { }
     }
 
-    readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
-    readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
-    readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Clear() => throw new NotSupportedException();
+    bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
 // TODO: Optimize even more. This design is far from the northstar of perfect codegen
 // but it still somehow manages to outperform Rust split iterators
-public struct U8Split<TSeparator> :
-    ICollection<U8String>, IU8Enumerable<U8Split<TSeparator>.Enumerator>
+public readonly struct U8Split<TSeparator> :
+    ICollection<U8String>,
+    IU8Enumerable<U8Split<TSeparator>.Enumerator>
         where TSeparator : unmanaged
 {
     readonly U8String _value;
     readonly TSeparator _separator;
-    int _count;
 
     internal U8Split(U8String value, TSeparator separator)
     {
         _value = value;
         _separator = separator;
-        _count = value.IsEmpty ? 0 : -1;
     }
 
     public int Count
@@ -206,24 +198,13 @@ public struct U8Split<TSeparator> :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var count = _count;
-            if (count >= 0)
-            {
-                return count;
-            }
-
-            // Matches the behavior of string.Split('\n').Length for "hello\n"
-            // TODO: Should we break consistency and not count the very last segment if it is empty?
-            return _count = Count(_value.UnsafeSpan, _separator) + 1;
-
-            static int Count(ReadOnlySpan<byte> value, TSeparator separator)
-            {
-                return U8Searching.Count(value, separator);
-            }
+            var value = _value;
+            return !value.IsEmpty
+                ? U8Searching.Count(value.UnsafeSpan, _separator) + 1 : 0;
         }
     }
 
-    public readonly bool Contains(U8String item)
+    public bool Contains(U8String item)
     {
         return U8Searching.SplitContains(_value, _separator, item);
     }
@@ -233,22 +214,22 @@ public struct U8Split<TSeparator> :
         this.CopyTo<U8Split<TSeparator>, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second)
+    public void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Split<TSeparator>, Enumerator, U8String>(out first, out second);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Split<TSeparator>, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public readonly U8String ElementAt(int index)
+    public U8String ElementAt(int index)
     {
         return this.ElementAt<U8Split<TSeparator>, Enumerator, U8String>(index);
     }
 
-    public readonly U8String ElementAtOrDefault(int index)
+    public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Split<TSeparator>, Enumerator, U8String>(index);
     }
@@ -260,11 +241,11 @@ public struct U8Split<TSeparator> :
     /// Returns a <see cref="Enumerator"/> over the provided string.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value, _separator);
+    public Enumerator GetEnumerator() => new(_value, _separator);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    readonly bool ICollection<U8String>.IsReadOnly => true;
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    bool ICollection<U8String>.IsReadOnly => true;
 
     public struct Enumerator : IU8Enumerator
     {
@@ -314,27 +295,26 @@ public struct U8Split<TSeparator> :
         readonly void IDisposable.Dispose() { }
     }
 
-    readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
-    readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
-    readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Clear() => throw new NotSupportedException();
+    bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
-public struct U8Split<TSeparator, TComparer> :
-    ICollection<U8String>, IU8Enumerable<U8Split<TSeparator, TComparer>.Enumerator>
+public readonly struct U8Split<TSeparator, TComparer> :
+    ICollection<U8String>,
+    IU8Enumerable<U8Split<TSeparator, TComparer>.Enumerator>
         where TSeparator : struct
         where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
 {
     readonly U8String _value;
     readonly TSeparator _separator;
     readonly TComparer _comparer;
-    int _count;
 
-    public U8Split(U8String value, TSeparator separator, TComparer comparer)
+    internal U8Split(U8String value, TSeparator separator, TComparer comparer)
     {
         _value = value;
         _separator = separator;
         _comparer = comparer;
-        _count = value.IsEmpty ? 0 : -1;
     }
 
     public int Count
@@ -342,22 +322,13 @@ public struct U8Split<TSeparator, TComparer> :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var count = _count;
-            if (count >= 0)
-            {
-                return count;
-            }
-
-            return _count = Count(_value.UnsafeSpan, _separator, _comparer) + 1;
-
-            static int Count(ReadOnlySpan<byte> value, TSeparator separator, TComparer comparer)
-            {
-                return U8Searching.Count(value, separator, comparer);
-            }
+            var value = _value;
+            return !value.IsEmpty
+                ? U8Searching.Count(value.UnsafeSpan, _separator, _comparer) + 1 : 0;
         }
     }
 
-    public readonly bool Contains(U8String item)
+    public bool Contains(U8String item)
     {
         return U8Searching.SplitContains(_value, _separator, item, _comparer);
     }
@@ -367,22 +338,22 @@ public struct U8Split<TSeparator, TComparer> :
         this.CopyTo<U8Split<TSeparator, TComparer>, Enumerator, U8String>(array.AsSpan()[index..]);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second)
+    public void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Split<TSeparator, TComparer>, Enumerator, U8String>(out first, out second);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Split<TSeparator, TComparer>, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public readonly U8String ElementAt(int index)
+    public U8String ElementAt(int index)
     {
         return this.ElementAt<U8Split<TSeparator, TComparer>, Enumerator, U8String>(index);
     }
 
-    public readonly U8String ElementAtOrDefault(int index)
+    public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Split<TSeparator, TComparer>, Enumerator, U8String>(index);
     }
@@ -394,11 +365,11 @@ public struct U8Split<TSeparator, TComparer> :
     /// Returns a <see cref="Enumerator"/> over the provided string.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value, _separator, _comparer);
+    public Enumerator GetEnumerator() => new(_value, _separator, _comparer);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-    readonly bool ICollection<U8String>.IsReadOnly => true;
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    bool ICollection<U8String>.IsReadOnly => true;
 
     public struct Enumerator : IU8Enumerator
     {
@@ -449,9 +420,9 @@ public struct U8Split<TSeparator, TComparer> :
         readonly void IDisposable.Dispose() { }
     }
 
-    readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
-    readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
-    readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Clear() => throw new NotSupportedException();
+    bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 }
 
 [Flags]
@@ -510,8 +481,8 @@ public readonly struct ConfiguredU8Split :
 
     public Enumerator GetEnumerator() => new(_value, _separator, _options);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public struct Enumerator : IU8Enumerator
     {
@@ -632,8 +603,8 @@ public readonly struct ConfiguredU8Split<TSeparator> :
 
     public Enumerator GetEnumerator() => new(_value, _separator, _options);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public struct Enumerator : IU8Enumerator
     {
@@ -756,8 +727,8 @@ public readonly struct ConfiguredU8Split<TSeparator, TComparer> :
 
     public Enumerator GetEnumerator() => new(_value, _separator, _comparer, _options);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
     public struct Enumerator : IU8Enumerator
     {
@@ -843,17 +814,20 @@ public readonly ref struct U8RefSplit
         _separator = separator;
     }
 
-    public int Count()
+    public int Count
     {
-        var split = this;
-        if (!split._value.IsEmpty)
+        get
         {
-            return U8Searching.Count(
-                split._value.UnsafeSpan,
-                split._separator) + 1;
-        }
+            var split = this;
+            if (!split._value.IsEmpty)
+            {
+                return U8Searching.Count(
+                    split._value.UnsafeSpan,
+                    split._separator) + 1;
+            }
 
-        return 0;
+            return 0;
+        }
     }
 
     public bool Contains(U8String item)
@@ -867,7 +841,7 @@ public readonly ref struct U8RefSplit
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = split.Count();
+            var count = split.Count;
             span = span[..count];
 
             var i = 0;
@@ -954,7 +928,7 @@ public readonly ref struct U8RefSplit
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = split.Count();
+            var count = split.Count;
             var result = new U8String[count];
             var span = result.AsSpan();
 
@@ -968,7 +942,7 @@ public readonly ref struct U8RefSplit
             return result;
         }
 
-        return Array.Empty<U8String>();
+        return [];
     }
 
     public List<U8String> ToList()
@@ -976,7 +950,7 @@ public readonly ref struct U8RefSplit
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = split.Count();
+            var count = split.Count;
             var result = new List<U8String>(count);
             CollectionsMarshal.SetCount(result, count);
             var span = CollectionsMarshal.AsSpan(result);
@@ -991,7 +965,7 @@ public readonly ref struct U8RefSplit
             return result;
         }
 
-        return new List<U8String>();
+        return [];
     }
 
     public readonly Enumerator GetEnumerator() => new(_value, _separator);
@@ -1060,18 +1034,21 @@ public readonly ref struct U8RefSplit<TComparer>
         _comparer = comparer;
     }
 
-    public int Count()
+    public int Count
     {
-        var split = this;
-        if (!split._value.IsEmpty)
+        get
         {
-            return U8Searching.Count(
-                split._value.UnsafeSpan,
-                split._separator,
-                split._comparer) + 1;
-        }
+            var split = this;
+            if (!split._value.IsEmpty)
+            {
+                return U8Searching.Count(
+                    split._value.UnsafeSpan,
+                    split._separator,
+                    split._comparer) + 1;
+            }
 
-        return 0;
+            return 0;
+        }
     }
 
     public bool Contains(U8String item)
@@ -1085,7 +1062,7 @@ public readonly ref struct U8RefSplit<TComparer>
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = split.Count();
+            var count = split.Count;
             span = span[..count];
 
             var i = 0;
@@ -1172,7 +1149,7 @@ public readonly ref struct U8RefSplit<TComparer>
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = split.Count();
+            var count = split.Count;
             var result = new U8String[count];
             var span = result.AsSpan();
 
@@ -1186,7 +1163,7 @@ public readonly ref struct U8RefSplit<TComparer>
             return result;
         }
 
-        return Array.Empty<U8String>();
+        return [];
     }
 
     public List<U8String> ToList()
@@ -1194,7 +1171,7 @@ public readonly ref struct U8RefSplit<TComparer>
         var split = this;
         if (split._value.Length > 0)
         {
-            var count = split.Count();
+            var count = split.Count;
             var result = new List<U8String>(count);
             CollectionsMarshal.SetCount(result, count);
             var span = CollectionsMarshal.AsSpan(result);
@@ -1209,7 +1186,7 @@ public readonly ref struct U8RefSplit<TComparer>
             return result;
         }
 
-        return new List<U8String>();
+        return [];
     }
 
     public readonly Enumerator GetEnumerator() => new(_value, _separator, _comparer);
@@ -1710,8 +1687,7 @@ public readonly ref struct U8RefAnySplit
             if (remaining.Length > 0)
             {
                 var value = _value!.SliceUnsafe(remaining.Offset, remaining.Length);
-                var separators = _separators;
-                var index = value.IndexOfAny(separators);
+                var index = value.IndexOfAny(_separators);
                 if (index >= 0)
                 {
                     _current = new(remaining.Offset, index);

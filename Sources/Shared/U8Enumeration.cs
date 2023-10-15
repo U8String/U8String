@@ -8,7 +8,7 @@ namespace U8Primitives;
 // in a SIMD way (is there a way to make it not explode and not be a total UB?)
 internal static class U8Enumeration
 {
-    internal static void CopyTo<T, E, U>(this ref T source, Span<U> destination)
+    internal static void CopyTo<T, E, U>(this T source, Span<U> destination)
         where T : struct, IEnumerable<U, E>, ICollection<U>
         where E : struct, IEnumerator<U>
         where U : struct
@@ -155,7 +155,7 @@ internal static class U8Enumeration
     //     return ThrowHelpers.SequenceIsEmpty<U>();
     // }
 
-    internal static U[] ToArray<T, E, U>(this ref T source)
+    internal static U[] ToArray<T, E, U>(this T source)
         where T : struct, IEnumerable<U, E>, ICollection<U>
         where E : struct, IEnumerator<U>
         where U : struct
@@ -172,7 +172,7 @@ internal static class U8Enumeration
         return Array.Empty<U>();
     }
 
-    internal static List<U> ToList<T, E, U>(this ref T source)
+    internal static List<U> ToList<T, E, U>(this T source)
         where T : struct, IEnumerable<U, E>, ICollection<U>
         where E : struct, IEnumerator<U>
         where U : struct
@@ -218,7 +218,7 @@ internal static class U8Enumeration
         return result;
     }
 
-    static int FillUnchecked<T, E, U>(this ref T source, Span<U> destination)
+    static int FillUnchecked<T, E, U>(this T source, Span<U> destination)
         where T : struct, IEnumerable<U, E>
         where E : struct, IEnumerator<U>
         where U : struct

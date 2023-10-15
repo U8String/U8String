@@ -71,12 +71,20 @@ public struct InterpolatedU8StringHandler
         goto Retry;
     }
 
-    public void AppendFormatted(ReadOnlySpan<char> value) => AppendLiteral(value);
+    public void AppendFormatted(ReadOnlySpan<char> value)
+    {
+        AppendLiteral(value);
+    }
 
     public void AppendFormatted(ReadOnlySpan<byte> value)
     {
         U8String.Validate(value);
         AppendBytes(value);
+    }
+
+    public void AppendFormatted(bool value)
+    {
+        AppendBytes(value ? "True"u8: "False"u8);
     }
 
     public void AppendFormatted(U8String value)
@@ -87,8 +95,26 @@ public struct InterpolatedU8StringHandler
         }
     }
 
+    // Explicit no-format overload for more compact codegen
+    // and specialization so that *if* TryFormat is inlined into
+    // the body, the format-specific branches are optimized away.
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public void AppendFormatted<T>(T value, ReadOnlySpan<char> format = default)
+    public void AppendFormatted<T>(T value)
+        where T : IUtf8SpanFormattable
+    {
+    Retry:
+        if (value.TryFormat(Free, out var written, default, _provider))
+        {
+            BytesWritten += written;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void AppendFormatted<T>(T value, ReadOnlySpan<char> format)
         where T : IUtf8SpanFormattable
     {
     Retry:
@@ -164,7 +190,7 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatPresized<T>(
-        ReadOnlySpan<char> format, T value, IFormatProvider? provider, out U8String result)
+        T value, ReadOnlySpan<char> format, IFormatProvider? provider, out U8String result)
             where T : IUtf8SpanFormattable
     {
         var length = GetFormattedLength<T>();
@@ -200,7 +226,7 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     static U8String FormatUnsized<T>(
-        ReadOnlySpan<char> format, T value, IFormatProvider? provider)
+        T value, ReadOnlySpan<char> format, IFormatProvider? provider)
             where T : IUtf8SpanFormattable
     {
         // TODO: Maybe it's okay to steal from array pool?

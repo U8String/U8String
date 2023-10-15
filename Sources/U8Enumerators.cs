@@ -1,7 +1,7 @@
 using System.Collections;
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+
 using U8Primitives.Abstractions;
 
 namespace U8Primitives;
@@ -9,17 +9,11 @@ namespace U8Primitives;
 /// <summary>
 /// A collection of chars in a provided <see cref="U8String"/>.
 /// </summary>
-public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
+public readonly struct U8Chars(U8String value) :
+    ICollection<char>,
+    IEnumerable<char, U8Chars.Enumerator>
 {
-    readonly U8String _value;
-
-    int _count;
-
-    public U8Chars(U8String value)
-    {
-        _value = value;
-        _count = value.IsEmpty ? 0 : -1;
-    }
+    readonly U8String _value = value;
 
     /// <summary>
     /// The number of chars in the current <see cref="U8String"/>.
@@ -29,21 +23,8 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            // Somehow the codegen here is underwhelming
-            var count = _count;
-            if (count >= 0)
-            {
-                return count;
-            }
-            return _count = Count(_value.UnsafeSpan);
-
-            static int Count(ReadOnlySpan<byte> value)
-            {
-                Debug.Assert(!value.IsEmpty);
-
-                // TODO: Is this enough?
-                return Encoding.UTF8.GetCharCount(value);
-            }
+            var value = _value;
+            return !value.IsEmpty ? Encoding.UTF8.GetCharCount(value.UnsafeSpan) : 0;
         }
     }
 
@@ -51,9 +32,18 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
     // there is no easy way to fix it without sacrificing performance.
     // Perhaps it is worth just do the transcoding iteration here and warn the users
     // instead of straight up producing UB or throwing exceptions???
-    public readonly bool Contains(char item) => _value.Contains(item);
+    public bool Contains(char item) => _value.Contains(item);
 
-    public readonly void CopyTo(char[] destination, int index)
+    public void CopyTo(Span<char> destination)
+    {
+        var value = _value;
+        if (!value.IsEmpty)
+        {
+            Encoding.UTF8.GetChars(value.UnsafeSpan, destination);
+        }
+    }
+
+    public void CopyTo(char[] destination, int index)
     {
         var value = _value;
         if (!value.IsEmpty)
@@ -62,22 +52,22 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
         }
     }
 
-    public readonly void Deconstruct(out char first, out char second)
+    public void Deconstruct(out char first, out char second)
     {
         this.Deconstruct<U8Chars, Enumerator, char>(out first, out second);
     }
 
-    public readonly void Deconstruct(out char first, out char second, out char third)
+    public void Deconstruct(out char first, out char second, out char third)
     {
         this.Deconstruct<U8Chars, Enumerator, char>(out first, out second, out third);
     }
 
-    public readonly char ElementAt(int index)
+    public char ElementAt(int index)
     {
         return this.ElementAt<U8Chars, Enumerator, char>(index);
     }
 
-    public readonly char ElementAtOrDefault(int index)
+    public char ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Chars, Enumerator, char>(index);
     }
@@ -92,7 +82,7 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
             return chars;
         }
 
-        return Array.Empty<char>();
+        return [];
     }
 
     public List<char> ToList()
@@ -109,30 +99,20 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
             return chars;
         }
 
-        return new List<char>();
+        return [];
     }
 
-    public readonly Enumerator GetEnumerator() => new(_value);
+    public Enumerator GetEnumerator() => new(_value);
 
-    readonly IEnumerator<char> IEnumerable<char>.GetEnumerator() => new Enumerator(_value);
-    readonly IEnumerator IEnumerable.GetEnumerator() => new Enumerator(_value);
+    IEnumerator<char> IEnumerable<char>.GetEnumerator() => new Enumerator(_value);
+    IEnumerator IEnumerable.GetEnumerator() => new Enumerator(_value);
 
-    public struct Enumerator : IEnumerator<char>
+    public struct Enumerator(U8String value) : IEnumerator<char>
     {
-        // TODO: refactor layout
-        readonly byte[]? _value;
-        readonly int _offset;
-        readonly int _length;
-        int _nextByteIdx;
+        readonly byte[]? _value = value._value;
+        readonly U8Range _range = value.Range;
+        int _nextByteIdx = 0;
         uint _currentCharPair;
-
-        public Enumerator(U8String value)
-        {
-            _value = value._value;
-            _offset = value.Offset;
-            _length = value.Length;
-            _nextByteIdx = 0;
-        }
 
         // TODO
         public readonly char Current => (char)_currentCharPair;
@@ -142,14 +122,14 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            var (offset, length, nextByteIdx, currentCharPair) =
-                (_offset, _length, _nextByteIdx, _currentCharPair);
+            var (range, nextByteIdx, currentCharPair) =
+                (_range, _nextByteIdx, _currentCharPair);
 
             if (currentCharPair < char.MaxValue)
             {
-                if ((uint)nextByteIdx < (uint)length)
+                if ((uint)nextByteIdx < (uint)range.Length)
                 {
-                    ref var ptr = ref _value!.AsRef(offset + nextByteIdx);
+                    ref var ptr = ref _value!.AsRef(range.Offset + nextByteIdx);
 
                     if (U8Info.IsAsciiByte(in ptr))
                     {
@@ -200,19 +180,11 @@ public struct U8Chars : ICollection<char>, IEnumerable<char, U8Chars.Enumerator>
 /// <summary>
 /// A collection of Runes (unicode scalar values) in a provided <see cref="U8String"/>.
 /// </summary>
-public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
+public readonly struct U8Runes(U8String value) :
+    ICollection<Rune>,
+    IEnumerable<Rune, U8Runes.Enumerator>
 {
-    readonly U8String _value;
-
-    // If we bring up non-ascii counting to ascii level, we might not need this
-    // similar to LineCollection.
-    int _count;
-
-    public U8Runes(U8String value)
-    {
-        _value = value;
-        _count = value.IsEmpty ? 0 : -1;
-    }
+    readonly U8String _value = value;
 
     /// <summary>
     /// The number of Runes (unicode scalar values) in the current <see cref="U8String"/>.
@@ -220,20 +192,10 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
     public int Count
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            // Somehow the codegen here is underwhelming
-            var count = _count;
-            if (count >= 0)
-            {
-                return count;
-            }
-
-            return _count = _value.RuneCount;
-        }
+        get => _value.RuneCount;
     }
 
-    public readonly bool Contains(Rune item) => _value.Contains(item);
+    public bool Contains(Rune item) => _value.Contains(item);
 
     public void CopyTo(Rune[] destination, int index)
     {
@@ -242,22 +204,22 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
         this.CopyTo<U8Runes, Enumerator, Rune>(destination.AsSpan()[index..]);
     }
 
-    public readonly void Deconstruct(out Rune first, out Rune second)
+    public void Deconstruct(out Rune first, out Rune second)
     {
         this.Deconstruct<U8Runes, Enumerator, Rune>(out first, out second);
     }
 
-    public readonly void Deconstruct(out Rune first, out Rune second, out Rune third)
+    public void Deconstruct(out Rune first, out Rune second, out Rune third)
     {
         this.Deconstruct<U8Runes, Enumerator, Rune>(out first, out second, out third);
     }
 
-    public readonly Rune ElementAt(int index)
+    public Rune ElementAt(int index)
     {
         return this.ElementAt<U8Runes, Enumerator, Rune>(index);
     }
 
-    public readonly Rune ElementAtOrDefault(int index)
+    public Rune ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Runes, Enumerator, Rune>(index);
     }
@@ -267,24 +229,16 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
     public List<Rune> ToList() => this.ToList<U8Runes, Enumerator, Rune>();
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value);
+    public Enumerator GetEnumerator() => new(_value);
 
-    readonly IEnumerator<Rune> IEnumerable<Rune>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<Rune> IEnumerable<Rune>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public struct Enumerator : IEnumerator<Rune>
+    public struct Enumerator(U8String value) : IEnumerator<Rune>
     {
-        readonly byte[]? _value;
-        readonly int _offset;
-        readonly int _length;
+        readonly byte[]? _value = value._value;
+        readonly U8Range _range = value.Range;
         int _index;
-
-        public Enumerator(U8String value)
-        {
-            _value = value._value;
-            _offset = value.Offset;
-            _length = value.Length;
-        }
 
         public Rune Current { get; private set; }
 
@@ -292,9 +246,9 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
         public bool MoveNext()
         {
             var index = _index;
-            if (index < _length)
+            if (index < _range.Length)
             {
-                ref var ptr = ref _value!.AsRef(_offset + index);
+                ref var ptr = ref _value!.AsRef(_range.Offset + index);
 
                 Current = U8Conversions.CodepointToRune(ref ptr, out var size);
                 _index = index + size;
@@ -305,38 +259,27 @@ public struct U8Runes : ICollection<Rune>, IEnumerable<Rune, U8Runes.Enumerator>
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset() => _index = -1;
+        public void Reset() => _index = 0;
 
         readonly object IEnumerator.Current => Current;
         readonly void IDisposable.Dispose() { }
     }
 
-    readonly bool ICollection<Rune>.IsReadOnly => true;
-    readonly void ICollection<Rune>.Add(Rune item) => throw new NotSupportedException();
-    readonly void ICollection<Rune>.Clear() => throw new NotSupportedException();
-    readonly bool ICollection<Rune>.Remove(Rune item) => throw new NotSupportedException();
+    bool ICollection<Rune>.IsReadOnly => true;
+    void ICollection<Rune>.Add(Rune item) => throw new NotSupportedException();
+    void ICollection<Rune>.Clear() => throw new NotSupportedException();
+    bool ICollection<Rune>.Remove(Rune item) => throw new NotSupportedException();
 }
 
 /// <summary>
 /// A collection of lines in a provided <see cref="U8String"/>.
 /// </summary>
-public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
+/// <param name="value">The string to enumerate over.</param>
+public readonly struct U8Lines(U8String value) :
+    ICollection<U8String>,
+    IU8Enumerable<U8Lines.Enumerator>
 {
-    readonly U8String _value;
-
-    // We might not need this. Although counting is O(n), the absolute performance
-    // is very good, and on AVX2/512 - it's basically instantenous.
-    int _count;
-
-    /// <summary>
-    /// Creates a new line enumeration over the provided string.
-    /// </summary>
-    /// <param name="value">The string to enumerate over.</param>
-    public U8Lines(U8String value)
-    {
-        _value = value;
-        _count = value.IsEmpty ? 0 : -1;
-    }
+    readonly U8String _value = value;
 
     /// <summary>
     /// The number of lines in the current <see cref="U8String"/>.
@@ -346,20 +289,12 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var count = _count;
-            if (count >= 0)
-            {
-                return count;
-            }
-
-            // Matches the behavior of string.Split('\n').Length for "hello\n"
-            // TODO: Should we break consistency and not count the very last segment if it is empty?
-            // (likely no - an empty line is still a line)
-            return _count = _value.UnsafeSpan.Count((byte)'\n') + 1;
+            var value = _value;
+            return !value.IsEmpty ? value.UnsafeSpan.Count((byte)'\n') + 1 : 0;
         }
     }
 
-    public readonly bool Contains(U8String item)
+    public bool Contains(U8String item)
     {
         return !item.Contains((byte)'\n') && _value.Contains(item);
     }
@@ -369,22 +304,22 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
         this.CopyTo<U8Lines, Enumerator, U8String>(destination.AsSpan()[index..]);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second)
+    public void Deconstruct(out U8String first, out U8String second)
     {
         this.Deconstruct<U8Lines, Enumerator, U8String>(out first, out second);
     }
 
-    public readonly void Deconstruct(out U8String first, out U8String second, out U8String third)
+    public void Deconstruct(out U8String first, out U8String second, out U8String third)
     {
         this.Deconstruct<U8Lines, Enumerator, U8String>(out first, out second, out third);
     }
 
-    public readonly U8String ElementAt(int index)
+    public U8String ElementAt(int index)
     {
         return this.ElementAt<U8Lines, Enumerator, U8String>(index);
     }
 
-    public readonly U8String ElementAtOrDefault(int index)
+    public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Lines, Enumerator, U8String>(index);
     }
@@ -396,37 +331,28 @@ public struct U8Lines : ICollection<U8String>, IU8Enumerable<U8Lines.Enumerator>
     /// Returns a <see cref="Enumerator"/> over the provided string.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly Enumerator GetEnumerator() => new(_value);
+    public Enumerator GetEnumerator() => new(_value);
 
-    readonly IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    readonly IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    readonly bool ICollection<U8String>.IsReadOnly => true;
-    readonly void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
-    readonly void ICollection<U8String>.Clear() => throw new NotSupportedException();
-    readonly bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
+    bool ICollection<U8String>.IsReadOnly => true;
+    void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.Clear() => throw new NotSupportedException();
+    bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 
     /// <summary>
     /// A struct that enumerates lines over a string.
     /// </summary>
-    public struct Enumerator : IU8Enumerator
+    /// <param name="value">The string to enumerate over.</param>
+    public struct Enumerator(U8String value) : IU8Enumerator
     {
         // TODO 1: Ensure this is aligned with Rust's .lines() implementation, or not?
         // private static readonly SearchValues<byte> NewLine = SearchValues.Create("\r\n"u8);
         // TODO 2: Consider using 'InnerOffsets'
-        private readonly byte[]? _value;
-        private U8Range _remaining;
+        private readonly byte[]? _value = value._value;
+        private U8Range _remaining = value._inner;
         private U8Range _current;
-
-        /// <summary>
-        /// Creates a new line enumerator over the provided string.
-        /// </summary>
-        /// <param name="value">The string to enumerate over.</param>
-        public Enumerator(U8String value)
-        {
-            _value = value._value;
-            _remaining = value._inner;
-        }
 
         /// <summary>
         /// Returns the current line.

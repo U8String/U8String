@@ -18,6 +18,12 @@ public class Formatting
     public string FormatDateTimeU16() => $"Date is {DateTime}";
 
     [Benchmark]
+    public U8String FormatBool() => U8String.Format($"{true} {false}");
+
+    [Benchmark]
+    public string FormatBoolU16() => $"{true} {false}";
+
+    [Benchmark]
     public U8String FormatGuid() => U8String.Format($"Guid is {Guid}");
 
     [Benchmark]
