@@ -35,7 +35,7 @@ public class Splitting
     public int SpanUtf16Count() => ValueUtf16!.AsSpan().Count(',');
 
     [Benchmark]
-    public int SplitSeqCount() => Value.Split(", "u8).Count();
+    public int SplitSeqCount() => Value.Split(", "u8).Count;
 
     [Benchmark]
     public U8String SplitFirst() => Value.SplitFirst(',').Segment;
