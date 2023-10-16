@@ -3,7 +3,7 @@ using System.Text;
 
 namespace U8Primitives.Tests;
 
-internal static class TestExtensions
+internal static class Extensions
 {
     internal static byte[] ToUtf8(this Rune rune)
     {

@@ -1,9 +1,6 @@
-using System.Text;
-
 namespace U8Primitives.Tests;
 
-// TODO: Refactor to use Theory?
-public class UnicodeInfo
+public class U8InfoTests
 {
     [Fact]
     public void IsAsciiByte_TrueForAsciiBytes()
@@ -20,6 +17,24 @@ public class UnicodeInfo
         foreach (var b in Constants.NonAsciiBytes)
         {
             Assert.False(U8Info.IsAsciiByte(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
+    public void IsAsciiLetter_TrueForAsciiLetters()
+    {
+        foreach (var l in Constants.AsciiLetters)
+        {
+            Assert.True(U8Info.IsAsciiLetter(l), $"{(char)l}");
+        }
+    }
+
+    [Fact]
+    public void IsAsciiLetter_FalseForNonAsciiLetters()
+    {
+        foreach (var b in Constants.AsciiBytes.Except(Constants.AsciiLetters))
+        {
+            Assert.False(U8Info.IsAsciiLetter(b), $"{(char)b}");
         }
     }
 

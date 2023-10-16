@@ -1,4 +1,4 @@
-namespace U8Primitives.Tests;
+namespace U8Primitives.Tests.U8StringTests;
 
 public partial class Manipulation
 {

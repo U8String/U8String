@@ -12,6 +12,8 @@ public static class Constants
     public static readonly byte[] AsciiBytes =
         Enumerable.Range(0b0000_0000, 128).Select(i => (byte)i).ToArray();
 
+    public static readonly byte[] AsciiLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"u8.ToArray();
+
     public static readonly string Ascii = Encoding.ASCII.GetString(AsciiBytes);
 
     public const string Cyrilic =
@@ -45,7 +47,7 @@ public static class Constants
     public static readonly byte[] NonSurrogateEmojiBytes = Encoding.UTF8.GetBytes(NonSurrogateEmoji);
 
     public static IEnumerable<byte[]> NonSurrogateEmojiChars =>
-        NonSurrogateEmoji.EnumerateRunes().Select(TestExtensions.ToUtf8);
+        NonSurrogateEmoji.EnumerateRunes().Select(Extensions.ToUtf8);
 
     public const string Mixed =
         "ABCDEFGHIJKLMNOPQRSTUVWXYZÄÖÜß" +
@@ -61,7 +63,7 @@ public static class Constants
     public static readonly byte[] MixedBytes = Encoding.UTF8.GetBytes(Mixed);
 
     public static IEnumerable<byte[]> MixedCharBytes =>
-        Mixed.EnumerateRunes().Select(TestExtensions.ToUtf8);
+        Mixed.EnumerateRunes().Select(Extensions.ToUtf8);
 
     public const string AsciiWhitespace = "\t\n\v\f\r ";
 

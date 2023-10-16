@@ -3,7 +3,7 @@ using System.Text;
 namespace U8Primitives.Tests;
 
 // These tests perform exhaustive evaluation and cannot be theories.
-public class ScalarConversion
+public class U8ScalarTests
 {
     public static IEnumerable<object[]> Runes => Constants.AllRunes.Select(r => new object[] { r });
 

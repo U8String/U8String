@@ -3,13 +3,51 @@ using System.Buffers;
 namespace U8Primitives.Tests;
 
 #pragma warning disable CA1829, RCS1077 // Optimize LINQ method call.
-#pragma warning disable xUnit1004 // Test methods should not be skipped
 #pragma warning disable xUnit2017 // xUnit analyzer suggests changes that are wrong
-public class Enumeration
+// TODO:
+// - ElementAt returns correct value, throws
+// - CopyTo writes correct sequence, throws
+// - ToList returns correct sequence
+public class U8EnumeratorTests
 {
-    // TODO: Refactor?
-    public static IEnumerable<object[]> ValidStrings =>
-        ReferenceCases.ValidStrings.Select(c => new object[] { c });
+    public static readonly IEnumerable<object[]> ValidStrings = new[]
+    {
+        new TestCase(
+            Name: "Empty",
+            Utf16: string.Empty,
+            Utf8: [],
+            Runes: []),
+
+        new TestCase(
+            Name: "ASCII",
+            Utf16: Constants.Ascii,
+            Utf8: Constants.AsciiBytes,
+            Runes: Constants.Ascii.EnumerateRunes().ToArray()),
+
+        new TestCase(
+            Name: "Cyrilic",
+            Utf16: Constants.Cyrilic,
+            Utf8: Constants.CyrilicBytes,
+            Runes: Constants.Cyrilic.EnumerateRunes().ToArray()),
+
+        new TestCase(
+            Name: "Kana",
+            Utf16: Constants.Kana,
+            Utf8: Constants.KanaBytes,
+            Runes: Constants.Kana.EnumerateRunes().ToArray()),
+
+        new TestCase(
+            Name: "NonSurrogateEmoji",
+            Utf16: Constants.NonSurrogateEmoji,
+            Utf8: Constants.NonSurrogateEmojiBytes,
+            Runes: Constants.NonSurrogateEmoji.EnumerateRunes().ToArray()),
+
+        new TestCase(
+            Name: "Mixed",
+            Utf16: Constants.Mixed,
+            Utf8: Constants.MixedBytes,
+            Runes: Constants.Mixed.EnumerateRunes().ToArray()),
+    }.Select(c => new object[] { c });
 
     [Theory]
     [MemberData(nameof(ValidStrings))]

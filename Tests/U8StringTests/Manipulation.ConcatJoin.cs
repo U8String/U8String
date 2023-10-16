@@ -2,7 +2,7 @@ using System.Text;
 
 using U8Primitives.InteropServices;
 
-namespace U8Primitives.Tests;
+namespace U8Primitives.Tests.U8StringTests;
 
 public partial class Manipulation
 {
@@ -109,7 +109,7 @@ public partial class Manipulation
     public void ConcatRune_ProducesCorrectValue(string source, Rune r)
     {
         static byte[] ToBytes(IEnumerable<Rune> runes) =>
-            runes.SelectMany(TestExtensions.ToUtf8).ToArray();
+            runes.SelectMany(Extensions.ToUtf8).ToArray();
 
         var u8str = new U8String(source);
         var actualRight = u8str + r;
