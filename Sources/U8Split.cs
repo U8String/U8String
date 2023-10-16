@@ -61,7 +61,6 @@ public readonly struct U8Split(U8String value, U8String separator) :
 
     public int Count
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var deref = this;
@@ -195,7 +194,6 @@ public readonly struct U8Split<TSeparator> :
 
     public int Count
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var value = _value;
@@ -319,7 +317,6 @@ public readonly struct U8Split<TSeparator, TComparer> :
 
     public int Count
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var value = _value;

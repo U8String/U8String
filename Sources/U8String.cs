@@ -111,7 +111,6 @@ public readonly partial struct U8String :
     /// </remarks>
     public int RuneCount
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             if (!IsEmpty)

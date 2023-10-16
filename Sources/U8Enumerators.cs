@@ -20,7 +20,6 @@ public readonly struct U8Chars(U8String value) :
     /// </summary>
     public int Count
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var value = _value;
@@ -191,7 +190,6 @@ public readonly struct U8Runes(U8String value) :
     /// </summary>
     public int Count
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value.RuneCount;
     }
 
@@ -286,7 +284,6 @@ public readonly struct U8Lines(U8String value) :
     /// </summary>
     public int Count
     {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var value = _value;

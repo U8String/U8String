@@ -23,7 +23,7 @@
     - [x] Finish implementing AsciiIgnoreCase comparer
     - [x] Adopt the abstraction for .Contains, .IndexOf, etc.
 - [x] IList, IEnumerable
-- [ ] Format(U8InterpolatedHandler)
+- [x] Format(InterpolatedU8StringHandler)
 - [x] Comparison
     - [x] OrdinalComparer
     - [x] ~~AsciiIgnoreCaseComparer~~
