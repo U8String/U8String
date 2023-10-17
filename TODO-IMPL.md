@@ -14,6 +14,8 @@
     - [ ] `U8Searcher<T>` where T is byte or char or Rune
     - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
+- [ ] Audit all methods that accept `string?` or `ROS<char>` and ensure they throw `FormatException` on torn surrogates
+    - [ ] Add `CreateLossy` variants that replaces broken sequences with replacement chars
 - [x] ~~Consider centralizing `new byte[length]` allocations to control null-termination and zeroing~~ too problematic to inline the conditionals that would determine the alloc size, after all, it's opprtunistic null-termination
 - [ ] Ensure correct behavior for all Split/Any overlods when supplied with empty separator
 - [x] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
@@ -53,8 +55,8 @@
 - [x] Consider Trim/ToUpper/LowerAscii method variants to not throw on invalid ASCII but rather omit such characters similar to what Rust's String functions do. Done: now non-ascii chars are simply ignored
 - [x] Debugger View and ToString
 - [x] Complete Rune counting vectorization
-- [ ] Invalid sequences sanitization (specifically to remove invalid sequences, non-owned zero space glyps, etc. to interfere with popular utf8 text fingerprinting techniques)
-    - [ ] Replace invalid
+- [ ] Invalid sequences sanitization (specifically to remove invalid sequences, non-owned zero space joiners, etc. to interfere with popular utf8 text fingerprinting techniques)
+    - [ ] ~~Replace invalid~~ Use `CreateLossy` because U8String having invalid sequences is undefined behavior
     - [ ] Trim invalid (and count?)
 - [x] Complete char counting vectorization (does counting non-continuation bytes is sufficient to be compliant with to-Chars conversion?)
 - [x] IList<byte>

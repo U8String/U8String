@@ -16,7 +16,7 @@ public static class U8StringExtensions
     public static U8String ToU8String(this string? value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
-    public static U8String ToU8String(this byte[] value) => new(value);
+    public static U8String ToU8String(this byte[]? value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
     public static U8String ToU8String(this Span<byte> value) => new(value);

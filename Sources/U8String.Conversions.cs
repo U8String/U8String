@@ -65,7 +65,7 @@ public readonly partial struct U8String
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
     public static U8String Parse(string s, IFormatProvider? provider = null)
     {
-        return Parse(s.AsSpan(), provider);
+        return new(s);
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
@@ -73,20 +73,19 @@ public readonly partial struct U8String
     {
         // TODO: Decide when/how TryParse could fail, factor in the required codegen shape
         // to skip CNS string decoding after https://github.com/dotnet/runtime/pull/85328 lands.
-        _ = TryParse(s, provider, out var result);
-        return result;
+        return new(s);
     }
 
     /// <summary>
     /// Creates a <see cref="U8String"/> from the specified <paramref name="utf8Text"/>.
     /// </summary>
     /// <param name="utf8Text">The UTF-8 encoded text to create a <see cref="U8String"/> from.</param>
-    /// <param name="provider">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
+    /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
     /// <returns>A new <see cref="U8String"/> created from <paramref name="utf8Text"/>.</returns>
     /// <exception cref="ArgumentException"> Thrown when <paramref name="utf8Text"/> contains invalid UTF-8.</exception>
-    public static U8String Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? provider = null)
+    public static U8String Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? _ = null)
     {
-        if (!TryParse(utf8Text, provider, out var result))
+        if (!TryParse(utf8Text, _, out var result))
         {
             ThrowHelpers.InvalidUtf8();
         }
@@ -97,19 +96,19 @@ public readonly partial struct U8String
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
     public static bool TryParse(
         [NotNullWhen(true)] string? s,
-        IFormatProvider? provider,
-        [MaybeNullWhen(false)] out U8String result) => TryParse(s.AsSpan(), provider, out result);
+        IFormatProvider? _,
+        [MaybeNullWhen(false)] out U8String result) => TryParse(s.AsSpan(), _, out result);
 
     /// <summary>
     /// Decodes the specified <paramref name="s"/> into a <see cref="U8String"/>.
     /// </summary>
     /// <param name="s">The UTF-16 encoded string to decode.</param>
-    /// <param name="provider">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
+    /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
     /// <param name="result">The decoded <see cref="U8String"/>.</param>
     /// <returns>True if the <paramref name="s"/> was successfully decoded, otherwise false.</returns>
     public static bool TryParse(
         ReadOnlySpan<char> s,
-        IFormatProvider? provider,
+        IFormatProvider? _,
         out U8String result)
     {
         // Double traversal becomes the favourable tradeoff at longer lengths,
@@ -138,12 +137,12 @@ public readonly partial struct U8String
     /// Creates a <see cref="U8String"/> from the specified <paramref name="utf8Text"/>.
     /// </summary>
     /// <param name="utf8Text">The UTF-8 encoded text to create a <see cref="U8String"/> from.</param>
-    /// <param name="provider">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
+    /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
     /// <param name="result">A new <see cref="U8String"/> created from <paramref name="utf8Text"/>.</param>
     /// <returns>True if the <paramref name="utf8Text"/> contains well-formed UTF-8, otherwise false.</returns>
     public static bool TryParse(
         ReadOnlySpan<byte> utf8Text,
-        IFormatProvider? provider,
+        IFormatProvider? _,
         out U8String result)
     {
         if (IsValid(utf8Text))

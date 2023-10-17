@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace U8Primitives;
@@ -6,6 +7,8 @@ namespace U8Primitives;
 [InterpolatedStringHandler]
 public struct InterpolatedU8StringHandler
 {
+    static readonly ConditionalWeakTable<string, byte[]> LiteralPool = [];
+
     readonly IFormatProvider? _provider;
     InlineBuffer128 _inline;
     byte[]? _rented;
@@ -41,21 +44,33 @@ public struct InterpolatedU8StringHandler
     }
 
     // Reference: https://github.com/dotnet/runtime/issues/93501
-    // Uncomment once inlined TryGetBytes gains UTF8EncodingSealed.ReadUtf8 call
+    // Refactor once inlined TryGetBytes gains UTF8EncodingSealed.ReadUtf8 call
     // which JIT/AOT can optimize away for string literals, eliding the transcoding.
     // [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    // public void AppendLiteral(string s)
-    // {
-    // Retry:
-    //    if (Encoding.UTF8.TryGetBytes(s, Free, out var written))
-    //    {
-    //        BytesWritten += written;
-    //        return;
-    //    }
+    public void AppendLiteral([ConstantExpected] string s)
+    {
+        if (s is { Length: > 0 })
+        {
+            if (s.Length is 1 && char.IsAscii(s[0]))
+            {
+                AppendByte((byte)s[0]);
+                return;
+            }
 
-    //    Grow();
-    //    goto Retry;
-    // }
+            AppendLiteralString(s);
+        }  
+    }
+
+    void AppendLiteralString(string s)
+    {
+        if (!LiteralPool.TryGetValue(s, out var literal))
+        {
+            literal = Encoding.UTF8.GetBytes(s);
+            LiteralPool.AddOrUpdate(s, literal);
+        }
+
+        AppendBytes(literal);
+    }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void AppendLiteral(ReadOnlySpan<char> s)
@@ -128,6 +143,21 @@ public struct InterpolatedU8StringHandler
         goto Retry;
     }
 
+    void AppendByte(byte value)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length > 0)
+        {
+            free[0] = value;
+            BytesWritten++;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
     void AppendBytes(ReadOnlySpan<byte> bytes)
     {
     Retry:
@@ -189,6 +219,31 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static bool TryFormatLiteral<T>(T value, out U8String literal)
+    {
+        if (value is int i32 && (uint)i32 <= U8Literals.Int32.UpperBoundInclusive)
+        {
+            literal = U8Literals.Int32.Get(i32);
+            return true;
+        }
+
+        Unsafe.SkipInit(out literal);
+        return false;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static bool TryFormatPresized<T>(T value, out U8String result)
+        where T : IUtf8SpanFormattable
+    {
+        var length = GetFormattedLength<T>();
+        var buffer = new byte[length];
+        var success = value.TryFormat(buffer, out length, default, null);
+
+        result = new(buffer, 0, length);
+        return success;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatPresized<T>(
         T value, ReadOnlySpan<char> format, IFormatProvider? provider, out U8String result)
             where T : IUtf8SpanFormattable
@@ -222,6 +277,20 @@ public readonly partial struct U8String
         if (typeof(T) == typeof(TimeSpan)) return 24;
         if (typeof(T) == typeof(Guid)) return 40;
         else return 32;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static U8String FormatUnsized<T>(T value)
+        where T : IUtf8SpanFormattable
+    {
+        int length;
+        var buffer = new byte[64];
+        while (!value.TryFormat(buffer, out length, default, null))
+        {
+            buffer = new byte[buffer.Length * 2];
+        }
+
+        return new(buffer, 0, length);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

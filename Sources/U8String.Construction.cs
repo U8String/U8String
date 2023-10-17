@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
+using System.Text;
 
 using Microsoft.Win32.SafeHandles;
 
@@ -19,7 +20,7 @@ public readonly partial struct U8String
     /// Creates a new <see cref="U8String"/> from the specified UTF-8 bytes.
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
+    /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
     /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
     /// </remarks>
@@ -29,9 +30,9 @@ public readonly partial struct U8String
         // byte[] Value *must* remain null if the length is 0.
         if (value.Length > 0)
         {
-            var nullTerminate = value[^1] != 0;
-
             Validate(value);
+
+            var nullTerminate = value[^1] != 0;
             var bytes = new byte[value.Length + (nullTerminate ? 1 : 0)];
             var buffer = bytes.SliceUnsafe(0, value.Length);
 
@@ -46,7 +47,7 @@ public readonly partial struct U8String
     /// Creates a new <see cref="U8String"/> from the specified <see cref="ImmutableArray{T}"/> of <see cref="byte"/>s.
     /// </summary>
     /// <param name="value">The <see cref="ImmutableArray{T}"/> of <see cref="byte"/>s to create the <see cref="U8String"/> from.</param>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
+    /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
     /// The <see cref="U8String"/> will be created by taking the underlying reference from the <paramref name="value"/> without copying if the length is greater than 0.
     /// </remarks>
@@ -72,7 +73,13 @@ public readonly partial struct U8String
     {
         if (value.Length > 0)
         {
-            this = Parse(value, null);
+            var nullTerminate = value[^1] != 0;
+            var length = Encoding.UTF8.GetByteCount(value);
+            var bytes = new byte[length + (nullTerminate ? 1 : 0)];
+            Encoding.UTF8.GetBytes(value, bytes);
+
+            _value = bytes;
+            _inner = new U8Range(0, length);
         }
     }
 
@@ -85,9 +92,20 @@ public readonly partial struct U8String
     /// </remarks>
     public U8String(string? value)
     {
-        if (!string.IsNullOrEmpty(value))
+        if (value is { Length: > 0 })
         {
-            this = Parse(value.AsSpan(), null);
+            if (U8Interning.TryGetEncoded(value, out this))
+            {
+                return;
+            }
+
+            var nullTerminate = value[^1] != 0;
+            var length = Encoding.UTF8.GetByteCount(value);
+            var bytes = new byte[length + (nullTerminate ? 1 : 0)];
+            Encoding.UTF8.GetBytes(value, bytes);
+
+            _value = bytes;
+            _inner = new U8Range(0, length);
         }
     }
 
@@ -159,7 +177,24 @@ public readonly partial struct U8String
     public static U8String Create<T>(T value)
         where T : IUtf8SpanFormattable
     {
-        return Create(value, default, null);
+        // Specialized path that uses default format and null provider
+        // which improves codegen and allows us to use literals.
+        if (value is not U8String u8str)
+        {
+            if (typeof(T).IsValueType && TryFormatLiteral(value, out var result))
+            {
+                return result;
+            }
+
+            if (TryFormatPresized(value, out result))
+            {
+                return result;
+            }
+
+            return FormatUnsized(value);
+        }
+
+        return u8str;
     }
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T, ReadOnlySpan{char})"/>
@@ -182,11 +217,6 @@ public readonly partial struct U8String
     {
         if (value is not U8String u8str)
         {
-            // if (TryGetInterned(value, out u8str))
-            // {
-            //    return u8str;
-            // }
-
             if (TryFormatPresized(value, format, provider, out var result))
             {
                 return result;
