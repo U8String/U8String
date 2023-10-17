@@ -89,6 +89,7 @@ public readonly partial struct U8String
     /// <remarks>
     /// The <see cref="U8String"/> will be created by encoding the <see cref="string"/> as UTF-8.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String(string? value)
     {
         if (value is { Length: > 0 })

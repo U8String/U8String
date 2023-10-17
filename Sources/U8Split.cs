@@ -1668,7 +1668,7 @@ public readonly ref struct U8RefAnySplit
         {
             _value = value._value;
             _separators = separators;
-            _remaining = value.Range;
+            _remaining = value._inner;
         }
 
         public readonly U8String Current

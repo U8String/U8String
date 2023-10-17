@@ -217,20 +217,26 @@ public readonly partial struct U8String
             return UnsafeSpan.ToArray();
         }
 
-        return Array.Empty<byte>();
+        return [];
     }
 
     /// <inheritdoc cref="ToString()"/>
-    public string ToString(string? format, IFormatProvider? formatProvider) => ToString();
+    public string ToString(string? format, IFormatProvider? _) => ToString();
 
     /// <summary>
     /// Encodes the current <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation.
     /// </summary>
     public override string ToString()
     {
-        if (!IsEmpty)
+        var deref = this;
+        if (!deref.IsEmpty)
         {
-            return Encoding.UTF8.GetString(UnsafeSpan);
+            if (U8Interning.TryGetDecoded(deref, out var decoded))
+            {
+                return decoded;
+            }
+
+            return Encoding.UTF8.GetString(deref.UnsafeSpan);
         }
 
         return string.Empty;

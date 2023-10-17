@@ -46,7 +46,7 @@ public struct InterpolatedU8StringHandler
     // Reference: https://github.com/dotnet/runtime/issues/93501
     // Refactor once inlined TryGetBytes gains UTF8EncodingSealed.ReadUtf8 call
     // which JIT/AOT can optimize away for string literals, eliding the transcoding.
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendLiteral([ConstantExpected] string s)
     {
         if (s is { Length: > 0 })
@@ -58,9 +58,10 @@ public struct InterpolatedU8StringHandler
             }
 
             AppendLiteralString(s);
-        }  
+        }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     void AppendLiteralString(string s)
     {
         if (!LiteralPool.TryGetValue(s, out var literal))
@@ -221,9 +222,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatLiteral<T>(T value, out U8String literal)
     {
-        if (value is int i32 && (uint)i32 <= U8Literals.Int32.UpperBoundInclusive)
+        if (value is int i32 && U8Literals.Int32.TryGet(i32, out literal))
         {
-            literal = U8Literals.Int32.Get(i32);
             return true;
         }
 

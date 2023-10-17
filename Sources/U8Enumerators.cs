@@ -109,7 +109,7 @@ public readonly struct U8Chars(U8String value) :
     public struct Enumerator(U8String value) : IEnumerator<char>
     {
         readonly byte[]? _value = value._value;
-        readonly U8Range _range = value.Range;
+        readonly U8Range _range = value._inner;
         int _nextByteIdx = 0;
         uint _currentCharPair;
 
@@ -235,7 +235,7 @@ public readonly struct U8Runes(U8String value) :
     public struct Enumerator(U8String value) : IEnumerator<Rune>
     {
         readonly byte[]? _value = value._value;
-        readonly U8Range _range = value.Range;
+        readonly U8Range _range = value._inner;
         int _index;
 
         public Rune Current { get; private set; }

@@ -780,7 +780,7 @@ internal static class U8Manipulation
         {
             // This method operates on absolute offsets
             var array = source._value!;
-            var range = source.Range;
+            var range = source._inner;
 
             while (true)
             {
@@ -811,7 +811,7 @@ internal static class U8Manipulation
 
             // Copy the first part of the string before the first LF -> CRLF
             builder.Write(array.SliceUnsafe(
-                source.Range.Offset, firstReplace - source.Range.Offset));
+                source._inner.Offset, firstReplace - source._inner.Offset));
             builder.Write("\r\n"u8);
 
             foreach (var line in new U8String(array, range).Lines)
