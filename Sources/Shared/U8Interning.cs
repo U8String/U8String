@@ -35,9 +35,8 @@ internal static class U8Interning
             return new(encoded, 0, encoded.Length - 1);
         }
 
-        var nullTerminate = value is not [.., (char)0];
-        var length = Encoding.UTF8.GetByteCount(value);
-        encoded = new byte[length + (nullTerminate ? 1 : 0)];
+        var length = Encoding.UTF8.GetByteCount(value) + 1;
+        encoded = new byte[length];
         Encoding.UTF8.GetBytes(value, encoded);
 
         if (length < EncodedPoolThreshold)

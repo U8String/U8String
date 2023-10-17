@@ -30,7 +30,7 @@ public readonly partial struct U8String
 
     public static explicit operator U8String(ReadOnlySpan<byte> value) => new(value);
     public static explicit operator U8String(ImmutableArray<byte> value) => new(value);
-    public static explicit operator U8String(string value) => new(value);
+    public static explicit operator U8String(string? value) => new(value);
     public static explicit operator U8String(ReadOnlySpan<char> value) => new(value);
     public static explicit operator string(U8String value) => value.ToString();
 
