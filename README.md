@@ -19,7 +19,7 @@ It is a ground-up reimplementation of the `string` type with UTF-8 semantics, an
 - Interop with native libraries that use UTF-8
 - Directly consuming UTF-8 byte sequences
 - Canonical representation of text primitives for serialization and storage which use UTF-8 (e.g. DB drivers)
-- When you experience a sudden urge to beat Rust and Go in both benchmark and real-world performance scenarios
+- Storing large amounts of ASCII-like text on the heap which is twice as compact as UTF-16
 
 ## Quick Start
 `dotnet add package U8String --prerelease`
@@ -104,9 +104,9 @@ TBD
 ### Advanced
 See https://github.com/neon-sunset/warpskimmer and [Twitch IRC parsing comparison](https://github.com/jprochazk/twitch-irc-benchmarks/blob/009fa4368ce8f09e8d73234308b22c35f7ef2bea/results/round-0/README.md)
 
-The implementation demonstrates how simple it is to achieve almost maximum hardware utilization with this library. Keep in mind that performance takes a hit due to the use of WSL2 and differences in Linux ABI which influences register allocation, on Windows, it takes about 150-160ns per message. So, effectively, the implementation fights with one hand tied behind its back still.
+The implementation demonstrates how simple it is to achieve almost maximum hardware utilization with this library. Keep in mind that performance takes a hit due to the use of WSL2 and differences in Linux ABI which influences register allocation, on Windows, it takes about 150-160ns per message, taking the first place.
 
 Historically, a lot of Golang implementations in various benchmarks used to have an advantage due to non-copying slicing and the fact
 that Go's strings do not validate whether the slices are correct. With U8String (even though it ensures slice correctness), the significant advantage of .NET's compiler and standard library over Golang's can be observed.
 
-In many scenarios, it will even outperform Rust's `&str` and `String` types due to much more conservative vectorization of Rust's standard library as well as shortcomings of its select internal string abstractions (which require additional manual work to achieve comparable performance).
+In many scenarios, this will even outperform Rust's `&str` and `String` types due to much more conservative vectorization of Rust's standard library and shortcomings of its select internal string abstractions (which require additional manual work to achieve comparable performance).
