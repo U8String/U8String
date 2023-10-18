@@ -16,7 +16,7 @@ public partial class Manipulation
     static readonly Rune ThreeByteRune = new(ThreeByteChar);
     static readonly Rune FourByteRune = "😂".EnumerateRunes().First();
 
-    static readonly byte[] Empty = Array.Empty<byte>();
+    static readonly byte[] Empty = [];
     static readonly byte[] Latin = "Hello, World"u8.ToArray();
     static readonly byte[] Cyrillic = "Привіт, Всесвіт"u8.ToArray();
     static readonly byte[] Japanese = "こんにちは、世界"u8.ToArray();

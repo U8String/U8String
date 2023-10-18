@@ -513,6 +513,37 @@ public readonly partial struct U8String
         throw new NotImplementedException();
     }
 
+    public U8String NullTerminate()
+    {
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            var (value, offset, length) = deref;
+            ref var end = ref deref.UnsafeRefAdd(length - 1);
+
+            U8String result;
+            if (end is 0)
+            {
+                result = deref;
+            }
+            else if ((uint)(offset + length) < (uint)value!.Length &&
+                end.Add(1) is 0)
+            {
+                result = new(deref._value, offset, deref.Length + 1);
+            }
+            else
+            {
+                var bytes = new byte[length + 1];
+                value.SliceUnsafe(offset, length).CopyToUnsafe(ref bytes.AsRef());
+                result = new(bytes, 0, length + 1);
+            }
+
+            return result;
+        }
+
+        return U8Constants.NullByte;
+    }
+
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(byte value) => U8Manipulation.Remove(this, value);
 
