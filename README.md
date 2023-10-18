@@ -91,8 +91,8 @@ var formatted = U8String.Format($"Today is {DateTime.Now:yyyy-MM-dd}.");
 
 ## Evaluation
 
-As this project is still in development, it is not recommended for deployment in production.
-It is, however, in sufficiently advanced state to be used for evaluation and testing purposes.
+As this project is still in development, it is not recommended for deployment in production.  
+It is, however, in sufficiently advanced state to be used for evaluation and testing purposes.  
 If you are interested in using this library in your project or have any questions or suggestions,
 please feel free to reach out by opening an issue or contacting me directly.
 
