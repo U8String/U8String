@@ -1,10 +1,12 @@
 using System.Buffers;
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 namespace U8Primitives;
 
 [InterpolatedStringHandler]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public struct InterpolatedU8StringHandler
 {
     static readonly ConditionalWeakTable<string, byte[]> LiteralPool = [];
