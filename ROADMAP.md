@@ -6,7 +6,7 @@
     - [x] Enumeration
     - [x] Allocation (internal, not for 1.0.0)
 - [ ] U8String
-    - [ ] CoreLib `string` non-globalization features parity
+    - [x] CoreLib `string` non-globalization features parity
         - [x] Split
         - [x] Slice
         - [x] Replace, Remove
@@ -14,7 +14,7 @@
         - [x] Conversions
         - [x] Concat, Join
         - [x] Comparison, Equality and Hashcode
-        - [ ] Format
+        - [x] Format
         - [x] Trim
         - [x] etc.
     - [x] Comparison
