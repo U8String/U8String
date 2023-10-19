@@ -3,7 +3,7 @@ namespace U8Primitives.Tests.U8StringTests;
 public class Base
 {
     [Fact]
-    public void GetPinnableReferencing_DereferencingEmptyStringThrowsNRE()
+    public void GetPinnableReference_DereferencingEmptySliceThrowsNRE()
     {
         var values = new[]
         {
