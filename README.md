@@ -1,7 +1,7 @@
 # U8String
 [work-in-progress] Highly functional and performant UTF-8 string primitive for C# and .NET.
 
-This library adopts the lessons learned from CoreLib's .NET 5 UTF-8 string prototype, Rust and Go string implementations to provide first-class UTF-8 string primitive which has been historically missing in .NET.
+This library adopts the lessons learned from .NET 5's `Utf8String` prototype, Rust and Go string implementations to provide first-class UTF-8 string primitive which has been historically missing in .NET.
 
 It is a ground-up reimplementation of the `string` type with UTF-8 semantics, and is designed to be a drop-in replacement for `string` in scenarios where UTF-8 is the preferred encoding.
 
