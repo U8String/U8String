@@ -46,7 +46,7 @@ public static class U8Marshal
     /// <paramref name="value"/>.Length - <paramref name="offset"/>.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Create(byte[] value, int offset, int length) => new(value, offset, length);
+    public static U8String Create(byte[]? value, int offset, int length) => new(value, offset, length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe U8String CreateFromNullTerminated(byte* ptr)

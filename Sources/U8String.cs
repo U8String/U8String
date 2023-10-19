@@ -147,8 +147,12 @@ public readonly partial struct U8String :
         {
             ref var reference = ref Unsafe.NullRef<byte>();
             var (value, offset) = (_value, (nint)(uint)Offset);
-            if (value != null) reference = ref MemoryMarshal.GetArrayDataReference(value);
-            reference = ref Unsafe.Add(ref reference, offset);
+            if (value != null)
+            {
+                reference = ref Unsafe.Add(
+                    ref MemoryMarshal.GetArrayDataReference(value), offset);
+            }
+
             return ref reference;
         }
     }
