@@ -12,6 +12,7 @@ public class Construction
         {
             var str = new U8String(bytes, offset, 0);
 
+            Assert.Null(str._value);
             Assert.True(str.IsEmpty);
             Assert.Equal(offset, str.Offset);
             Assert.Equal(0, str.Length);
@@ -29,10 +30,10 @@ public class Construction
             var range = new U8Range(offset, 0);
             var str = new U8String(bytes, range);
 
+            Assert.Null(str._value);
             Assert.True(str.IsEmpty);
             Assert.Equal(offset, str.Offset);
             Assert.Equal(0, str.Length);
         }
     }
 }
-

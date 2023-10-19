@@ -16,10 +16,31 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
     {
         if (reader.TokenType is JsonTokenType.String)
         {
-            var buffer = !reader.HasValueSequence
-                ? reader.ValueSpan.ToArray()
-                : reader.ValueSequence.ToArray();
-            var length = buffer.Length;
+            var length = 0;
+            var buffer = (byte[]?)null;
+
+            if (!reader.HasValueSequence)
+            {
+                var span = reader.ValueSpan;
+                if (span.Length > 0)
+                {
+                    var nullTerminate = span[^1] != 0;
+
+                    length = span.Length;
+                    buffer = new byte[span.Length + (nullTerminate ? 1 : 0)];
+                    span.CopyToUnsafe(ref buffer.AsRef());
+                }
+            }
+            else
+            {
+                var sequence = reader.ValueSequence;
+                if (sequence.Length > 0)
+                {
+                    length = checked((int)sequence.Length);
+                    buffer = new byte[length + 1];
+                    sequence.CopyTo(buffer);
+                }
+            }
 
             return new(buffer, 0, length);
         }

@@ -82,7 +82,7 @@ public readonly partial struct U8String
 
     public static U8String Concat(U8String left, ReadOnlySpan<byte> right)
     {
-        if (!right.IsEmpty)
+        if (right.Length > 0)
         {
             Validate(right);
             if (!left.IsEmpty)
@@ -98,7 +98,7 @@ public readonly partial struct U8String
 
     public static U8String Concat(ReadOnlySpan<byte> left, U8String right)
     {
-        if (!left.IsEmpty)
+        if (left.Length > 0)
         {
             Validate(left);
             if (!right.IsEmpty)

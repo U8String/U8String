@@ -225,9 +225,9 @@ public readonly partial struct U8String
     static bool TryFormatLiteral<T>(T value, out U8String literal)
     {
         if (value is int i32 && U8Literals.Int32.TryGet(i32, out literal))
-        {
             return true;
-        }
+        else if (value is long i64 && U8Literals.Int64.TryGet(i64, out literal))
+            return true;
 
         Unsafe.SkipInit(out literal);
         return false;

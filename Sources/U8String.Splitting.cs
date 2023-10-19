@@ -75,7 +75,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            if (!separator.IsEmpty)
+            if (separator.Length > 0)
             {
                 var span = source.UnsafeSpan;
                 var index = span.IndexOf(separator);
@@ -104,7 +104,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            if (!separator.IsEmpty)
+            if (separator.Length > 0)
             {
                 var span = source.UnsafeSpan;
                 var index = span.IndexOf(separator);
@@ -189,7 +189,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            if (!separator.IsEmpty)
+            if (separator.Length > 0)
             {
                 var (index, stride) = U8Searching.IndexOf(source.UnsafeSpan, separator, comparer);
 
@@ -219,7 +219,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            if (!separator.IsEmpty)
+            if (separator.Length > 0)
             {
                 var (index, stride) = U8Searching.IndexOf(source.UnsafeSpan, separator, comparer);
 
@@ -298,7 +298,7 @@ public readonly partial struct U8String
         var source = this;
         if (!source.IsEmpty)
         {
-            if (!separator.IsEmpty)
+            if (separator.Length > 0)
             {
                 var span = source.UnsafeSpan;
                 var index = span.LastIndexOf(separator);
@@ -320,12 +320,12 @@ public readonly partial struct U8String
         return default;
     }
 
-    public U8SplitPair SplitLastUnchecked(ReadOnlySpan<byte> separator)
+    internal U8SplitPair SplitLastUnchecked(ReadOnlySpan<byte> separator)
     {
         var source = this;
         if (!source.IsEmpty)
         {
-            if (!separator.IsEmpty)
+            if (separator.Length > 0)
             {
                 var span = source.UnsafeSpan;
                 var index = span.LastIndexOf(separator);

@@ -41,6 +41,7 @@
 - [x] ~~Look into MakeSeparatorListVectorized impl. in CoreLib and adopt its approach if applicable~~
 - [x] Refactor and generalize large chunks into separate utility classes
 - [ ] Optimize Split(..., U8SplitOptions)
+- [ ] Consider exposing a configuration aid to address issues with System.Text.Json defaults for encoding non-ASCII characters 
 - [x] Consider alternate eagerly-evaluated Split consisting of (byte[] source, U8Range[] offsets). Conclusion: no, but optimize CopyTo()
 - [x] Consider `OriginalU8String`/`SourceU8String` or refactoring into `U8String` and `U8Slice` (I'm not a fan of this because `U8Slice` won't be backwards convertible to `U8String` and developers will just take `U8String` everywhere, leading back to the issues caused by `string` tradeoffs) Solution: not worth, focus on `ROS<byte>` as much as possible with `NativeU8String` and `NativeU8String<TAlloc>`(?) as alternatives
 - [x] Optimize `Split(...).ToArray()` path - right now it loses to string.Split quite a bit on short lengths
