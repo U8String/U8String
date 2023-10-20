@@ -252,7 +252,7 @@ public readonly partial struct U8String
     /// <remarks>
     /// Pooled <see cref="string"/>s are linked to the lifetime of <see cref="Source"/>s they were created from.
     /// Multiple <see cref="string"/>s can be linked to the same <see cref="Source"/> to represent the slices
-    /// into the portions of the original data.
+    /// of the portions of the original data.
     /// </remarks>
     /// </summary>
     public string ToStringInterned()
