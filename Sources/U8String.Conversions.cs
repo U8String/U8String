@@ -241,4 +241,22 @@ public readonly partial struct U8String
 
         return string.Empty;
     }
+
+    /// <summary>
+    /// Encodes the current <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation and
+    /// stores it in the decoded pool.
+    /// <para>
+    /// If the <see cref="U8String"/> slice is already in the decoded pool, the existing <see cref="string"/>
+    /// is returned instead.
+    /// </para>
+    /// <remarks>
+    /// Pooled <see cref="string"/>s are linked to the lifetime of <see cref="Source"/>s they were created from.
+    /// Multiple <see cref="string"/>s can be linked to the same <see cref="Source"/> to represent the slices
+    /// into the portions of the original data.
+    /// </remarks>
+    /// </summary>
+    public string ToStringInterned()
+    {
+        return !IsEmpty ? U8Interning.GetDecoded(this) : string.Empty;
+    }
 }

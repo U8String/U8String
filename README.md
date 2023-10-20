@@ -11,7 +11,7 @@ It is a ground-up reimplementation of the `string` type with UTF-8 semantics, an
 - `byte`, `char` and `Rune` overload variants for maximum flexibility
 - Performant UTF-8 formatting inspired by [CoreLib](https://github.com/dotnet/runtime/blob/release/8.0/src/libraries/System.Private.CoreLib/src/System/Text/Unicode/Utf8.cs#L366) and [Yoshifumi Kawai](https://github.com/Cysharp/Utf8StringInterpolation) implementations
 - Convenient `.Runes`, `.Lines`, `.Chars`, `SplitFirst/Last(...)` and `.Split(...)` projections
-- String interning for repeated conversions from and to UTF-16
+- Opt-in string interning for repeated conversions from and to UTF-16
 - Easy integration with .NET type system thanks to `IUtf8SpanFormattable` and `IUtf8SpanParsable<T>` added in .NET 8
 
 ## Target Scenarios

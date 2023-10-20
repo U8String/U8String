@@ -1,6 +1,6 @@
 namespace U8Primitives;
 
-public readonly struct U8Source
+public readonly struct U8Source : IEquatable<U8Source>
 {
     internal readonly byte[]? Value;
 
@@ -40,5 +40,39 @@ public readonly struct U8Source
         }
 
         return default;
+    }
+
+    public bool Equals(U8Source other)
+    {
+        return ReferenceEquals(Value, other.Value);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is U8Source other)
+        {
+            return ReferenceEquals(Value, other.Value);
+        }
+        else if (obj is byte[] bytes)
+        {
+            return ReferenceEquals(Value, bytes);
+        }
+
+        return false;
+    }
+
+    public override int GetHashCode()
+    {
+        return Value?.GetHashCode() ?? 0;
+    }
+
+    public static bool operator ==(U8Source left, U8Source right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(U8Source left, U8Source right)
+    {
+        return !(left == right);
     }
 }

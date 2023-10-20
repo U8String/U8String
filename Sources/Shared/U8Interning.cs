@@ -6,27 +6,25 @@ namespace U8Primitives;
 
 internal static class U8Interning
 {
-    static readonly bool _useEncodedPool = !(AppContext
-        .TryGetSwitch("U8String.DisableEncodedPool", out var disable) && disable);
-    static readonly bool _useDecodedPool = !(AppContext
-        .TryGetSwitch("U8String.DisableDecodedPool", out var disable) && disable);
+    static readonly bool _useEncodedPool = AppContext
+        .TryGetSwitch("U8String.UseEncodedPool", out var enabled) && enabled;
+    static readonly bool _useDecodedPool = AppContext
+        .TryGetSwitch("U8String.UseDecodedPool", out var enabled) && enabled;
 
-    // Unconditionally enable for NativeAOT. There is an escape hatch in the form of
-    // setting U8String.EncodedPoolThreshold to a lower value or zero.
-    static bool UseEncodedPool => !RuntimeFeature.IsDynamicCodeCompiled || _useEncodedPool;
-    static bool UseDecodedPool => !RuntimeFeature.IsDynamicCodeCompiled || _useDecodedPool;
+    static bool UseEncodedPool => _useEncodedPool;
+    static bool UseDecodedPool => _useDecodedPool;
 
     static readonly int EncodedPoolThreshold = AppContext
-        .GetData("U8String.EncodedPoolThreshold") is int threshold ? threshold : 32768;
+        .GetData("U8String.EncodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
     static readonly int DecodedPoolThreshold = AppContext
-        .GetData("U8String.DecodedPoolThreshold") is int threshold ? threshold : 32768;
+        .GetData("U8String.DecodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
 
     // Contract: only not-empty strings are interned.
     static readonly ConditionalWeakTable<string, byte[]> EncodedPool = [];
     static readonly ConditionalWeakTable<byte[], ConcurrentDictionary<long, string>> DecodedPool = [];
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetEncoded(string value, out U8String encoded)
+    internal static bool TryGetEncoded(string value, out U8String encoded)
     {
         Debug.Assert(!string.IsNullOrEmpty(value));
 
@@ -41,7 +39,7 @@ internal static class U8Interning
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static U8String GetEncoded(string value)
+    internal static U8String GetEncoded(string value)
     {
         // This does not really coalesce the cctor checks for NativeAOT, but at least
         // it puts both of them in one place, helping the branch predictor.
@@ -66,7 +64,7 @@ internal static class U8Interning
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool TryGetDecoded(U8String value, out string decoded)
+    internal static bool TryGetDecoded(U8String value, out string decoded)
     {
         Debug.Assert(!value.IsEmpty);
 
@@ -80,7 +78,7 @@ internal static class U8Interning
         return false;
     }
 
-    static string GetDecoded(U8String value)
+    internal static string GetDecoded(U8String value)
     {
         Debug.Assert(value.Length > 0);
         Debug.Assert(Unsafe.SizeOf<U8Range>() is sizeof(long));

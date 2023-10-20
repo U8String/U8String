@@ -229,6 +229,30 @@ public readonly partial struct U8String
     }
 
     /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified <see cref="string"/>
+    /// and stores the result in the encoded pool.
+    /// <para>
+    /// If the <see cref="string"/> is already in the encoded pool, the existing <see cref="U8String"/>
+    /// is returned instead.
+    /// </para>
+    /// </summary>
+    /// <remarks>
+    /// Pooled <see cref="U8String"/>s are linked to the lifetime of the respective <see cref="string"/>s
+    /// they were created from. Please note this method operates on <see cref="string"/> references and
+    /// does not perform deduplication in case multiple <see cref="string"/>s exist with the same
+    /// contents.
+    /// <para>
+    /// Should deduplication be desired, it may be achieved by calling <see cref="string.Intern(string)"/>
+    /// on the <paramref name="value"/> before passing it to this method.
+    /// </para>
+    /// </remarks>
+    /// <param name="value">The <see cref="string"/> to create the <see cref="U8String"/> from.</param>
+    public static U8String CreateInterned(string? value)
+    {
+        return value is { Length: > 0 } ? U8Interning.GetEncoded(value) : default;
+    }
+
+    /// <summary>
     /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
     /// if it is a valid UTF-8 sequence.
     /// </summary>
