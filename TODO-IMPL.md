@@ -21,6 +21,8 @@
 - [x] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
 - [ ] Consider bringing back some of the checked CopyTo for inputs that might be changed concurrently
+- [ ] Setup self-hosted or paid runner for ARM64
+- [ ] Setup continuous benchmarking pipeline (should I just pay for good runners? self-host?)
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [x] Optimize .Replace methods
 - [x] ~~Mirror caching of certain types which cache ToString() with ConditionalWeakTable?~~ Out of scope for 1.0.0

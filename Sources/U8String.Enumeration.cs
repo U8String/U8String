@@ -32,6 +32,18 @@ public readonly partial struct U8String
     }
 
     /// <summary>
+    /// Returns a collection of rune indices over the provided string.
+    /// </summary> <summary>
+    /// This is a lazily-evaluated allocation-free collection.
+    /// </summary>
+    /// <value></value>
+    public U8RuneIndices RuneIndices
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(this);
+    }
+
+    /// <summary>
     /// Returns a collection of lines over the provided string.
     /// </summary>
     /// <remarks>

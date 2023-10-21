@@ -235,31 +235,30 @@ public readonly struct U8Runes(U8String value) :
     public struct Enumerator(U8String value) : IEnumerator<Rune>
     {
         readonly byte[]? _value = value._value;
-        readonly U8Range _range = value._inner;
-        int _index;
+        readonly int _length = value._inner.Length;
+        int _offset = value._inner.Offset;
 
         public Rune Current { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            var index = _index;
-            if (index < _range.Length)
+            var offset = _offset;
+            if (offset < _length)
             {
-                ref var ptr = ref _value!.AsRef(_range.Offset + index);
+                ref var ptr = ref _value!.AsRef(offset);
 
                 Current = U8Conversions.CodepointToRune(ref ptr, out var size);
-                _index = index + size;
+                _offset = offset + size;
                 return true;
             }
 
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset() => _index = 0;
 
         readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
         readonly void IDisposable.Dispose() { }
     }
 
@@ -267,6 +266,113 @@ public readonly struct U8Runes(U8String value) :
     void ICollection<Rune>.Add(Rune item) => throw new NotSupportedException();
     void ICollection<Rune>.Clear() => throw new NotSupportedException();
     bool ICollection<Rune>.Remove(Rune item) => throw new NotSupportedException();
+}
+
+// This is effectively https://github.com/dotnet/runtime/issues/28507 adapted to U8String
+// Since the source has to be valid UTF-8, we can make assumptions which significantly improve performance.
+/// <summary>
+/// A collection of Rune indices in a provided <see cref="U8String"/>.
+/// </summary>
+public readonly struct U8RuneIndices(U8String value) :
+    ICollection<U8RuneIndex>,
+    IEnumerable<U8RuneIndex, U8RuneIndices.Enumerator>
+{
+    readonly U8String _value = value;
+
+    public int Count
+    {
+        get => _value.RuneCount;
+    }
+
+    public bool Contains(U8RuneIndex item)
+    {
+        var value = _value;
+        if (!value.IsEmpty)
+        {
+            var offset = item.Offset;
+
+            if ((uint)offset < (uint)value.Length)
+            {
+                ref var ptr = ref value.UnsafeRefAdd(offset);
+
+                return U8Conversions
+                    .CodepointToRune(ref ptr, out var _) == item.Value;
+            }
+        }
+
+        return false;
+    }
+
+    public void CopyTo(U8RuneIndex[] destination, int index)
+    {
+        this.CopyTo<U8RuneIndices, Enumerator, U8RuneIndex>(destination.AsSpan()[index..]);
+    }
+
+    public void Deconstruct(out U8RuneIndex first, out U8RuneIndex second)
+    {
+        this.Deconstruct<U8RuneIndices, Enumerator, U8RuneIndex>(out first, out second);
+    }
+
+    public void Deconstruct(out U8RuneIndex first, out U8RuneIndex second, out U8RuneIndex third)
+    {
+        this.Deconstruct<U8RuneIndices, Enumerator, U8RuneIndex>(out first, out second, out third);
+    }
+
+    public U8RuneIndex ElementAt(int index)
+    {
+        return this.ElementAt<U8RuneIndices, Enumerator, U8RuneIndex>(index);
+    }
+
+    public U8RuneIndex ElementAtOrDefault(int index)
+    {
+        return this.ElementAtOrDefault<U8RuneIndices, Enumerator, U8RuneIndex>(index);
+    }
+
+    public U8RuneIndex[] ToArray() => this.ToArray<U8RuneIndices, Enumerator, U8RuneIndex>();
+
+    public List<U8RuneIndex> ToList() => this.ToList<U8RuneIndices, Enumerator, U8RuneIndex>();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Enumerator GetEnumerator() => new(_value);
+
+    IEnumerator<U8RuneIndex> IEnumerable<U8RuneIndex>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    public struct Enumerator(U8String value) : IEnumerator<U8RuneIndex>
+    {
+        readonly byte[]? _value = value._value;
+        readonly int _length = value._inner.Length;
+        int _offset = value._inner.Offset;
+
+        public U8RuneIndex Current { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            var offset = _offset;
+            if (offset < _length)
+            {
+                ref var ptr = ref _value!.AsRef(offset);
+
+                Current = new(
+                    U8Conversions.CodepointToRune(ref ptr, out var size), offset, size);
+
+                _offset = offset + size;
+                return true;
+            }
+
+            return false;
+        }
+
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
+    }
+
+    bool ICollection<U8RuneIndex>.IsReadOnly => true;
+    void ICollection<U8RuneIndex>.Add(U8RuneIndex item) => throw new NotSupportedException();
+    void ICollection<U8RuneIndex>.Clear() => throw new NotSupportedException();
+    bool ICollection<U8RuneIndex>.Remove(U8RuneIndex item) => throw new NotSupportedException();
 }
 
 /// <summary>
