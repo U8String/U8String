@@ -740,8 +740,7 @@ public readonly partial struct U8String
                 {
                     return source;
                 }
-                else --end;
-            } // Can't increment start because TrimCore expects non-continuation byte
+            }
 
             return TrimCore(source._value, source.Offset + start, end);
         }
@@ -767,7 +766,7 @@ public readonly partial struct U8String
                 {
                     if (U8Info.IsAsciiByte(b)
                         ? U8Info.IsAsciiWhitespace(b)
-                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end), out _))
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(endSearch), out _))
                     {
                         // Save the last found whitespace code point offset and continue searching
                         // for more whitspace byte sequences from their end. If we don't do this,
@@ -837,7 +836,7 @@ public readonly partial struct U8String
                 {
                     if (U8Info.IsAsciiByte(b)
                         ? U8Info.IsAsciiWhitespace(b)
-                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(end), out _))
+                        : U8Info.IsNonAsciiWhitespace(ref ptr.Add(endSearch), out _))
                     {
                         end = endSearch - 1;
                     }

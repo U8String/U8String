@@ -4,16 +4,19 @@ public readonly struct U8Source : IEquatable<U8Source>
 {
     internal readonly byte[]? Value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Source(U8String value)
     {
         Value = value._value;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8Source(byte[]? value)
     {
         Value = value;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(U8Range range)
     {
         var source = Value;
@@ -24,14 +27,14 @@ public readonly struct U8Source : IEquatable<U8Source>
 
         if (range.Length > 0)
         {
-            var end = range.Offset + range.Length;
-            if ((uint)end > (uint)source!.Length)
+            var (offset, length) = (range.Offset, range.Length);
+            if ((ulong)(uint)offset + (ulong)(uint)length > (ulong)(uint)source!.Length)
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }
 
-            if (U8Info.IsContinuationByte(in source.AsRef(range.Offset))
-                || ((uint)end < (uint)source.Length && U8Info.IsContinuationByte(in source.AsRef(end))))
+            if (U8Info.IsContinuationByte(source.AsRef(offset)) || (
+                length < source.Length && U8Info.IsContinuationByte(source.AsRef(offset + length))))
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }
@@ -51,11 +54,11 @@ public readonly struct U8Source : IEquatable<U8Source>
     {
         if (obj is U8Source other)
         {
-            return ReferenceEquals(Value, other.Value);
+            return Equals(other);
         }
-        else if (obj is byte[] bytes)
+        else if (obj is U8String str)
         {
-            return ReferenceEquals(Value, bytes);
+            return Equals(str.Source);
         }
 
         return false;
@@ -66,13 +69,11 @@ public readonly struct U8Source : IEquatable<U8Source>
         return Value?.GetHashCode() ?? 0;
     }
 
-    public static bool operator ==(U8Source left, U8Source right)
-    {
-        return left.Equals(right);
-    }
+    public static bool operator ==(U8Source left, U8Source right) => left.Equals(right);
+    public static bool operator ==(U8Source left, U8String right) => left.Equals(right.Source);
+    public static bool operator ==(U8String left, U8Source right) => right.Equals(left.Source);
 
-    public static bool operator !=(U8Source left, U8Source right)
-    {
-        return !(left == right);
-    }
+    public static bool operator !=(U8Source left, U8Source right) => !(left == right);
+    public static bool operator !=(U8Source left, U8String right) => !(left == right);
+    public static bool operator !=(U8String left, U8Source right) => !(left == right);
 }

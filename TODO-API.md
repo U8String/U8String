@@ -31,6 +31,8 @@
     - [x] ~~UnicodeNormalizedComparer (all normalization forms)~~
 - [x] Runes view (IEnumerable, or stateful IList?)
     - [ ] CopyTo(span)
+- [ ] RuneIndices / RuneOffsets / RunePositions (an advanced Runes view similar to https://github.com/dotnet/runtime/issues/28507)
+    - [ ] Likely projects to (Rune, int offset), but perhaps it's better to steal RunePosition (if yes, maybe just wrap U8Scalar?)
 - [x] Chars view (same as above)
     - [ ] CopyTo(span)
     - [ ] Optimize `U8Chars.Enumerator` and contribute to dotnet/runtime
@@ -71,6 +73,7 @@
     - [x] ToLower/ToUpper (invariant case converter not implemented yet)
     - [x] ToLowerAscii/ToUpperAscii
 - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
+- [ ] Transcoding: UTF8<->UTF32
 - [x] TryCreate construction variants
 - [x] IsLatin/IsAlphanumeric?
 - [x] Construction aligned with collection literals initialization syntax and API shape (turned out to be quite useless)

@@ -71,6 +71,7 @@ public readonly partial struct U8String
         return obj switch
         {
             U8String other => Equals(other),
+            ImmutableArray<byte> other => Equals(other),
             byte[] other => Equals(other),
             _ => false,
         };
@@ -105,6 +106,12 @@ public readonly partial struct U8String
     public bool Equals(byte[]? other)
     {
         return other != null && Equals(other.AsSpan());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Equals(ImmutableArray<byte> other)
+    {
+        return Equals(other.AsSpan());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

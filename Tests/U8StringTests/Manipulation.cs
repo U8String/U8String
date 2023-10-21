@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+
 namespace U8Primitives.Tests.U8StringTests;
 
 public partial class Manipulation
@@ -86,6 +88,9 @@ public partial class Manipulation
 
         Assert.True(value.Slice(0, 0).Equals(""u8));
         Assert.True(value.Slice(0, 0).Equals(U8String.Empty));
+
+        Assert.True(value.Slice(value.Length).Equals(""u8));
+        Assert.True(value.Slice(value.Length).Equals(U8String.Empty));
 
         Assert.True(value[..2].Equals("П"u8));
         Assert.True(value.Slice(0, 2).Equals("П"u8));
@@ -222,4 +227,94 @@ public partial class Manipulation
         Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue, 1));
     }
 #pragma warning restore IDE0057
+
+    public static IEnumerable<(
+        ImmutableArray<byte> expected,
+        ImmutableArray<byte> actual)> TrimData()
+    {
+        var values = new[]
+        {
+            [],
+            [..Constants.AsciiBytes
+                .Except(Constants.AsciiWhitespaceBytes.ToArray())],
+            Constants.CyrilicBytes,
+            Constants.KanaBytes,
+            Constants.NonSurrogateEmojiBytes,
+            Constants.MixedBytes
+        };
+
+        foreach (var value in values)
+        {
+            yield return (value, value);
+
+            foreach (var rune in Constants.WhitespaceRunes)
+            {
+                var runeBytes = rune.ToUtf8();
+
+                yield return (value, [..runeBytes, ..value]);
+                yield return (value, [..value, ..runeBytes]);
+                yield return (value, [..runeBytes, ..value, ..runeBytes]);
+            }
+
+            var allRuneBytes = Constants.WhitespaceRunes
+                .SelectMany(r => r.ToUtf8())
+                .ToImmutableArray();
+            
+            yield return (value, [..allRuneBytes, ..value]);
+            yield return (value, [..value, ..allRuneBytes]);
+            yield return (value, [..allRuneBytes, ..value, ..allRuneBytes]);
+        }
+    }
+
+    [Fact]
+    public void Trim_ReturnsCorrectValue()
+    {
+        foreach (var (expected, actual) in TrimData())
+        {
+            var value = new U8String(actual);
+            var trimmed = value.Trim();
+
+            Assert.True(trimmed.Equals(expected));
+        }
+    }
+
+    [Fact]
+    public void TrimStart_ReturnsCorrectValue()
+    {
+        foreach (var (expected, actual) in TrimData())
+        {
+            var actualSpan = actual.AsSpan();
+            if (expected.Length > 1)
+            {
+                // We don't trim end so remove that part from comparison.
+                var postfixOffset = actualSpan.IndexOf(expected.AsSpan()) + expected.Length;
+                actualSpan = actual.AsSpan()[..postfixOffset];
+            }
+
+            var value = new U8String(actualSpan);
+            var trimmed = value.TrimStart();
+
+            Assert.True(trimmed.Equals(expected));
+        }
+    }
+
+    [Fact]
+    public void TrimEnd_ReturnsCorrectValue()
+    {
+        foreach (var (expected, actual) in TrimData())
+        {
+            var actualSpan = actual.AsSpan();
+            if (expected.Length > 1)
+            {
+                // We don't trim start so remove that part from comparison.
+                var prefixOffset = actualSpan.LastIndexOf(expected.AsSpan());
+                actualSpan = actualSpan[prefixOffset..];
+            }
+
+            var value = new U8String(actualSpan);
+            var trimmed = value.TrimEnd();
+
+            Assert.True(trimmed.Equals(expected));
+        }
+    }
 }

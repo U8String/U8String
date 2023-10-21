@@ -19,13 +19,18 @@ public readonly partial struct U8String
 
     public static bool operator ==(U8String left, U8String right) => left.Equals(right);
     public static bool operator ==(U8String left, byte[] right) => left.Equals(right);
+    public static bool operator ==(U8String left, ImmutableArray<byte> right) => left.Equals(right);
     public static bool operator ==(U8String left, ReadOnlySpan<byte> right) => left.Equals(right);
     public static bool operator ==(byte[] left, U8String right) => right.Equals(left);
+    public static bool operator ==(ImmutableArray<byte> left, U8String right) => right.Equals(left);
     public static bool operator ==(ReadOnlySpan<byte> left, U8String right) => right.Equals(left);
+
     public static bool operator !=(U8String left, U8String right) => !(left == right);
     public static bool operator !=(U8String left, byte[] right) => !(left == right);
+    public static bool operator !=(U8String left, ImmutableArray<byte> right) => !(left == right);
     public static bool operator !=(U8String left, ReadOnlySpan<byte> right) => !(left == right);
     public static bool operator !=(byte[] left, U8String right) => !(left == right);
+    public static bool operator !=(ImmutableArray<byte> left, U8String right) => !(left == right);
     public static bool operator !=(ReadOnlySpan<byte> left, U8String right) => !(left == right);
 
     public static explicit operator U8String(ReadOnlySpan<byte> value) => new(value);
