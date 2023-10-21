@@ -79,6 +79,72 @@ public partial class Manipulation
         Constants.NonSurrogateEmojiBytes
     }.Select(v => new object[] { new U8String(v) });
 
+    [Fact]
+    public void Slice_SimpleSliceProducesCorrectResult()
+    {
+        var value = (U8String)"Привіт, Всесвіт!"u8;
+
+        Assert.True(value.Slice(0, 0).Equals(""u8));
+        Assert.True(value.Slice(0, 0).Equals(U8String.Empty));
+
+        Assert.True(value[..2].Equals("П"u8));
+        Assert.True(value.Slice(0, 2).Equals("П"u8));
+
+        Assert.True(value[2..].Equals("ривіт, Всесвіт!"u8));
+        Assert.True(value.Slice(2).Equals("ривіт, Всесвіт!"u8));
+
+        Assert.True(value[2..^1].Equals("ривіт, Всесвіт"u8));
+        Assert.True(value.Slice(2, value.Length - 3).Equals("ривіт, Всесвіт"u8));
+
+        Assert.True(value[^1..].Equals("!"u8));
+        Assert.True(value.Slice(value.Length - 1).Equals("!"u8));
+    }
+
+    [Theory, MemberData(nameof(SliceData))]
+    public void Slice_SlicingAtValidOffsetProducesCorrectResult(U8String value)
+    {
+        var (rune, _) = value.Runes;
+
+        var validOffsets = Enumerable
+            .Range(0, value.Length)
+            .Where(i => i % rune.Utf8SequenceLength is 0);
+
+        foreach (var offset in validOffsets)
+        {
+            var actual = value.Slice(offset);
+            var expected = value.AsSpan().Slice(offset);
+
+            Assert.True(actual.Equals(expected));
+            Assert.Equal(value.Length - offset, actual.Length);
+        }
+    }
+
+    [Theory, MemberData(nameof(SliceData))]
+    public void Slice_SlicingAtValidOffsetValidLengthProducesCorrectResult(U8String value)
+    {
+        var (rune, _) = value.Runes;
+
+        var offsets = Enumerable
+            .Range(0, value.Length)
+            .Where(i => i % rune.Utf8SequenceLength is 0);
+
+        var validArgs = offsets
+            .Select(o => Enumerable
+                .Range(0, value.Length - o)
+                .Where(l => l % rune.Utf8SequenceLength is 0)
+                .Select(l => (offset: o, length: l)))
+            .SelectMany(v => v);
+
+        foreach (var (offset, length) in validArgs)
+        {
+            var actual = value.Slice(offset, length);
+            var expected = value.AsSpan().Slice(offset, length);
+
+            Assert.True(actual.Equals(expected));
+            Assert.Equal(length, actual.Length);
+        }
+    }
+
     [Theory, MemberData(nameof(SliceData))]
     public void Slice_SlicingAtContinuationByteOffsetThrows(U8String value)
     {
