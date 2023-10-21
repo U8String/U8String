@@ -654,6 +654,7 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentException">
     /// The resulting substring splits at a UTF-8 code point boundary and would result in an invalid UTF-8 string.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(int start)
     {
         var source = this;
@@ -689,11 +690,12 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentException">
     /// The resulting substring splits at a UTF-8 code point boundary and would result in an invalid UTF-8 string.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(int start, int length)
     {
         var source = this;
         // From ReadOnly/Span<T> Slice(int, int) implementation
-        if ((uint)(start + length) > (uint)source.Length)
+        if ((ulong)(uint)start + (ulong)(uint)length > (ulong)(uint)source.Length)
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
@@ -703,6 +705,8 @@ public readonly partial struct U8String
             if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
                 length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
             {
+                // TODO: Re-author exception - is it possible to pass some state to a throw helper which
+                // would allow to provide more context to the exception message without regressing codegen?
                 ThrowHelpers.ArgumentOutOfRange();
             }
 

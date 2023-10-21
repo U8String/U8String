@@ -70,4 +70,90 @@ public partial class Manipulation
         Assert.Equal(value.Offset, nullTerminated.Offset);
         Assert.Equal(value.Length, nullTerminated.Length - 1);
     }
+
+#pragma warning disable IDE0057 // Use range operator. Why: to pick the right overload.
+    public static readonly IEnumerable<object[]> SliceData = new[]
+    {
+        Constants.CyrilicBytes,
+        Constants.KanaBytes,
+        Constants.NonSurrogateEmojiBytes
+    }.Select(v => new object[] { new U8String(v) });
+
+    [Theory, MemberData(nameof(SliceData))]
+    public void Slice_SlicingAtContinuationByteOffsetThrows(U8String value)
+    {
+        var (rune, _) = value.Runes;
+
+        var invalidOffsets = Enumerable
+            .Range(0, value.Length)
+            .Where(i => i % rune.Utf8SequenceLength != 0
+                && i != value.Length);
+
+        foreach (var index in invalidOffsets)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(index));
+        }
+    }
+
+    [Theory, MemberData(nameof(SliceData))]
+    public void Slice_SlicingAtContinuationByteOffsetValidLengthThrows(U8String value)
+    {
+        var (rune, _) = value.Runes;
+
+        var invalidOffsets = Enumerable
+            .Range(0, value.Length)
+            .Where(i => i % rune.Utf8SequenceLength != 0
+                && i != value.Length);
+
+        foreach (var offset in invalidOffsets)
+        {
+            Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(offset, value.Length - offset));
+        }
+    }
+
+    [Theory, MemberData(nameof(SliceData))]
+    public void Slice_SlicingAtValidOffsetContinuationByteLengthThrows(U8String value)
+    {
+        var (rune, _) = value.Runes;
+
+        var invalidArgs = Enumerable
+            .Range(0, value.Length)
+            .Where(i => i % rune.Utf8SequenceLength != 0
+                && i != value.Length)
+            .Select(l => Enumerable
+                .Range(0, l)
+                .Where(o => o % rune.Utf8SequenceLength is 0)
+                .Select(o => (offset: o, length: l)))
+            .SelectMany(v => v);
+
+        foreach (var (offset, length) in invalidArgs)
+        {
+            _ = value.Slice(offset);
+            _ = value.Slice(offset, value.Length - offset);
+            Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(offset, length));
+        }
+    }
+
+    [Fact]
+    public void Slice_SlicingAtNegativeOffsetThrows()
+    {
+        var value = new U8String(Constants.CyrilicBytes);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-2));
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue));
+    }
+
+    [Fact]
+    public void Slice_SlicingAtNegativeOffsetValidLengthThrows()
+    {
+        var value = new U8String(Constants.AsciiBytes);
+
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-1, value.Length));
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-1, 0));
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-1, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-2, 1));
+        Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue, 1));
+    }
+#pragma warning restore IDE0057
 }

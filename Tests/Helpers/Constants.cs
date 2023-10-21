@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 
 namespace U8Primitives.Tests;
@@ -9,18 +10,18 @@ public static class Constants
         .Range(0xE000, 0x10FFFF - 0xE000 + 1))
         .Select(i => new Rune(i));
 
-    public static readonly byte[] AsciiBytes =
-        Enumerable.Range(0b0000_0000, 128).Select(i => (byte)i).ToArray();
+    public static readonly ImmutableArray<byte> AsciiBytes =
+        [..Enumerable.Range(0b0000_0000, 128).Select(i => (byte)i)];
 
-    public static readonly byte[] AsciiLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"u8.ToArray();
+    public static readonly ImmutableArray<byte> AsciiLetters = [.."ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"u8];
 
-    public static readonly string Ascii = Encoding.ASCII.GetString(AsciiBytes);
+    public static readonly string Ascii = Encoding.ASCII.GetString(AsciiBytes.AsSpan());
 
     public const string Cyrilic =
         "абвгґдеєжзиіїйклмнопрстуфхцчшщьюя" +
         "АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ";
 
-    public static readonly byte[] CyrilicBytes = Encoding.UTF8.GetBytes(Cyrilic);
+    public static readonly ImmutableArray<byte> CyrilicBytes = [..Encoding.UTF8.GetBytes(Cyrilic)];
 
     public static IEnumerable<byte[]> CyrilicCharBytes =>
         Cyrilic.Select((_, i) => Encoding.UTF8.GetBytes(Cyrilic, i, 1));
@@ -34,7 +35,7 @@ public static class Constants
         "ヤユヨラリルレロワヲンガギグゲゴザジズゼゾ" +
         "ダヂヅデドバビブベボパピプペポ";
 
-    public static readonly byte[] KanaBytes = Encoding.UTF8.GetBytes(Kana);
+    public static readonly ImmutableArray<byte> KanaBytes = [..Encoding.UTF8.GetBytes(Kana)];
 
     public static IEnumerable<byte[]> KanaCharBytes =>
         Kana.Select((_, i) => Encoding.UTF8.GetBytes(Kana, i, 1));
@@ -44,7 +45,7 @@ public static class Constants
         "😶🙄😏😣😥😮😯😪😫😴😌😛😜😝🤤😒😓😔😕" +
         "🙃🤑😲🙁😖😞😟😤😢😭😦😧😨😩😬😰😱";
 
-    public static readonly byte[] NonSurrogateEmojiBytes = Encoding.UTF8.GetBytes(NonSurrogateEmoji);
+    public static readonly ImmutableArray<byte> NonSurrogateEmojiBytes = [..Encoding.UTF8.GetBytes(NonSurrogateEmoji)];
 
     public static IEnumerable<byte[]> NonSurrogateEmojiChars =>
         NonSurrogateEmoji.EnumerateRunes().Select(Extensions.ToUtf8);
@@ -60,7 +61,7 @@ public static class Constants
         "∲∳∴∵∶∷∸∹∺∻∼∽∾∿≀≁≂≃≄≅≆≇≈≉≊≋≌≍≎≏≐≑≒≓≔≕≖≗≘≙≚" +
         "≛≜≝≞≟≠≡≢≣≤≥≦≧≨≩≪≫≬≭≮≯≰≱≲≳≴≵≶≷≸≹≺≻≼≽≾≿";
 
-    public static readonly byte[] MixedBytes = Encoding.UTF8.GetBytes(Mixed);
+    public static readonly ImmutableArray<byte> MixedBytes = [..Encoding.UTF8.GetBytes(Mixed)];
 
     public static IEnumerable<byte[]> MixedCharBytes =>
         Mixed.EnumerateRunes().Select(Extensions.ToUtf8);
