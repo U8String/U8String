@@ -46,9 +46,13 @@ public readonly record struct U8RuneIndex : IEquatable<U8RuneIndex>
         length = Length;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8RuneIndex other)
     {
-        return Value == other.Value && Offset == other.Offset;
+        var (value, offset) = this;
+        var (otherValue, otherOffset) = other;
+
+        return value == otherValue && offset == otherOffset;
     }
 
     public static implicit operator Rune(U8RuneIndex index) => index.Value;
