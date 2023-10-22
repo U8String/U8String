@@ -74,9 +74,6 @@ public readonly partial struct U8String :
     [MemberNotNullWhen(false, nameof(_value))]
     public bool IsEmpty
     {
-        // TODO: consolidate to a single discriminant of "emptiness"
-        // and stop relying on null _value. That is, as long as it
-        // does not regress Warpskimmer numbers.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value is null;
     }
@@ -85,7 +82,6 @@ public readonly partial struct U8String :
     {
         get
         {
-            // Not exactly rosy codegen but will do for now.
             if (!IsEmpty)
             {
                 ref var ptr = ref UnsafeRef;

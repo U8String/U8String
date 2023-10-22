@@ -27,10 +27,6 @@ public readonly struct U8Chars(U8String value) :
         }
     }
 
-    // TODO: Wow, this seems to be terribly broken on surrogate chars and 
-    // there is no easy way to fix it without sacrificing performance.
-    // Perhaps it is worth just do the transcoding iteration here and warn the users
-    // instead of straight up producing UB or throwing exceptions???
     public bool Contains(char item) => _value.Contains(item);
 
     public void CopyTo(Span<char> destination)
@@ -450,9 +446,6 @@ public readonly struct U8Lines(U8String value) :
     /// <param name="value">The string to enumerate over.</param>
     public struct Enumerator(U8String value) : IU8Enumerator
     {
-        // TODO 1: Ensure this is aligned with Rust's .lines() implementation, or not?
-        // private static readonly SearchValues<byte> NewLine = SearchValues.Create("\r\n"u8);
-        // TODO 2: Consider using 'InnerOffsets'
         private readonly byte[]? _value = value._value;
         private U8Range _remaining = value._inner;
         private U8Range _current;

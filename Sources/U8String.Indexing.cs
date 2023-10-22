@@ -41,12 +41,12 @@ public readonly partial struct U8String
             && !U8Info.IsContinuationByte(UnsafeRefAdd(index));
     }
 
-    // TODO: NextRuneIndex/LastRuneIndex/RoundToRuneIndex (Boundary?)
     internal int NextRuneIndex(int index)
     {
         var deref = this;
         if ((uint)index >= (uint)deref.Length)
         {
+            // Should we use -1 as a sentinel value?
             return Length;
         }
 
