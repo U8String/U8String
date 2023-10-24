@@ -8,7 +8,7 @@ namespace U8Primitives;
 internal readonly struct U8Scalar
 {
     internal readonly byte B0, B1, B2, B3;
-    internal readonly byte Length;
+    internal readonly int Length;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8Scalar(byte b)

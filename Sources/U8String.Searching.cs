@@ -5,6 +5,26 @@ namespace U8Primitives;
 
 public readonly partial struct U8String
 {
+    public int CommonPrefixLength(U8String other)
+    {
+        if (!other.IsEmpty)
+        {
+            return CommonPrefixLength(other.UnsafeSpan);
+        }
+
+        return 0;
+    }
+
+    public int CommonPrefixLength(ReadOnlySpan<byte> other)
+    {
+        if (!IsEmpty)
+        {
+            return UnsafeSpan.CommonPrefixLength(other);
+        }
+        
+        return 0;
+    }
+
     public bool Contains(byte value) => U8Searching.Contains(this, value);
 
     public bool Contains(char value)

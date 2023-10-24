@@ -1,4 +1,5 @@
 using System.IO.Hashing;
+using System.Numerics;
 using System.Runtime.Intrinsics;
 
 using U8Primitives.Abstractions;
@@ -21,6 +22,112 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public static U8AsciiIgnoreCaseComparer Instance => default;
 
+    public int CommonPrefixLength(U8String left, U8String right)
+    {
+        if (!left.IsEmpty)
+        {
+            if (!right.IsEmpty)
+            {
+                var lspan = left.UnsafeSpan;
+                var rspan = right.UnsafeSpan;
+
+                return CommonPrefixLength(lspan, rspan);
+            }
+        }
+
+        return 0;
+    }
+
+    public int CommonPrefixLength(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+    {
+        nuint offset = 0;
+        nuint length = (uint)Math.Min(left.Length, right.Length);
+
+        ref var lptr = ref left.AsRef();
+        ref var rptr = ref right.AsRef();
+
+        if (length >= (nuint)Vector256<byte>.Count)
+        {
+            var mask = Vector256.Create((byte)0x20);
+            var upperStart = Vector256.Create((byte)'A');
+            var upperEnd = Vector256.Create((byte)'Z');
+
+            var lastvec = length - (nuint)Vector256<byte>.Count;
+            do
+            {
+                var lvec = Vector256.LoadUnsafe(ref lptr, offset);
+                var rvec = Vector256.LoadUnsafe(ref rptr, offset);
+
+                var lcmask = mask
+                    & lvec.Gte(upperStart)
+                    & lvec.Lte(upperEnd);
+
+                var rcmask = mask
+                    & rvec.Gte(upperStart)
+                    & rvec.Lte(upperEnd);
+
+                // Compare normalized left and right vectors and negate the result
+                // in order to find the first index of not match.
+
+                var neqmask = ~((lvec | lcmask).Eq(rvec | rcmask));
+                if (neqmask != Vector256<byte>.Zero)
+                {
+                    return neqmask.IndexOfMatch() + (int)offset;
+                }
+                offset += (nuint)Vector256<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        if (length >= offset + (nuint)Vector128<byte>.Count)
+        {
+            var lvec = Vector128.LoadUnsafe(ref lptr, offset);
+            var rvec = Vector128.LoadUnsafe(ref rptr, offset);
+
+            var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
+            var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
+
+            var neqmask = ~lcvec.Eq(rcvec);
+            if (neqmask != Vector128<byte>.Zero)
+            {
+                return neqmask.IndexOfMatch() + (int)offset;
+            }
+            offset += (nuint)Vector128<byte>.Count;
+        }
+
+        if (Vector64.IsHardwareAccelerated &&
+            length >= offset + (nuint)Vector64<byte>.Count)
+        {
+            var lvec = Vector64.LoadUnsafe(ref lptr, offset);
+            var rvec = Vector64.LoadUnsafe(ref rptr, offset);
+
+            var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
+            var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
+
+            var neqmask = ~Vector64.Equals(lcvec, rcvec);
+            if (neqmask != Vector64<byte>.Zero)
+            {
+                return BitOperations.TrailingZeroCount(
+                    neqmask.AsUInt64().ToScalar()) + (int)offset;
+            }
+            offset += (nuint)Vector64<byte>.Count;
+        }
+
+        while (offset < length)
+        {
+            var l = lptr.Add(offset);
+            var r = rptr.Add(offset);
+
+            if (l != r && (!U8Info.IsAsciiLetter(l) || (l ^ 0x20) != r))
+            {
+                return (int)offset;
+            }
+
+            offset++;
+        }
+
+        return (int)length;
+    }
+
     public int Compare(U8String x, U8String y)
     {
         if (!x.IsEmpty)
@@ -41,7 +148,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
-        var offset = x.CommonPrefixLength(y);
+        var offset = CommonPrefixLength(x, y);
         var length = Math.Min(x.Length, y.Length);
 
         ref var xptr = ref x.AsRef();
@@ -49,7 +156,6 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
         while (offset < length)
         {
-            // TODO: Vectorize
             var xval = xptr.Add(offset);
             var yval = yptr.Add(offset);
 
