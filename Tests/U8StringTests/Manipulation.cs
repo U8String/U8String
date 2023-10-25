@@ -259,7 +259,7 @@ public partial class Manipulation
             var allRuneBytes = Constants.WhitespaceRunes
                 .SelectMany(r => r.ToUtf8())
                 .ToImmutableArray();
-            
+
             yield return (value, [..allRuneBytes, ..value]);
             yield return (value, [..value, ..allRuneBytes]);
             yield return (value, [..allRuneBytes, ..value, ..allRuneBytes]);

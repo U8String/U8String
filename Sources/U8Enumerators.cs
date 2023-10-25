@@ -291,8 +291,9 @@ public readonly struct U8RuneIndices(U8String value) :
             {
                 ref var ptr = ref value.UnsafeRefAdd(offset);
 
-                return U8Conversions
-                    .CodepointToRune(ref ptr, out var _) == item.Value;
+                // TODO: Improve this in both strictness and codegen quality
+                return U8Info.RuneLength(in ptr) == item.Length &&
+                    U8Conversions.CodepointToRune(ref ptr, out var _) == item.Value;
             }
         }
 

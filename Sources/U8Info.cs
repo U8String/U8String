@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Diagnostics;
 using System.Numerics;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
@@ -100,28 +99,24 @@ public static class U8Info
             size = 2;
             return true;
         }
-        else
+
+        // If you are wondering why the formating is so weird or why instead of range checks there is
+        // a bespoke pattern match - it's because this makes JIT/AOT produce better branch ordering
+        // and more efficient range checks, and it kind of looks like a table which is easier on the eyes.
+        // (in absolute terms, the codegen quality is still questionable but it's better than converting to rune)
+        var b2 = ptr.Add(2);
+        if ((b0 is 0xE1 && b1 is 0x9A && b2 is 0x80) ||
+            (b0 is 0xE2 && (
+                (b1 is 0x80 && b2 is 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0x87 or 0x88 or 0x89 or 0x8A or 0xA8 or 0xA9 or 0xAF) ||
+                (b1 is 0x81 && b2 is 0x9F))) ||
+            (b0 is 0xE3 && b1 is 0x80 && b2 is 0x80))
         {
-            // If you are wondering why the formating is so weird or why instead of range checks there is
-            // a bespoke pattern match - it's because this makes JIT/AOT produce better branch ordering
-            // and more efficient range checks, and it kind of looks like a table which is easier on the eyes.
-            // (in absolute terms, the codegen quality is still questionable but it's better than converting to rune)
-            var b2 = ptr.Add(2);
-            if ((b0 is 0xE1 && b1 is 0x9A && b2 is 0x80) ||
-                (b0 is 0xE2 && (
-                    (b1 is 0x80 && b2 is 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0x87 or 0x88 or 0x89 or 0x8A or 0xA8 or 0xA9 or 0xAF) ||
-                    (b1 is 0x81 && b2 is 0x9F))) ||
-                (b0 is 0xE3 && b1 is 0x80 && b2 is 0x80))
-            {
-                size = 3;
-                return true;
-            }
-            else
-            {
-                size = RuneLength(b0);
-                return false;
-            }
+            size = 3;
+            return true;
         }
+
+        size = RuneLength(b0);
+        return false;
     }
 
     // TODO: Is there really no better way to do this?

@@ -24,6 +24,9 @@
 - [ ] Setup self-hosted or paid runner for ARM64
 - [ ] Setup continuous benchmarking pipeline (should I just pay for good runners? self-host?)
 - [ ] Align (to 16B boundary) large inputs in vectorized methods
+- [ ] Use interceptors to perform additional compile-time work upfront
+    - [ ] Investigate if interception of operator and constructor calls is possible
+    - [ ] Lower `U8String.Create("string literal"u8)`, `new(...)` and `cns.ToU8String()` (incl. non-utf8 forms) to `U8Marshal.Create(cns_byteLiteral, 0, length)`
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [x] Optimize .Replace methods
 - [x] ~~Mirror caching of certain types which cache ToString() with ConditionalWeakTable?~~ Out of scope for 1.0.0

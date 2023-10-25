@@ -24,15 +24,12 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public int CommonPrefixLength(U8String left, U8String right)
     {
-        if (!left.IsEmpty)
+        if (!left.IsEmpty && !right.IsEmpty)
         {
-            if (!right.IsEmpty)
-            {
-                var lspan = left.UnsafeSpan;
-                var rspan = right.UnsafeSpan;
+            var lspan = left.UnsafeSpan;
+            var rspan = right.UnsafeSpan;
 
-                return CommonPrefixLength(lspan, rspan);
-            }
+            return CommonPrefixLength(lspan, rspan);
         }
 
         return 0;
