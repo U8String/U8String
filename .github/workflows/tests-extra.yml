@@ -38,6 +38,7 @@ jobs:
         run: |
           wget https://dot.net/v1/dotnet-install.ps1 -O dotnet-install.ps1
           .\dotnet-install.ps1 -Channel 8.0 -Runtime dotnet -Architecture x86 -InstallDir $env:USERPROFILE\.dotnet -Quality ga
+        shell: pwsh
 
       - name: Test Release x86
         if: matrix.os == 'windows-latest'
