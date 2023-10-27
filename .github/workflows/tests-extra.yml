@@ -39,7 +39,7 @@ jobs:
         uses: DataDog/setup-dotnet@architecture2
         with:
           dotnet-version: 8.0.x
-          include-prerelease: true
+          dotnet-quality: ga
           architecture: x86
 
       - name: Test Release x86
