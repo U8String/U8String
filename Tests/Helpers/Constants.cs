@@ -95,4 +95,43 @@ public static class Constants
         .Range(0xE000, 0x10FFFF - 0xE000 + 1))
         .Select(i => new Rune(i))
         .Except(WhitespaceRunes);
+
+    public static readonly TestCase[] ValidStrings =
+    [
+        new TestCase(
+            Name: "Empty",
+            Utf16: string.Empty,
+            Utf8: [],
+            Runes: []),
+
+        new TestCase(
+            Name: "ASCII",
+            Utf16: Ascii,
+            Utf8: AsciiBytes,
+            Runes: [..Ascii.EnumerateRunes()]),
+
+        new TestCase(
+            Name: "Cyrilic",
+            Utf16: Cyrilic,
+            Utf8: CyrilicBytes,
+            Runes: [..Cyrilic.EnumerateRunes()]),
+
+        new TestCase(
+            Name: "Kana",
+            Utf16: Kana,
+            Utf8: KanaBytes,
+            Runes: [..Kana.EnumerateRunes()]),
+
+        new TestCase(
+            Name: "NonSurrogateEmoji",
+            Utf16: NonSurrogateEmoji,
+            Utf8: NonSurrogateEmojiBytes,
+            Runes: [..NonSurrogateEmoji.EnumerateRunes()]),
+
+        new TestCase(
+            Name: "Mixed",
+            Utf16: Mixed,
+            Utf8: MixedBytes,
+            Runes: [..Mixed.EnumerateRunes()]),
+    ];
 }

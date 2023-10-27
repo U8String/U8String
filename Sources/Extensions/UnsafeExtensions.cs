@@ -43,6 +43,14 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref T AsRef<T>(this T[] value, nint offset)
+        where T : struct
+    {
+        Debug.Assert((uint)offset < (uint)value.Length);
+        return ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), offset);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this Span<T> value, int offset)
         where T : struct
     {
@@ -72,7 +80,6 @@ internal static class UnsafeExtensions
     {
         return ref Unsafe.As<T, U>(ref value);
     }
-
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyToUnsafe<T>(this Span<T> source, ref T destination)

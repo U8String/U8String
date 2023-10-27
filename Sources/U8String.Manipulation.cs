@@ -734,12 +734,10 @@ public readonly partial struct U8String
             var (start, end) = (0, source.Length - 1);
             var last = ptr.Add(end);
 
-            if (U8Info.IsAsciiByte(in ptr) && !U8Info.IsAsciiWhitespace(in ptr))
+            if (U8Info.IsAsciiByte(in ptr) && !U8Info.IsAsciiWhitespace(in ptr) &&
+                U8Info.IsAsciiByte(last) && !U8Info.IsAsciiWhitespace(last))
             {
-                if (U8Info.IsAsciiByte(last) && !U8Info.IsAsciiWhitespace(last))
-                {
-                    return source;
-                }
+                return source;
             }
 
             return TrimCore(source._value, source.Offset + start, end);

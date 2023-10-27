@@ -1,9 +1,30 @@
 using System.Collections.Immutable;
+using System.Text;
 
 namespace U8Primitives.Tests.U8StringTests;
 
 public partial class Manipulation
 {
+    const byte Byte = (byte)'!';
+    const char OneByteChar = 'A';
+    const char TwoByteChar = 'Ї';
+    const char ThreeByteChar = 'こ';
+    static readonly char SurrogateChar = "😂"[0];
+    static readonly Rune OneByteRune = new(OneByteChar);
+    static readonly Rune TwoByteRune = new(TwoByteChar);
+    static readonly Rune ThreeByteRune = new(ThreeByteChar);
+    static readonly Rune FourByteRune = "😂".EnumerateRunes().First();
+
+    static readonly byte[] Empty = [];
+    static readonly byte[] Latin = "Hello, World"u8.ToArray();
+    static readonly byte[] Cyrillic = "Привіт, Всесвіт"u8.ToArray();
+    static readonly byte[] Japanese = "こんにちは、世界"u8.ToArray();
+    static readonly byte[] Emoji = "📈📈📈📈📈"u8.ToArray();
+    static readonly byte[] Mixed = "HelloПривітこんにちは📈"u8.ToArray();
+    static readonly byte[] Invalid = [0x80, 0x80, 0x80, 0x80];
+
+    public static readonly object[][] Strings = [[Empty], [Latin], [Cyrillic], [Japanese], [Emoji], [Mixed]];
+
     [Fact]
     public void NullTerminate_NullTerminatesEmpty()
     {

@@ -7,6 +7,7 @@ namespace U8Primitives;
 
 [InterpolatedStringHandler]
 [EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable RCS1003 // Add braces to multi-line expression. Why: more compact and readable here.
 public struct InterpolatedU8StringHandler
 {
     static readonly ConditionalWeakTable<string, byte[]> LiteralPool = [];
@@ -102,7 +103,7 @@ public struct InterpolatedU8StringHandler
 
     public void AppendFormatted(bool value)
     {
-        AppendBytes(value ? "True"u8: "False"u8);
+        AppendBytes(value ? "True"u8 : "False"u8);
     }
 
     public void AppendFormatted(U8String value)
@@ -224,10 +225,18 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatLiteral<T>(T value, out U8String literal)
     {
-        if (value is int i32 && U8Literals.Int32.TryGet(i32, out literal))
+        if (value is byte u8)
+        {
+            literal = U8Literals.GetByte(u8);
             return true;
-        else if (value is long i64 && U8Literals.Int64.TryGet(i64, out literal))
-            return true;
+        }
+        else if (value is sbyte i8 && U8Literals.TryGetInt8(i8, out literal)) return true;
+        else if (value is short i16 && U8Literals.TryGetInt16(i16, out literal)) return true;
+        else if (value is ushort u16 && U8Literals.TryGetUInt16(u16, out literal)) return true;
+        else if (value is int i32 && U8Literals.TryGetInt32(i32, out literal)) return true;
+        else if (value is uint u32 && U8Literals.TryGetUInt32(u32, out literal)) return true;
+        else if (value is long i64 && U8Literals.TryGetInt64(i64, out literal)) return true;
+        else if (value is ulong u64 && U8Literals.TryGetUInt64(u64, out literal)) return true;
 
         Unsafe.SkipInit(out literal);
         return false;
@@ -261,16 +270,17 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static int GetFormattedLength<T>() where T : IUtf8SpanFormattable
     {
-        if (typeof(T) == typeof(byte)) return 8;
-        if (typeof(T) == typeof(char)) return 8;
-        if (typeof(T) == typeof(Rune)) return 8;
         if (typeof(T) == typeof(sbyte)) return 8;
-        if (typeof(T) == typeof(ushort)) return 8;
+        if (typeof(T) == typeof(char)) return 4;
+        if (typeof(T) == typeof(Rune)) return 8;
         if (typeof(T) == typeof(short)) return 8;
-        if (typeof(T) == typeof(uint)) return 16;
-        if (typeof(T) == typeof(int)) return 16;
-        if (typeof(T) == typeof(ulong)) return 24;
+        if (typeof(T) == typeof(ushort)) return 8;
+        if (typeof(T) == typeof(int)) return 12;
+        if (typeof(T) == typeof(uint)) return 12;
         if (typeof(T) == typeof(long)) return 24;
+        if (typeof(T) == typeof(ulong)) return 20;
+        if (typeof(T) == typeof(nint)) return 24;
+        if (typeof(T) == typeof(nuint)) return 20;
         if (typeof(T) == typeof(float)) return 16;
         if (typeof(T) == typeof(double)) return 24;
         if (typeof(T) == typeof(decimal)) return 32;
@@ -278,7 +288,8 @@ public readonly partial struct U8String
         if (typeof(T) == typeof(DateTimeOffset)) return 40;
         if (typeof(T) == typeof(TimeSpan)) return 24;
         if (typeof(T) == typeof(Guid)) return 40;
-        else return 32;
+
+        return 32;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

@@ -11,44 +11,7 @@ namespace U8Primitives.Tests;
 // - ToList returns correct sequence
 public class U8EnumeratorTests
 {
-    public static readonly IEnumerable<object[]> ValidStrings = new[]
-    {
-        new TestCase(
-            Name: "Empty",
-            Utf16: string.Empty,
-            Utf8: [],
-            Runes: []),
-
-        new TestCase(
-            Name: "ASCII",
-            Utf16: Constants.Ascii,
-            Utf8: Constants.AsciiBytes,
-            Runes: [..Constants.Ascii.EnumerateRunes()]),
-
-        new TestCase(
-            Name: "Cyrilic",
-            Utf16: Constants.Cyrilic,
-            Utf8: Constants.CyrilicBytes,
-            Runes: [..Constants.Cyrilic.EnumerateRunes()]),
-
-        new TestCase(
-            Name: "Kana",
-            Utf16: Constants.Kana,
-            Utf8: Constants.KanaBytes,
-            Runes: [..Constants.Kana.EnumerateRunes()]),
-
-        new TestCase(
-            Name: "NonSurrogateEmoji",
-            Utf16: Constants.NonSurrogateEmoji,
-            Utf8: Constants.NonSurrogateEmojiBytes,
-            Runes: [..Constants.NonSurrogateEmoji.EnumerateRunes()]),
-
-        new TestCase(
-            Name: "Mixed",
-            Utf16: Constants.Mixed,
-            Utf8: Constants.MixedBytes,
-            Runes: [..Constants.Mixed.EnumerateRunes()]),
-    }.Select(c => new object[] { c });
+    public static IEnumerable<object[]> ValidStrings => Constants.ValidStrings.Select(c => new object[] { c });
 
     [Theory]
     [MemberData(nameof(ValidStrings))]

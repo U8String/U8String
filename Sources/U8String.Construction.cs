@@ -173,6 +173,12 @@ public readonly partial struct U8String
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
     public static U8String Create(/*params*/ ReadOnlySpan<char> value) => new(value);
 
+    /// <summary>
+    /// Converts the value of this instance to its equivalent UTF-8 representation (either
+    /// "True" or "False").
+    /// </summary>
+    public static U8String Create(bool value) => U8Literals.GetBoolean(value);
+
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T)"/>
     public static U8String Create<T>(T value)
         where T : IUtf8SpanFormattable

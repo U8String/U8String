@@ -1,118 +1,29 @@
-using System.Diagnostics;
-
 namespace U8Primitives;
 
-internal static class U8Literals
+static partial class U8Literals
 {
-    internal static class Int32
+    static class Boolean
     {
-        static readonly U8String[] Numbers =
-        [
-            new U8String("-1\0"u8, skipValidation: true),
-            new U8String("0\0"u8, skipValidation: true),
-            new U8String("1\0"u8, skipValidation: true),
-            new U8String("2\0"u8, skipValidation: true),
-            new U8String("3\0"u8, skipValidation: true),
-            new U8String("4\0"u8, skipValidation: true),
-            new U8String("5\0"u8, skipValidation: true),
-            new U8String("6\0"u8, skipValidation: true),
-            new U8String("7\0"u8, skipValidation: true),
-            new U8String("8\0"u8, skipValidation: true),
-            new U8String("9\0"u8, skipValidation: true),
-            new U8String("10\0"u8, skipValidation: true),
-            new U8String("11\0"u8, skipValidation: true),
-            new U8String("12\0"u8, skipValidation: true),
-            new U8String("13\0"u8, skipValidation: true),
-            new U8String("14\0"u8, skipValidation: true),
-            new U8String("15\0"u8, skipValidation: true),
-            new U8String("16\0"u8, skipValidation: true),
-            new U8String("17\0"u8, skipValidation: true),
-            new U8String("18\0"u8, skipValidation: true),
-            new U8String("19\0"u8, skipValidation: true),
-            new U8String("20\0"u8, skipValidation: true),
-            new U8String("21\0"u8, skipValidation: true),
-            new U8String("22\0"u8, skipValidation: true),
-            new U8String("23\0"u8, skipValidation: true),
-            new U8String("24\0"u8, skipValidation: true),
-            new U8String("25\0"u8, skipValidation: true),
-            new U8String("26\0"u8, skipValidation: true),
-            new U8String("27\0"u8, skipValidation: true),
-            new U8String("28\0"u8, skipValidation: true),
-            new U8String("29\0"u8, skipValidation: true),
-            new U8String("30\0"u8, skipValidation: true),
-            new U8String("31\0"u8, skipValidation: true),
-            new U8String("32\0"u8, skipValidation: true)
-        ];
+        // Can't use static readonly U8String here because NativeAOT doesn't suppport
+        // preinit for byte arrays nested in structs as of .NET 8. But constructing
+        // U8String around byte[] readonly static is even better codegen-wise.
+        static readonly byte[] True = [(byte)'T', (byte)'r', (byte)'u', (byte)'e', (byte)'\0'];
+        static readonly byte[] False = [(byte)'F', (byte)'a', (byte)'l', (byte)'s', (byte)'e', (byte)'\0'];
 
-        internal static bool TryGet(int value, out U8String literal)
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static U8String Get(bool value)
         {
-            const int lowerBoundInclusive = -1;
-            const int upperBoundInclusive = 32;
-
-            if (value is >= lowerBoundInclusive and <= upperBoundInclusive)
-            {
-                literal = Numbers.AsRef(value + 1);
-                return true;
-            }
-
-            Unsafe.SkipInit(out literal);
-            return false;
+            return value ? new(True, 0, 4) : new(False, 0, 5);
         }
     }
 
-    internal static class Int64
-    {
-        static readonly U8String[] Numbers =
-        [
-            new U8String("-1\0"u8, skipValidation: true),
-            new U8String("0\0"u8, skipValidation: true),
-            new U8String("1\0"u8, skipValidation: true),
-            new U8String("2\0"u8, skipValidation: true),
-            new U8String("3\0"u8, skipValidation: true),
-            new U8String("4\0"u8, skipValidation: true),
-            new U8String("5\0"u8, skipValidation: true),
-            new U8String("6\0"u8, skipValidation: true),
-            new U8String("7\0"u8, skipValidation: true),
-            new U8String("8\0"u8, skipValidation: true),
-            new U8String("9\0"u8, skipValidation: true),
-            new U8String("10\0"u8, skipValidation: true),
-            new U8String("11\0"u8, skipValidation: true),
-            new U8String("12\0"u8, skipValidation: true),
-            new U8String("13\0"u8, skipValidation: true),
-            new U8String("14\0"u8, skipValidation: true),
-            new U8String("15\0"u8, skipValidation: true),
-            new U8String("16\0"u8, skipValidation: true),
-            new U8String("17\0"u8, skipValidation: true),
-            new U8String("18\0"u8, skipValidation: true),
-            new U8String("19\0"u8, skipValidation: true),
-            new U8String("20\0"u8, skipValidation: true),
-            new U8String("21\0"u8, skipValidation: true),
-            new U8String("22\0"u8, skipValidation: true),
-            new U8String("23\0"u8, skipValidation: true),
-            new U8String("24\0"u8, skipValidation: true),
-            new U8String("25\0"u8, skipValidation: true),
-            new U8String("26\0"u8, skipValidation: true),
-            new U8String("27\0"u8, skipValidation: true),
-            new U8String("28\0"u8, skipValidation: true),
-            new U8String("29\0"u8, skipValidation: true),
-            new U8String("30\0"u8, skipValidation: true),
-            new U8String("31\0"u8, skipValidation: true),
-            new U8String("32\0"u8, skipValidation: true)
-        ];
-
-        internal static bool TryGet(long value, out U8String literal)
-        {
-            const long lowerBoundInclusive = -1;
-            const long upperBoundInclusive = 32;
-
-            if (value is >= lowerBoundInclusive and <= upperBoundInclusive)
-            {
-                literal = Numbers.AsRef((int)(value + 1));
-                return true;
-            }
-
-            Unsafe.SkipInit(out literal);
-            return false;
-        }
-    }
+    internal static U8String GetBoolean(bool value) => Boolean.Get(value);
+    internal static U8String GetByte(byte value) => Numbers.Get(value);
+    internal static bool TryGetInt8(sbyte value, out U8String literal) => Numbers.TryGet(value, out literal);
+    internal static bool TryGetInt16(short value, out U8String literal) => Numbers.TryGet(value, out literal);
+    internal static bool TryGetUInt16(ushort value, out U8String literal) => Numbers.TryGet(value, out literal);
+    internal static bool TryGetInt32(int value, out U8String literal) => Numbers.TryGet(value, out literal);
+    internal static bool TryGetUInt32(uint value, out U8String literal) => Numbers.TryGet((nint)value, out literal);
+    internal static bool TryGetInt64(long value, out U8String literal) => Numbers.TryGet((nint)value, out literal);
+    internal static bool TryGetUInt64(ulong value, out U8String literal) => Numbers.TryGet(nint.CreateSaturating(value), out literal);
 }

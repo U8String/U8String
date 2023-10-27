@@ -93,7 +93,7 @@ public partial class Serialization
         foreach (var actual in new[] { serializedUtf8, serializedUtf16 })
         {
             Assert.Equal(expected, actual);
-            
+
             Assert.Null(actual.Value1);
             Assert.NotNull(actual.Value2);
             Assert.True(actual.Value2.Value.IsEmpty);
