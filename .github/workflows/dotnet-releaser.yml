@@ -3,7 +3,9 @@ name: ci/cd
 on:
   push:
     paths-ignore:
+    - '**.md'
     - 'bench/**'
+    - '.github/workflows/tests-extra.yml'
   pull_request:
 
 jobs:

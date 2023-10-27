@@ -1,6 +1,12 @@
 name: tests-extra
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore:
+    - '**.md'
+    - 'bench/**'
+    - '.github/workflows/dotnet-releaser.yml'
+  pull_request:
 
 jobs:
   tests-extra:
@@ -12,20 +18,34 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v2
         with:
           dotnet-version: 8.0.x
           include-prerelease: true
+          architecture: x64
+
       - name: Restore dependencies
         run: dotnet restore
+
       - name: Test
         run: dotnet test --no-restore
         env:
           DOTNET_EnableAVX512F: 1
+
+      - name: Setup .NET for x86
+        if: matrix.os == 'windows-latest'
+        uses: DataDog/setup-dotnet@architecture2
+        with:
+          dotnet-version: 8.0.x
+          include-prerelease: true
+          architecture: x86
+
       - name: Test Release x86
         if: matrix.os == 'windows-latest'
         run: dotnet test -c Release -a x86
+
       - name: Test Release x64
         run: dotnet test -c Release --no-restore
         env:
