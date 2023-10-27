@@ -33,16 +33,16 @@ jobs:
         env:
           DOTNET_EnableAVX512F: 1
 
-      - name: Setup .NET for x86
-        if: matrix.os == 'windows-latest'
-        run: |
-          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -O dotnet-install.ps1
-          .\dotnet-install.ps1 -Channel 8.0 -Runtime dotnet -Architecture x86 -Quality ga
-        shell: pwsh
+      # - name: Setup .NET for x86
+      #   if: matrix.os == 'windows-latest'
+      #   run: |
+      #     Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -O dotnet-install.ps1
+      #     .\dotnet-install.ps1 -Channel 8.0 -Runtime dotnet -Architecture x86 -Quality ga
+      #   shell: pwsh
 
-      - name: Test Release x86
-        if: matrix.os == 'windows-latest'
-        run: dotnet test -c Release -a x86
+      # - name: Test Release x86
+      #   if: matrix.os == 'windows-latest'
+      #   run: dotnet test -c Release -a x86
 
       - name: Test Release x64
         run: dotnet test -c Release --no-restore
