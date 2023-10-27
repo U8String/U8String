@@ -25,7 +25,7 @@ jobs:
           DOTNET_EnableAVX512F: 1
       - name: Test Release x86
         if: matrix.os == 'windows-latest'
-        run: dotnet test -c Release -a x86 --no-restore
+        run: dotnet test -c Release -a x86
       - name: Test Release x64
         run: dotnet test -c Release --no-restore
         env:
