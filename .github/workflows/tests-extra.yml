@@ -37,7 +37,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: |
           Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -O dotnet-install.ps1
-          .\dotnet-install.ps1 -Channel 8.0 -Runtime dotnet -Architecture x86 -InstallDir $env:USERPROFILE\.dotnet -Quality ga
+          .\dotnet-install.ps1 -Channel 8.0 -Runtime dotnet -Architecture x86 -Quality ga
         shell: pwsh
 
       - name: Test Release x86
