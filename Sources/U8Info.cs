@@ -34,21 +34,7 @@ public static class U8Info
     public static bool IsAsciiWhitespace(in byte value)
     {
         // .NET ARM64 supremacy: this is fused into cmp, ccmp and cinc.
-        if (ArmBase.Arm64.IsSupported)
-        {
-            return value is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
-        }
-
-        if (!BitConverter.IsLittleEndian)
-        {
-            ThrowHelpers.NotSupportedBigEndian();
-        }
-
-        const ulong mask = 4294983168;
-        var x1 = (uint)value < 33 ? 1ul : 0ul;
-        var x2 = mask >> value;
-        var res = x1 & x2;
-        return Unsafe.As<ulong, bool>(ref res);
+        return value is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

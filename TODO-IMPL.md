@@ -16,6 +16,7 @@
     - [ ] `U8SearchValues` + `implicit operator U8SearchValues(SearchValues<byte> searcher)`
 - [ ] Audit all methods that accept `string?` or `ROS<char>` and ensure they throw `FormatException` on torn surrogates
     - [ ] Add `CreateLossy` variants that replaces broken sequences with replacement chars
+- [ ] Consider implementing a proper full U8ScalarInfo lookup table and replace branch-based whitespace and other similar checks with it
 - [x] ~~Consider centralizing `new byte[length]` allocations to control null-termination and zeroing~~ too problematic to inline the conditionals that would determine the alloc size, after all, it's opprtunistic null-termination
 - [ ] Ensure correct behavior for all Split/Any overlods when supplied with empty separator
 - [x] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done

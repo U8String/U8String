@@ -540,35 +540,35 @@ internal static class U8Manipulation
         {
             var current = source.UnsafeSpan;
             var firstReplace = current.IndexOf(oldValue);
-            if (firstReplace < 0)
+            if (firstReplace >= 0)
             {
-                return source;
+                var replaced = new byte[source.Length + 1];
+                var destination = replaced.AsSpan();
+
+                current
+                    .SliceUnsafe(0, firstReplace)
+                    .CopyTo(destination.SliceUnsafe(0, firstReplace));
+
+                destination = destination.SliceUnsafe(firstReplace);
+                current = current.SliceUnsafe(firstReplace);
+
+                current.Replace(
+                    destination.SliceUnsafe(0, current.Length),
+                    oldValue,
+                    newValue);
+
+                // Old and new bytes which individually are invalid unicode scalar values
+                // are allowed if the replacement produces a valid UTF-8 sequence.
+                if (validate && (
+                    !U8Info.IsAsciiByte(oldValue) ||
+                    !U8Info.IsAsciiByte(newValue)))
+                {
+                    U8String.Validate(destination);
+                }
+                return new(replaced, 0, source.Length);
             }
 
-            var replaced = new byte[source.Length + 1];
-            var destination = replaced.AsSpan();
-
-            current
-                .SliceUnsafe(0, firstReplace)
-                .CopyTo(destination.SliceUnsafe(0, firstReplace));
-
-            destination = destination.SliceUnsafe(firstReplace);
-            current = current.SliceUnsafe(firstReplace);
-
-            current.Replace(
-                destination.SliceUnsafe(0, current.Length),
-                oldValue,
-                newValue);
-
-            // Old and new bytes which individually are invalid unicode scalar values
-            // are allowed if the replacement produces a valid UTF-8 sequence.
-            if (validate && (
-                !U8Info.IsAsciiByte(oldValue) ||
-                !U8Info.IsAsciiByte(newValue)))
-            {
-                U8String.Validate(destination);
-            }
-            return new(replaced, 0, source.Length);
+            return source;
         }
 
         return default;
@@ -795,7 +795,6 @@ internal static class U8Manipulation
 
                     if (offset > 0 && span[offset - 1] is (byte)'\r')
                     {
-
                         continue;
                     }
                     // Range is now the slice after the first LF -> CRLF replacement

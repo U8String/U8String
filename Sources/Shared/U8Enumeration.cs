@@ -14,7 +14,7 @@ internal static class U8Enumeration
         where U : struct
     {
         var count = source.Count;
-        if (count is not 0)
+        if (count > 0)
         {
             source.FillUnchecked<T, E, U>(destination[..count]);
         }
@@ -161,7 +161,7 @@ internal static class U8Enumeration
         where U : struct
     {
         var count = source.Count;
-        if (count is not 0)
+        if (count > 0)
         {
             var result = new U[count];
             source.FillUnchecked<T, E, U>(result);
@@ -169,7 +169,7 @@ internal static class U8Enumeration
             return result;
         }
 
-        return Array.Empty<U>();
+        return [];
     }
 
     internal static List<U> ToList<T, E, U>(this T source)

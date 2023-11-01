@@ -1,6 +1,8 @@
+using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Unicode;
 
 namespace U8Primitives;
 
@@ -82,15 +84,10 @@ public readonly partial struct U8String
     /// <param name="utf8Text">The UTF-8 encoded text to create a <see cref="U8String"/> from.</param>
     /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
     /// <returns>A new <see cref="U8String"/> created from <paramref name="utf8Text"/>.</returns>
-    /// <exception cref="ArgumentException"> Thrown when <paramref name="utf8Text"/> contains invalid UTF-8.</exception>
+    /// <exception cref="FormatException"> Thrown when <paramref name="utf8Text"/> contains invalid UTF-8.</exception>
     public static U8String Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? _ = null)
     {
-        if (!TryParse(utf8Text, _, out var result))
-        {
-            ThrowHelpers.InvalidUtf8();
-        }
-
-        return result;
+        return new(utf8Text);
     }
 
     /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
@@ -117,20 +114,27 @@ public readonly partial struct U8String
         {
             var nullTerminate = s[^1] != 0;
             var length = Encoding.UTF8.GetByteCount(s);
-            var value = new byte[nullTerminate ? length + 1 : length];
+            var value = new byte[length + (nullTerminate ? 1 : 0)];
 
-            if (Encoding.UTF8.TryGetBytes(s, value, out var bytesWritten))
+            if (Utf8.FromUtf16(
+                    source: s,
+                    destination: value,
+                    charsRead: out var _,
+                    bytesWritten: out var _,
+                    replaceInvalidSequences: false,
+                    isFinalBlock: true)
+                is OperationStatus.Done)
             {
-                result = new U8String(value, 0, bytesWritten);
+                result = new U8String(value, 0, length);
                 return true;
             }
 
             result = default;
-            return true;
+            return false;
         }
 
         result = default;
-        return false;
+        return true;
     }
 
     /// <summary>
@@ -212,9 +216,10 @@ public readonly partial struct U8String
     /// <returns>A new <see cref="byte"/> array to which the current <see cref="U8String"/>'s bytes were copied.</returns>
     public byte[] ToArray()
     {
-        if (!IsEmpty)
+        var deref = this;
+        if (!deref.IsEmpty)
         {
-            return UnsafeSpan.ToArray();
+            return deref.UnsafeSpan.ToArray();
         }
 
         return [];
@@ -257,6 +262,11 @@ public readonly partial struct U8String
     /// </summary>
     public string ToStringInterned()
     {
-        return !IsEmpty ? U8Interning.GetDecoded(this) : string.Empty;
+        if (!IsEmpty)
+        {
+            return U8Interning.GetDecoded(this);
+        }
+        
+        return string.Empty;
     }
 }

@@ -23,7 +23,12 @@ public readonly struct U8Chars(U8String value) :
         get
         {
             var value = _value;
-            return !value.IsEmpty ? Encoding.UTF8.GetCharCount(value.UnsafeSpan) : 0;
+            if (!value.IsEmpty)
+            {
+                return Encoding.UTF8.GetCharCount(value.UnsafeSpan);
+            }
+
+            return 0;
         }
     }
 
@@ -69,12 +74,11 @@ public readonly struct U8Chars(U8String value) :
 
     public char[] ToArray()
     {
-        var value = _value;
-        if (!value.IsEmpty)
+        var (bytes, offset, length) = _value;
+
+        if (bytes != null)
         {
-            var chars = new char[Count];
-            Encoding.UTF8.GetChars(value.UnsafeSpan, chars);
-            return chars;
+            return Encoding.UTF8.GetChars(bytes, offset, length);
         }
 
         return [];
@@ -85,12 +89,13 @@ public readonly struct U8Chars(U8String value) :
         var value = _value;
         if (!value.IsEmpty)
         {
-            var count = Count;
+            var bytes = value.UnsafeSpan;
+            var count = Encoding.UTF8.GetCharCount(bytes);
             var chars = new List<char>(count);
             CollectionsMarshal.SetCount(chars, count);
             var span = CollectionsMarshal.AsSpan(chars);
 
-            Encoding.UTF8.GetChars(value.UnsafeSpan, span);
+            Encoding.UTF8.GetChars(bytes, span);
             return chars;
         }
 
@@ -252,7 +257,6 @@ public readonly struct U8Runes(U8String value) :
             return false;
         }
 
-
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
         readonly void IDisposable.Dispose() { }
@@ -291,7 +295,6 @@ public readonly struct U8RuneIndices(U8String value) :
             {
                 ref var ptr = ref value.UnsafeRefAdd(offset);
 
-                // TODO: Improve this in both strictness and codegen quality
                 return U8Info.RuneLength(in ptr) == item.Length &&
                     U8Conversions.CodepointToRune(ref ptr, out var _) == item.Value;
             }
@@ -390,7 +393,12 @@ public readonly struct U8Lines(U8String value) :
         get
         {
             var value = _value;
-            return !value.IsEmpty ? value.UnsafeSpan.Count((byte)'\n') + 1 : 0;
+            if (!value.IsEmpty)
+            {
+                return value.UnsafeSpan.Count((byte)'\n') + 1;
+            }
+
+            return 0;
         }
     }
 

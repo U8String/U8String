@@ -36,7 +36,7 @@ public class U8ScalarTests
             Assert.Equal(bytes.Length, scalar.Length);
         }
     }
-    
+
     [Fact]
     public void U8Scalar_CreateFromRuneReturnsCorrectValue()
     {

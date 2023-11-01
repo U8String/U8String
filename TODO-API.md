@@ -31,7 +31,7 @@
     - [x] ~~UnicodeNormalizedComparer (all normalization forms)~~
 - [x] Runes view (IEnumerable, or stateful IList?)
     - [ ] CopyTo(span)
-- [ ] RuneIndices / RuneOffsets / RunePositions (an advanced Runes view similar to https://github.com/dotnet/runtime/issues/28507)
+- [x] RuneIndices / RuneOffsets / RunePositions (an advanced Runes view similar to https://github.com/dotnet/runtime/issues/28507)
     - [ ] Likely projects to (Rune, int offset), but perhaps it's better to steal RunePosition (if yes, maybe just wrap U8Scalar?)
 - [x] Chars view (same as above)
     - [ ] CopyTo(span)

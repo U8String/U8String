@@ -1,7 +1,9 @@
+using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Unicode;
 
 using Microsoft.Win32.SafeHandles;
 
@@ -72,10 +74,22 @@ public readonly partial struct U8String
     {
         if (value.Length > 0)
         {
-            var nullTerminate = value[^1] != 0;
             var length = Encoding.UTF8.GetByteCount(value);
+            var nullTerminate = value[^1] != 0;
             var bytes = new byte[length + (nullTerminate ? 1 : 0)];
-            Encoding.UTF8.GetBytes(value, bytes);
+
+            var result = Utf8.FromUtf16(
+                source: value,
+                destination: bytes,
+                charsRead: out _,
+                bytesWritten: out length,
+                replaceInvalidSequences: false,
+                isFinalBlock: true);
+
+            if (result != OperationStatus.Done)
+            {
+                ThrowHelpers.InvalidUtf8();
+            }
 
             _value = bytes;
             _inner = new U8Range(0, length);
@@ -99,10 +113,22 @@ public readonly partial struct U8String
                 return;
             }
 
-            var nullTerminate = value[^1] != 0;
             var length = Encoding.UTF8.GetByteCount(value);
+            var nullTerminate = value[^1] != 0;
             var bytes = new byte[length + (nullTerminate ? 1 : 0)];
-            Encoding.UTF8.GetBytes(value, bytes);
+
+            var result = Utf8.FromUtf16(
+                source: value,
+                destination: bytes,
+                charsRead: out _,
+                bytesWritten: out length,
+                replaceInvalidSequences: false,
+                isFinalBlock: true);
+
+            if (result != OperationStatus.Done)
+            {
+                ThrowHelpers.InvalidUtf8();
+            }
 
             _value = bytes;
             _inner = new U8Range(0, length);
@@ -174,10 +200,15 @@ public readonly partial struct U8String
     public static U8String Create(/*params*/ ReadOnlySpan<char> value) => new(value);
 
     /// <summary>
-    /// Converts the value of this instance to its equivalent UTF-8 representation (either
+    /// Converts the <see cref="bool"/> value to its equivalent UTF-8 string representation (either
     /// "True" or "False").
     /// </summary>
     public static U8String Create(bool value) => U8Literals.GetBoolean(value);
+
+    /// <summary>
+    /// Converts the <see cref="byte"/> value to its equivalent UTF-8 string representation.
+    /// </summary>
+    public static U8String Create(byte value) => U8Literals.GetByte(value);
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T)"/>
     public static U8String Create<T>(T value)
@@ -192,12 +223,17 @@ public readonly partial struct U8String
                 return result;
             }
 
-            if (TryFormatPresized(value, out result))
-            {
-                return result;
-            }
+            return CreateCore(value);
 
-            return FormatUnsized(value);
+            static U8String CreateCore(T value)
+            {
+                if (TryFormatPresized(value, out var result))
+                {
+                    return result;
+                }
+
+                return FormatUnsized(value);
+            }
         }
 
         return u8str;
@@ -255,7 +291,12 @@ public readonly partial struct U8String
     /// <param name="value">The <see cref="string"/> to create the <see cref="U8String"/> from.</param>
     public static U8String CreateInterned(string? value)
     {
-        return value is { Length: > 0 } ? U8Interning.GetEncoded(value) : default;
+        if (value is { Length: > 0 })
+        {
+            return U8Interning.GetEncoded(value);
+        }
+
+        return default;
     }
 
     /// <summary>

@@ -33,6 +33,9 @@ public static class U8StringExtensions
     /// <inheritdoc cref="U8String.Create(bool)"/>
     public static U8String ToU8String(this bool value) => U8String.Create(value);
 
+    /// <inheritdoc cref="U8String.Create(byte)"/>
+    public static U8String ToU8String(this byte value) => U8String.Create(value);
+
     /// <summary>
     /// Converts the <see paramref="value"/> to a <see cref="U8String"/> using the default format.
     /// </summary>

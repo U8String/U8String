@@ -1,18 +1,17 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Text;
+using System.Text.Unicode;
 
 namespace U8Primitives;
 
 internal static class U8Interning
 {
-    static readonly bool _useEncodedPool = AppContext
+    static bool UseEncodedPool { get; } = AppContext
         .TryGetSwitch("U8String.UseEncodedPool", out var enabled) && enabled;
-    static readonly bool _useDecodedPool = AppContext
+    static bool UseDecodedPool { get; } = AppContext
         .TryGetSwitch("U8String.UseDecodedPool", out var enabled) && enabled;
-
-    static bool UseEncodedPool => _useEncodedPool;
-    static bool UseDecodedPool => _useDecodedPool;
 
     static readonly int EncodedPoolThreshold = AppContext
         .GetData("U8String.EncodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
@@ -53,7 +52,19 @@ internal static class U8Interning
 
         var length = Encoding.UTF8.GetByteCount(value);
         encoded = new byte[length + 1];
-        Encoding.UTF8.GetBytes(value, encoded);
+
+         var result = Utf8.FromUtf16(
+            source: value,
+            destination: encoded,
+            charsRead: out _,
+            bytesWritten: out length,
+            replaceInvalidSequences: false,
+            isFinalBlock: true);
+
+        if (result != OperationStatus.Done)
+        {
+            ThrowHelpers.InvalidUtf8();
+        }
 
         if (length < threshold)
         {
@@ -97,7 +108,7 @@ internal static class U8Interning
             {
                 return interned;
             }
-            
+
             decoded = Encoding.UTF8.GetString(value.UnsafeSpan);
 
             if (decoded.Length < threshold)
