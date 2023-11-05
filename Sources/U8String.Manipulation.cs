@@ -505,31 +505,51 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Normalizes current <see cref="U8String"/> to the specified Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
+    /// Normalizes current <see cref="U8String"/> to the specified Unicode normalization form.
     /// </summary>
     /// <returns>A new <see cref="U8String"/> normalized to the specified form.</returns>
     internal U8String Normalize(NormalizationForm form = NormalizationForm.FormC)
     {
-        throw new NotImplementedException();
+        if (!Enum.IsDefined(form))
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(form));
+        }
+
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            var value = source.UnsafeSpan;
+            var nonAsciiOffset = (int)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
+            value = value.SliceUnsafe(nonAsciiOffset);
+
+            if (value.Length > 0)
+            {
+                throw new NotImplementedException();
+            }
+
+            return source;
+        }
+
+        return default;
     }
 
     public U8String NullTerminate()
     {
-        var deref = this;
-        if (!deref.IsEmpty)
+        var source = this;
+        if (!source.IsEmpty)
         {
-            var (value, offset, length) = deref;
-            ref var end = ref deref.UnsafeRefAdd(length - 1);
+            var (value, offset, length) = source;
+            ref var end = ref source.UnsafeRefAdd(length - 1);
 
             U8String result;
             if (end is 0)
             {
-                result = deref;
+                result = source;
             }
             else if ((uint)(offset + length) < (uint)value!.Length &&
                 end.Add(1) is 0)
             {
-                result = new(deref._value, offset, deref.Length + 1);
+                result = new(value, offset, length + 1);
             }
             else
             {

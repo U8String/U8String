@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text;
 
 using U8Primitives.Abstractions;
@@ -10,11 +11,7 @@ public readonly partial struct U8String
     // TODO: Dedup SplitFirst/Last
     public U8SplitPair SplitFirst(byte separator)
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         var source = this;
         if (!source.IsEmpty)
@@ -36,14 +33,23 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(separator);
 
-        return char.IsAscii(separator)
-            ? SplitFirst((byte)separator)
-            : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+        if (char.IsAscii(separator))
+        {
+            return SplitFirst((byte)separator);
+        }
+
+        return SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
     }
 
-    public U8SplitPair SplitFirst(Rune separator) => separator.IsAscii
-        ? SplitFirst((byte)separator.Value)
-        : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+    public U8SplitPair SplitFirst(Rune separator)
+    {
+        if (separator.IsAscii)
+        {
+            return SplitFirst((byte)separator.Value);
+        }
+
+        return SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+    }
 
     public U8SplitPair SplitFirst(U8String separator)
     {
@@ -66,10 +72,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    // It would be *really nice* to aggressively inline this method
-    // but the way validation is currently implemented does not significantly
-    // benefit from splitting on UTF-8 literals while possibly risking
-    // running out of inlining budget significantly regressing performance everywhere else.
     public U8SplitPair SplitFirst(ReadOnlySpan<byte> separator)
     {
         var source = this;
@@ -77,14 +79,12 @@ public readonly partial struct U8String
         {
             if (separator.Length > 0)
             {
-                var span = source.UnsafeSpan;
-                var index = span.IndexOf(separator);
+                var index = source.UnsafeSpan.IndexOf(separator);
                 if (index >= 0)
                 {
-                    // Same as with Slice(int, int), this might dereference past the end of the string.
-                    // TODO: Do something about it if it's ever an issue.
-                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) ||
-                        U8Info.IsContinuationByte(source.UnsafeRefAdd(index + separator.Length)))
+                    var end = index + separator.Length;
+                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) || (end < source.Length &&
+                        U8Info.IsContinuationByte(source.UnsafeRefAdd(end))))
                     {
                         ThrowHelpers.InvalidSplit();
                     }
@@ -99,19 +99,18 @@ public readonly partial struct U8String
         return default;
     }
 
-    internal U8SplitPair SplitFirstUnchecked(ReadOnlySpan<byte> separator)
+    U8SplitPair SplitFirstUnchecked(ReadOnlySpan<byte> separator)
     {
+        Debug.Assert(separator.Length > 0);
+
         var source = this;
         if (!source.IsEmpty)
         {
-            if (separator.Length > 0)
+            var span = source.UnsafeSpan;
+            var index = span.IndexOf(separator);
+            if (index >= 0)
             {
-                var span = source.UnsafeSpan;
-                var index = span.IndexOf(separator);
-                if (index >= 0)
-                {
-                    return new(source, index, separator.Length);
-                }
+                return new(source, index, separator.Length);
             }
 
             return U8SplitPair.NotFound(source);
@@ -123,11 +122,7 @@ public readonly partial struct U8String
     public U8SplitPair SplitFirst<T>(byte separator, T comparer)
         where T : IU8IndexOfOperator
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         var source = this;
         if (!source.IsEmpty)
@@ -148,17 +143,25 @@ public readonly partial struct U8String
     public U8SplitPair SplitFirst<T>(char separator, T comparer)
         where T : IU8IndexOfOperator
     {
-        return char.IsAscii(separator)
-            ? SplitFirst((byte)separator, comparer)
-            : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
+        ThrowHelpers.CheckSurrogate(separator);
+
+        if (char.IsAscii(separator))
+        {
+            return SplitFirst((byte)separator, comparer);
+        }
+
+        return SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
     }
 
     public U8SplitPair SplitFirst<T>(Rune separator, T comparer)
         where T : IU8IndexOfOperator
     {
-        return separator.IsAscii
-            ? SplitFirst((byte)separator.Value, comparer)
-            : SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
+        if (separator.IsAscii)
+        {
+            return SplitFirst((byte)separator.Value, comparer);
+        }
+
+        return SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
     }
 
     internal U8SplitPair SplitFirst<T>(U8String separator, T comparer)
@@ -197,8 +200,9 @@ public readonly partial struct U8String
                 {
                     // Same as with Slice(int, int), this might dereference past the end of the string.
                     // TODO: Do something about it if it's ever an issue.
-                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) ||
-                        U8Info.IsContinuationByte(source.UnsafeRefAdd(index + stride)))
+                    var end = index + stride;
+                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) || (end < source.Length &&
+                        U8Info.IsContinuationByte(source.UnsafeRefAdd(end))))
                     {
                         ThrowHelpers.InvalidSplit();
                     }
@@ -213,20 +217,19 @@ public readonly partial struct U8String
         return default;
     }
 
-    internal U8SplitPair SplitFirstUnchecked<T>(ReadOnlySpan<byte> separator, T comparer)
+    U8SplitPair SplitFirstUnchecked<T>(ReadOnlySpan<byte> separator, T comparer)
         where T : IU8IndexOfOperator
     {
+        Debug.Assert(separator.Length > 0);
+
         var source = this;
         if (!source.IsEmpty)
         {
-            if (separator.Length > 0)
-            {
-                var (index, stride) = U8Searching.IndexOf(source.UnsafeSpan, separator, comparer);
+            var (index, stride) = U8Searching.IndexOf(source.UnsafeSpan, separator, comparer);
 
-                if (index >= 0)
-                {
-                    return new(source, index, stride);
-                }
+            if (index >= 0)
+            {
+                return new(source, index, stride);
             }
 
             return U8SplitPair.NotFound(source);
@@ -237,11 +240,7 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitLast(byte separator)
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         var source = this;
         if (!source.IsEmpty)
@@ -263,14 +262,23 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(separator);
 
-        return char.IsAscii(separator)
-            ? SplitLast((byte)separator)
-            : SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+        if (char.IsAscii(separator))
+        {
+            return SplitLast((byte)separator);
+        }
+
+        return SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
     }
 
-    public U8SplitPair SplitLast(Rune separator) => separator.IsAscii
-        ? SplitLast((byte)separator.Value)
-        : SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+    public U8SplitPair SplitLast(Rune separator)
+    {
+        if (separator.IsAscii)
+        {
+            return SplitLast((byte)separator.Value);
+        }
+
+        return SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+    }
 
     public U8SplitPair SplitLast(U8String separator)
     {
@@ -300,12 +308,12 @@ public readonly partial struct U8String
         {
             if (separator.Length > 0)
             {
-                var span = source.UnsafeSpan;
-                var index = span.LastIndexOf(separator);
+                var index = source.UnsafeSpan.LastIndexOf(separator);
                 if (index >= 0)
                 {
-                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) ||
-                        U8Info.IsContinuationByte(source.UnsafeRefAdd(index + separator.Length)))
+                    var end = index + separator.Length;
+                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) || (end < source.Length &&
+                        U8Info.IsContinuationByte(source.UnsafeRefAdd(end))))
                     {
                         ThrowHelpers.InvalidSplit();
                     }
@@ -322,17 +330,16 @@ public readonly partial struct U8String
 
     internal U8SplitPair SplitLastUnchecked(ReadOnlySpan<byte> separator)
     {
+        Debug.Assert(separator.Length > 0);
+
         var source = this;
         if (!source.IsEmpty)
         {
-            if (separator.Length > 0)
+            var span = source.UnsafeSpan;
+            var index = span.LastIndexOf(separator);
+            if (index >= 0)
             {
-                var span = source.UnsafeSpan;
-                var index = span.LastIndexOf(separator);
-                if (index >= 0)
-                {
-                    return new(source, index, separator.Length);
-                }
+                return new(source, index, separator.Length);
             }
 
             return U8SplitPair.NotFound(source);
@@ -344,11 +351,7 @@ public readonly partial struct U8String
     public U8SplitPair SplitLast<T>(byte separator, T comparer)
         where T : IU8LastIndexOfOperator
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         var source = this;
         if (!source.IsEmpty)
@@ -366,12 +369,105 @@ public readonly partial struct U8String
         return default;
     }
 
+    public U8SplitPair SplitLast<T>(char separator, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        ThrowHelpers.CheckSurrogate(separator);
+
+        if (char.IsAscii(separator))
+        {
+            return SplitLast((byte)separator, comparer);
+        }
+
+        return SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
+    }
+
+    public U8SplitPair SplitLast<T>(Rune separator, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        if (separator.IsAscii)
+        {
+            return SplitLast((byte)separator.Value, comparer);
+        }
+
+        return SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan(), comparer);
+    }
+
+    internal U8SplitPair SplitLast<T>(U8String separator, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            if (!separator.IsEmpty)
+            {
+                var (index, stride) = U8Searching.LastIndexOf(source.UnsafeSpan, separator.UnsafeSpan, comparer);
+
+                if (index >= 0)
+                {
+                    return new(source, index, stride);
+                }
+            }
+
+            return U8SplitPair.NotFound(source);
+        }
+
+        return default;
+    }
+
+    public U8SplitPair SplitLast<T>(ReadOnlySpan<byte> separator, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            if (separator.Length > 0)
+            {
+                var (index, stride) = U8Searching.LastIndexOf(source.UnsafeSpan, separator, comparer);
+
+                if (index >= 0)
+                {
+                    var end = index + stride;
+                    if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) || (end < source.Length &&
+                        U8Info.IsContinuationByte(source.UnsafeRefAdd(end))))
+                    {
+                        ThrowHelpers.InvalidSplit();
+                    }
+
+                    return new(source, index, stride);
+                }
+            }
+
+            return U8SplitPair.NotFound(source);
+        }
+
+        return default;
+    }
+
+    internal U8SplitPair SplitLastUnchecked<T>(ReadOnlySpan<byte> separator, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        Debug.Assert(separator.Length > 0);
+
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            var (index, stride) = U8Searching.LastIndexOf(source.UnsafeSpan, separator, comparer);
+
+            if (index >= 0)
+            {
+                return new(source, index, stride);
+            }
+
+            return U8SplitPair.NotFound(source);
+        }
+
+        return default;
+    }
+
     public U8Split<byte> Split(byte separator)
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return new(this, separator);
     }
@@ -392,20 +488,14 @@ public readonly partial struct U8String
 
     public U8RefSplit Split(ReadOnlySpan<byte> separator)
     {
-        if (!IsValid(separator))
-        {
-            ThrowHelpers.InvalidSplit();
-        }
+        Validate(separator);
 
         return new(this, separator);
     }
 
     public ConfiguredU8Split<byte> Split(byte separator, U8SplitOptions options)
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return new(this, separator, options);
     }
@@ -428,10 +518,7 @@ public readonly partial struct U8String
     public U8Split<byte, T> Split<T>(byte separator, T comparer)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return new(this, separator, comparer);
     }
@@ -459,10 +546,7 @@ public readonly partial struct U8String
     public U8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        if (!IsValid(separator))
-        {
-            ThrowHelpers.InvalidSplit();
-        }
+        Validate(separator);
 
         return new(this, separator, comparer);
     }
@@ -470,10 +554,7 @@ public readonly partial struct U8String
     public ConfiguredU8Split<byte, T> Split<T>(byte separator, T comparer, U8SplitOptions options)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return new(this, separator, comparer, options);
     }
@@ -501,19 +582,16 @@ public readonly partial struct U8String
     public ConfiguredU8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer, U8SplitOptions options)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        if (!IsValid(separator))
-        {
-            ThrowHelpers.InvalidSplit();
-        }
+        Validate(separator);
 
         return new(this, separator, comparer, options);
     }
 
     public U8RefAnySplit SplitAny(ReadOnlySpan<byte> separators)
     {
-        if (!IsValid(separators))
+        if (!Ascii.IsValid(separators))
         {
-            ThrowHelpers.InvalidSplit();
+            ThrowHelpers.ArgumentException();
         }
 
         return new(this, separators);

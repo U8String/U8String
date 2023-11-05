@@ -187,8 +187,7 @@ public readonly partial struct U8String
     }
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
-    // Tracks https://github.com/dotnet/runtime/issues/87569
-    public static U8String Create(/*params*/ ReadOnlySpan<byte> value) => new(value);
+    public static U8String Create(ReadOnlySpan<byte> value) => new(value);
 
     /// <inheritdoc cref="U8String(ImmutableArray{byte})"/>
     public static U8String Create(ImmutableArray<byte> value) => new(value);
@@ -197,7 +196,7 @@ public readonly partial struct U8String
     public static U8String Create(string value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
-    public static U8String Create(/*params*/ ReadOnlySpan<char> value) => new(value);
+    public static U8String Create(ReadOnlySpan<char> value) => new(value);
 
     /// <summary>
     /// Converts the <see cref="bool"/> value to its equivalent UTF-8 string representation (either

@@ -21,7 +21,7 @@ public readonly partial struct U8String
         {
             return UnsafeSpan.CommonPrefixLength(other);
         }
-        
+
         return 0;
     }
 
@@ -217,7 +217,7 @@ public readonly partial struct U8String
 
         return false;
     }
-    
+
     public bool EndsWith<T>(byte value, T comparer)
         where T : IU8EndsWithOperator
     {

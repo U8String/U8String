@@ -810,14 +810,15 @@ public readonly ref struct U8RefSplit
 
     public int Count
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            var split = this;
-            if (!split._value.IsEmpty)
+            var value = _value;
+            var separator = _separator;
+
+            if (!value.IsEmpty)
             {
-                return U8Searching.Count(
-                    split._value.UnsafeSpan,
-                    split._separator) + 1;
+                return U8Searching.Count(value.UnsafeSpan, separator) + 1;
             }
 
             return 0;
@@ -1032,13 +1033,13 @@ public readonly ref struct U8RefSplit<TComparer>
     {
         get
         {
-            var split = this;
-            if (!split._value.IsEmpty)
+            var value = _value;
+            var separator = _separator;
+            var comparer = _comparer;
+
+            if (!value.IsEmpty)
             {
-                return U8Searching.Count(
-                    split._value.UnsafeSpan,
-                    split._separator,
-                    split._comparer) + 1;
+                return U8Searching.Count(value.UnsafeSpan, separator, comparer) + 1;
             }
 
             return 0;

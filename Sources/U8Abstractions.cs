@@ -69,7 +69,6 @@ public interface IEnumerable<T, TEnumerator> : IEnumerable<T>
 }
 
 public interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
-    where TEnumerator : struct, IU8Enumerator
-{ }
+    where TEnumerator : struct, IU8Enumerator;
 
-public interface IU8Enumerator : IEnumerator<U8String> { }
+public interface IU8Enumerator : IEnumerator<U8String>;

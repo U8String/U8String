@@ -266,7 +266,7 @@ public readonly partial struct U8String
         {
             return U8Interning.GetDecoded(this);
         }
-        
+
         return string.Empty;
     }
 }

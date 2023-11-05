@@ -5,11 +5,14 @@
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
 - [ ] Contribute IsAsciiWhitespace codegen shape to CoreLib, check out if Utf8Length can be ported too
 - [ ] Contribute optimized versions of span enumerators
-- [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
+- [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs 
+scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
     - [ ] Invariant
     - [ ] Ordinal + .Utf8 (Ordinal.Utf8.cs)
     - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
+- [ ] Implement Unicode normalization (review utf8proc and unilib and then write C#-optimized version)
+- [ ] Consider contributing proposal for `Utf8.IsNormalized(NormalizationForm, src)` and `Utf8.Normalize(NormalizationForm, src, dst)` to dotnet/runtime (rationale: CoreLib has rich adapted to platforms interop for globalization that uses ICU or NLS, both of which usually offer UTF-8 alternatives, therefore exposing UTF-8 normalization is effectively "free" compared to the alternative of requiring the users to either reimplement it or to bring non-C# dependencies that do so)
 - [ ] Consider Rust-like U8Searcher (or IU8Searcher) abstraction (or just U8SearchValuesSplit for now). This is to stop duplicating splitting code, because adding another split type impl. seems a bit too much
     - [ ] `U8Searcher<T>` where T is byte or char or Rune
     - [ ] `U8Searcher<T, C>` where C is IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator

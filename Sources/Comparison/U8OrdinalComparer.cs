@@ -55,7 +55,7 @@ public readonly struct U8OrdinalComparer :
 
     public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        return source.Count(value);
+        return value.Length is 1 ? source.Count(value[0]) : source.Count(value);
     }
 
     public bool StartsWith(ReadOnlySpan<byte> source, byte value)

@@ -55,7 +55,16 @@ internal static class ThrowHelpers
         throw new ArgumentOutOfRangeException(paramName);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining), StackTraceHidden]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void CheckAscii(in byte value)
+    {
+        if (value > 0x7F)
+        {
+            NonAsciiByte();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CheckSurrogate(char value)
     {
         if (char.IsSurrogate(value))
@@ -65,10 +74,16 @@ internal static class ThrowHelpers
     }
 
     [DoesNotReturn, StackTraceHidden]
+    internal static void NonAsciiByte()
+    {
+        throw new ArgumentException("The argument is not a valid ASCII byte.");
+    }
+
+    [DoesNotReturn, StackTraceHidden]
     internal static void SurrogateChar()
     {
         throw new ArgumentException(
-            "The argument is a surrogate character. Surrogate UTF-16 code units are not representable in UTF-8.");
+            "The argument is a surrogate character. Separate surrogate UTF-16 code units are not representable in UTF-8.");
     }
 
     [DoesNotReturn, StackTraceHidden]

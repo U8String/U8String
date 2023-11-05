@@ -159,8 +159,11 @@ internal static class U8Searching
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int Count(ReadOnlySpan<byte> value, ReadOnlySpan<byte> item)
     {
-        //return item.Length is 1 ? value.Count(item.AsRef()) : value.Count(item);
-        return value.Count(item); // This already has internal check for Length is 1
+        // Although span.Count checks internally for Length == 1, the way it is written
+        // is not inlineable due to a loop in the default arm of its switch.
+        // Therefore, we have to pre-check this here in order to improve the case
+        // where item is a single-byte literal, which is expected to be relatively common.
+        return item.Length is 1 ? value.Count(item[0]) : value.Count(item);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -189,22 +189,11 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public int Count(ReadOnlySpan<byte> source, byte value)
     {
-        // Maybe it's faster to just do Count(value) + Count(inverted)?
-        // TODO: Benchmark alternatives
-        if (!U8Info.IsAsciiLetter(value))
-        {
-            return source.Count(value);
-        }
+        var count = source.Count(value);
 
-        int index;
-        var count = 0;
-        while (true)
+        if (U8Info.IsAsciiLetter(value))
         {
-            index = source.IndexOfAny(value, (byte)(value ^ 0x20));
-            if (index < 0) break;
-
-            count++;
-            source = source.SliceUnsafe(index + 1);
+            count += source.Count((byte)(value ^ 0x20));
         }
 
         return count;

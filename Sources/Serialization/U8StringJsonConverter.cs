@@ -36,7 +36,7 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
                 var sequence = reader.ValueSequence;
                 if (sequence.Length > 0)
                 {
-                    length = checked((int)sequence.Length);
+                    length = int.CreateChecked(sequence.Length);
                     buffer = new byte[length + 1];
                     sequence.CopyTo(buffer);
                 }

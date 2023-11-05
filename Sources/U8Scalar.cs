@@ -13,6 +13,7 @@ internal readonly struct U8Scalar
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8Scalar(byte b)
     {
+        Unsafe.SkipInit(out this);
         B0 = b;
         Length = 1;
     }
@@ -21,6 +22,8 @@ internal readonly struct U8Scalar
     internal U8Scalar(char c, [ConstantExpected] bool checkAscii = true)
     {
         Debug.Assert(!char.IsSurrogate(c));
+
+        Unsafe.SkipInit(out this);
 
         if (checkAscii && c <= 0x7F)
         {
@@ -47,6 +50,8 @@ internal readonly struct U8Scalar
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8Scalar(Rune rune, [ConstantExpected] bool checkAscii = true)
     {
+        Unsafe.SkipInit(out this);
+
         var r = (uint)rune.Value;
         if (checkAscii && r <= 0x7F)
         {

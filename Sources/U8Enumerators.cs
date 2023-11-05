@@ -390,6 +390,7 @@ public readonly struct U8Lines(U8String value) :
     /// </summary>
     public int Count
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             var value = _value;

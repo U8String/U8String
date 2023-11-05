@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
+
 using U8Primitives.Serialization;
 
 #pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
@@ -185,13 +186,31 @@ public readonly partial struct U8String :
     /// <summary>
     /// Evaluates if the current <see cref="U8String"/> contains only ASCII characters.
     /// </summary>
-    public bool IsAscii() => Ascii.IsValid(this);
+    public bool IsAscii() => System.Text.Ascii.IsValid(this);
 
     /// <summary>
     /// Evaluates if the current <see cref="U8String"/> is normalized to the specified
     /// Unicode normalization form (default: <see cref="NormalizationForm.FormC"/>).
     /// </summary>
-    internal bool IsNormalized(NormalizationForm form = NormalizationForm.FormC) => throw new NotImplementedException();
+    internal bool IsNormalized(NormalizationForm form = NormalizationForm.FormC)
+    {
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            var value = source.UnsafeSpan;
+
+            // Drain always normalized ASCII bytes
+            var nonAsciiOffset = (int)Polyfills.Text.Ascii.GetIndexOfFirstNonAsciiByte(value);
+            value = value.SliceUnsafe(nonAsciiOffset);
+
+            if (value.Length > 0)
+            {
+                throw new NotImplementedException();
+            }
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Validates that the <paramref name="value"/> is a valid UTF-8 byte sequence.
