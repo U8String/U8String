@@ -533,23 +533,25 @@ public readonly partial struct U8String
         return default;
     }
 
+#pragma warning disable RCS1179 // Unnecessary assignment of a value. Why: manually merge return block and improve jump threading
     public U8String NullTerminate()
     {
-        var source = this;
-        if (!source.IsEmpty)
-        {
-            var (value, offset, length) = source;
-            ref var end = ref source.UnsafeRefAdd(length - 1);
+        var (value, offset, length) = this;
 
-            U8String result;
-            if (end is 0)
-            {
-                result = source;
-            }
-            else if ((uint)(offset + length) < (uint)value!.Length &&
-                end.Add(1) is 0)
+        U8String result;
+        if (value != null)
+        {
+            var end = offset + length;
+            // Same as IsNullTerminated - split AsRef and Add to skip debug assert
+            ref var ptr = ref value.AsRef().Add(end);
+
+            if ((uint)end < (uint)value.Length && ptr is 0)
             {
                 result = new(value, offset, length + 1);
+            }
+            else if (ptr.Subtract(1) is 0)
+            {
+                result = new(value, offset, length);
             }
             else
             {
@@ -557,12 +559,15 @@ public readonly partial struct U8String
                 value.SliceUnsafe(offset, length).CopyToUnsafe(ref bytes.AsRef());
                 result = new(bytes, 0, length + 1);
             }
-
-            return result;
+        }
+        else
+        {
+            result = U8Constants.NullByte;
         }
 
-        return U8Constants.NullByte;
+        return result;
     }
+#pragma warning restore RCS1179
 
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(byte value) => U8Manipulation.Remove(this, value);

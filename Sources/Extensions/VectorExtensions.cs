@@ -7,7 +7,7 @@ namespace U8Primitives;
 internal static class VectorExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches<T>(this Vector512<T> mask)
+    internal static int GetMatchCount<T>(this Vector512<T> mask)
     {
         if (Vector512.IsHardwareAccelerated)
         {
@@ -17,24 +17,24 @@ internal static class VectorExtensions
         if (Vector256.IsHardwareAccelerated)
         {
             var (lower, upper) = mask;
-            var lowerCount = CountMatches(lower);
-            var upperCount = CountMatches(upper);
+            var lowerCount = GetMatchCount(lower);
+            var upperCount = GetMatchCount(upper);
 
             return upperCount + lowerCount;
         }
-        
+
         var (vec0, vec1, vec2, vec3) = mask;
 
-        var cnt0 = CountMatches(vec0);
-        var cnt1 = CountMatches(vec1);
-        var cnt2 = CountMatches(vec2);
-        var cnt3 = CountMatches(vec3);
+        var cnt0 = GetMatchCount(vec0);
+        var cnt1 = GetMatchCount(vec1);
+        var cnt2 = GetMatchCount(vec2);
+        var cnt3 = GetMatchCount(vec3);
 
         return cnt0 + cnt1 + cnt2 + cnt3;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches<T>(this Vector256<T> mask)
+    internal static int GetMatchCount<T>(this Vector256<T> mask)
     {
         if (Vector256.IsHardwareAccelerated)
         {
@@ -42,14 +42,14 @@ internal static class VectorExtensions
         }
 
         var (lower, upper) = mask;
-        var lowerCount = CountMatches(lower);
-        var upperCount = CountMatches(upper);
+        var lowerCount = GetMatchCount(lower);
+        var upperCount = GetMatchCount(upper);
 
         return upperCount + lowerCount;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches<T>(this Vector128<T> mask)
+    internal static int GetMatchCount<T>(this Vector128<T> mask)
     {
         if (AdvSimd.Arm64.IsSupported)
         {
@@ -62,7 +62,7 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int CountMatches<T>(this Vector64<T> mask)
+    internal static int GetMatchCount<T>(this Vector64<T> mask)
     {
         return AdvSimd.Arm64
             .AddAcross(AdvSimd.PopCount(mask.AsByte()))
@@ -88,7 +88,7 @@ internal static class VectorExtensions
             {
                 return IndexOfMatch(upper.Eq(comparand)) + Vector256<T>.Count;
             }
-            
+
             return IndexOfMatch(eqlo);
         }
 
@@ -105,10 +105,10 @@ internal static class VectorExtensions
                 var eq2 = vec2.Eq(cmp128);
                 if (eq2 == Vector128<T>.Zero)
                 {
-                    return IndexOfMatch(vec3.Eq(cmp128)) + Vector128<T>.Count * 3;
+                    return IndexOfMatch(vec3.Eq(cmp128)) + (Vector128<T>.Count * 3);
                 }
-                
-                return IndexOfMatch(eq2) + Vector128<T>.Count * 2;
+
+                return IndexOfMatch(eq2) + (Vector128<T>.Count * 2);
             }
 
             return IndexOfMatch(eq1) + Vector128<T>.Count;
@@ -204,7 +204,6 @@ internal static class VectorExtensions
         out Vector128<T> vec2,
         out Vector128<T> vec3)
     {
-
         vec0 = vector.GetLower().GetLower();
         vec1 = vector.GetLower().GetUpper();
         vec2 = vector.GetUpper().GetLower();

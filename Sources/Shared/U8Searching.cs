@@ -199,16 +199,39 @@ internal static class U8Searching
         return comparer.Count(source, value);
     }
 
-    // TODO: Count without cast -> lt -> sub vec len?
-    // TODO 2: Consider adding AVX512 path?
+    // Bypass DynamicPGO because it sometimes moves VectorXXX.Create
+    // into the loops which is very much not what we want. In this case
+    // PGO wins are minor compared to regressions for some of its decisions.
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static int CountRunes(ref byte src, nuint length)
     {
+        Debug.Assert(length > 0);
+
         // Adopted from https://github.com/simdutf/simdutf/blob/master/src/generic/utf8.h#L10
+        // This method achieves width x2 unrolling by relying on new struct promotion and
+        // helpers in VectorExtensions. Operations on 512b and 256b are intentional.
         var count = 0;
         var offset = (nuint)0;
         ref var ptr = ref Unsafe.As<byte, sbyte>(ref src);
 
-        if (length >= (nuint)Vector256<byte>.Count)
+        if (Vector256.IsHardwareAccelerated &&
+            length >= (nuint)Vector512<byte>.Count)
+        {
+            var continuations = Vector512.Create((sbyte)-64);
+            var lastvec = length - (nuint)Vector512<byte>.Count;
+            do
+            {
+                var chunk = Vector512.LoadUnsafe(ref ptr, offset);
+                var matches = Vector512.LessThan(chunk, continuations);
+
+                count += 64 - matches.AsByte().GetMatchCount();
+                offset += (nuint)Vector512<byte>.Count;
+            } while (offset <= lastvec);
+        }
+
+        // All platforms targeted by .NET 8+ are supposed to support 128b SIMD.
+        // If this is not the case, please file an issue (it will work but slowly).
+        if (length >= offset + (nuint)Vector256<byte>.Count)
         {
             var continuations = Vector256.Create((sbyte)-64);
             var lastvec = length - (nuint)Vector256<byte>.Count;
@@ -217,9 +240,12 @@ internal static class U8Searching
                 var chunk = Vector256.LoadUnsafe(ref ptr, offset);
                 var matches = Vector256.LessThan(chunk, continuations);
 
-                count += 32 - matches.AsByte().CountMatches();
+                count += 32 - matches.AsByte().GetMatchCount();
                 offset += (nuint)Vector256<byte>.Count;
-            } while (offset <= lastvec);
+
+            // Skip this loop if we took the V512 path above
+            // since we can only do a single iteration at most.
+            } while (!Vector256.IsHardwareAccelerated && offset <= lastvec);
         }
 
         if (length >= offset + (nuint)Vector128<byte>.Count)
@@ -228,7 +254,7 @@ internal static class U8Searching
             var chunk = Vector128.LoadUnsafe(ref ptr, offset);
             var matches = Vector128.LessThan(chunk, continuations);
 
-            count += 16 - matches.AsByte().CountMatches();
+            count += 16 - matches.AsByte().GetMatchCount();
             offset += (nuint)Vector128<byte>.Count;
         }
 
@@ -239,7 +265,7 @@ internal static class U8Searching
             var chunk = Vector64.LoadUnsafe(ref ptr, offset);
             var matches = Vector64.LessThan(chunk, continuations);
 
-            count += 8 - matches.AsByte().CountMatches();
+            count += 8 - matches.AsByte().GetMatchCount();
             offset += (nuint)Vector64<byte>.Count;
         }
 

@@ -74,6 +74,14 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ref T Subtract<T>(this ref T value, int offset)
+        where T : struct
+    {
+        Debug.Assert(offset >= 0);
+        return ref Unsafe.Subtract(ref value, (nint)(uint)offset);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref U Cast<T, U>(this ref T value)
         where T : unmanaged
         where U : unmanaged
@@ -99,6 +107,8 @@ internal static class UnsafeExtensions
     internal static Span<T> SliceUnsafe<T>(this T[] value, int start)
         where T : struct
     {
+        Debug.Assert((uint)start < (uint)value.Length);
+
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)start),
             value.Length - start);
@@ -108,6 +118,8 @@ internal static class UnsafeExtensions
     internal static Span<T> SliceUnsafe<T>(this T[] value, int offset, int length)
         where T : struct
     {
+        Debug.Assert((uint)offset + (uint)length <= (uint)value.Length);
+
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)offset), length);
     }
@@ -115,6 +127,8 @@ internal static class UnsafeExtensions
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<byte> SliceUnsafe(this byte[] value, U8Range range)
     {
+        Debug.Assert((uint)range.Offset + (uint)range.Length <= (uint)value.Length);
+
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)range.Offset),
             range.Length);
@@ -124,6 +138,8 @@ internal static class UnsafeExtensions
     internal static Span<T> SliceUnsafe<T>(this Span<T> value, int start)
         where T : struct
     {
+        Debug.Assert((uint)start < (uint)value.Length);
+
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)start),
             value.Length - start);
@@ -133,6 +149,8 @@ internal static class UnsafeExtensions
     internal static Span<T> SliceUnsafe<T>(this Span<T> value, int offset, int length)
         where T : struct
     {
+        Debug.Assert((uint)offset + (uint)length <= (uint)value.Length);
+
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset), length);
     }
@@ -141,6 +159,8 @@ internal static class UnsafeExtensions
     internal static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> value, int start)
         where T : struct
     {
+        Debug.Assert((uint)start < (uint)value.Length);
+
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)start),
             value.Length - start);
@@ -150,6 +170,8 @@ internal static class UnsafeExtensions
     internal static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> value, int offset, int length)
         where T : struct
     {
+        Debug.Assert((uint)offset + (uint)length <= (uint)value.Length);
+
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset), length);
     }

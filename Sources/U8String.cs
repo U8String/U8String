@@ -47,7 +47,11 @@ public readonly partial struct U8String :
     /// <remarks>
     /// Functionally equivalent to <see langword="default(U8String)"/>.
     /// </remarks>
-    public static U8String Empty => default;
+    public static U8String Empty
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => default;
+    }
 
     internal readonly byte[]? _value;
     internal readonly U8Range _inner;
@@ -81,13 +85,19 @@ public readonly partial struct U8String :
 
     public bool IsNullTerminated
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if (!IsEmpty)
+            var (value, offset, length) = this;
+
+            if (value != null)
             {
-                ref var ptr = ref UnsafeRef;
-                return ptr.Add(Length - 1) is 0 || (
-                    (uint)(Offset + Length) < (uint)_value!.Length && ptr.Add(Length) is 0);
+                var end = offset + length;
+                // Explicitly split AsRef and Add to skip Debug assert.
+                // This is intended since ptr is potentially out of bounds.
+                ref var ptr = ref value.AsRef().Add(end);
+
+                return ((uint)end < (uint)value.Length && ptr is 0) || ptr.Subtract(1) is 0;
             }
 
             return false;
@@ -104,10 +114,11 @@ public readonly partial struct U8String :
     /// The number of UTF-8 code points in the current <see cref="U8String"/>.
     /// </summary>
     /// <remarks>
-    /// Although evaluation of this property is O(n), its actual cost is very low.
+    /// Evaluation of this property becomes O(n) above 50-100 bytes.
     /// </remarks>
     public int RuneCount
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
             if (!IsEmpty)
