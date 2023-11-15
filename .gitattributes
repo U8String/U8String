@@ -1,0 +1,15 @@
+# Autodetect text files
+* text=auto
+
+# ...Unless the name matches the following
+# overriding patterns
+
+# Definitively text files 
+*.cs text
+*.csproj text
+*.sln text
+*.json text
+*.md text
+
+# Ensure those won't be messed up with
+*.png binary
