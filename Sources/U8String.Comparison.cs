@@ -157,20 +157,6 @@ public readonly partial struct U8String
         return ReferenceEquals(_value, value.Value);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool SourceEquals(ImmutableArray<byte> other)
-    {
-        var arr = ImmutableCollectionsMarshal.AsArray(other);
-
-        return ReferenceEquals(_value, arr);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool SourceEquals(byte[] other)
-    {
-        return ReferenceEquals(_value, other);
-    }
-
     /// <inheritdoc cref="GetHashCode(ReadOnlySpan{byte})"/>
     public override int GetHashCode()
     {

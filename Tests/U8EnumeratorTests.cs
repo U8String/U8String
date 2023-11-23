@@ -15,7 +15,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void ByteEnumerator_ReturnsCorrectBytes(TestCase testCase)
+    public void ByteEnumerator_ReturnsCorrectBytes(ReferenceText testCase)
     {
         var bytes = testCase.Utf8;
         var u8str = new U8String(testCase.Utf8);
@@ -38,7 +38,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Chars_CountHasCorrectValue(TestCase testCase)
+    public void U8Chars_CountHasCorrectValue(ReferenceText testCase)
     {
         var chars = testCase.Utf16;
         var u8str = new U8String(testCase.Utf8);
@@ -52,7 +52,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Chars_ContainsReturnsCorrectValue(TestCase testCase)
+    public void U8Chars_ContainsReturnsCorrectValue(ReferenceText testCase)
     {
         var chars = testCase.Utf16;
         var u8str = new U8String(testCase.Utf8);
@@ -77,7 +77,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Chars_EnumeratesToCorrectValues(TestCase testCase)
+    public void U8Chars_EnumeratesToCorrectValues(ReferenceText testCase)
     {
         var chars = testCase.Utf16;
         var u8str = new U8String(testCase.Utf8);
@@ -101,7 +101,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Chars_CollectsToCorrectArray(TestCase testCase)
+    public void U8Chars_CollectsToCorrectArray(ReferenceText testCase)
     {
         var chars = testCase.Utf16.AsSpan();
         var u8chars = new U8String(testCase.Utf8).Chars;
@@ -111,7 +111,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Runes_CountHasCorrectValue(TestCase testCase)
+    public void U8Runes_CountHasCorrectValue(ReferenceText testCase)
     {
         var runes = testCase.Runes;
         var u8str = new U8String(testCase.Utf8);
@@ -125,7 +125,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Runes_ContainsReturnsCorrectValue(TestCase testCase)
+    public void U8Runes_ContainsReturnsCorrectValue(ReferenceText testCase)
     {
         var runes = testCase.Runes;
         var u8str = new U8String(testCase.Utf8);
@@ -142,7 +142,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Runes_EnumeratesToCorrectValues(TestCase testCase)
+    public void U8Runes_EnumeratesToCorrectValues(ReferenceText testCase)
     {
         var runes = testCase.Runes;
         var u8str = new U8String(testCase.Utf8);
@@ -166,7 +166,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8Runes_CollectsToCorrectArray(TestCase testCase)
+    public void U8Runes_CollectsToCorrectArray(ReferenceText testCase)
     {
         var runes = testCase.Runes.AsSpan();
         var u8runes = new U8String(testCase.Utf8).Runes;
@@ -176,7 +176,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8RuneIndices_CountHasCorrectValue(TestCase testCase)
+    public void U8RuneIndices_CountHasCorrectValue(ReferenceText testCase)
     {
         var runes = testCase.Runes;
         var u8str = new U8String(testCase.Utf8);
@@ -190,7 +190,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8RuneIndices_ContainsReturnsCorrectValue(TestCase testCase)
+    public void U8RuneIndices_ContainsReturnsCorrectValue(ReferenceText testCase)
     {
         // This test assumes that all test cases contain non-repeating runes
         var runes = testCase.Runes;
@@ -225,7 +225,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8RuneIndices_EnumeratesToCorrectValues(TestCase testCase)
+    public void U8RuneIndices_EnumeratesToCorrectValues(ReferenceText testCase)
     {
         var runes = testCase.Runes;
         var u8str = new U8String(testCase.Utf8);
@@ -262,7 +262,7 @@ public class U8EnumeratorTests
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void U8RuneIndices_CollectsToCorrectArray(TestCase testCase)
+    public void U8RuneIndices_CollectsToCorrectArray(ReferenceText testCase)
     {
         var runes = testCase.Runes;
         var u8str = new U8String(testCase.Utf8);

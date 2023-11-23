@@ -211,9 +211,8 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Returns a <see cref="byte"/> array containing the current <see cref="U8String"/>'s bytes.
+    /// Creates a new <see cref="byte"/> array from this <see cref="U8String"/>'s bytes.
     /// </summary>
-    /// <returns>A new <see cref="byte"/> array to which the current <see cref="U8String"/>'s bytes were copied.</returns>
     public byte[] ToArray()
     {
         var deref = this;
@@ -225,11 +224,8 @@ public readonly partial struct U8String
         return [];
     }
 
-    /// <inheritdoc cref="ToString()"/>
-    public string ToString(string? format, IFormatProvider? _) => ToString();
-
     /// <summary>
-    /// Encodes the current <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation.
+    /// Encodes this instance of <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation.
     /// </summary>
     public override string ToString()
     {
@@ -248,7 +244,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Encodes the current <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation and
+    /// Encodes this instance of <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation and
     /// stores it in the decoded pool.
     /// <para>
     /// If the <see cref="U8String"/> slice is already in the decoded pool, the existing <see cref="string"/>
@@ -268,5 +264,11 @@ public readonly partial struct U8String
         }
 
         return string.Empty;
+    }
+
+    /// <inheritdoc />
+    string IFormattable.ToString(string? format, IFormatProvider? formatProvider)
+    {
+        return ToString();
     }
 }

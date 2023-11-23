@@ -11,13 +11,13 @@ public static class U8Marshal
     /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/>.
     /// </summary>
     /// <param name="str"></param>
+    /// <exception cref="NullReferenceException">
+    /// Thrown when <see cref="U8String._value"/> is <see langword="null"/>.
+    /// </exception>
     /// <remarks>
     /// This method is a variant of <see cref="U8String.AsSpan()"/> which skips length check
     /// and uncoditionally constructs the span from the underlying buffer.
     /// </remarks>
-    /// <exception cref="NullReferenceException">
-    /// Thrown when <see cref="U8String._value"/> is <see langword="null"/>.
-    /// </exception>
     public static ReadOnlySpan<byte> AsSpan(U8String str) => str.UnsafeSpan;
 
     /// <summary>
@@ -25,6 +25,7 @@ public static class U8Marshal
     /// without performing UTF-8 validation or copying the data.
     /// </summary>
     /// <param name="value">UTF-8 buffer to construct U8String around.</param>
+    /// <exception cref="NullReferenceException"><paramref name="value"/> is <see langword="null"/>.</exception>
     /// <remarks>
     /// Mutating <paramref name="value"/> after calling this method may result in undefined behavior
     /// or data corruption.

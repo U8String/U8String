@@ -22,6 +22,8 @@ public readonly partial struct U8String
     {
         // This will throw NRE on empty, there is nothing we can do about it
         // without sacrificing codegen quality.
+        // CoreLib seems to struggle with this in a similar way:
+        // https://github.com/dotnet/runtime/blob/main/src/libraries/System.Collections.Immutable/src/System/Collections/Immutable/ImmutableArray_1.Minimal.cs#L131
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => ref UnsafeSpan[index];
     }
@@ -38,7 +40,7 @@ public readonly partial struct U8String
     public bool IsRuneBoundary(int index)
     {
         return (uint)index < (uint)Length
-            && !U8Info.IsContinuationByte(UnsafeRefAdd(index));
+            && !U8Info.IsContinuationByte(in UnsafeRefAdd(index));
     }
 
     internal int NextRuneIndex(int index)

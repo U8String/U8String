@@ -37,7 +37,6 @@ internal static class U8Interning
         return false;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static U8String GetEncoded(string value)
     {
         // This does not really coalesce the cctor checks for NativeAOT, but at least

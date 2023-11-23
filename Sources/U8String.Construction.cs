@@ -23,19 +23,44 @@ public readonly partial struct U8String
     /// </summary>
     /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
     /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
+    /// </remarks>
+    public U8String(byte[] value)
+    {
+        ThrowHelpers.CheckNull(value);
+
+        var span = (ReadOnlySpan<byte>)value;
+        if (span.Length > 0)
+        {
+            Validate(span);
+            var nullTerminate = span[^1] != 0;
+            var bytes = new byte[(nint)(uint)span.Length + (nullTerminate ? 1 : 0)];
+
+            span.CopyToUnsafe(ref bytes.AsRef());
+
+            _value = bytes;
+            _inner = new U8Range(0, span.Length);
+        }
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified UTF-8 bytes.
+    /// </summary>
+    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
+    /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
     /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
     /// </remarks>
     public U8String(ReadOnlySpan<byte> value)
     {
-        // Contract:
-        // byte[] Value *must* remain null if the length is 0.
         if (value.Length > 0)
         {
             Validate(value);
 
             var nullTerminate = value[^1] != 0;
-            var bytes = new byte[value.Length + (nullTerminate ? 1 : 0)];
+            var bytes = new byte[(nint)(uint)value.Length + (nullTerminate ? 1 : 0)];
 
             value.CopyToUnsafe(ref bytes.AsRef());
 
@@ -50,16 +75,62 @@ public readonly partial struct U8String
     /// <param name="value">The <see cref="ImmutableArray{T}"/> of <see cref="byte"/>s to create the <see cref="U8String"/> from.</param>
     /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-8 data.</exception>
     /// <remarks>
-    /// The <see cref="U8String"/> will be created by taking the underlying reference from the <paramref name="value"/> without copying if the length is greater than 0.
+    /// The <see cref="U8String"/> will be created by taking the underlying reference from the <paramref name="value"/> without copying the bytes if the length is greater than 0.
     /// </remarks>
     public U8String(ImmutableArray<byte> value)
     {
         var bytes = ImmutableCollectionsMarshal.AsArray(value);
-        if (bytes?.Length > 0)
+        if (bytes != null)
         {
-            Validate(bytes);
+            var span = bytes.AsSpan();
+            if (span.Length > 0)
+            {
+                Validate(span);
+                _value = bytes;
+                _inner = new U8Range(0, span.Length);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified <see cref="string"/>.
+    /// </summary>
+    /// <param name="value">The <see cref="string"/> to create the <see cref="U8String"/> from.</param>
+    /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-16 data.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by encoding the <see cref="string"/> as UTF-8.
+    /// </remarks>
+    public U8String(string value)
+    {
+        ThrowHelpers.CheckNull(value);
+
+        if (value.Length > 0)
+        {
+            if (U8Interning.TryGetEncoded(value, out this))
+            {
+                return;
+            }
+
+            var length = Encoding.UTF8.GetByteCount(value);
+            var nullTerminate = value[^1] != 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
+
+            var result = Utf8.FromUtf16(
+                source: value,
+                destination: bytes,
+                charsRead: out _,
+                bytesWritten: out length,
+                replaceInvalidSequences: false,
+                isFinalBlock: true);
+
+            if (result != OperationStatus.Done)
+            {
+                ThrowHelpers.InvalidUtf8();
+            }
+
             _value = bytes;
-            _inner = new U8Range(0, bytes.Length);
+            _inner = new U8Range(0, length);
         }
     }
 
@@ -67,6 +138,7 @@ public readonly partial struct U8String
     /// Creates a new <see cref="U8String"/> from the specified <see cref="ReadOnlySpan{T}"/> of UTF-8 <see cref="char"/>s.
     /// </summary>
     /// <param name="value">The <see cref="ReadOnlySpan{T}"/> of <see cref="char"/>s to create the <see cref="U8String"/> from.</param>
+    /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-16 data.</exception>
     /// <remarks>
     /// The <see cref="U8String"/> will be created by encoding the <see cref="char"/>s as UTF-8.
     /// </remarks>
@@ -76,7 +148,7 @@ public readonly partial struct U8String
         {
             var length = Encoding.UTF8.GetByteCount(value);
             var nullTerminate = value[^1] != 0;
-            var bytes = new byte[length + (nullTerminate ? 1 : 0)];
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
 
             var result = Utf8.FromUtf16(
                 source: value,
@@ -96,43 +168,24 @@ public readonly partial struct U8String
         }
     }
 
-    /// <summary>
-    /// Creates a new <see cref="U8String"/> from the specified <see cref="string"/>.
-    /// </summary>
-    /// <param name="value">The <see cref="string"/> to create the <see cref="U8String"/> from.</param>
-    /// <remarks>
-    /// The <see cref="U8String"/> will be created by encoding the <see cref="string"/> as UTF-8.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public U8String(string? value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8String(ReadOnlySpan<byte> value, bool skipValidation)
     {
-        if (value is { Length: > 0 })
+        Debug.Assert(skipValidation);
+
+        if (value.Length > 0)
         {
-            if (U8Interning.TryGetEncoded(value, out this))
-            {
-                return;
-            }
-
-            var length = Encoding.UTF8.GetByteCount(value);
             var nullTerminate = value[^1] != 0;
-            var bytes = new byte[length + (nullTerminate ? 1 : 0)];
+            var bytes = new byte[(nint)(uint)value.Length + (nullTerminate ? 1 : 0)];
 
-            var result = Utf8.FromUtf16(
-                source: value,
-                destination: bytes,
-                charsRead: out _,
-                bytesWritten: out length,
-                replaceInvalidSequences: false,
-                isFinalBlock: true);
-
-            if (result != OperationStatus.Done)
-            {
-                ThrowHelpers.InvalidUtf8();
-            }
+            value.CopyToUnsafe(ref bytes.AsRef());
 
             _value = bytes;
-            _inner = new U8Range(0, length);
+            _inner = new U8Range(0, value.Length);
         }
+
+        Debug.Assert(Offset >= 0);
+        Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
     }
 
     /// <summary>
@@ -166,25 +219,8 @@ public readonly partial struct U8String
             inner.Offset + inner.Length) <= (uint)value.Length);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal U8String(ReadOnlySpan<byte> value, bool skipValidation)
-    {
-        Debug.Assert(skipValidation);
-
-        if (value.Length > 0)
-        {
-            var nullTerminate = value[^1] != 0;
-            var bytes = new byte[value.Length + (nullTerminate ? 1 : 0)];
-
-            value.CopyToUnsafe(ref bytes.AsRef());
-
-            _value = bytes;
-            _inner = new U8Range(0, value.Length);
-        }
-
-        Debug.Assert(Offset >= 0);
-        Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
-    }
+    /// <inheritdoc cref="U8String(byte[])"/>
+    public static U8String Create(byte[] value) => new(value);
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{byte})"/>
     public static U8String Create(ReadOnlySpan<byte> value) => new(value);
@@ -269,6 +305,40 @@ public readonly partial struct U8String
         return u8str;
     }
 
+    // TODO: Documentation
+    // TODO: byte[] counterpart
+    // TODO: something better than Encoding.UTF8.GetBytes + null-termination?
+    public static U8String CreateLossy(string value)
+    {
+        ThrowHelpers.CheckNull(value);
+
+        return CreateLossy(value.AsSpan());
+    }
+
+    public static U8String CreateLossy(ReadOnlySpan<char> value)
+    {
+        if (value.Length > 0)
+        {
+            var length = Encoding.UTF8.GetByteCount(value);
+            var nullTerminate = value[^1] != 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
+
+            var result = Utf8.FromUtf16(
+                source: value,
+                destination: bytes,
+                charsRead: out _,
+                bytesWritten: out length,
+                replaceInvalidSequences: true,
+                isFinalBlock: true);
+
+            Debug.Assert(result is OperationStatus.Done);
+
+            return new(bytes, 0, length);
+        }
+
+        return default;
+    }
+
     /// <summary>
     /// Creates a new <see cref="U8String"/> from the specified <see cref="string"/>
     /// and stores the result in the encoded pool.
@@ -351,6 +421,22 @@ public readonly partial struct U8String
         return handle.ReadToU8StringAsync(offset, ct);
     }
 
+    public static bool TryCreate(byte[]? value, out U8String result)
+    {
+        if (value != null)
+        {
+            var span = (ReadOnlySpan<byte>)value;
+            if (IsValid(span))
+            {
+                result = new(span, skipValidation: true);
+                return true;
+            }
+        }
+
+        result = default;
+        return false;
+    }
+
     public static bool TryCreate(ReadOnlySpan<byte> value, out U8String result)
     {
         if (IsValid(value))
@@ -375,6 +461,48 @@ public readonly partial struct U8String
 
         result = default;
         return false;
+    }
+
+    public static bool TryCreate(string? value, out U8String result)
+    {
+        if (value != null)
+        {
+            return TryCreate(value.AsSpan(), out result);
+        }
+
+        result = default;
+        return false;
+    }
+
+    public static bool TryCreate(ReadOnlySpan<char> value, out U8String result)
+    {
+        var success = true;
+
+        if (value.Length > 0)
+        {
+            var length = Encoding.UTF8.GetByteCount(value);
+            var nullTerminate = value[^1] != 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
+
+            var status = Utf8.FromUtf16(
+                source: value,
+                destination: bytes,
+                charsRead: out _,
+                bytesWritten: out length,
+                replaceInvalidSequences: false,
+                isFinalBlock: true);
+
+            if (status == OperationStatus.Done)
+            {
+                result = new(bytes, 0, length);
+                return true;
+            }
+
+            success = false;
+        }
+
+        result = default;
+        return success;
     }
 
     /// <summary>

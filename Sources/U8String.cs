@@ -234,10 +234,9 @@ public readonly partial struct U8String :
         {
             return Utf8.IsValid(value);
         }
-
-        if (value.Length is 1)
+        else if (value.Length > 0)
         {
-            return U8Info.IsAsciiByte(value[0]);
+            return U8Info.IsAsciiByte(in value.AsRef());
         }
 
         return true;

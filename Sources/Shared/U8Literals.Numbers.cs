@@ -266,7 +266,10 @@ static partial class U8Literals
         ];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static U8String Get(byte value) => Values.AsRef(++value);
+        internal static U8String Get(byte value)
+        {
+            return Values.AsRef(value + 1);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal static bool TryGet(nint value, out U8String literal)

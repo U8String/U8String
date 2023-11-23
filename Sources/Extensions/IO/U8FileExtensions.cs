@@ -8,10 +8,21 @@ public static class U8FileExtensions
     // TODO: Detect and strip BOMs. Check if this requires BE to LE conversion.
     public static U8String ReadToU8String(this SafeFileHandle handle, long offset = 0)
     {
-        var length = RandomAccess.GetLength(handle) - offset;
+        if (offset < 0)
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(offset));
+        }
+
+        var length = RandomAccess.GetLength(handle);
+        if (length < offset)
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(offset));
+        }
+
+        length -= offset;
         if (length > int.MaxValue)
         {
-            ThrowHelpers.ArgumentOutOfRange();
+            ThrowHelpers.ArgumentException("File or file segment is too large to read into a U8String.");
         }
 
         if (length > 0)
@@ -32,10 +43,21 @@ public static class U8FileExtensions
         long offset = 0,
         CancellationToken ct = default)
     {
-        var length = RandomAccess.GetLength(handle) - offset;
+        if (offset < 0)
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(offset));
+        }
+
+        var length = RandomAccess.GetLength(handle);
+        if (length < offset)
+        {
+            ThrowHelpers.ArgumentOutOfRange(nameof(offset));
+        }
+
+        length -= offset;
         if (length > int.MaxValue)
         {
-            ThrowHelpers.ArgumentOutOfRange();
+            ThrowHelpers.ArgumentException("File or file segment is too large to read into a U8String.");
         }
 
         if (length > 0)

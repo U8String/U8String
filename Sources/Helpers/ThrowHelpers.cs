@@ -38,6 +38,12 @@ internal static class ThrowHelpers
     }
 
     [DoesNotReturn, StackTraceHidden]
+    internal static void ArgumentException(string message)
+    {
+        throw new ArgumentException(message);
+    }
+
+    [DoesNotReturn, StackTraceHidden]
     internal static void ArgumentOutOfRange()
     {
         throw new ArgumentOutOfRangeException();
@@ -56,6 +62,15 @@ internal static class ThrowHelpers
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void CheckNull([NotNull] object? value)
+    {
+        if (value is null)
+        {
+            NullValue();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CheckAscii(in byte value)
     {
         if (value > 0x7F)
@@ -71,6 +86,12 @@ internal static class ThrowHelpers
         {
             SurrogateChar();
         }
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static void NullValue()
+    {
+        throw new ArgumentNullException("value");
     }
 
     [DoesNotReturn, StackTraceHidden]

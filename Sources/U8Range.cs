@@ -2,7 +2,7 @@ using System.Diagnostics;
 
 namespace U8Primitives;
 
-public readonly struct U8Range
+public readonly struct U8Range : IEquatable<U8Range>
 {
     internal readonly int Offset;
     public readonly int Length;
@@ -32,5 +32,34 @@ public readonly struct U8Range
         Debug.Assert((uint)length <= int.MaxValue);
 
         return new(value.Offset + start, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool Equals(U8Range other)
+    {
+        var (offset, length) = (Offset, Length);
+        var (otherOffset, otherLength) = (other.Offset, other.Length);
+
+        return offset == otherOffset && length == otherLength;
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is U8Range range && Equals(range);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Offset, Length);
+    }
+
+    public static bool operator ==(U8Range left, U8Range right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(U8Range left, U8Range right)
+    {
+        return !(left == right);
     }
 }

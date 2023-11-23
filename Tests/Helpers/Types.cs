@@ -3,7 +3,7 @@ using System.Text;
 
 namespace U8Primitives.Tests;
 
-public record TestCase(
+public record ReferenceText(
     string Name,
     string Utf16,
     ImmutableArray<byte> Utf8,

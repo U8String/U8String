@@ -96,39 +96,39 @@ public static class Constants
         .Select(i => new Rune(i))
         .Except(WhitespaceRunes);
 
-    public static readonly TestCase[] ValidStrings =
+    public static readonly ReferenceText[] ValidStrings =
     [
-        new TestCase(
+        new ReferenceText(
             Name: "Empty",
             Utf16: string.Empty,
             Utf8: [],
             Runes: []),
 
-        new TestCase(
+        new ReferenceText(
             Name: "ASCII",
             Utf16: Ascii,
             Utf8: AsciiBytes,
             Runes: [..Ascii.EnumerateRunes()]),
 
-        new TestCase(
+        new ReferenceText(
             Name: "Cyrilic",
             Utf16: Cyrilic,
             Utf8: CyrilicBytes,
             Runes: [..Cyrilic.EnumerateRunes()]),
 
-        new TestCase(
+        new ReferenceText(
             Name: "Kana",
             Utf16: Kana,
             Utf8: KanaBytes,
             Runes: [..Kana.EnumerateRunes()]),
 
-        new TestCase(
+        new ReferenceText(
             Name: "NonSurrogateEmoji",
             Utf16: NonSurrogateEmoji,
             Utf8: NonSurrogateEmojiBytes,
             Runes: [..NonSurrogateEmoji.EnumerateRunes()]),
 
-        new TestCase(
+        new ReferenceText(
             Name: "Mixed",
             Utf16: Mixed,
             Utf8: MixedBytes,

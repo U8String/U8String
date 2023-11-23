@@ -429,19 +429,14 @@ public enum U8SplitOptions : byte
     Trim = 2,
 }
 
-public readonly struct ConfiguredU8Split :
-    IU8Enumerable<ConfiguredU8Split.Enumerator>
+public readonly struct ConfiguredU8Split(
+    U8String value,
+    U8String separator,
+    U8SplitOptions options) : IU8Enumerable<ConfiguredU8Split.Enumerator>
 {
-    readonly U8String _value;
-    readonly U8String _separator;
-    readonly U8SplitOptions _options;
-
-    public ConfiguredU8Split(U8String value, U8String separator, U8SplitOptions options)
-    {
-        _value = value;
-        _separator = separator;
-        _options = options;
-    }
+    readonly U8String _value = value;
+    readonly U8String _separator = separator;
+    readonly U8SplitOptions _options = options;
 
     public void Deconstruct(out U8String first, out U8String second)
     {
@@ -480,21 +475,16 @@ public readonly struct ConfiguredU8Split :
     IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public struct Enumerator : IU8Enumerator
+    public struct Enumerator(
+        U8String value,
+        U8String separator,
+        U8SplitOptions options) : IU8Enumerator
     {
-        readonly byte[]? _value;
-        readonly U8String _separator;
-        readonly U8SplitOptions _options;
+        readonly byte[]? _value = value._value;
+        readonly U8String _separator = separator;
+        readonly U8SplitOptions _options = options;
         U8Range _current;
-        U8Range _remaining;
-
-        public Enumerator(U8String value, U8String separator, U8SplitOptions options)
-        {
-            _value = value._value;
-            _separator = separator;
-            _options = options;
-            _remaining = value._inner;
-        }
+        U8Range _remaining = value._inner;
 
         public readonly U8String Current => new(_value, _current.Offset, _current.Length);
 
@@ -886,7 +876,7 @@ public readonly ref struct U8RefSplit
     {
         if (index < 0)
         {
-            ThrowHelpers.ArgumentOutOfRange();
+            ThrowHelpers.ArgumentOutOfRange<U8String>();
         }
 
         foreach (var item in this)

@@ -17,7 +17,7 @@ public class Base
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void Length_ReturnsCorrectValue(TestCase testCase)
+    public void Length_ReturnsCorrectValue(ReferenceText testCase)
     {
         var u8str = new U8String(testCase.Utf8);
         var expected = testCase.Utf8.Length;
@@ -27,7 +27,7 @@ public class Base
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void IsEmpty_ReturnsCorrectValue(TestCase testCase)
+    public void IsEmpty_ReturnsCorrectValue(ReferenceText testCase)
     {
         var u8str = new U8String(testCase.Utf8);
         var expected = testCase.Utf8.IsEmpty;
@@ -37,7 +37,7 @@ public class Base
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void RuneCount_ReturnsCorrectValue(TestCase testCase)
+    public void RuneCount_ReturnsCorrectValue(ReferenceText testCase)
     {
         var u8str = new U8String(testCase.Utf8);
         var expected = testCase.Runes.Length;
@@ -54,7 +54,7 @@ public class Base
 #pragma warning disable CA1829, RCS1077 // Optimize LINQ method call.
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void Count_ReturnsCorrectValue(TestCase testCase)
+    public void Count_ReturnsCorrectValue(ReferenceText testCase)
     {
         var u8str = new U8String(testCase.Utf8);
         var expected = testCase.Utf8.Length;
@@ -88,7 +88,7 @@ public class Base
 
     [Theory]
     [MemberData(nameof(ValidStrings))]
-    public void IsValid_ReturnsTrueForValidStrings(TestCase testCase)
+    public void IsValid_ReturnsTrueForValidStrings(ReferenceText testCase)
     {
         Assert.True(U8String.IsValid(testCase.Utf8.AsSpan()));
     }

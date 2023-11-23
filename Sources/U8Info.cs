@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Numerics;
-using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
 namespace U8Primitives;
