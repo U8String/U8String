@@ -28,8 +28,8 @@ public partial class Manipulation
     {
         var u8str = (U8String)"Hello, World!"u8;
 
-        Assert.Throws<ArgumentOutOfRangeException>(() => u8str + 0x80);
-        Assert.Throws<ArgumentOutOfRangeException>(() => 0x80 + u8str);
+        Assert.Throws<ArgumentException>(() => u8str + 0x80);
+        Assert.Throws<ArgumentException>(() => 0x80 + u8str);
     }
 
     public static IEnumerable<object[]> CharConcats()

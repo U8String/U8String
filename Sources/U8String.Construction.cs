@@ -307,7 +307,6 @@ public readonly partial struct U8String
 
     // TODO: Documentation
     // TODO: byte[] counterpart
-    // TODO: something better than Encoding.UTF8.GetBytes + null-termination?
     public static U8String CreateLossy(string value)
     {
         ThrowHelpers.CheckNull(value);

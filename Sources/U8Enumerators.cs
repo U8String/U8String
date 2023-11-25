@@ -1,6 +1,9 @@
+using System.Buffers;
 using System.Collections;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Unicode;
 
 using U8Primitives.Abstractions;
 
@@ -35,22 +38,10 @@ public readonly struct U8Chars(U8String value) :
 
     public bool Contains(char item) => _value.Contains(item);
 
-    public void CopyTo(Span<char> destination)
+    /// <inheritdoc />
+    void ICollection<char>.CopyTo(char[] destination, int index)
     {
-        var value = _value;
-        if (!value.IsEmpty)
-        {
-            Encoding.UTF8.GetChars(value.UnsafeSpan, destination);
-        }
-    }
-
-    public void CopyTo(char[] destination, int index)
-    {
-        var value = _value;
-        if (!value.IsEmpty)
-        {
-            Encoding.UTF8.GetChars(value.UnsafeSpan, destination.AsSpan()[index..]);
-        }
+        _value.CopyTo(destination.AsSpan()[index..], out _);
     }
 
     public void Deconstruct(out char first, out char second)
@@ -75,11 +66,17 @@ public readonly struct U8Chars(U8String value) :
 
     public char[] ToArray()
     {
-        var (bytes, offset, length) = _value;
-
-        if (bytes != null)
+        var value = _value;
+        if (!value.IsEmpty)
         {
-            return Encoding.UTF8.GetChars(bytes, offset, length);
+            var bytes = value.UnsafeSpan;
+            var count = Encoding.UTF8.GetCharCount(bytes);
+            var chars = new char[count];
+
+            var result = Utf8.ToUtf16(
+                bytes, chars, out _, out _, replaceInvalidSequences: false);
+            Debug.Assert(result is OperationStatus.Done);
+            return chars;
         }
 
         return [];
@@ -96,7 +93,9 @@ public readonly struct U8Chars(U8String value) :
             CollectionsMarshal.SetCount(chars, count);
             var span = CollectionsMarshal.AsSpan(chars);
 
-            Encoding.UTF8.GetChars(bytes, span);
+            var result = Utf8.ToUtf16(
+                bytes, span, out _, out _, replaceInvalidSequences: false);
+            Debug.Assert(result is OperationStatus.Done);
             return chars;
         }
 

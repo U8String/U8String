@@ -252,6 +252,54 @@ public readonly partial struct U8String :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void ValidatePossibleConstant(ReadOnlySpan<byte> value)
+    {
+        if (value.Length <= 0)
+        {
+            return;
+        }
+        else if (value.Length is 1)
+        {
+            if (value.AsRef() > 0x7F)
+            {
+                ThrowHelpers.InvalidUtf8();
+            }
+
+            return;
+        }
+        else if (value.Length is 2)
+        {
+            var b01 = value.AsRef().Cast<byte, ushort>();
+            if ((b01 & 0x8080) is 0)
+            {
+                return;
+            }
+        }
+        else if (value.Length is 3)
+        {
+            var b01 = value.AsRef().Cast<byte, ushort>();
+            var b2 = value.AsRef(2);
+            if ((b01 & 0x8080) is 0 && b2 < 0x80)
+            {
+                return;
+            }
+        }
+        else if (value.Length is 4)
+        {
+            var b0123 = value.AsRef().Cast<byte, uint>();
+            if ((b0123 & 0x80808080) is 0)
+            {
+                return;
+            }
+        }
+
+        if (!Utf8.IsValid(value))
+        {
+            ThrowHelpers.InvalidUtf8();
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Deconstruct(out byte[]? value, out int offset, out int length)
     {
         value = _value;

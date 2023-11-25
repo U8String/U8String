@@ -6,19 +6,28 @@ using U8Primitives.InteropServices;
 
 namespace U8Primitives;
 
-#pragma warning disable IDE0046, IDE0057 // Why: range slicing and ternary expressions do not produce desired codegen
+#pragma warning disable IDE0046, IDE0057, RCS1003 // Why: range slicing and ternary expressions do not produce desired codegen
 public readonly partial struct U8String
 {
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="right"/> is not an ASCII byte.
+    /// </exception>
     public static U8String Concat(U8String left, byte right)
     {
-        if (!U8Info.IsAsciiByte(right))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(right));
-        }
+        ThrowHelpers.CheckAscii(right);
 
         return U8Manipulation.ConcatUnchecked(left, right);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="right"/> is a surrogate character.
+    /// </exception>
     public static U8String Concat(U8String left, char right)
     {
         ThrowHelpers.CheckSurrogate(right);
@@ -28,6 +37,9 @@ public readonly partial struct U8String
             : U8Manipulation.ConcatUnchecked(left, new U8Scalar(right, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
     public static U8String Concat(U8String left, Rune right)
     {
         return right.IsAscii
@@ -35,16 +47,25 @@ public readonly partial struct U8String
             : U8Manipulation.ConcatUnchecked(left, new U8Scalar(right, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="left"/> is not an ASCII byte.
+    /// </exception>
     public static U8String Concat(byte left, U8String right)
     {
-        if (!U8Info.IsAsciiByte(left))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(left));
-        }
+        ThrowHelpers.CheckAscii(left);
 
         return U8Manipulation.ConcatUnchecked(left, right);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// <paramref name="left"/> is a surrogate character.
+    /// </exception>
     public static U8String Concat(char left, U8String right)
     {
         ThrowHelpers.CheckSurrogate(left);
@@ -54,6 +75,9 @@ public readonly partial struct U8String
             : U8Manipulation.ConcatUnchecked(new U8Scalar(left, checkAscii: false).AsSpan(), right);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
     public static U8String Concat(Rune left, U8String right)
     {
         return left.IsAscii
@@ -61,8 +85,9 @@ public readonly partial struct U8String
             : U8Manipulation.ConcatUnchecked(new U8Scalar(left, checkAscii: false).AsSpan(), right);
     }
 
-    // TODO: Optimize/deduplicate Concat variants
-    // TODO: Investigate if it is possible fold validation for u8 literals
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
     public static U8String Concat(U8String left, U8String right)
     {
         if (!left.IsEmpty)
@@ -80,11 +105,17 @@ public readonly partial struct U8String
         return right;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="FormatException">
+    /// <paramref name="right"/> is not a valid UTF-8 byte sequence.
+    /// </exception>
     public static U8String Concat(U8String left, ReadOnlySpan<byte> right)
     {
         if (right.Length > 0)
         {
-            Validate(right);
+            ValidatePossibleConstant(right);
             if (!left.IsEmpty)
             {
                 return U8Manipulation.ConcatUnchecked(left.UnsafeSpan, right);
@@ -96,11 +127,17 @@ public readonly partial struct U8String
         return left;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="FormatException">
+    /// <paramref name="left"/> is not a valid UTF-8 byte sequence.
+    /// </exception>
     public static U8String Concat(ReadOnlySpan<byte> left, U8String right)
     {
         if (left.Length > 0)
         {
-            Validate(left);
+            ValidatePossibleConstant(left);
             if (!right.IsEmpty)
             {
                 return U8Manipulation.ConcatUnchecked(left, right.UnsafeSpan);
@@ -112,6 +149,12 @@ public readonly partial struct U8String
         return right;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
+    /// </summary>
+    /// <exception cref="FormatException">
+    /// The resulting string is not a valid UTF-8 byte sequence.
+    /// </exception>
     public static U8String Concat(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
         var length = left.Length + right.Length;
@@ -130,11 +173,22 @@ public readonly partial struct U8String
         return default;
     }
 
-    public static U8String Concat(U8String[]? values)
+    /// <summary>
+    /// Concatenates the elements of a specified <see cref="U8String"/> array.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="values"/> is <see langword="null"/>.
+    /// </exception>
+    public static U8String Concat(U8String[] values)
     {
+        ThrowHelpers.CheckNull(values);
+
         return Concat(values.AsSpan());
     }
 
+    /// <summary>
+    /// Concatenates the elements of a specified <see cref="ReadOnlySpan{T}"/> of <see cref="U8String"/> instances.
+    /// </summary>
     public static U8String Concat(ReadOnlySpan<U8String> values)
     {
         if (values.Length > 1)
@@ -168,8 +222,16 @@ public readonly partial struct U8String
         return default;
     }
 
+    /// <summary>
+    /// Concatenates the elements of a specified <see cref="IEnumerable{T}"/> of <see cref="U8String"/> instances.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="values"/> is <see langword="null"/>.
+    /// </exception>
     public static U8String Concat(IEnumerable<U8String> values)
     {
+        ThrowHelpers.CheckNull(values);
+
         if (values is U8String[] array)
         {
             return Concat(array.AsSpan());
@@ -211,10 +273,12 @@ public readonly partial struct U8String
     }
 
     public static U8String Concat<T>(
-        T[]? values,
+        T[] values,
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         return Concat<T>(values.AsSpan(), format, provider);
     }
 
@@ -249,6 +313,8 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         if (values is T[] array)
         {
             return Concat<T>(array.AsSpan(), format, provider);
@@ -289,40 +355,69 @@ public readonly partial struct U8String
         }
     }
 
-    /// <inheritdoc />
-    public void CopyTo(byte[] destination, int index)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void CopyTo(Span<byte> destination)
     {
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            source.UnsafeSpan.CopyTo(destination);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool TryCopyTo(Span<byte> destination)
+    {
+        var source = this;
+        var result = true;
+        if (!source.IsEmpty)
+        {
+            if (destination.Length >= source.Length)
+            {
+                source.UnsafeSpan.CopyToUnsafe(ref destination.AsRef());
+                result = true;
+            }
+            else result = false;
+        }
+
+        return result;
+    }
+
+    /// <inheritdoc />
+    void ICollection<byte>.CopyTo(byte[] destination, int index)
+    {
+        ThrowHelpers.CheckNull(destination);
+
         AsSpan().CopyTo(destination.AsSpan()[index..]);
     }
 
-    public void CopyTo(Span<byte> destination)
+    public static U8String Join(byte separator, U8String[] values)
     {
-        AsSpan().CopyTo(destination);
-    }
+        ThrowHelpers.CheckNull(values);
 
-    public static U8String Join(byte separator, U8String[]? values) => Join(separator, values.AsSpan());
+        return Join(separator, values.AsSpan());
+    }
 
     public static U8String Join(byte separator, ReadOnlySpan<U8String> values)
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return U8Manipulation.Join(separator, values);
     }
 
     public static U8String Join(byte separator, IEnumerable<U8String> values)
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return U8Manipulation.Join(separator, values);
     }
 
-    public static U8String Join(char separator, U8String[]? values) => Join(separator, values.AsSpan());
+    public static U8String Join(char separator, U8String[] values)
+    {
+        ThrowHelpers.CheckNull(values);
+
+        return Join(separator, values.AsSpan());
+    }
 
     public static U8String Join(char separator, ReadOnlySpan<U8String> values)
     {
@@ -342,7 +437,12 @@ public readonly partial struct U8String
             : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
     }
 
-    public static U8String Join(Rune separator, U8String[]? values) => Join(separator, values.AsSpan());
+    public static U8String Join(Rune separator, U8String[] values)
+    {
+        ThrowHelpers.CheckNull(values);
+
+        return Join(separator, values.AsSpan());
+    }
 
     public static U8String Join(Rune separator, ReadOnlySpan<U8String> values)
     {
@@ -353,31 +453,42 @@ public readonly partial struct U8String
 
     public static U8String Join(Rune separator, IEnumerable<U8String> values)
     {
+        ThrowHelpers.CheckNull(values);
+
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values)
             : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
     }
 
-    public static U8String Join(ReadOnlySpan<byte> separator, U8String[]? values) => Join(separator, values.AsSpan());
+    public static U8String Join(ReadOnlySpan<byte> separator, U8String[] values)
+    {
+        ThrowHelpers.CheckNull(values);
+
+        return Join(separator, values.AsSpan());
+    }
 
     public static U8String Join(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
+
         return U8Manipulation.Join(separator, values);
     }
 
     public static U8String Join(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
+
         return U8Manipulation.Join(separator, values);
     }
 
     public static U8String Join<T>(
         byte separator,
-        T[]? values,
+        T[] values,
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         return Join<T>(separator, values.AsSpan(), format, provider);
     }
 
@@ -387,10 +498,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckAscii(separator);
 
         return U8Manipulation.Join(separator, values, format, provider);
     }
@@ -401,20 +509,20 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        if (!U8Info.IsAsciiByte(separator))
-        {
-            ThrowHelpers.ArgumentOutOfRange(nameof(separator));
-        }
+        ThrowHelpers.CheckAscii(separator);
+        ThrowHelpers.CheckNull(values);
 
         return U8Manipulation.Join(separator, values, format, provider);
     }
 
     public static U8String Join<T>(
         char separator,
-        T[]? values,
+        T[] values,
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         return Join<T>(separator, values.AsSpan(), format, provider);
     }
 
@@ -446,10 +554,12 @@ public readonly partial struct U8String
 
     public static U8String Join<T>(
         Rune separator,
-        T[]? values,
+        T[] values,
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         return Join<T>(separator, values.AsSpan(), format, provider);
     }
 
@@ -470,6 +580,8 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values, format, provider)
             : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
@@ -477,10 +589,12 @@ public readonly partial struct U8String
 
     public static U8String Join<T>(
         ReadOnlySpan<byte> separator,
-        T[]? values,
+        T[] values,
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        ThrowHelpers.CheckNull(values);
+
         return Join<T>(separator, values.AsSpan(), format, provider);
     }
 
@@ -490,7 +604,8 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
+
         return U8Manipulation.Join(separator, values, format, provider);
     }
 
@@ -500,7 +615,8 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
+
         return U8Manipulation.Join(separator, values, format, provider);
     }
 
@@ -534,6 +650,20 @@ public readonly partial struct U8String
     }
 
 #pragma warning disable RCS1179 // Unnecessary assignment of a value. Why: manually merge return block and improve jump threading
+    /// <summary>
+    /// Returns an explicitly null-terminated variant of the current <see cref="U8String"/>.
+    /// </summary>
+    /// <remarks>
+    /// Most new instances of <see cref="U8String"/> are already implicitly null-terminated.
+    /// Calling this method in such situations will return the original instance with its
+    /// length adjusted to include the null terminator that is already present in the
+    /// underlying buffer.
+    /// <para/>
+    /// If this instance of <see cref="U8String"/> is empty, this method will return <see cref="U8Constants.NullByte"/>.
+    /// <para/>
+    /// For <see cref="U8String"/> instances that are not null-terminated,
+    /// a new copy will be created with the null terminator appended to the end.
+    /// </remarks>
     public U8String NullTerminate()
     {
         var (value, offset, length) = this;
@@ -662,7 +792,7 @@ public readonly partial struct U8String
         }
         else
         {
-            Validate(lineEnding);
+            ValidatePossibleConstant(lineEnding);
             return U8Manipulation.LineEndingsToCustom(this, lineEnding);
         }
     }
@@ -921,12 +1051,14 @@ public readonly partial struct U8String
         return U8Marshal.Slice(source, range);
     }
 
-    // TODO:
-    // - Complete impl. depends on porting of InlineArray-based array builder for letters
-    // which have different lengths in upper/lower case.
-    // - Remove/rename to ToLowerFallback or move to something like "FallbackInvariantComparer"
-    // clearly indicating it being slower and inferior alternative to proper implementations
-    // which call into ICU/NLS/Hybrid-provided case change exports.
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> with the characters converted to lowercase using specified <paramref name="converter"/>.
+    /// </summary>
+    /// <param name="converter">The case conversion implementation to use.</param>
+    /// <typeparam name="T">The type of the case conversion implementation.</typeparam>
+    /// <remarks>
+    /// If there are no characters to convert, the current instance is returned instead.
+    /// </remarks>
     public U8String ToLower<T>(T converter)
         where T : IU8CaseConverter
     {
@@ -983,6 +1115,14 @@ public readonly partial struct U8String
         return deref;
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> with the characters converted to uppercase using specified <paramref name="converter"/>.
+    /// </summary>
+    /// <param name="converter">The case conversion implementation to use.</param>
+    /// <typeparam name="T">The type of the case conversion implementation.</typeparam>
+    /// <remarks>
+    /// If there are no characters to convert, the current instance is returned instead.
+    /// </remarks>
     public U8String ToUpper<T>(T converter)
         where T : IU8CaseConverter
     {
@@ -1033,12 +1173,17 @@ public readonly partial struct U8String
         return deref;
     }
 
-    // TODO: docs
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> with the ASCII characters converted to lowercase.
+    /// </summary>
     public U8String ToLowerAscii()
     {
         return ToLower(U8CaseConversion.Ascii);
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> with the ASCII characters converted to uppercase.
+    /// </summary>
     public U8String ToUpperAscii()
     {
         return ToUpper(U8CaseConversion.Ascii);

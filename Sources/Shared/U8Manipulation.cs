@@ -20,7 +20,7 @@ internal static class U8Manipulation
         return new U8String(value, 0, length);
     }
 
-    internal static U8String ConcatUnchecked(byte left , ReadOnlySpan<byte> right)
+    internal static U8String ConcatUnchecked(byte left, ReadOnlySpan<byte> right)
     {
         Debug.Assert(U8Info.IsAsciiByte(left));
 
@@ -58,7 +58,7 @@ internal static class U8Manipulation
         {
             return values[0];
         }
-            
+
         return default;
     }
 
@@ -83,7 +83,7 @@ internal static class U8Manipulation
                 return default;
             }
         }
-        
+
         return JoinEnumerable(separator, values);
 
         static U8String JoinEnumerable(byte separator, IEnumerable<U8String> values)
@@ -133,7 +133,7 @@ internal static class U8Manipulation
         {
             return values[0];
         }
-        
+
         return default;
     }
 
@@ -203,7 +203,7 @@ internal static class U8Manipulation
         {
             return U8String.Create(values[0], format, provider);
         }
-        
+
         return default;
     }
 
@@ -259,7 +259,7 @@ internal static class U8Manipulation
         {
             return U8String.Create(values[0], format, provider);
         }
-        
+
         return default;
     }
 

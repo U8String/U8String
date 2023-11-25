@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
@@ -64,149 +65,137 @@ public readonly partial struct U8String
         return _value.AsMemory(Offset, Length);
     }
 
-    /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
-    public static U8String Parse(string s, IFormatProvider? provider = null)
+    /// <summary>
+    /// Decodes this instance of <see cref="U8String"/> to specified destination buffer
+    /// of UTF-16 <see cref="char"/>s.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="destination"/> is too small to fit the decoded string.
+    /// </exception>
+    public void CopyTo(Span<char> destination, out int charsWritten)
+    {
+        var source = this;
+        if (!source.IsEmpty)
+        {
+            var result = Utf8.ToUtf16(
+                source.UnsafeSpan,
+                destination,
+                out _,
+                out charsWritten,
+                replaceInvalidSequences: false);
+
+            if (result is OperationStatus.DestinationTooSmall)
+            {
+                ThrowHelpers.ArgumentException("Destination buffer is too small.");
+            }
+
+            // This is intentional - we want to punish the callers which break the contract
+            // and corrupt U8String instances by having this condition be undefined behavior.
+            // Maybe tomorrow it will throw, maybe it will not, maybe it will partially write?
+            Debug.Assert(
+                result is OperationStatus.Done,
+                "Found invalid U8String while converting to UTF-16. This should never happen.");
+        }
+        else charsWritten = 0;
+    }
+
+    /// <summary>
+    /// Decodes this instance of <see cref="U8String"/> to specified destination buffer
+    /// of UTF-16 <see cref="char"/>s.
+    /// </summary>
+    public bool TryCopyTo(Span<char> destination, out int charsWritten)
+    {
+        var source = this;
+        var success = true;
+        if (!source.IsEmpty)
+        {
+            var result = Utf8.ToUtf16(
+                source.UnsafeSpan,
+                destination,
+                out _,
+                out charsWritten,
+                replaceInvalidSequences: false);
+
+            if (result is OperationStatus.DestinationTooSmall)
+            {
+                success = false;
+            }
+
+            Debug.Assert(
+                result is OperationStatus.Done,
+                "Found invalid U8String while converting to UTF-16. This should never happen.");
+        }
+        else charsWritten = 0;
+
+        return success;
+    }
+
+    /// <inheritdoc />
+    static U8String IParsable<U8String>.Parse(string s, IFormatProvider? _)
     {
         return new(s);
     }
 
-    /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
-    public static U8String Parse(ReadOnlySpan<char> s, IFormatProvider? provider = null)
+    /// <inheritdoc />
+    static U8String ISpanParsable<U8String>.Parse(ReadOnlySpan<char> s, IFormatProvider? _)
     {
         // TODO: Decide when/how TryParse could fail, factor in the required codegen shape
         // to skip CNS string decoding after https://github.com/dotnet/runtime/pull/85328 lands.
         return new(s);
     }
 
-    /// <summary>
-    /// Creates a <see cref="U8String"/> from the specified <paramref name="utf8Text"/>.
-    /// </summary>
-    /// <param name="utf8Text">The UTF-8 encoded text to create a <see cref="U8String"/> from.</param>
-    /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
-    /// <returns>A new <see cref="U8String"/> created from <paramref name="utf8Text"/>.</returns>
-    /// <exception cref="FormatException"> Thrown when <paramref name="utf8Text"/> contains invalid UTF-8.</exception>
-    public static U8String Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? _ = null)
+    /// <inheritdoc />
+    static U8String IUtf8SpanParsable<U8String>.Parse(ReadOnlySpan<byte> utf8Text, IFormatProvider? _)
     {
         return new(utf8Text);
     }
 
-    /// <inheritdoc cref="TryParse(ReadOnlySpan{char}, IFormatProvider?, out U8String)"/>
-    public static bool TryParse(
+    /// <inheritdoc />
+    static bool IParsable<U8String>.TryParse(
         [NotNullWhen(true)] string? s,
         IFormatProvider? _,
-        [MaybeNullWhen(false)] out U8String result) => TryParse(s.AsSpan(), _, out result);
+        [MaybeNullWhen(false)] out U8String result) => TryCreate(s, out result);
 
-    /// <summary>
-    /// Decodes the specified <paramref name="s"/> into a <see cref="U8String"/>.
-    /// </summary>
-    /// <param name="s">The UTF-16 encoded string to decode.</param>
-    /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
-    /// <param name="result">The decoded <see cref="U8String"/>.</param>
-    /// <returns>True if the <paramref name="s"/> was successfully decoded, otherwise false.</returns>
-    public static bool TryParse(
+    /// <inheritdoc />
+    static bool ISpanParsable<U8String>.TryParse(
         ReadOnlySpan<char> s,
         IFormatProvider? _,
-        out U8String result)
-    {
-        // Double traversal becomes the favourable tradeoff at longer lengths,
-        // and at shorter lengths the overhead is negligible.
-        if (s.Length > 0)
-        {
-            var nullTerminate = s[^1] != 0;
-            var length = Encoding.UTF8.GetByteCount(s);
-            var value = new byte[length + (nullTerminate ? 1 : 0)];
+        out U8String result) => TryCreate(s, out result);
 
-            if (Utf8.FromUtf16(
-                    source: s,
-                    destination: value,
-                    charsRead: out var _,
-                    bytesWritten: out var _,
-                    replaceInvalidSequences: false,
-                    isFinalBlock: true)
-                is OperationStatus.Done)
-            {
-                result = new U8String(value, 0, length);
-                return true;
-            }
-
-            result = default;
-            return false;
-        }
-
-        result = default;
-        return true;
-    }
-
-    /// <summary>
-    /// Creates a <see cref="U8String"/> from the specified <paramref name="utf8Text"/>.
-    /// </summary>
-    /// <param name="utf8Text">The UTF-8 encoded text to create a <see cref="U8String"/> from.</param>
-    /// <param name="_">Defined by <see cref="ISpanParsable{U8String}"/> but not applicable to this type.</param>
-    /// <param name="result">A new <see cref="U8String"/> created from <paramref name="utf8Text"/>.</param>
-    /// <returns>True if the <paramref name="utf8Text"/> contains well-formed UTF-8, otherwise false.</returns>
-    public static bool TryParse(
+    /// <inheritdoc />
+    static bool IUtf8SpanParsable<U8String>.TryParse(
         ReadOnlySpan<byte> utf8Text,
         IFormatProvider? _,
-        out U8String result)
-    {
-        if (IsValid(utf8Text))
-        {
-            result = new U8String(utf8Text, skipValidation: true);
-            return true;
-        }
+        out U8String result) => TryCreate(utf8Text, out result);
 
-        result = default;
-        return false;
-    }
-
-    /// <summary>
-    /// Encodes the current <see cref="U8String"/> into its UTF-16 representation and writes it to the specified <paramref name="destination"/>.
-    /// </summary>
-    /// <param name="destination">The destination to write the UTF-16 representation to.</param>
-    /// <param name="charsWritten">The number of characters written to <paramref name="destination"/>.</param>
-    /// <param name="format">Defined by <see cref="ISpanFormattable"/> but not applicable to this type.</param>
-    /// <param name="provider">Defined by <see cref="ISpanFormattable"/> but not applicable to this type.</param>
-    /// <returns>True if the UTF-16 representation was successfully written to <paramref name="destination"/>, otherwise false.</returns>
-    public bool TryFormat(
+    /// <inheritdoc />
+    bool ISpanFormattable.TryFormat(
         Span<char> destination,
         out int charsWritten,
         ReadOnlySpan<char> format,
-        IFormatProvider? provider)
-    {
-        if (!IsEmpty)
-        {
-            return Encoding.UTF8.TryGetChars(UnsafeSpan, destination, out charsWritten);
-        }
-
-        charsWritten = 0;
-        return true;
-    }
+        IFormatProvider? provider) => TryCopyTo(destination, out charsWritten);
 
     /// <inheritdoc />
-    public bool TryFormat(
+    bool IUtf8SpanFormattable.TryFormat(
         Span<byte> utf8Destination,
         out int bytesWritten,
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
         var source = this;
-
-        bool result;
-        var written = 0;
+        var result = true;
+        bytesWritten = 0;
         if (!source.IsEmpty)
         {
             if (utf8Destination.Length >= source.Length)
             {
                 source.UnsafeSpan.CopyToUnsafe(ref utf8Destination.AsRef());
-
-                written = source.Length;
+                bytesWritten = source.Length;
                 result = true;
             }
             else result = false;
         }
-        else result = true;
 
-        bytesWritten = written;
         return result;
     }
 

@@ -488,7 +488,7 @@ public readonly partial struct U8String
 
     public U8RefSplit Split(ReadOnlySpan<byte> separator)
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
 
         return new(this, separator);
     }
@@ -546,7 +546,7 @@ public readonly partial struct U8String
     public U8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
 
         return new(this, separator, comparer);
     }
@@ -582,7 +582,7 @@ public readonly partial struct U8String
     public ConfiguredU8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer, U8SplitOptions options)
         where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        Validate(separator);
+        ValidatePossibleConstant(separator);
 
         return new(this, separator, comparer, options);
     }
