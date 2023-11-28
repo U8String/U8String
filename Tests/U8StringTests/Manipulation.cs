@@ -247,11 +247,9 @@ public partial class Manipulation
         Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(-2, 1));
         Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue, 1));
     }
-#pragma warning restore IDE0057
 
-    public static IEnumerable<(
-        ImmutableArray<byte> expected,
-        ImmutableArray<byte> actual)> TrimData()
+#pragma warning restore IDE0057
+    public static IEnumerable<(U8String expected, U8String source)> TrimData()
     {
         var values = new[]
         {
@@ -262,19 +260,39 @@ public partial class Manipulation
             Constants.KanaBytes,
             Constants.NonSurrogateEmojiBytes,
             Constants.MixedBytes
-        };
+        }.Select(U8String.Create);
+
+        var repetitions = Enumerable.Range(0, 16);
+
+        var whitespaceRunes = Constants
+            .WhitespaceRunes
+            .Select(Extensions.ToUtf8);
+
+        var whitespaceSlices = whitespaceRunes
+            .Select(rune => repetitions
+                .Select(count => Enumerable
+                    .Repeat(rune, count)
+                    .SelectMany(runes => runes)
+                    .ToArray()))
+            .SelectMany(runes => runes)
+            .ToArray();
 
         foreach (var value in values)
         {
             yield return (value, value);
 
-            foreach (var rune in Constants.WhitespaceRunes)
+            foreach (var whitespace in whitespaceSlices)
             {
-                var runeBytes = rune.ToUtf8();
+                yield return (value, [..whitespace, ..value]);
+                yield return (value, [..value, ..whitespace]);
+                yield return (value, [..whitespace, ..value, ..whitespace]);
 
-                yield return (value, [..runeBytes, ..value]);
-                yield return (value, [..value, ..runeBytes]);
-                yield return (value, [..runeBytes, ..value, ..runeBytes]);
+                // Test when we trim slices that are themselves view
+                // into a larger string.
+                var innerSliceSource = new U8String((ReadOnlySpan<byte>)
+                    [..value, ..whitespace, ..value, ..whitespace, ..value]);
+                var innerSlice = innerSliceSource[value.Length..^value.Length];
+                yield return (value, innerSlice);
             }
 
             var allRuneBytes = Constants.WhitespaceRunes
@@ -287,55 +305,57 @@ public partial class Manipulation
         }
     }
 
+    // These are facts because converting them to theories adds some odd 28866
+    // test cases burning cpu time for no reason.
     [Fact]
     public void Trim_ReturnsCorrectValue()
     {
-        foreach (var (expected, actual) in TrimData())
+        foreach (var (expected, source) in TrimData())
         {
-            var value = new U8String(actual);
-            var trimmed = value.Trim();
+            var actual = source.Trim();
 
-            Assert.True(trimmed.Equals(expected));
+            Assert.Equal(expected, actual);
+            Assert.True(actual.Equals(expected));
         }
     }
 
     [Fact]
     public void TrimStart_ReturnsCorrectValue()
     {
-        foreach (var (expected, actual) in TrimData())
+        foreach (var (expected, source) in TrimData())
         {
-            var actualSpan = actual.AsSpan();
+            var actual = source;
             if (expected.Length > 1)
             {
                 // We don't trim end so remove that part from comparison.
-                var postfixOffset = actualSpan.IndexOf(expected.AsSpan()) + expected.Length;
-                actualSpan = actual.AsSpan()[..postfixOffset];
+                var postfixOffset = actual.IndexOf(expected) + expected.Length;
+                actual = actual[..postfixOffset];
             }
 
-            var value = new U8String(actualSpan);
-            var trimmed = value.TrimStart();
+            actual = actual.TrimStart();
 
-            Assert.True(trimmed.Equals(expected));
+            Assert.Equal(expected, actual);
+            Assert.True(actual.Equals(expected));
         }
     }
 
     [Fact]
     public void TrimEnd_ReturnsCorrectValue()
     {
-        foreach (var (expected, actual) in TrimData())
+        foreach (var (expected, source) in TrimData())
         {
-            var actualSpan = actual.AsSpan();
+            var actual = source;
             if (expected.Length > 1)
             {
                 // We don't trim start so remove that part from comparison.
-                var prefixOffset = actualSpan.LastIndexOf(expected.AsSpan());
-                actualSpan = actualSpan[prefixOffset..];
+                var prefixOffset = actual.LastIndexOf(expected);
+                actual = actual[prefixOffset..];
             }
 
-            var value = new U8String(actualSpan);
-            var trimmed = value.TrimEnd();
+            actual = actual.TrimEnd();
 
-            Assert.True(trimmed.Equals(expected));
+            Assert.Equal(expected, actual);
+            Assert.True(actual.Equals(expected));
         }
     }
 }

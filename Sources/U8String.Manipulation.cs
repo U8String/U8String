@@ -886,8 +886,7 @@ public readonly partial struct U8String
         if (!source.IsEmpty)
         {
             ref var ptr = ref source.UnsafeRef;
-            var (start, end) = (0, source.Length - 1);
-            var last = ptr.Add(end);
+            var last = ptr.Add(source.Length - 1);
 
             if (U8Info.IsAsciiByte(in ptr) && !U8Info.IsAsciiWhitespace(in ptr) &&
                 U8Info.IsAsciiByte(last) && !U8Info.IsAsciiWhitespace(last))
@@ -895,24 +894,30 @@ public readonly partial struct U8String
                 return source;
             }
 
-            return TrimCore(source._value, source.Offset + start, end);
+            return TrimCore(source._value, source.Offset, source.Length);
         }
 
         return default;
 
-        static U8String TrimCore(byte[] source, int start, int end)
+        // The code below looks simple but it's surprisingly migraine-inducing
+        static U8String TrimCore(byte[] source, int offset, int length)
         {
+            var sourceOffset = offset;
+
             ref var ptr = ref source.AsRef();
-            while (start <= end)
+            while (offset <= length)
             {
-                if (!U8Info.IsWhitespaceRune(ref ptr.Add(start), out var size))
+                if (!U8Info.IsWhitespaceRune(ref ptr.Add(offset), out var size))
                 {
                     break;
                 }
-                start += size;
+                offset += size;
             }
 
-            for (var endSearch = end; endSearch >= start; endSearch--)
+            length -= offset - sourceOffset;
+            ptr = ref ptr.Add(offset);
+
+            for (var endSearch = length - 1; endSearch >= 0; endSearch--)
             {
                 var b = ptr.Add(endSearch);
                 if (!U8Info.IsContinuationByte(b))
@@ -924,7 +929,7 @@ public readonly partial struct U8String
                         // Save the last found whitespace code point offset and continue searching
                         // for more whitspace byte sequences from their end. If we don't do this,
                         // we will end up trimming away continuation bytes at the end of the string.
-                        end = endSearch - 1;
+                        length = endSearch;
                     }
                     else
                     {
@@ -933,7 +938,7 @@ public readonly partial struct U8String
                 }
             }
 
-            return new U8String(source, start, end - start + 1);
+            return new U8String(source, offset, length);
         }
     }
 
