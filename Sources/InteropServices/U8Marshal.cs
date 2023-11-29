@@ -57,6 +57,8 @@ public static class U8Marshal
 
     public static U8String CreateFromNullTerminated(ref byte ptr)
     {
+        // TODO: Move into separate helper class with logic to account for PAGESIZE
+        // to prevent SEGFAULTs from occuring due to SIMD reads past the end of the buffer.
         var span = MemoryMarshal.CreateReadOnlySpan(ref ptr, int.MaxValue);
         var length = span.IndexOf((byte)'\0');
         if (length < 0)

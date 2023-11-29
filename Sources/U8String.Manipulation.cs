@@ -914,8 +914,8 @@ public readonly partial struct U8String
                 offset += size;
             }
 
-            length -= offset - sourceOffset;
             ptr = ref ptr.Add(offset);
+            length -= offset - sourceOffset;
 
             for (var endSearch = length - 1; endSearch >= 0; endSearch--)
             {

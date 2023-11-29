@@ -3,6 +3,7 @@ using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 
+#pragma warning disable RCS1003, RCS1179, IDE0045 // Braces, ternary, etc. Why: explicit control over block layout and return merging.
 public readonly partial struct U8String
 {
     public int CommonPrefixLength(U8String other)
@@ -17,33 +18,78 @@ public readonly partial struct U8String
 
     public int CommonPrefixLength(ReadOnlySpan<byte> other)
     {
-        if (!IsEmpty)
+        var deref = this;
+        if (!deref.IsEmpty)
         {
-            return UnsafeSpan.CommonPrefixLength(other);
+            return deref.UnsafeSpan.CommonPrefixLength(other);
         }
 
         return 0;
     }
 
-    public bool Contains(byte value) => U8Searching.Contains(this, value);
+    public bool Contains(byte value)
+    {
+        bool result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            result = deref.UnsafeSpan.Contains(value);
+        }
+        else result = false;
+
+        return result;
+    }
 
     public bool Contains(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return U8Searching.Contains(this, value);
+        return char.IsAscii(value)
+            ? Contains((byte)value)
+            : Contains(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
-    public bool Contains(Rune value) => U8Searching.Contains(this, value);
+    public bool Contains(Rune value)
+    {
+        return value.IsAscii
+            ? Contains((byte)value.Value)
+            : Contains(new U8Scalar(value, checkAscii: false).AsSpan());
+    }
 
-    public bool Contains(U8String value) => U8Searching.Contains(this, value);
+    public bool Contains(U8String value)
+    {
+        bool result;
+        var deref = this;
+        if (!value.IsEmpty)
+        {
+            if (!deref.IsEmpty)
+            {
+                result = deref.UnsafeSpan.IndexOf(value.UnsafeSpan) >= 0;
+            }
+            else result = false;
+        }
+        else result = true;
 
-    public bool Contains(ReadOnlySpan<byte> value) => U8Searching.Contains(this, value);
+        return result;
+    }
+
+    public bool Contains(ReadOnlySpan<byte> value)
+    {
+        bool result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            result = deref.UnsafeSpan.IndexOf(value) >= 0;
+        }
+        else result = value.IsEmpty;
+
+        return result;
+    }
 
     public bool Contains<T>(byte value, T comparer)
         where T : IU8ContainsOperator
     {
-        return U8Searching.Contains(this, value, comparer);
+        return comparer.Contains(this, value);
     }
 
     public bool Contains<T>(char value, T comparer)
@@ -51,31 +97,36 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return U8Searching.Contains(this, value, comparer);
+        return char.IsAscii(value)
+            ? Contains((byte)value, comparer)
+            : Contains(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public bool Contains<T>(Rune value, T comparer)
         where T : IU8ContainsOperator
     {
-        return U8Searching.Contains(this, value, comparer);
+        return value.IsAscii
+            ? Contains((byte)value.Value, comparer)
+            : Contains(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public bool Contains<T>(U8String value, T comparer)
         where T : IU8ContainsOperator
     {
-        return U8Searching.Contains(this, value, comparer);
+        return comparer.Contains(this, value);
     }
 
     public bool Contains<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8ContainsOperator
     {
-        return U8Searching.Contains(this, value, comparer);
+        return comparer.Contains(this, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(byte value)
     {
-        return Length > 0 && UnsafeRef == value;
+        var (arr, offset) = (_value, Offset);
+        return arr != null && arr.AsRef(offset) == value;
     }
 
     public bool StartsWith(char value)
@@ -93,38 +144,32 @@ public readonly partial struct U8String
 
     public bool StartsWith(U8String value)
     {
+        bool result;
         var deref = this;
-        if (deref.Length >= value.Length)
+        if (!value.IsEmpty)
         {
-            if (deref.Length > 0)
+            if (!deref.IsEmpty && value.Length <= deref.Length)
             {
-                return deref.UnsafeSpan
-                    .SliceUnsafe(0, value.Length)
-                    .SequenceEqual(value.UnsafeSpan);
+                result = deref.UnsafeSpan.StartsWith(value.UnsafeSpan);
             }
-
-            return true;
+            else result = false;
         }
+        else result = true;
 
-        return false;
+        return result;
     }
 
     public bool StartsWith(ReadOnlySpan<byte> value)
     {
+        bool result;
         var deref = this;
-        if (deref.Length >= value.Length)
+        if (!deref.IsEmpty && value.Length <= deref.Length)
         {
-            if (deref.Length > 0)
-            {
-                return deref.UnsafeSpan
-                    .SliceUnsafe(0, value.Length)
-                    .SequenceEqual(value);
-            }
-
-            return true;
+            result = deref.UnsafeSpan.StartsWith(value);
         }
+        else result = value.IsEmpty;
 
-        return false;
+        return result;
     }
 
     public bool StartsWith<T>(byte value, T comparer)
@@ -166,7 +211,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(byte value)
     {
-        return Length > 0 && UnsafeRefAdd(Length - 1) == value;
+        var (arr, offset, length) = this;
+        return arr != null && arr.AsRef(offset + length - 1) == value;
     }
 
     public bool EndsWith(char value)
@@ -184,38 +230,32 @@ public readonly partial struct U8String
 
     public bool EndsWith(U8String value)
     {
+        bool result;
         var deref = this;
-        if (deref.Length >= value.Length)
+        if (!value.IsEmpty)
         {
-            if (deref.Length > 0)
+            if (!deref.IsEmpty && value.Length <= deref.Length)
             {
-                return deref.UnsafeSpan
-                    .SliceUnsafe(deref.Length - value.Length)
-                    .SequenceEqual(value.UnsafeSpan);
+                result = deref.UnsafeSpan.EndsWith(value.UnsafeSpan);
             }
-
-            return true;
+            else result = false;
         }
+        else result = true;
 
-        return false;
+        return result;
     }
 
     public bool EndsWith(ReadOnlySpan<byte> value)
     {
+        bool result;
         var deref = this;
-        if (deref.Length >= value.Length)
+        if (!deref.IsEmpty && value.Length <= deref.Length)
         {
-            if (deref.Length > 0)
-            {
-                return deref.UnsafeSpan
-                    .SliceUnsafe(deref.Length - value.Length)
-                    .SequenceEqual(value);
-            }
-
-            return true;
+            result = deref.UnsafeSpan.EndsWith(value);
         }
+        else result = value.IsEmpty;
 
-        return false;
+        return result;
     }
 
     public bool EndsWith<T>(byte value, T comparer)
@@ -254,27 +294,69 @@ public readonly partial struct U8String
         return comparer.EndsWith(this, value);
     }
 
-    public int IndexOf(byte value) => U8Searching.IndexOf(this, value).Offset;
+    public int IndexOf(byte value)
+    {
+        int result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            result = deref.UnsafeSpan.IndexOf(value);
+        }
+        else result = -1;
+
+        return result;
+    }
 
     public int IndexOf(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return U8Searching.IndexOf(this, value).Offset;
+        return char.IsAscii(value)
+            ? IndexOf((byte)value)
+            : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
-    public int IndexOf(Rune value) => U8Searching.IndexOf(this, value).Offset;
+    public int IndexOf(Rune value)
+    {
+        return value.IsAscii
+            ? IndexOf((byte)value.Value)
+            : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
+    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int IndexOf(U8String value) => U8Searching.IndexOf(this, value).Offset;
+    public int IndexOf(U8String value)
+    {
+        int result;
+        var deref = this;
+        if (!value.IsEmpty)
+        {
+            if (!deref.IsEmpty)
+            {
+                result = deref.UnsafeSpan.IndexOf(value.UnsafeSpan);
+            }
+            else result = -1;
+        }
+        else result = 0;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int IndexOf(ReadOnlySpan<byte> value) => U8Searching.IndexOf(this, value);
+        return result;
+    }
+
+    public int IndexOf(ReadOnlySpan<byte> value)
+    {
+        int result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            result = deref.UnsafeSpan.IndexOf(value);
+        }
+        else result = value.IsEmpty ? 0 : -1;
+
+        return result;
+    }
 
     public int IndexOf<T>(byte value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer).Offset;
+        return comparer.IndexOf(this, value).Offset;
     }
 
     public int IndexOf<T>(char value, T comparer)
@@ -282,50 +364,94 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return U8Searching.IndexOf(this, value, comparer).Offset;
+        return char.IsAscii(value)
+            ? IndexOf((byte)value, comparer)
+            : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public int IndexOf<T>(Rune value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer).Offset;
+        return value.IsAscii
+            ? IndexOf((byte)value.Value, comparer)
+            : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf<T>(U8String value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer).Offset;
+        return comparer.IndexOf(this, value).Offset;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8IndexOfOperator
     {
-        return U8Searching.IndexOf(this, value, comparer).Offset;
+        return comparer.IndexOf(this, value).Offset;
     }
 
-    public int LastIndexOf(byte value) => U8Searching.LastIndexOf(this, value).Offset;
+    public int LastIndexOf(byte value)
+    {
+        int result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            result = deref.UnsafeSpan.LastIndexOf(value);
+        }
+        else result = -1;
+
+        return result;
+    }
 
     public int LastIndexOf(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return U8Searching.LastIndexOf(this, value).Offset;
+        return char.IsAscii(value)
+            ? LastIndexOf((byte)value)
+            : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
-    public int LastIndexOf(Rune value) => U8Searching.LastIndexOf(this, value).Offset;
+    public int LastIndexOf(Rune value)
+    {
+        return value.IsAscii
+            ? LastIndexOf((byte)value.Value)
+            : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
+    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LastIndexOf(U8String value) => U8Searching.LastIndexOf(this, value).Offset;
+    public int LastIndexOf(U8String value)
+    {
+        int result;
+        var deref = this;
+        if (!value.IsEmpty)
+        {
+            if (!deref.IsEmpty)
+            {
+                result = deref.UnsafeSpan.LastIndexOf(value.UnsafeSpan);
+            }
+            else result = -1;
+        }
+        else result = 0;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public int LastIndexOf(ReadOnlySpan<byte> value) => U8Searching.LastIndexOf(this, value);
+        return result;
+    }
+
+    public int LastIndexOf(ReadOnlySpan<byte> value)
+    {
+        int result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            result = deref.UnsafeSpan.LastIndexOf(value);
+        }
+        else result = value.IsEmpty ? 0 : -1;
+
+        return result;
+    }
 
     public int LastIndexOf<T>(byte value, T comparer)
         where T : IU8LastIndexOfOperator
     {
-        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+        return comparer.LastIndexOf(this, value).Offset;
     }
 
     public int LastIndexOf<T>(char value, T comparer)
@@ -333,26 +459,28 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+        return char.IsAscii(value)
+            ? LastIndexOf((byte)value, comparer)
+            : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
     public int LastIndexOf<T>(Rune value, T comparer)
         where T : IU8LastIndexOfOperator
     {
-        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+        return value.IsAscii
+            ? LastIndexOf((byte)value.Value, comparer)
+            : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf<T>(U8String value, T comparer)
         where T : IU8LastIndexOfOperator
     {
-        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+        return comparer.LastIndexOf(this, value).Offset;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8LastIndexOfOperator
     {
-        return U8Searching.LastIndexOf(this, value, comparer).Offset;
+        return comparer.LastIndexOf(this, value).Offset;
     }
 }
