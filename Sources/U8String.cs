@@ -1,6 +1,8 @@
-﻿using System.ComponentModel;
+﻿using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Numerics;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json.Serialization;
@@ -25,16 +27,20 @@ namespace U8Primitives;
 /// unless specified otherwise. If an operation would produce invalid UTF-8, an exception is thrown.</para>
 /// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
 /// </remarks>
-[DebuggerDisplay("{ToString()}")]
+[DebuggerDisplay("{DebuggerDisplay()}")]
 [JsonConverter(typeof(U8StringJsonConverter))]
 [CollectionBuilder(typeof(U8String), nameof(Create))]
 public readonly partial struct U8String :
+    IEqualityOperators<U8String, U8String, bool>,
+    IAdditionOperators<U8String, U8String, U8String>,
     IEquatable<U8String>,
     IEquatable<U8String?>,
+    IEquatable<ImmutableArray<byte>>,
     IEquatable<byte[]?>,
     IComparable<U8String>,
     IComparable<U8String?>,
     IList<byte>,
+    IReadOnlyList<byte>,
     ICloneable,
     ISpanParsable<U8String>,
     ISpanFormattable,
@@ -63,9 +69,8 @@ public readonly partial struct U8String :
     }
 
     /// <summary>
-    /// The number of UTF-8 bytes in the current <see cref="U8String"/>.
+    /// The number of UTF-8 code units (bytes) in the current <see cref="U8String"/>.
     /// </summary>
-    /// <returns>The number of UTF-8 bytes.</returns>
     public int Length
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -75,7 +80,6 @@ public readonly partial struct U8String :
     /// <summary>
     /// Indicates whether the current <see cref="U8String"/> is empty.
     /// </summary>
-    /// <returns><see langword="true"/> if the current <see cref="U8String"/> is empty; otherwise, <see langword="false"/>.</returns>
     [MemberNotNullWhen(false, nameof(_value))]
     public bool IsEmpty
     {
@@ -83,6 +87,18 @@ public readonly partial struct U8String :
         get => _value is null;
     }
 
+    /// <summary>
+    /// Indicates whether the current <see cref="U8String"/> is either explicitly or implicitly null-terminated.
+    /// </summary>
+    /// <remarks>
+    /// Implicit null-termination is when the null-terminator is stored at the next byte past the <see cref="Length"/>
+    /// of the current <see cref="U8String"/>.
+    /// <para/>
+    /// Passing such instances to native APIs that expect C-style strings is safe as long as the
+    /// <see cref="U8String"/> is pinned and not modified throughout the duration of the call.
+    /// <para/>
+    /// See <see cref="NullTerminate()"/> for more information.
+    /// </remarks>
     public bool IsNullTerminated
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -142,6 +158,9 @@ public readonly partial struct U8String :
     /// <inheritdoc/>
     bool ICollection<byte>.IsReadOnly => true;
 
+    /// <inheritdoc/>
+    int IReadOnlyCollection<byte>.Count => Length;
+
     /// <summary>
     /// Similar to <see cref="UnsafeRef"/>, but does not throw NRE if <see cref="IsEmpty"/> is true.
     /// </summary>
@@ -181,7 +200,9 @@ public readonly partial struct U8String :
     internal ReadOnlySpan<byte> UnsafeSpan
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => MemoryMarshal.CreateReadOnlySpan(ref UnsafeRef, Length);
+        get => MemoryMarshal.CreateReadOnlySpan(
+            ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset),
+            Length);
     }
 
     /// <summary>
@@ -197,7 +218,17 @@ public readonly partial struct U8String :
     /// <summary>
     /// Evaluates if the current <see cref="U8String"/> contains only ASCII characters.
     /// </summary>
-    public bool IsAscii() => System.Text.Ascii.IsValid(this);
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public bool IsAscii()
+    {
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            return Ascii.IsValid(deref.UnsafeSpan);
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Evaluates if the current <see cref="U8String"/> is normalized to the specified
@@ -299,6 +330,10 @@ public readonly partial struct U8String :
         }
     }
 
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ref readonly byte GetPinnableReference() => ref DangerousRef;
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void Deconstruct(out byte[]? value, out int offset, out int length)
     {
@@ -307,9 +342,12 @@ public readonly partial struct U8String :
         length = Length;
     }
 
-    [EditorBrowsable(EditorBrowsableState.Never)]
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ref readonly byte GetPinnableReference() => ref DangerousRef;
+    string DebuggerDisplay()
+    {
+        return Length < 1024
+            ? ToString()
+            : $"{this[..FloorRuneIndex(1024)]}...";
+    }
 
     void IList<byte>.Insert(int index, byte item) => throw new NotSupportedException();
     void IList<byte>.RemoveAt(int index) => throw new NotSupportedException();

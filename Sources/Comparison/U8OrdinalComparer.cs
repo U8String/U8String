@@ -16,25 +16,11 @@ public readonly struct U8OrdinalComparer :
 
     public int Compare(U8String x, U8String y)
     {
-        if (!x.IsEmpty)
-        {
-            if (!y.IsEmpty)
-            {
-                var left = x.UnsafeSpan;
-                var right = y.UnsafeSpan;
-
-                return Compare(left, right);
-            }
-
-            return 1;
-        }
-
-        return y.IsEmpty ? 0 : -1;
+        return U8String.Compare(x, y);
     }
 
     public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
-        // TODO: Does this need to be clamped?
         return x.SequenceCompareTo(y);
     }
 

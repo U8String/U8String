@@ -88,13 +88,15 @@ public readonly partial struct U8String
             {
                 ThrowHelpers.ArgumentException("Destination buffer is too small.");
             }
-
-            // This is intentional - we want to punish the callers which break the contract
-            // and corrupt U8String instances by having this condition be undefined behavior.
-            // Maybe tomorrow it will throw, maybe it will not, maybe it will partially write?
-            Debug.Assert(
-                result is OperationStatus.Done,
-                "Found invalid U8String while converting to UTF-16. This should never happen.");
+            else
+            {
+                // This is intentional - we want to punish the callers which break the contract
+                // and corrupt U8String instances by having this condition be undefined behavior.
+                // Maybe tomorrow it will throw, maybe it will not, maybe it will partially write?
+                Debug.Assert(
+                    result is OperationStatus.Done,
+                    "Found invalid U8String while converting to UTF-16. This should never happen.");
+            }
         }
         else charsWritten = 0;
     }
@@ -120,10 +122,12 @@ public readonly partial struct U8String
             {
                 success = false;
             }
-
-            Debug.Assert(
-                result is OperationStatus.Done,
-                "Found invalid U8String while converting to UTF-16. This should never happen.");
+            else
+            {
+                Debug.Assert(
+                    result is OperationStatus.Done,
+                    "Found invalid U8String while converting to UTF-16. This should never happen.");
+            }
         }
         else charsWritten = 0;
 

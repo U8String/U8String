@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Text;
 
 namespace U8Primitives;
@@ -6,7 +5,7 @@ namespace U8Primitives;
 public readonly partial struct U8String
 {
     /// <summary>
-    /// Gets a UTF-8 code unit represented as <see cref="byte"/> at the specified index.
+    /// Gets the UTF-8 code unit represented as <see cref="byte"/> at the specified index.
     /// </summary>
     /// <param name="index">The index.</param>
     /// <exception cref="ArgumentOutOfRangeException">
@@ -36,36 +35,117 @@ public readonly partial struct U8String
         set => throw new NotImplementedException();
     }
 
-    // TODO: Naming? Other options are ugly or long, or even more confusing.
+    /// <inheritdoc cref="this[int]"/>
+    byte IReadOnlyList<byte>.this[int index]
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => this[index];
+    }
+
+    /// <summary>
+    /// Determines whether the specified <paramref name="index"/> is at a UTF-8 code point boundary.
+    /// </summary>
+    /// <param name="index">The index to check.</param>
     public bool IsRuneBoundary(int index)
     {
         return (uint)index < (uint)Length
             && !U8Info.IsContinuationByte(in UnsafeRefAdd(index));
     }
 
-    internal int NextRuneIndex(int index)
+    /// <summary>
+    /// Finds the closest index where <see cref="IsRuneBoundary(int)"/> is <see langword="true"/>
+    /// at or after the specified index.
+    /// </summary>
+    /// <param name="index">The index to start searching at.</param>
+    /// <remarks>
+    /// If <paramref name="index"/> is greater than or equal to <see cref="Length"/>,
+    /// <see cref="Length"/> is returned instead.
+    /// </remarks>
+    public int CeilRuneIndex(int index)
     {
         var deref = this;
-        if ((uint)index >= (uint)deref.Length)
+        if ((uint)index < (uint)deref.Length)
         {
-            // Should we use -1 as a sentinel value?
-            return Length;
+            ref var ptr = ref deref.UnsafeRef;
+            while (index < deref.Length
+                && U8Info.IsContinuationByte(ptr.Add(index)))
+            {
+                index++;
+            }
+
+            return index;
         }
 
-        ref var ptr = ref deref.UnsafeRef;
-        while (++index < deref.Length
-            && U8Info.IsContinuationByte(ptr.Add(index)));
-
-        return index;
+        return deref.Length;
     }
 
-    public Rune GetRuneAt(int index)
+    /// <summary>
+    /// Finds the closest index where <see cref="IsRuneBoundary(int)"/> is <see langword="true"/>
+    /// at or before the specified index.
+    /// </summary>
+    /// <param name="index">The index to start searching at.</param>
+    /// <remarks>
+    /// If <paramref name="index"/> is greater than or equal to <see cref="Length"/>,
+    /// <see cref="Length"/> is returned instead.
+    /// </remarks>
+    public int FloorRuneIndex(int index)
+    {
+        var deref = this;
+        if ((uint)index < (uint)deref.Length)
+        {
+            ref var ptr = ref deref.UnsafeRef;
+            while (index > 0
+                && U8Info.IsContinuationByte(ptr.Add(index)))
+            {
+                index--;
+            }
+
+            return index;
+        }
+
+        return deref.Length;
+    }
+
+    /// <summary>
+    /// Finds the next index where <see cref="IsRuneBoundary(int)"/> is <see langword="true"/>
+    /// after the specified index.
+    /// </summary>
+    /// <param name="index">The index preceding the rune to find.</param>
+    /// <remarks>
+    /// If <paramref name="index"/> is greater than or equal to <see cref="Length"/>,
+    /// <see cref="Length"/> is returned instead.
+    /// </remarks>
+    public int NextRuneIndex(int index)
+    {
+        var deref = this;
+        if ((uint)index < (uint)deref.Length)
+        {
+            ref var ptr = ref deref.UnsafeRef;
+            while (++index < deref.Length
+                && U8Info.IsContinuationByte(ptr.Add(index))) ;
+
+            return index;
+        }
+
+        return deref.Length;
+    }
+
+    /// <summary>
+    /// Retrieves the UTF-8 code point at the specified index.
+    /// </summary>
+    /// <param name="index">The index of the code point to retrieve.</param>
+    /// <param name="runeLength">The length of the code point in UTF-8 code units.</param>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="index"/> does not point to a valid UTF-8 code point boundary.
+    /// Also thrown when <paramref name="index"/> is less than zero or greater than or equal to <see cref="Length"/>.
+    /// </exception>
+    public Rune GetRuneAt(int index, out int runeLength)
     {
         var deref = this;
         if ((uint)index >= (uint)deref.Length)
         {
             // TODO: EH UX
-            ThrowHelpers.IndexOutOfRange();
+            ThrowHelpers.ArgumentException();
         }
 
         ref var ptr = ref deref.UnsafeRefAdd(index);
@@ -73,23 +153,34 @@ public readonly partial struct U8String
 
         if (U8Info.IsContinuationByte(b0))
         {
-            ThrowHelpers.ArgumentOutOfRange();
+            ThrowHelpers.ArgumentException();
         }
 
-        return U8Conversions.CodepointToRune(ref ptr, out _);
+        return U8Conversions.CodepointToRune(ref ptr, out runeLength);
     }
 
-    public bool TryGetRuneAt(int index, out Rune rune)
+    /// <summary>
+    /// Attempts to retrieve the UTF-8 code point at the specified index.
+    /// </summary>
+    /// <param name="index">The index of the code point to retrieve.</param>
+    /// <param name="rune">The code point at the specified index.</param>
+    /// <param name="runeLength">The length of the code point in UTF-8 code units (bytes).</param>
+    /// <returns>
+    /// <see langword="true"/> if the <paramref name="index"/> points to a valid UTF-8 code point boundary;
+    /// otherwise, <see langword="false"/>.
+    /// </returns>
+    public bool TryGetRuneAt(int index, out Rune rune, out int runeLength)
     {
         var deref = this;
         if ((uint)index < (uint)deref.Length)
         {
             ref var ptr = ref deref.UnsafeRefAdd(index);
-            rune = U8Conversions.CodepointToRune(ref ptr, out _);
+            rune = U8Conversions.CodepointToRune(ref ptr, out runeLength);
             return !U8Info.IsContinuationByte(ptr);
         }
 
         rune = default;
+        runeLength = 0;
         return false;
     }
 }

@@ -1,20 +1,35 @@
 using System.Collections.Immutable;
 using System.IO.Hashing;
-using System.Runtime.InteropServices;
+
 using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 
+#pragma warning disable RCS1003 // Add braces. Why: manual codegen tuning.
 public readonly partial struct U8String
 {
     public static int Compare(U8String x, U8String y)
     {
-        return U8Comparison.Ordinal.Compare(x, y);
+        int result;
+        if (!x.IsEmpty)
+        {
+            if (!y.IsEmpty)
+            {
+                var left = x.UnsafeSpan;
+                var right = y.UnsafeSpan;
+
+                result = Compare(left, right);
+            }
+            else result = 1;
+        }
+        else result = y.IsEmpty ? 0 : -1;
+
+        return result;
     }
 
     public static int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
     {
-        return U8Comparison.Ordinal.Compare(x, y);
+        return x.SequenceCompareTo(y);
     }
 
     public static int Compare<T>(U8String x, U8String y, T comparer)
@@ -36,18 +51,51 @@ public readonly partial struct U8String
     /// </summary>
     public int CompareTo(U8String other)
     {
-        return U8Comparison.Ordinal.Compare(this, other);
+        int result;
+        if (!other.IsEmpty)
+        {
+            var deref = this;
+            if (!deref.IsEmpty)
+            {
+                var left = deref.UnsafeSpan;
+                var right = other.UnsafeSpan;
+
+                result = Compare(left, right);
+            }
+            else result = -1;
+        }
+        else result = IsEmpty ? 0 : 1;
+
+        return result;
     }
 
     public int CompareTo(U8String? other)
     {
         // Supposedly, this is for collections which opt to store 'U8String?'
-        return other.HasValue ? CompareTo(other.Value) : 1;
+        if (other.HasValue)
+        {
+            return CompareTo(other.Value);
+        }
+
+        return 1;
     }
 
     public int CompareTo(ReadOnlySpan<byte> other)
     {
-        return U8Comparison.Ordinal.Compare(this, other);
+        int result;
+        var deref = this;
+        if (!deref.IsEmpty)
+        {
+            if (!other.IsEmpty)
+            {
+                var left = deref.UnsafeSpan;
+                result = Compare(left, other);
+            }
+            else result = 1;
+        }
+        else result = other.IsEmpty ? 0 : -1;
+
+        return result;
     }
 
     public int CompareTo<T>(U8String other, T comparer)
@@ -80,7 +128,12 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String? other)
     {
-        return other.HasValue && Equals(other.Value);
+        if (other.HasValue)
+        {
+            return Equals(other.Value);
+        }
+
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -105,7 +158,12 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(byte[]? other)
     {
-        return other != null && Equals(other.AsSpan());
+        if (other != null)
+        {
+            return Equals(other.AsSpan());
+        }
+
+        return false;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
