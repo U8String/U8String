@@ -2,6 +2,7 @@ using System.Text;
 
 namespace U8Primitives;
 
+#pragma warning disable RCS1003 // Add braces. Why: manual block ordering.
 public readonly partial struct U8String
 {
     /// <summary>
@@ -46,10 +47,15 @@ public readonly partial struct U8String
     /// Determines whether the specified <paramref name="index"/> is at a UTF-8 code point boundary.
     /// </summary>
     /// <param name="index">The index to check.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsRuneBoundary(int index)
     {
-        return (uint)index < (uint)Length
-            && !U8Info.IsContinuationByte(in UnsafeRefAdd(index));
+        var deref = this;
+        if (index is 0) return true;
+
+        return (uint)index < (uint)deref.Length
+            ? U8Info.IsBoundaryByte(in deref.UnsafeRefAdd(index))
+            : index == deref.Length;
     }
 
     /// <summary>

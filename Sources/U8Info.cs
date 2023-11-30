@@ -37,6 +37,12 @@ public static class U8Info
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static bool IsBoundaryByte(in byte value)
+    {
+        return (sbyte)value >= -0x40;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsContinuationByte(in byte value)
     {
         return (sbyte)value < -64;
