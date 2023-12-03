@@ -135,7 +135,7 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from the specified <see cref="ReadOnlySpan{T}"/> of UTF-8 <see cref="char"/>s.
+    /// Creates a new <see cref="U8String"/> from the specified <see cref="ReadOnlySpan{T}"/> of <see cref="char"/>s.
     /// </summary>
     /// <param name="value">The <see cref="ReadOnlySpan{T}"/> of <see cref="char"/>s to create the <see cref="U8String"/> from.</param>
     /// <exception cref="FormatException">Thrown when <paramref name="value"/> contains malformed UTF-16 data.</exception>

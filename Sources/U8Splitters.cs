@@ -136,7 +136,7 @@ public readonly struct U8Split(U8String value, U8String separator) :
             _remaining = value._inner;
         }
 
-        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        public readonly U8String Current => new(_value, _current);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -258,7 +258,7 @@ public readonly struct U8Split<TSeparator> :
             _remaining = value._inner;
         }
 
-        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        public readonly U8String Current => new(_value, _current);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -382,7 +382,7 @@ public readonly struct U8Split<TSeparator, TComparer> :
             _comparer = comparer;
             _remaining = value._inner;
         }
-        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        public readonly U8String Current => new(_value, _current);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -486,7 +486,7 @@ public readonly struct ConfiguredU8Split(
         U8Range _current;
         U8Range _remaining = value._inner;
 
-        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        public readonly U8String Current => new(_value, _current);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -607,7 +607,7 @@ public readonly struct ConfiguredU8Split<TSeparator> :
             _remaining = value._inner;
         }
 
-        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        public readonly U8String Current => new(_value, _current);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -732,7 +732,7 @@ public readonly struct ConfiguredU8Split<TSeparator, TComparer> :
             _remaining = value._inner;
         }
 
-        public readonly U8String Current => new(_value, _current.Offset, _current.Length);
+        public readonly U8String Current => new(_value, _current);
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -972,7 +972,7 @@ public readonly ref struct U8RefSplit
         public readonly U8String Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(_value, _current.Offset, _current.Length);
+            get => new(_value, _current);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1195,7 +1195,7 @@ public readonly ref struct U8RefSplit<TComparer>
         public readonly U8String Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(_value, _current.Offset, _current.Length);
+            get => new(_value, _current);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1379,7 +1379,7 @@ public readonly ref struct ConfiguredU8RefSplit
         public readonly U8String Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(_value, _current.Offset, _current.Length);
+            get => new(_value, _current);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1584,7 +1584,7 @@ public readonly ref struct ConfiguredU8RefSplit<TComparer>
         public readonly U8String Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(_value, _current.Offset, _current.Length);
+            get => new(_value, _current);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1662,7 +1662,7 @@ public readonly ref struct U8RefAnySplit
         public readonly U8String Current
         {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(_value, _current.Offset, _current.Length);
+            get => new(_value, _current);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

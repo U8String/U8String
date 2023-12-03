@@ -1,11 +1,19 @@
+using System.Buffers.Text;
+using System.Diagnostics;
+using System.Linq;
 using System.Text;
 using U8Primitives.Abstractions;
 
 namespace U8Primitives;
 
-#pragma warning disable RCS1003, RCS1179, IDE0045 // Braces, ternary, etc. Why: explicit control over block layout and return merging.
+// Use braces, ternary, etc. Why: explicit control over block layout and return merging with nice syntax.
+#pragma warning disable RCS1003, RCS1179, IDE0045
 public readonly partial struct U8String
 {
+    /// <summary>
+    /// Calculates the length of the common prefix between
+    /// this <see cref="U8String"/> and <paramref name="other"/>.
+    /// </summary>
     public int CommonPrefixLength(U8String other)
     {
         if (!other.IsEmpty)
@@ -16,6 +24,10 @@ public readonly partial struct U8String
         return 0;
     }
 
+    /// <summary>
+    /// Calculates the length of the common prefix between
+    /// this <see cref="U8String"/> and <paramref name="other"/>.
+    /// </summary>
     public int CommonPrefixLength(ReadOnlySpan<byte> other)
     {
         var deref = this;
@@ -27,35 +39,61 @@ public readonly partial struct U8String
         return 0;
     }
 
+    /// <summary>
+    /// Indicates whether specified <see cref="byte"/> occurs within
+    /// current <see cref="U8String"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Contains(byte value)
     {
-        bool result;
-        var deref = this;
-        if (!deref.IsEmpty)
-        {
-            result = deref.UnsafeSpan.Contains(value);
-        }
-        else result = false;
-
-        return result;
+        return !IsEmpty && UnsafeSpan.Contains(value);
     }
 
+    /// <summary>
+    /// Indicates whether specified <see cref="char"/> occurs within
+    /// current <see cref="U8String"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public bool Contains(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? Contains((byte)value)
-            : Contains(new U8Scalar(value, checkAscii: false).AsSpan());
+            : ContainsRune(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Indicates whether specified <see cref="Rune"/> occurs within
+    /// current <see cref="U8String"/>.
+    /// </summary>
     public bool Contains(Rune value)
     {
         return value.IsAscii
             ? Contains((byte)value.Value)
-            : Contains(new U8Scalar(value, checkAscii: false).AsSpan());
+            : ContainsRune(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    // This method exists to reduce codegen size and remove duplicate calls
+    // which occur when Contains(span) is called from Contains(char/Rune).
+    // It is also not being forcibly inlined because it may cause the inlining
+    // of the enclosing Contains(char/Rune) as well, which takes quite a bit
+    // of space due to conversion to UTF-8.
+    bool ContainsRune(ReadOnlySpan<byte> value)
+    {
+        Debug.Assert(value.Length is >= 2 and <= 4);
+
+        var deref = this;
+        return !deref.IsEmpty && deref.UnsafeSpan.IndexOf(value) >= 0;
+    }
+
+    /// <summary>
+    /// Indicates whether specified <paramref name="value"/> occurs within
+    /// current <see cref="U8String"/>.
+    /// </summary>
     public bool Contains(U8String value)
     {
         bool result;
@@ -73,25 +111,43 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Indicates whether specified <paramref name="value"/> occurs within
+    /// current <see cref="U8String"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Contains(ReadOnlySpan<byte> value)
     {
-        bool result;
         var deref = this;
         if (!deref.IsEmpty)
         {
-            result = deref.UnsafeSpan.IndexOf(value) >= 0;
+            var span = deref.UnsafeSpan;
+            return value.Length is 1
+                ? span.Contains(value.AsRef())
+                : span.IndexOf(value) >= 0;
         }
-        else result = value.IsEmpty;
 
-        return result;
+        return value.IsEmpty;
     }
 
+    /// <summary>
+    /// Indicates whether specified <see cref="byte"/> occurs within
+    /// current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool Contains<T>(byte value, T comparer)
         where T : IU8ContainsOperator
     {
         return comparer.Contains(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether specified <see cref="char"/> occurs within
+    /// current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public bool Contains<T>(char value, T comparer)
         where T : IU8ContainsOperator
     {
@@ -102,6 +158,10 @@ public readonly partial struct U8String
             : Contains(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Indicates whether specified <see cref="Rune"/> occurs within
+    /// current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool Contains<T>(Rune value, T comparer)
         where T : IU8ContainsOperator
     {
@@ -116,12 +176,20 @@ public readonly partial struct U8String
         return comparer.Contains(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether specified <paramref name="value"/> occurs within
+    /// current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool Contains<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8ContainsOperator
     {
         return comparer.Contains(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <see cref="byte"/>.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(byte value)
     {
@@ -129,6 +197,14 @@ public readonly partial struct U8String
         return arr != null && arr.AsRef(offset) == value;
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <see cref="char"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public bool StartsWith(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
@@ -138,10 +214,18 @@ public readonly partial struct U8String
             : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <see cref="Rune"/>.
+    /// </summary>
     public bool StartsWith(Rune value) => value.IsAscii
         ? StartsWith((byte)value.Value)
         : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan());
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <paramref name="value"/>.
+    /// </summary>
     public bool StartsWith(U8String value)
     {
         bool result;
@@ -159,6 +243,10 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <paramref name="value"/>.
+    /// </summary>
     public bool StartsWith(ReadOnlySpan<byte> value)
     {
         bool result;
@@ -172,12 +260,24 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <see cref="byte"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool StartsWith<T>(byte value, T comparer)
         where T : IU8StartsWithOperator
     {
         return comparer.StartsWith(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <see cref="char"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public bool StartsWith<T>(char value, T comparer)
         where T : IU8StartsWithOperator
     {
@@ -188,6 +288,10 @@ public readonly partial struct U8String
             : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <see cref="Rune"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool StartsWith<T>(Rune value, T comparer)
         where T : IU8StartsWithOperator
     {
@@ -196,18 +300,30 @@ public readonly partial struct U8String
             : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <paramref name="value"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool StartsWith<T>(U8String value, T comparer)
         where T : IU8StartsWithOperator
     {
         return comparer.StartsWith(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> starts with
+    /// specified <paramref name="value"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool StartsWith<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8StartsWithOperator
     {
         return comparer.StartsWith(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <see cref="byte"/>.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(byte value)
     {
@@ -215,6 +331,14 @@ public readonly partial struct U8String
         return arr != null && arr.AsRef(offset + length - 1) == value;
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <see cref="char"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public bool EndsWith(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
@@ -224,10 +348,18 @@ public readonly partial struct U8String
             : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <see cref="Rune"/>.
+    /// </summary>
     public bool EndsWith(Rune value) => value.IsAscii
         ? EndsWith((byte)value.Value)
         : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan());
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <paramref name="value"/>.
+    /// </summary>
     public bool EndsWith(U8String value)
     {
         bool result;
@@ -245,6 +377,10 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <paramref name="value"/>.
+    /// </summary>
     public bool EndsWith(ReadOnlySpan<byte> value)
     {
         bool result;
@@ -258,12 +394,24 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <see cref="byte"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool EndsWith<T>(byte value, T comparer)
         where T : IU8EndsWithOperator
     {
         return comparer.EndsWith(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <see cref="char"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public bool EndsWith<T>(char value, T comparer)
         where T : IU8EndsWithOperator
     {
@@ -274,6 +422,10 @@ public readonly partial struct U8String
             : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <see cref="Rune"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool EndsWith<T>(Rune value, T comparer)
         where T : IU8EndsWithOperator
     {
@@ -282,47 +434,92 @@ public readonly partial struct U8String
             : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <paramref name="value"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool EndsWith<T>(U8String value, T comparer)
         where T : IU8EndsWithOperator
     {
         return comparer.EndsWith(this, value);
     }
 
+    /// <summary>
+    /// Indicates whether current <see cref="U8String"/> ends with
+    /// specified <paramref name="value"/> using specified <paramref name="comparer"/>.
+    /// </summary>
     public bool EndsWith<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8EndsWithOperator
     {
         return comparer.EndsWith(this, value);
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <see cref="byte"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf(byte value)
     {
-        int result;
-        var deref = this;
-        if (!deref.IsEmpty)
-        {
-            result = deref.UnsafeSpan.IndexOf(value);
-        }
-        else result = -1;
-
-        return result;
+        return !IsEmpty ? UnsafeSpan.IndexOf(value) : -1;
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <see cref="char"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public int IndexOf(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? IndexOf((byte)value)
-            : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
+            : IndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <see cref="Rune"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int IndexOf(Rune value)
     {
         return value.IsAscii
             ? IndexOf((byte)value.Value)
-            : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
+            : IndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    int IndexOfRune(ReadOnlySpan<byte> value)
+    {
+        Debug.Assert(value.Length is >= 2 and <= 4);
+
+        var deref = this;
+        return !deref.IsEmpty ? deref.UnsafeSpan.IndexOf(value) : -1;
+    }
+
+    /// <summary>
+    /// Finds the first occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int IndexOf(U8String value)
     {
         int result;
@@ -340,25 +537,57 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int IndexOf(ReadOnlySpan<byte> value)
     {
         int result;
         var deref = this;
         if (!deref.IsEmpty)
         {
-            result = deref.UnsafeSpan.IndexOf(value);
+            var span = deref.UnsafeSpan;
+            result = value.Length is 1
+                ? span.IndexOf(value.AsRef())
+                : span.IndexOf(value);
         }
         else result = value.IsEmpty ? 0 : -1;
 
         return result;
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <see cref="byte"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int IndexOf<T>(byte value, T comparer)
         where T : IU8IndexOfOperator
     {
         return comparer.IndexOf(this, value).Offset;
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <see cref="char"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public int IndexOf<T>(char value, T comparer)
         where T : IU8IndexOfOperator
     {
@@ -369,6 +598,14 @@ public readonly partial struct U8String
             : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <see cref="Rune"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int IndexOf<T>(Rune value, T comparer)
         where T : IU8IndexOfOperator
     {
@@ -377,47 +614,100 @@ public readonly partial struct U8String
             : IndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int IndexOf<T>(U8String value, T comparer)
         where T : IU8IndexOfOperator
     {
         return comparer.IndexOf(this, value).Offset;
     }
 
+    /// <summary>
+    /// Finds the first occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int IndexOf<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8IndexOfOperator
     {
         return comparer.IndexOf(this, value).Offset;
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <see cref="byte"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf(byte value)
     {
-        int result;
-        var deref = this;
-        if (!deref.IsEmpty)
-        {
-            result = deref.UnsafeSpan.LastIndexOf(value);
-        }
-        else result = -1;
-
-        return result;
+        return !IsEmpty ? UnsafeSpan.LastIndexOf(value) : -1;
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <see cref="char"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public int LastIndexOf(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? LastIndexOf((byte)value)
-            : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
+            : LastIndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <see cref="Rune"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int LastIndexOf(Rune value)
     {
         return value.IsAscii
             ? LastIndexOf((byte)value.Value)
-            : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan());
+            : LastIndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
+    int LastIndexOfRune(ReadOnlySpan<byte> value)
+    {
+        Debug.Assert(value.Length is >= 2 and <= 4);
+
+        var deref = this;
+        return !deref.IsEmpty ? deref.UnsafeSpan.LastIndexOf(value) : -1;
+    }
+
+    /// <summary>
+    /// Finds the last occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int LastIndexOf(U8String value)
     {
         int result;
@@ -435,25 +725,57 @@ public readonly partial struct U8String
         return result;
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    /// <returns>
+    /// The zero-based index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int LastIndexOf(ReadOnlySpan<byte> value)
     {
         int result;
         var deref = this;
         if (!deref.IsEmpty)
         {
-            result = deref.UnsafeSpan.LastIndexOf(value);
+            var span = deref.UnsafeSpan;
+            result = value.Length is 1
+                ? span.LastIndexOf(value.AsRef())
+                : span.LastIndexOf(value);
         }
         else result = value.IsEmpty ? 0 : -1;
 
         return result;
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <see cref="byte"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int LastIndexOf<T>(byte value, T comparer)
         where T : IU8LastIndexOfOperator
     {
         return comparer.LastIndexOf(this, value).Offset;
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <see cref="char"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when <paramref name="value"/> is a surrogate character.
+    /// Separate surrogate UTF-16 code units are not representable in UTF-8.
+    /// </exception>
     public int LastIndexOf<T>(char value, T comparer)
         where T : IU8LastIndexOfOperator
     {
@@ -464,6 +786,14 @@ public readonly partial struct U8String
             : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <see cref="Rune"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int LastIndexOf<T>(Rune value, T comparer)
         where T : IU8LastIndexOfOperator
     {
@@ -472,12 +802,28 @@ public readonly partial struct U8String
             : LastIndexOf(new U8Scalar(value, checkAscii: false).AsSpan(), comparer);
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int LastIndexOf<T>(U8String value, T comparer)
         where T : IU8LastIndexOfOperator
     {
         return comparer.LastIndexOf(this, value).Offset;
     }
 
+    /// <summary>
+    /// Finds the last occurrence of the specified <paramref name="value"/>
+    /// in the current <see cref="U8String"/> using specified <paramref name="comparer"/>.
+    /// </summary>
+    /// <returns>
+    /// The index of <paramref name="value"/> if it is found;
+    /// <c>-1</c> otherwise.
+    /// </returns>
     public int LastIndexOf<T>(ReadOnlySpan<byte> value, T comparer)
         where T : IU8LastIndexOfOperator
     {

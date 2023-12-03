@@ -82,7 +82,6 @@ public static class U8StringExtensions
     /// <param name="format">The format to use.</param>
     /// <param name="provider">The format provider to use.</param>
     /// <returns>U8String representation of the value.</returns>
-    // [MethodImpl(MethodImplOptions.AggressiveInlining)] // We might this need after all...
     public static U8String ToU8String<T>(
         this T value,
         ReadOnlySpan<char> format,

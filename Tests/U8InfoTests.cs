@@ -76,7 +76,6 @@ public class U8InfoTests
             var utf8 = rune.ToUtf8();
             var message = $"Rune: 0x{rune.Value:X4} Bytes: {string.Join(" ", utf8.Select(b => b.ToString("X2")))}";
 
-            Assert.True(U8Info.IsWhitespaceRune(utf8), message);
             Assert.True(U8Info.IsWhitespaceRune(ref utf8[0], out var length), message);
             Assert.Equal(rune.Utf8SequenceLength, length);
             Assert.Equal(rune.Utf8SequenceLength, utf8.Length);
@@ -91,8 +90,7 @@ public class U8InfoTests
         {
             var utf8 = rune.ToUtf8();
             var message = $"Rune: 0x{rune.Value:X4} Bytes: {string.Join(" ", utf8.Select(b => b.ToString("X2")))}";
-            
-            Assert.False(U8Info.IsWhitespaceRune(utf8), message);
+
             Assert.False(U8Info.IsWhitespaceRune(ref utf8[0], out var length), message);
             Assert.Equal(rune.Utf8SequenceLength, length);
             Assert.Equal(rune.Utf8SequenceLength, utf8.Length);

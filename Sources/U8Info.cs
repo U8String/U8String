@@ -6,29 +6,38 @@ namespace U8Primitives;
 
 public static class U8Info
 {
+    /// <summary>
+    /// Determines wheter the bytes in <paramref name="value"/> comprise of ASCII characters only.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAscii(ReadOnlySpan<byte> value)
     {
-        if (value.Length is 1)
-        {
-            return IsAsciiByte(in value[0]);
-        }
-
-        return Ascii.IsValid(value);
+        return value.Length is 1
+            ? IsAsciiByte(in value.AsRef())
+            : Ascii.IsValid(value);
     }
 
+    /// <summary>
+    /// Determines wheter the provided byte is an ASCII character.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiByte(in byte value)
     {
         return value <= 0x7F;
     }
 
+    /// <summary>
+    /// Determines wheter the provided byte is an ASCII letter.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiLetter(in byte value)
     {
         return (uint)((value | 0x20) - 'a') <= 'z' - 'a';
     }
 
+    /// <summary>
+    /// Determines wheter the provided byte is an ASCII whitespace character.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsAsciiWhitespace(in byte value)
     {
@@ -36,36 +45,28 @@ public static class U8Info
         return value is 0x09 or 0x0A or 0x0B or 0x0C or 0x0D or 0x20;
     }
 
+    /// <summary>
+    /// Determines wheter the provided byte is a start of a UTF-8 code point.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsBoundaryByte(in byte value)
     {
         return (sbyte)value >= -0x40;
     }
 
+    /// <summary>
+    /// Determines wheter the provided byte is a continuation of a UTF-8 code point.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsContinuationByte(in byte value)
     {
         return (sbyte)value < -64;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool IsWhitespaceRune(ReadOnlySpan<byte> value)
-    {
-        if (value.Length > 0)
-        {
-            var b = value[0];
-            if (IsAsciiByte(b))
-            {
-                return IsAsciiWhitespace(b);
-            }
-
-            return Rune.DecodeFromUtf8(value, out var rune, out _) is OperationStatus.Done
-                && Rune.IsWhiteSpace(rune);
-        }
-
-        return false;
-    }
-
+    /// <summary>
+    /// Contract: input *must* be well-formed UTF-8.
+    /// Will dereference past the end of the input if it's not.
+    /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool IsWhitespaceRune(ref byte ptr, out int size)
     {
@@ -110,15 +111,20 @@ public static class U8Info
         return false;
     }
 
-    // TODO: Is there really no better way to do this?
-    // Why the hell does ARM64 have FJCVTZS but not something to count code point length?
-    // TODO 2: Naming? Other options are ugly or long, or even more confusing.
+    /// <summary>
+    /// Calculates the length of the UTF-8 code point starting at <paramref name="value"/>.
+    /// </summary>
+    /// <returns>
+    /// If <paramref name="value"/> points at a start of a UTF-8 code point, the length of the
+    /// code point in bytes; otherwise, <c>1</c>.
+    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int RuneLength(in byte value)
     {
         var lzcnt = BitOperations.LeadingZeroCount(~(uint)(value << 24));
         var flag = IsAsciiByte(value);
 
+        // Branchless cmovle / csel.
         return flag ? 1 : lzcnt;
     }
 }
