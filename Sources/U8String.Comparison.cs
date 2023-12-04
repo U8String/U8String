@@ -218,7 +218,7 @@ public readonly partial struct U8String
     /// <inheritdoc cref="GetHashCode(ReadOnlySpan{byte})"/>
     public override int GetHashCode()
     {
-        var hash = XxHash3.HashToUInt64(this, U8Constants.DefaultHashSeed);
+        var hash = XxHash3.HashToUInt64(this, U8HashSeed.Value);
 
         return ((int)hash) ^ (int)(hash >> 32);
     }
@@ -237,7 +237,7 @@ public readonly partial struct U8String
     /// </remarks>
     public static int GetHashCode(ReadOnlySpan<byte> value)
     {
-        var hash = XxHash3.HashToUInt64(value, U8Constants.DefaultHashSeed);
+        var hash = XxHash3.HashToUInt64(value, U8HashSeed.Value);
 
         return ((int)hash) ^ (int)(hash >> 32);
     }

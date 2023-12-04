@@ -505,8 +505,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     static int GetHashCodeLarge(ref byte src, nuint length, ReadOnlySpan<byte> buffer)
     {
-        var hasher = Interlocked.Exchange(ref Hasher, null);
-        hasher ??= new XxHash3(U8Constants.DefaultHashSeed);
+        var hasher = Hasher ??= new XxHash3(U8HashSeed.Value);
 
         do
         {
@@ -525,7 +524,6 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         var hash = hasher.GetCurrentHashAsUInt64();
 
         hasher.Reset();
-        Hasher = hasher;
         return ((int)hash) ^ (int)(hash >> 32);
     }
 }

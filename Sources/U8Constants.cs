@@ -37,10 +37,13 @@ public static class U8Constants
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(_replacementChar, 0, 3);
     }
+}
 
-    internal static long DefaultHashSeed { get; } = (long)GenerateSeed();
+static class U8HashSeed
+{
+    internal readonly static long Value = (long)Generate();
 
-    private static ulong GenerateSeed()
+    static ulong Generate()
     {
         var seed = 0ul;
         var span = MemoryMarshal.Cast<ulong, byte>(new Span<ulong>(ref seed));

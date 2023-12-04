@@ -164,9 +164,6 @@ public readonly partial struct U8String :
     /// <summary>
     /// Similar to <see cref="UnsafeRef"/>, but does not throw NRE if <see cref="IsEmpty"/> is true.
     /// </summary>
-    /// <remarks>
-    /// cmov's the ref out of byte[] if it is not null and uncoditionally increments it by <see cref="Offset"/>.
-    /// </remarks>
     internal ref byte DangerousRef
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -76,7 +76,7 @@ public readonly struct U8OrdinalComparer :
 
     public int GetHashCode(U8String value)
     {
-        return U8String.GetHashCode(value);
+        return value.GetHashCode();
     }
 
     public int GetHashCode(ReadOnlySpan<byte> value)
