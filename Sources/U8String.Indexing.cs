@@ -33,7 +33,7 @@ public readonly partial struct U8String
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => this[index];
-        set => throw new NotImplementedException();
+        set => throw new NotSupportedException();
     }
 
     /// <inheritdoc cref="this[int]"/>
@@ -47,6 +47,10 @@ public readonly partial struct U8String
     /// Determines whether the specified <paramref name="index"/> is at a UTF-8 code point boundary.
     /// </summary>
     /// <param name="index">The index to check.</param>
+    /// <returns>
+    /// <see langword="true"/> if the specified <paramref name="index"/> is at a UTF-8 code point boundary
+    /// or is equal to <see cref="Length"/> or <c>0</c>; otherwise, <see langword="false"/>.
+    /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool IsRuneBoundary(int index)
     {

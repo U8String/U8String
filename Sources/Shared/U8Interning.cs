@@ -6,21 +6,26 @@ using System.Text.Unicode;
 
 namespace U8Primitives;
 
-internal static class U8Interning
+// Contract: only not-empty strings are interned.
+static class U8Interning
 {
-    static bool UseEncodedPool { get; } = AppContext
+    static bool UseEncodedPool { get; } = RuntimeFeature.IsDynamicCodeCompiled && AppContext
         .TryGetSwitch("U8String.UseEncodedPool", out var enabled) && enabled;
-    static bool UseDecodedPool { get; } = AppContext
+    static bool UseDecodedPool { get; } = RuntimeFeature.IsDynamicCodeCompiled && AppContext
         .TryGetSwitch("U8String.UseDecodedPool", out var enabled) && enabled;
 
-    static readonly int EncodedPoolThreshold = AppContext
-        .GetData("U8String.EncodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
-    static readonly int DecodedPoolThreshold = AppContext
-        .GetData("U8String.DecodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
+    // Separate class to allow NativeAOT completely trim away the interning code
+    // by ensuring there is no cctor check in Use(Encoded/Decoded)Pool properties.
+    static class InternPool
+    {
+        internal static readonly ConditionalWeakTable<string, byte[]> Encoded = [];
+        internal static readonly ConditionalWeakTable<byte[], ConcurrentDictionary<long, string>> Decoded = [];
 
-    // Contract: only not-empty strings are interned.
-    static readonly ConditionalWeakTable<string, byte[]> EncodedPool = [];
-    static readonly ConditionalWeakTable<byte[], ConcurrentDictionary<long, string>> DecodedPool = [];
+        internal static readonly int EncodeThreshold = AppContext
+            .GetData("U8String.EncodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
+        internal static readonly int DecodeThreshold = AppContext
+            .GetData("U8String.DecodedPoolThreshold") is int threshold ? threshold : 8192 * 1024;
+    }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool TryGetEncoded(string value, out U8String encoded)
@@ -41,7 +46,7 @@ internal static class U8Interning
     {
         // This does not really coalesce the cctor checks for NativeAOT, but at least
         // it puts both of them in one place, helping the branch predictor.
-        var (pool, threshold) = (EncodedPool, EncodedPoolThreshold);
+        var (pool, threshold) = (InternPool.Encoded, InternPool.EncodeThreshold);
 
         if (pool.TryGetValue(value, out var encoded))
         {
@@ -93,7 +98,7 @@ internal static class U8Interning
         Debug.Assert(value.Length > 0);
         Debug.Assert(Unsafe.SizeOf<U8Range>() is sizeof(long));
 
-        var (pool, threshold) = (DecodedPool, DecodedPoolThreshold);
+        var (pool, threshold) = (InternPool.Decoded, InternPool.DecodeThreshold);
 
         var source = value._value;
         var range = Unsafe.BitCast<U8Range, long>(value._inner);

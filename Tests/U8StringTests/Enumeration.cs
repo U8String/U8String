@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text;
 
-namespace U8Primitives.Tests;
+namespace U8Primitives.Tests.U8StringTests;
 
 #pragma warning disable CA1829, RCS1077 // Optimize LINQ method call.
 #pragma warning disable xUnit2017 // xUnit analyzer suggests changes that are wrong
@@ -9,7 +9,7 @@ namespace U8Primitives.Tests;
 // - ElementAt returns correct value, throws
 // - CopyTo writes correct sequence, throws
 // - ToList returns correct sequence
-public class U8EnumeratorTests
+public class Enumeration
 {
     public static IEnumerable<object[]> ValidStrings => Constants.ValidStrings.Select(c => new object[] { c });
 

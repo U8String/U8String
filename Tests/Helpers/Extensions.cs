@@ -22,4 +22,9 @@ internal static class Extensions
     internal static T[] Array<T>(this T[] array) => array;
 
     internal static ReadOnlySpan<T> Span<T>(this ReadOnlySpan<T> span) => span;
+
+    internal static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> source)
+    {
+        return source.SelectMany(x => x);
+    }
 }

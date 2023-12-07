@@ -357,9 +357,11 @@ public readonly partial struct U8String
     /// </para>
     /// </remarks>
     /// <param name="value">The <see cref="string"/> to create the <see cref="U8String"/> from.</param>
-    public static U8String CreateInterned(string? value)
+    public static U8String CreateInterned(string value)
     {
-        if (value is { Length: > 0 })
+        ThrowHelpers.CheckNull(value);
+
+        if (value.Length > 0)
         {
             return U8Interning.GetEncoded(value);
         }

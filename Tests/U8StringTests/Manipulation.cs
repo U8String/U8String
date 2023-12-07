@@ -159,7 +159,7 @@ public partial class Manipulation
                 .Range(0, value.Length - o)
                 .Where(l => l % rune.Utf8SequenceLength is 0)
                 .Select(l => (offset: o, length: l)))
-            .SelectMany(v => v);
+            .Flatten();
 
         foreach (var (offset, length) in validArgs)
         {
@@ -216,7 +216,7 @@ public partial class Manipulation
                 .Range(0, l)
                 .Where(o => o % rune.Utf8SequenceLength is 0)
                 .Select(o => (offset: o, length: l)))
-            .SelectMany(v => v);
+            .Flatten();
 
         foreach (var (offset, length) in invalidArgs)
         {
@@ -224,6 +224,25 @@ public partial class Manipulation
             _ = value.Slice(offset, value.Length - offset);
             Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(offset, length));
         }
+    }
+
+    [Fact]
+    public void Slice_SlicingEmptyStringWithZeroOffsetSucceeds()
+    {
+        var value = default(U8String);
+        var actual = value.Slice(0);
+
+        Assert.Equal(0, actual.Length);
+    }
+
+    [Fact]
+    public void Slice_SlicingEmptyStringWithZeroOffsetZeroLengthSucceeds()
+    {
+        var value = default(U8String);
+        var actual = value.Slice(0, 0);
+
+        Assert.Equal(0, actual.Offset);
+        Assert.Equal(0, actual.Length);
     }
 
     [Fact]
@@ -272,9 +291,9 @@ public partial class Manipulation
             .Select(rune => repetitions
                 .Select(count => Enumerable
                     .Repeat(rune, count)
-                    .SelectMany(runes => runes)
+                    .Flatten()
                     .ToArray()))
-            .SelectMany(runes => runes)
+            .Flatten()
             .ToArray();
 
         foreach (var value in values)
@@ -296,7 +315,7 @@ public partial class Manipulation
             }
 
             var allRuneBytes = Constants.WhitespaceRunes
-                .SelectMany(r => r.ToUtf8())
+                .SelectMany(Extensions.ToUtf8)
                 .ToImmutableArray();
 
             yield return (value, [..allRuneBytes, ..value]);
