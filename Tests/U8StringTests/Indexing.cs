@@ -103,6 +103,14 @@ public class Indexing
         Assert.Throws<IndexOutOfRangeException>(() => ((IReadOnlyList<byte>)u8str)[int.MaxValue]);
     }
 
+    [Fact]
+    public void IListIndexer_ThrowsOnSet()
+    {
+        var u8str = new U8String(Constants.AsciiBytes);
+
+        Assert.Throws<NotSupportedException>(() => ((IList<byte>)u8str)[0] = 0);
+    }
+
     [Theory, MemberData(nameof(IndexedStrings))]
     public void IsRuneBoundary_ReturnsTrueForBoundaryIndex(ImmutableArray<byte> bytes, int stride)
     {
