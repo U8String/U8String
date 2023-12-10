@@ -1,8 +1,7 @@
-using System.Buffers;
 using System.Numerics;
 using System.Text;
 
-namespace U8Primitives;
+namespace U8;
 
 public static class U8Info
 {

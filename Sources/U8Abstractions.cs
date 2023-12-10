@@ -1,4 +1,4 @@
-namespace U8Primitives.Abstractions;
+namespace U8.Abstractions;
 
 public interface IU8ContainsOperator
 {

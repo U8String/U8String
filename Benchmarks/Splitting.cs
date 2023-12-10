@@ -1,9 +1,6 @@
-using System.Numerics;
-
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [MemoryDiagnoser]
 [ShortRunJob]
@@ -11,8 +8,6 @@ namespace U8Primitives.Benchmarks;
 // [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 public class Splitting
 {
-    private static readonly U8String SplitSeq = U8String.CreateUnchecked(", "u8);
-
     [Params(
         "test",
         "Lorem ipsum dolor sit amet, consectetur adipiscing elit, Sed non risus. Suspendisse",
@@ -25,7 +20,7 @@ public class Splitting
     [GlobalSetup]
     public void Setup()
     {
-        Value = new U8String(ValueUtf16);
+        Value = new U8String(ValueUtf16!);
     }
 
     [Benchmark]

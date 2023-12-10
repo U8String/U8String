@@ -1,4 +1,4 @@
-using U8Primitives;
+using U8;
 
 namespace System.Net.Http;
 

@@ -2,11 +2,13 @@ using System.IO.Hashing;
 using System.Numerics;
 using System.Runtime.Intrinsics;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
+using U8.CaseConversion;
 
-namespace U8Primitives;
+namespace U8.Comparison;
 
 // TODO: Optimize impls.
+// TODO: Decide where in the sort order should the case-folded characters go.
 public readonly struct U8AsciiIgnoreCaseComparer :
     IU8Comparer,
     IU8EqualityComparer,

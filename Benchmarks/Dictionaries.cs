@@ -1,9 +1,9 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
-using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
-namespace U8Primitives.Benchmarks;
+using BenchmarkDotNet.Attributes;
+
+namespace U8.Benchmarks;
 
 [MemoryDiagnoser]
 [ShortRunJob]
@@ -30,7 +30,7 @@ public class Dictionaries
     [GlobalSetup]
     public void Setup()
     {
-        var firstU8 = new U8String(StrUtf16);
+        var firstU8 = new U8String(StrUtf16!);
         var secondU8 = firstU8.Clone();
         var secondU16 = firstU8.ToString();
 

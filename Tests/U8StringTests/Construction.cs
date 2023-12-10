@@ -5,9 +5,10 @@ using System.Text;
 
 using Microsoft.Win32.SafeHandles;
 
-using U8Primitives.IO;
+using U8.IO;
+using U8.Primitives;
 
-namespace U8Primitives.Tests.U8StringTests;
+namespace U8.Tests.U8StringTests;
 
 public class Construction
 {

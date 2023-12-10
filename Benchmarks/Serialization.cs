@@ -4,7 +4,7 @@ using System.Text.Json.Serialization;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [MemoryDiagnoser]
 // [DisassemblyDiagnoser(maxDepth: 2)]

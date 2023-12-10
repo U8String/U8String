@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 
-namespace U8Primitives;
+namespace U8;
 
 public readonly partial struct U8String
 {

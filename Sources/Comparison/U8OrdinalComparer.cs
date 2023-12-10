@@ -1,6 +1,6 @@
-using U8Primitives.Abstractions;
+using U8.Abstractions;
 
-namespace U8Primitives;
+namespace U8.Comparison;
 
 public readonly struct U8OrdinalComparer :
     IU8Comparer,

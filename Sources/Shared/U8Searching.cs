@@ -3,9 +3,10 @@ using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
+using U8.Primitives;
 
-namespace U8Primitives;
+namespace U8.Shared;
 
 // TODO: Better name?
 internal static class U8Searching

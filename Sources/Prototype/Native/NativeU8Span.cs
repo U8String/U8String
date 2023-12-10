@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace U8Primitives.InteropServices;
+namespace U8.InteropServices;
 
 // TODO: Double-check to ensure zero-extension on all casts and math (after all, _length must never be negative)
 #pragma warning disable IDE0032, RCS1085 // Use auto-implemented property. Why: readable layout

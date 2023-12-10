@@ -7,10 +7,12 @@ using System.Text.Unicode;
 
 using Microsoft.Win32.SafeHandles;
 
-using U8Primitives.InteropServices;
-using U8Primitives.IO;
+using U8.InteropServices;
+using U8.IO;
+using U8.Primitives;
+using U8.Shared;
 
-namespace U8Primitives;
+namespace U8;
 
 // Policy:
 // - Constructors must drop the reference if the length is 0.

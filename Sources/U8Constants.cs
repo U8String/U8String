@@ -1,7 +1,7 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 
-namespace U8Primitives;
+namespace U8;
 
 public static class U8Constants
 {

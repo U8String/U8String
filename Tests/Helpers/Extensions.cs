@@ -1,7 +1,7 @@
 using System.Buffers;
 using System.Text;
 
-namespace U8Primitives.Tests;
+namespace U8.Tests;
 
 internal static class Extensions
 {

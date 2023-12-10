@@ -5,9 +5,10 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Unicode;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
+using U8.Shared;
 
-namespace U8Primitives;
+namespace U8.Primitives;
 
 /// <summary>
 /// A collection of chars in a provided <see cref="U8String"/>.
@@ -272,7 +273,7 @@ public readonly struct U8Runes(U8String value) :
 // This is effectively https://github.com/dotnet/runtime/issues/28507 adapted to U8String
 // Since the source has to be valid UTF-8, we can make assumptions which significantly improve performance.
 /// <summary>
-/// A collection of Rune indices in a provided <see cref="U8String"/>.
+/// A collection of Rune indices (unicode scalar values and their offsets) in a provided <see cref="U8String"/>.
 /// </summary>
 public readonly struct U8RuneIndices(U8String value) :
     ICollection<U8RuneIndex>,

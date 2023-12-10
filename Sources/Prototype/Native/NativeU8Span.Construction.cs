@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace U8Primitives.InteropServices;
+namespace U8.InteropServices;
 
 internal unsafe readonly partial struct NativeU8Span
 {

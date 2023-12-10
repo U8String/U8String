@@ -1,6 +1,8 @@
 using System.Text;
 
-namespace U8Primitives;
+using U8.Shared;
+
+namespace U8;
 
 #pragma warning disable RCS1003 // Add braces. Why: manual block ordering.
 public readonly partial struct U8String
@@ -64,7 +66,7 @@ public readonly partial struct U8String
 
     /// <summary>
     /// Finds the closest index where <see cref="IsRuneBoundary(int)"/> is <see langword="true"/>
-    /// at or after the specified index.
+    /// at or after the specified <paramref name="index"/>.
     /// </summary>
     /// <param name="index">The index to start searching at.</param>
     /// <remarks>
@@ -91,7 +93,7 @@ public readonly partial struct U8String
 
     /// <summary>
     /// Finds the closest index where <see cref="IsRuneBoundary(int)"/> is <see langword="true"/>
-    /// at or before the specified index.
+    /// at or before the specified <paramref name="index"/>.
     /// </summary>
     /// <param name="index">The index to start searching at.</param>
     /// <remarks>
@@ -118,7 +120,7 @@ public readonly partial struct U8String
 
     /// <summary>
     /// Finds the next index where <see cref="IsRuneBoundary(int)"/> is <see langword="true"/>
-    /// after the specified index.
+    /// after the specified <paramref name="index"/>.
     /// </summary>
     /// <param name="index">The index preceding the rune to find.</param>
     /// <remarks>

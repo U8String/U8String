@@ -1,8 +1,9 @@
 using System.Text;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
+using U8.Shared;
 
-namespace U8Primitives;
+namespace U8.Comparison;
 
 // Should this be called InvariantIgnoreCase? There is ambiguity for variable-length
 // case folding. What should be the policy for 54 characters that are affected by this?

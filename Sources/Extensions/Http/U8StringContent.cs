@@ -1,6 +1,6 @@
 using System.Net.Http.Headers;
 
-namespace U8Primitives.Http;
+namespace U8.Http;
 
 public sealed class U8StringContent : ByteArrayContent
 {

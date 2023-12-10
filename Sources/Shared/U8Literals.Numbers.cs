@@ -1,4 +1,4 @@
-namespace U8Primitives;
+namespace U8.Shared;
 
 static partial class U8Literals
 {
@@ -266,7 +266,7 @@ static partial class U8Literals
         ];
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal static U8String Get(byte value)
+        internal static U8String GetByte(byte value)
         {
             return Values.AsRef(value + 1);
         }

@@ -1,4 +1,6 @@
-namespace U8Primitives;
+using U8.Comparison;
+
+namespace U8;
 
 public static class U8Comparison
 {

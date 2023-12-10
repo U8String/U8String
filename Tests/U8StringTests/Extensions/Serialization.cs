@@ -3,7 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 
-namespace U8Primitives.Tests.U8StringTests;
+namespace U8.Tests.U8StringTests;
 
 public partial class Serialization
 {

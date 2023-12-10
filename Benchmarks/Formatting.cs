@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [MemoryDiagnoser]
 // [SimpleJob, SimpleJob(RuntimeMoniker.NativeAot80)]

@@ -1,7 +1,9 @@
 using System.Buffers;
 using System.Text;
 
-namespace U8Primitives.Tests.U8StringTests;
+using U8.Primitives;
+
+namespace U8.Tests.U8StringTests;
 
 #pragma warning disable CA1829, RCS1077 // Optimize LINQ method call.
 #pragma warning disable xUnit2017 // xUnit analyzer suggests changes that are wrong

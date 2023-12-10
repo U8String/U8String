@@ -4,7 +4,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace U8Primitives.Serialization;
+namespace U8.Serialization;
 
 /// <summary>
 /// A <see cref="JsonConverter{T}"/> for <see cref="U8String"/>.

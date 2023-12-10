@@ -1,6 +1,8 @@
 using System.Runtime.InteropServices;
 
-namespace U8Primitives.InteropServices;
+using U8.Primitives;
+
+namespace U8.InteropServices;
 
 /// <summary>
 /// Provides unsafe/unchecked methods for creating and manipulating <see cref="U8String"/> instances.
@@ -74,7 +76,7 @@ public static class U8Marshal
     /// Creates a new <see cref="U8SplitPair"/> representing a split of the given <paramref name="value"/>
     /// without performing bounds check or UTF-8 validation.
     /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
     {
         return new(value, offset, separatorLength);

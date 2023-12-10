@@ -1,7 +1,7 @@
 using System.IO.Hashing;
 using BenchmarkDotNet.Attributes;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 // [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 // [MemoryDiagnoser]

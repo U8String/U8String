@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace U8Primitives;
+namespace U8.Primitives;
 
 public readonly record struct U8RuneIndex : IEquatable<U8RuneIndex>
 {

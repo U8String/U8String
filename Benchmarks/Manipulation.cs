@@ -1,6 +1,6 @@
 using BenchmarkDotNet.Attributes;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [ShortRunJob]
 [MemoryDiagnoser]
@@ -44,13 +44,13 @@ public class Manipulation
     public string ConcatU16() => ValueU16 + ValueU16;
 
     [Benchmark]
-    public U8String ConcatMany() => U8String.Concat(Values);
+    public U8String ConcatMany() => U8String.Concat(Values!);
 
     [Benchmark]
     public string ConcatManyU16() => string.Concat(ValuesU16!);
 
     [Benchmark]
-    public U8String Join() => U8String.Join(", "u8, Values);
+    public U8String Join() => U8String.Join(", "u8, Values!);
 
     [Benchmark]
     public string JoinU16() => string.Join(", ", ValuesU16!);

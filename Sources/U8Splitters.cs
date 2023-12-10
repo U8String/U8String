@@ -1,10 +1,11 @@
 using System.Collections;
 using System.Runtime.InteropServices;
 
-using U8Primitives.Abstractions;
-using U8Primitives.InteropServices;
+using U8.Abstractions;
+using U8.InteropServices;
+using U8.Shared;
 
-namespace U8Primitives;
+namespace U8.Primitives;
 
 public readonly record struct U8SplitPair
 {
@@ -419,14 +420,6 @@ public readonly struct U8Split<TSeparator, TComparer> :
     void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
     void ICollection<U8String>.Clear() => throw new NotSupportedException();
     bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
-}
-
-[Flags]
-public enum U8SplitOptions : byte
-{
-    None = 0,
-    RemoveEmpty = 1,
-    Trim = 2,
 }
 
 public readonly struct ConfiguredU8Split(

@@ -1,8 +1,9 @@
 using System.Collections;
+using System.Text;
 
-using Rune = System.Text.Rune;
+using U8.Primitives;
 
-namespace U8Primitives;
+namespace U8;
 
 #pragma warning disable IDE0032, IDE0057 // Use auto property and index operator. Why: Perf, struct layout, accuracy and codegen.
 public readonly partial struct U8String
@@ -62,21 +63,13 @@ public readonly partial struct U8String
     IEnumerator<byte> IEnumerable<byte>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-    public struct Enumerator : IEnumerator<byte>
+    [method: MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public struct Enumerator(U8String value) : IEnumerator<byte>
     {
-        readonly byte[]? _value;
-        readonly int _offset;
-        readonly int _length;
-        int _index;
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public Enumerator(U8String value)
-        {
-            _value = value._value;
-            _offset = value.Offset;
-            _length = value.Length;
-            _index = -1;
-        }
+        readonly byte[]? _value = value._value;
+        readonly int _offset = value.Offset;
+        readonly int _length = value.Length;
+        int _index = -1;
 
         // Still cheaper than MemoryMarshal clever variants
         public readonly byte Current => _value![_offset + _index];

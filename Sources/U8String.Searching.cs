@@ -1,10 +1,10 @@
-using System.Buffers.Text;
 using System.Diagnostics;
-using System.Linq;
 using System.Text;
-using U8Primitives.Abstractions;
 
-namespace U8Primitives;
+using U8.Abstractions;
+using U8.Primitives;
+
+namespace U8;
 
 // Use braces, ternary, etc. Why: explicit control over block layout and return merging with nice syntax.
 #pragma warning disable RCS1003, RCS1179, IDE0045

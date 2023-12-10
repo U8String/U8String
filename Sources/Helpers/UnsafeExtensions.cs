@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace U8Primitives;
+using U8.Primitives;
+
+namespace U8;
 
 internal static class UnsafeExtensions
 {

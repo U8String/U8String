@@ -1,4 +1,4 @@
-namespace U8Primitives.Tests.U8ComparisonTests;
+namespace U8.Tests.U8ComparisonTests;
 
 public class AsciiIgnoreCaseConverter
 {

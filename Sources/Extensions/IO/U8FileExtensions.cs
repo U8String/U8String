@@ -1,6 +1,6 @@
 using Microsoft.Win32.SafeHandles;
 
-namespace U8Primitives.IO;
+namespace U8.IO;
 
 public static class U8FileExtensions
 {

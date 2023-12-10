@@ -1,7 +1,7 @@
 using System.Net;
 using BenchmarkDotNet.Attributes;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [ShortRunJob]
 [MemoryDiagnoser]

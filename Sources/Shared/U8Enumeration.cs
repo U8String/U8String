@@ -1,8 +1,8 @@
 using System.Runtime.InteropServices;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
 
-namespace U8Primitives;
+namespace U8.Shared;
 
 // TODO: Unsafe opt. strided broadcast / scatter byte[] reference onto U8String[]
 // in a SIMD way (is there a way to make it not explode and not be a total UB?)

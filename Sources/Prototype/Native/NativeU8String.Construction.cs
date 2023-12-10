@@ -1,7 +1,7 @@
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace U8Primitives.InteropServices;
+namespace U8.InteropServices;
 
 internal static partial class NativeU8String
 {

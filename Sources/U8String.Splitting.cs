@@ -1,10 +1,20 @@
 using System.Diagnostics;
 using System.Text;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
+using U8.Primitives;
+using U8.Shared;
 
 #pragma warning disable RCS1085, RCS1085FadeOut, IDE0032 // Use auto-implemented property. Why: readable fields.
-namespace U8Primitives;
+namespace U8;
+
+[Flags]
+public enum U8SplitOptions : byte
+{
+    None = 0,
+    RemoveEmpty = 1,
+    Trim = 2,
+}
 
 public readonly partial struct U8String
 {

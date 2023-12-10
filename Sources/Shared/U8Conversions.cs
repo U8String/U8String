@@ -1,7 +1,7 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-namespace U8Primitives;
+namespace U8.Shared;
 
 internal static class U8Conversions
 {

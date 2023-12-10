@@ -2,7 +2,9 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace U8Primitives;
+using U8.Primitives;
+
+namespace U8.Shared;
 
 internal static class U8Manipulation
 {
@@ -798,7 +800,10 @@ internal static class U8Manipulation
                         continue;
                     }
                     // Range is now the slice after the first LF -> CRLF replacement
-                    else goto Replace;
+                    else
+                    {
+                        goto Replace;
+                    }
                 }
 
                 return source;

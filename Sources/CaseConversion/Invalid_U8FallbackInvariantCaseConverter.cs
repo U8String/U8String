@@ -1,8 +1,8 @@
 using System.Buffers;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
 
-namespace U8Primitives;
+namespace U8.CaseConversion;
 
 internal readonly struct U8FallbackInvariantCaseConverter : IU8CaseConverter
 {

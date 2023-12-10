@@ -1,4 +1,4 @@
-namespace U8Primitives.Tests;
+namespace U8.Tests;
 
 public class U8InfoTests
 {

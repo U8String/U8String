@@ -1,7 +1,7 @@
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 #pragma warning disable CS1718 // Comparison made to same variable. Why: Benchmark.
 [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]

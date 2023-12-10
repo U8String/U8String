@@ -1,8 +1,8 @@
 using System.Runtime.Intrinsics;
 
-using U8Primitives.Abstractions;
+using U8.Abstractions;
 
-namespace U8Primitives;
+namespace U8.CaseConversion;
 
 public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 {

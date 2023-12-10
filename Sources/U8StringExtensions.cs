@@ -1,9 +1,7 @@
 using System.Collections.Immutable;
-using U8Primitives;
 
-namespace System;
+namespace U8;
 
-#pragma warning disable CA1305 // Specify IFormatProvider
 /// <summary>
 /// Provides extension methods to integrate <see cref="U8String"/> with the .NET type system.
 /// </summary>

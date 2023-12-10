@@ -2,7 +2,7 @@ using System.Buffers;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
-namespace U8Primitives;
+namespace U8;
 
 [InlineArray(Length)]
 internal struct InlineBuffer128

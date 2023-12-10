@@ -3,7 +3,7 @@ using System.Text;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Jobs;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [MemoryDiagnoser]
 [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
@@ -27,8 +27,8 @@ public class Construction
     }
 
     [Benchmark]
-    public U8String FromBytes() => new(Bytes);
+    public U8String FromBytes() => new(Bytes!);
 
     [Benchmark]
-    public U8String FromString() => new(Str);
+    public U8String FromString() => new(Str!);
 }

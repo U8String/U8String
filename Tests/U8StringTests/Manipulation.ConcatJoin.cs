@@ -1,8 +1,8 @@
 using System.Text;
 
-using U8Primitives.InteropServices;
+using U8.InteropServices;
 
-namespace U8Primitives.Tests.U8StringTests;
+namespace U8.Tests.U8StringTests;
 
 public partial class Manipulation
 {

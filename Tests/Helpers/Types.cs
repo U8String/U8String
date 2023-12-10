@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 
-namespace U8Primitives.Tests;
+namespace U8.Tests;
 
 public record ReferenceText(
     string Name,

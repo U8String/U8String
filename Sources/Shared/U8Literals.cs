@@ -1,4 +1,4 @@
-namespace U8Primitives;
+namespace U8.Shared;
 
 static partial class U8Literals
 {
@@ -18,7 +18,7 @@ static partial class U8Literals
     }
 
     internal static U8String GetBoolean(bool value) => Boolean.Get(value);
-    internal static U8String GetByte(byte value) => Numbers.Get(value);
+    internal static U8String GetByte(byte value) => Numbers.GetByte(value);
     internal static bool TryGetInt8(sbyte value, out U8String literal) => Numbers.TryGet(value, out literal);
     internal static bool TryGetInt16(short value, out U8String literal) => Numbers.TryGet(value, out literal);
     internal static bool TryGetUInt16(ushort value, out U8String literal) => Numbers.TryGet(value, out literal);

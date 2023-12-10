@@ -4,7 +4,9 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Unicode;
 
-namespace U8Primitives;
+using U8.Primitives;
+
+namespace U8.Shared;
 
 // Contract: only not-empty strings are interned.
 static class U8Interning

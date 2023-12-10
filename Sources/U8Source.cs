@@ -1,4 +1,4 @@
-namespace U8Primitives;
+namespace U8.Primitives;
 
 public readonly struct U8Source : IEquatable<U8Source>
 {

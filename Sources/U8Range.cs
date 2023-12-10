@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace U8Primitives;
+namespace U8.Primitives;
 
 public readonly struct U8Range : IEquatable<U8Range>
 {

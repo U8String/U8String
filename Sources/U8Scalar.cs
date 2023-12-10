@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace U8Primitives;
+namespace U8.Primitives;
 
 internal readonly struct U8Scalar
 {

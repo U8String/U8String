@@ -13,6 +13,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
 - [ ] Consider authoring namespaces and renaming `U8Primitives` to just `U8`
 - [ ] Implement Unicode normalization (review utf8proc and unilib and then write C#-optimized version)
+- [ ] Implement `SearchValues<U8String>` (constructible from `ROS<byte[]>`? need to consider u8 semantics and collection literals)
 - [ ] Consider contributing proposal for `Utf8.IsNormalized(NormalizationForm, src)` and `Utf8.Normalize(NormalizationForm, src, dst)` to dotnet/runtime (rationale: CoreLib has rich adapted to platforms interop for globalization that uses ICU or NLS, both of which usually offer UTF-8 alternatives, therefore exposing UTF-8 normalization is effectively "free" compared to the alternative of requiring the users to either reimplement it or to bring non-C# dependencies that do so)
 - [ ] Consider Rust-like U8Searcher (or IU8Searcher) abstraction (or just U8SearchValuesSplit for now). This is to stop duplicating splitting code, because adding another split type impl. seems a bit too much
     - [ ] `U8Searcher<T>` where T is byte or char or Rune

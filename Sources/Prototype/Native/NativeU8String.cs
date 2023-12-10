@@ -2,7 +2,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Text;
 
-namespace U8Primitives.InteropServices;
+namespace U8.InteropServices;
 
 // TODO: Design choices
 // - Immutable (ptr+len) vs mutable (ptr+len+capacity)

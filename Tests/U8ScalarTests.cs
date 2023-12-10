@@ -1,6 +1,8 @@
 using System.Text;
 
-namespace U8Primitives.Tests;
+using U8.Primitives;
+
+namespace U8.Tests;
 
 // These tests perform exhaustive evaluation and cannot be theories.
 public class U8ScalarTests

@@ -1,6 +1,7 @@
-using U8Primitives.Abstractions;
+using U8.Abstractions;
+using U8.CaseConversion;
 
-namespace U8Primitives;
+namespace U8;
 
 public static class U8CaseConversion
 {

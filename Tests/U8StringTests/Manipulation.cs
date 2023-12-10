@@ -1,7 +1,7 @@
 using System.Collections.Immutable;
 using System.Text;
 
-namespace U8Primitives.Tests.U8StringTests;
+namespace U8.Tests.U8StringTests;
 
 public partial class Manipulation
 {

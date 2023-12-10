@@ -2,7 +2,7 @@ using System.Text;
 
 using BenchmarkDotNet.Attributes;
 
-namespace U8Primitives.Benchmarks;
+namespace U8.Benchmarks;
 
 [ShortRunJob]
 [DisassemblyDiagnoser(exportCombinedDisassemblyReport: true, maxDepth: 3)]

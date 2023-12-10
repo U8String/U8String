@@ -2,7 +2,7 @@ using System.Numerics;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 
-namespace U8Primitives;
+namespace U8;
 
 internal static class VectorExtensions
 {

@@ -8,10 +8,12 @@ using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 
-using U8Primitives.Serialization;
+using U8.Primitives;
+using U8.Serialization;
+using U8.Shared;
 
 #pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
-namespace U8Primitives;
+namespace U8;
 
 /// <summary>
 /// UTF-8 encoded string.
@@ -129,9 +131,6 @@ public readonly partial struct U8String :
     /// <summary>
     /// The number of UTF-8 code points in the current <see cref="U8String"/>.
     /// </summary>
-    /// <remarks>
-    /// Evaluation of this property becomes O(n) above 50-100 bytes.
-    /// </remarks>
     public int RuneCount
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

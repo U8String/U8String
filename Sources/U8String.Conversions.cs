@@ -5,7 +5,9 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Unicode;
 
-namespace U8Primitives;
+using U8.Shared;
+
+namespace U8;
 
 // Simplify conditional and slice expressions; use braces. Why: style + ensuring right branch ordering.
 #pragma warning disable RCS1003, RCS1206, IDE0057

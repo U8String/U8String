@@ -1,4 +1,4 @@
-namespace U8Primitives.Tests.U8StringTests;
+namespace U8.Tests.U8StringTests;
 
 public class Base
 {

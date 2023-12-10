@@ -3,7 +3,10 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
-namespace U8Primitives;
+using U8.Primitives;
+using U8.Shared;
+
+namespace U8;
 
 [InterpolatedStringHandler]
 [EditorBrowsable(EditorBrowsableState.Never)]
@@ -24,7 +27,7 @@ public struct InterpolatedU8StringHandler
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(0, BytesWritten);
     }
 
-    internal Span<byte> Free
+    Span<byte> Free
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
@@ -52,7 +55,7 @@ public struct InterpolatedU8StringHandler
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendLiteral([ConstantExpected] string s)
     {
-        if (s is { Length: > 0 })
+        if (s.Length > 0)
         {
             if (s.Length is 1 && char.IsAscii(s[0]))
             {
@@ -62,18 +65,6 @@ public struct InterpolatedU8StringHandler
 
             AppendLiteralString(s);
         }
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    void AppendLiteralString(string s)
-    {
-        if (!LiteralPool.TryGetValue(s, out var literal))
-        {
-            literal = Encoding.UTF8.GetBytes(s);
-            LiteralPool.AddOrUpdate(s, literal);
-        }
-
-        AppendBytes(literal);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -90,20 +81,33 @@ public struct InterpolatedU8StringHandler
         goto Retry;
     }
 
-    public void AppendFormatted(ReadOnlySpan<char> value)
-    {
-        AppendLiteral(value);
-    }
-
-    public void AppendFormatted(ReadOnlySpan<byte> value)
-    {
-        U8String.Validate(value);
-        AppendBytes(value);
-    }
-
     public void AppendFormatted(bool value)
     {
         AppendBytes(value ? "True"u8 : "False"u8);
+    }
+
+    public void AppendFormatted(char value)
+    {
+        ThrowHelpers.CheckSurrogate(value);
+
+        if (char.IsAscii(value))
+        {
+            AppendByte((byte)value);
+            return;
+        }
+
+        AppendBytes(new U8Scalar(value, checkAscii: false).AsSpan());
+    }
+
+    public void AppendFormatted(Rune value)
+    {
+        if (value.IsAscii)
+        {
+            AppendByte((byte)value.Value);
+            return;
+        }
+
+        AppendBytes(new U8Scalar(value, checkAscii: false).AsSpan());
     }
 
     public void AppendFormatted(U8String value)
@@ -112,6 +116,17 @@ public struct InterpolatedU8StringHandler
         {
             AppendBytes(value.UnsafeSpan);
         }
+    }
+
+    public void AppendFormatted(ReadOnlySpan<byte> value)
+    {
+        U8String.Validate(value);
+        AppendBytes(value);
+    }
+
+    public void AppendFormatted(ReadOnlySpan<char> value)
+    {
+        AppendLiteral(value);
     }
 
     // Explicit no-format overload for more compact codegen
@@ -145,6 +160,18 @@ public struct InterpolatedU8StringHandler
 
         Grow();
         goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    void AppendLiteralString(string s)
+    {
+        if (!LiteralPool.TryGetValue(s, out var literal))
+        {
+            literal = Encoding.UTF8.GetBytes(s);
+            LiteralPool.AddOrUpdate(s, literal);
+        }
+
+        AppendBytes(literal);
     }
 
     void AppendByte(byte value)

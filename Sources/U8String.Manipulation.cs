@@ -1,10 +1,12 @@
 using System.Runtime.InteropServices;
 using System.Text;
 
-using U8Primitives.Abstractions;
-using U8Primitives.InteropServices;
+using U8.Abstractions;
+using U8.InteropServices;
+using U8.Primitives;
+using U8.Shared;
 
-namespace U8Primitives;
+namespace U8;
 
 #pragma warning disable IDE0046, IDE0057, RCS1003 // Why: range slicing and ternary expressions do not produce desired codegen
 public readonly partial struct U8String
