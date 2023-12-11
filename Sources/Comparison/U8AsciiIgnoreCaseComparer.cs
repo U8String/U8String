@@ -9,6 +9,7 @@ namespace U8.Comparison;
 
 // TODO: Optimize impls.
 // TODO: Decide where in the sort order should the case-folded characters go.
+#pragma warning disable RCS1003, IDE0045 // Add braces and simplify branching. Why: manual block ordering.
 public readonly struct U8AsciiIgnoreCaseComparer :
     IU8Comparer,
     IU8EqualityComparer,
@@ -24,7 +25,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public static U8AsciiIgnoreCaseComparer Instance => default;
 
-    public int CommonPrefixLength(U8String left, U8String right)
+    public static int CommonPrefixLength(U8String left, U8String right)
     {
         if (!left.IsEmpty && !right.IsEmpty)
         {
@@ -37,7 +38,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         return 0;
     }
 
-    public int CommonPrefixLength(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
+    public static int CommonPrefixLength(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)
     {
         nuint offset = 0;
         nuint length = (uint)Math.Min(left.Length, right.Length);
@@ -82,8 +83,8 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             var lvec = Vector128.LoadUnsafe(ref lptr, offset);
             var rvec = Vector128.LoadUnsafe(ref rptr, offset);
 
-            var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
-            var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
+            var lcvec = U8AsciiCaseConverter.ToLower(lvec);
+            var rcvec = U8AsciiCaseConverter.ToLower(rvec);
 
             var neqmask = ~lcvec.Eq(rcvec);
             if (neqmask != Vector128<byte>.Zero)
@@ -99,8 +100,8 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             var lvec = Vector64.LoadUnsafe(ref lptr, offset);
             var rvec = Vector64.LoadUnsafe(ref rptr, offset);
 
-            var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
-            var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
+            var lcvec = U8AsciiCaseConverter.ToLower(lvec);
+            var rcvec = U8AsciiCaseConverter.ToLower(rvec);
 
             var neqmask = ~Vector64.Equals(lcvec, rcvec);
             if (neqmask != Vector64<byte>.Zero)
@@ -129,20 +130,18 @@ public readonly struct U8AsciiIgnoreCaseComparer :
 
     public int Compare(U8String x, U8String y)
     {
+        int result;
         if (!x.IsEmpty)
         {
             if (!y.IsEmpty)
             {
-                var left = x.UnsafeSpan;
-                var right = y.UnsafeSpan;
-
-                return Compare(left, right);
+                result = Compare(x.UnsafeSpan, y.UnsafeSpan);
             }
-
-            return 1;
+            else result = x.Length;
         }
+        else result = -y.Length;
 
-        return y.IsEmpty ? 0 : -1;
+        return result;
     }
 
     public int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y)
@@ -150,25 +149,15 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         var offset = CommonPrefixLength(x, y);
         var length = Math.Min(x.Length, y.Length);
 
-        ref var xptr = ref x.AsRef();
-        ref var yptr = ref y.AsRef();
-
-        while (offset < length)
+        if (offset < length)
         {
-            var xval = xptr.Add(offset);
-            var yval = yptr.Add(offset);
+            var xval = x.AsRef(offset);
+            var yval = y.AsRef(offset);
 
-            if (xval != yval)
-            {
-                xval = U8Info.IsAsciiLetter(xval) ? (byte)(xval & 0b11011111) : xval;
-                yval = U8Info.IsAsciiLetter(yval) ? (byte)(yval & 0b11011111) : yval;
-                if (xval != yval)
-                {
-                    return xval - yval;
-                }
-            }
+            xval = U8Info.IsAsciiLetter(xval) ? (byte)(xval & 0b11011111) : xval;
+            yval = U8Info.IsAsciiLetter(yval) ? (byte)(yval & 0b11011111) : yval;
 
-            offset++;
+            return xval - yval;
         }
 
         return x.Length - y.Length;
@@ -445,8 +434,8 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             var lvec = Vector128.LoadUnsafe(ref left, offset);
             var rvec = Vector128.LoadUnsafe(ref right, offset);
 
-            var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
-            var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
+            var lcvec = U8AsciiCaseConverter.ToLower(lvec);
+            var rcvec = U8AsciiCaseConverter.ToLower(rvec);
 
             if (lcvec != rcvec)
             {
@@ -461,8 +450,8 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             var lvec = Vector64.LoadUnsafe(ref left, offset);
             var rvec = Vector64.LoadUnsafe(ref right, offset);
 
-            var lcvec = U8CaseConversion.Ascii.ToLower(lvec);
-            var rcvec = U8CaseConversion.Ascii.ToLower(rvec);
+            var lcvec = U8AsciiCaseConverter.ToLower(lvec);
+            var rcvec = U8AsciiCaseConverter.ToLower(rvec);
 
             if (lcvec != rcvec)
             {

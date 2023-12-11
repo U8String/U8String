@@ -32,7 +32,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
     // TODO: Consider for abstraction?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector256<byte> ToLower(Vector256<byte> utf8)
+    internal static Vector256<byte> ToLower(Vector256<byte> utf8)
     {
         var lower = Vector256.Create((byte)'A');
         var upper = Vector256.Create((byte)'Z');
@@ -46,7 +46,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector128<byte> ToLower(Vector128<byte> ascii)
+    internal static Vector128<byte> ToLower(Vector128<byte> ascii)
     {
         var lower = Vector128.Create((byte)'A');
         var upper = Vector128.Create((byte)'Z');
@@ -60,7 +60,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector64<byte> ToLower(Vector64<byte> ascii)
+    internal static Vector64<byte> ToLower(Vector64<byte> ascii)
     {
         var lower = Vector64.Create((byte)'A');
         var upper = Vector64.Create((byte)'Z');
@@ -108,9 +108,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         {
             var utf8 = Vector128.LoadUnsafe(ref src, offset);
 
-            Instance
-                .ToLower(utf8)
-                .StoreUnsafe(ref dst, offset);
+            ToLower(utf8).StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector128<byte>.Count;
         }
@@ -120,9 +118,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         {
             var utf8 = Vector64.LoadUnsafe(ref src, offset);
 
-            Instance
-                .ToLower(utf8)
-                .StoreUnsafe(ref dst, offset);
+            ToLower(utf8).StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector64<byte>.Count;
         }
@@ -153,7 +149,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector256<byte> ToUpper(Vector256<byte> utf8)
+    internal static Vector256<byte> ToUpper(Vector256<byte> utf8)
     {
         var lower = Vector256.Create((byte)'a');
         var upper = Vector256.Create((byte)'z');
@@ -167,7 +163,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector128<byte> ToUpper(Vector128<byte> ascii)
+    internal static Vector128<byte> ToUpper(Vector128<byte> ascii)
     {
         var lower = Vector128.Create((byte)'a');
         var upper = Vector128.Create((byte)'z');
@@ -181,7 +177,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public Vector64<byte> ToUpper(Vector64<byte> ascii)
+    internal static Vector64<byte> ToUpper(Vector64<byte> ascii)
     {
         var lower = Vector64.Create((byte)'a');
         var upper = Vector64.Create((byte)'z');
@@ -228,9 +224,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         {
             var utf8 = Vector128.LoadUnsafe(ref src, offset);
 
-            Instance
-                .ToUpper(utf8)
-                .StoreUnsafe(ref dst, offset);
+            ToUpper(utf8).StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector128<byte>.Count;
         }
@@ -240,9 +234,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         {
             var utf8 = Vector64.LoadUnsafe(ref src, offset);
 
-            Instance
-                .ToUpper(utf8)
-                .StoreUnsafe(ref dst, offset);
+            ToUpper(utf8).StoreUnsafe(ref dst, offset);
 
             offset += (nuint)Vector64<byte>.Count;
         }

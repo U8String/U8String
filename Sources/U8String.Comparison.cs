@@ -29,10 +29,7 @@ public readonly partial struct U8String
         {
             if (!y.IsEmpty)
             {
-                var left = x.UnsafeSpan;
-                var right = y.UnsafeSpan;
-
-                result = Compare(left, right);
+                result = x.UnsafeSpan.SequenceCompareTo(y.UnsafeSpan);
             }
             else result = x.Length;
         }
@@ -106,10 +103,7 @@ public readonly partial struct U8String
         {
             if (!other.IsEmpty)
             {
-                var left = deref.UnsafeSpan;
-                var right = other.UnsafeSpan;
-
-                result = left.SequenceCompareTo(right);
+                result = deref.UnsafeSpan.SequenceCompareTo(other.UnsafeSpan);
             }
             else result = deref.Length;
         }

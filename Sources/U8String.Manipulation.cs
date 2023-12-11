@@ -815,23 +815,19 @@ public readonly partial struct U8String
     public U8String Slice(int start)
     {
         var source = this;
-        if ((uint)start > (uint)source.Length)
+        var length = (long)(uint)source.Length - (long)(uint)start;
+        if (length < 0)
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
 
-        var length = source.Length - start;
-        if (length > 0)
+        start += source.Offset;
+        if (length > 0 && U8Info.IsContinuationByte(in source._value!.AsRef(start)))
         {
-            if (U8Info.IsContinuationByte(in source.UnsafeRefAdd(start)))
-            {
-                ThrowHelpers.ArgumentOutOfRange();
-            }
-
-            return new(source._value, source.Offset + start, length);
+            ThrowHelpers.ArgumentOutOfRange();
         }
 
-        return default;
+        return new(source._value, start, (int)(uint)(ulong)length);
     }
 
     /// <summary>
@@ -850,27 +846,36 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(int start, int length)
     {
-        var source = this;
-        // From ReadOnly/Span<T> Slice(int, int) implementation
-        if ((ulong)(uint)start + (ulong)(uint)length > (ulong)(uint)source.Length)
+        // The exact order of declaration and checks is very important because
+        // this method is effectively a multi-optimization problem and falls
+        // apart easily if you look at it funny.
+        // When making changes, special care must be taken to ensure none of the
+        // scenarios below have any regressions in both inlined and not inlined forms:
+        // - Slice(0, n)
+        // - Slice(n, str.Length - n)
+        // - Slice(n1, n2)
+        // - Slice(0, str.Length)
+        // - enregisteredLocal.Slice(...)
+        // - heap/stackReference.Slice(...)
+        var (value, offset, sourceLength) = this;
+        if ((ulong)(uint)start + (ulong)(uint)length > (ulong)(uint)sourceLength)
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
 
         if (length > 0)
         {
-            if (U8Info.IsContinuationByte(source.UnsafeRefAdd(start)) || (
-                length < source.Length && U8Info.IsContinuationByte(source.UnsafeRefAdd(start + length))))
+            ref var ptr = ref value!.AsRef(offset += start);
+            if ((start > 0 && U8Info
+                    .IsContinuationByte(in ptr)) ||
+                (length < (sourceLength - start) && U8Info
+                    .IsContinuationByte(in ptr.Add(length))))
             {
-                // TODO: Re-author exception - is it possible to pass some state to a throw helper which
-                // would allow to provide more context to the exception message without regressing codegen?
                 ThrowHelpers.ArgumentOutOfRange();
             }
-
-            return new(source._value, source.Offset + start, length);
         }
 
-        return default;
+        return new(value, offset, length);
     }
 
     /// <summary>
