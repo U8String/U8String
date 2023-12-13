@@ -1,6 +1,7 @@
 using System.Runtime.InteropServices;
 
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8.InteropServices;
 
@@ -80,6 +81,16 @@ public static class U8Marshal
     public static U8SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
     {
         return new(value, offset, separatorLength);
+    }
+
+    public static nuint CountRunes(ref byte ptr, nuint length)
+    {
+        return U8Searching.CountRunes(ref ptr, length);
+    }
+
+    public static unsafe nuint CountRunes(byte* ptr, nuint length)
+    {
+        return U8Searching.CountRunes(ref Unsafe.AsRef<byte>(ptr), length);
     }
 
     /// <summary>

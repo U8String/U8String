@@ -2,6 +2,8 @@ using System.Text;
 
 using BenchmarkDotNet.Attributes;
 
+using U8.Primitives;
+
 namespace U8.Benchmarks;
 
 [MemoryDiagnoser]
@@ -132,7 +134,13 @@ public class Enumeration
     public U8String[] CollectLines() => ThirdPartyNotices.Lines.ToArray();
 
     [Benchmark]
+    public U8Slices CollectLinesSlices() => ThirdPartyNotices.Lines.ToSlices();
+
+    [Benchmark]
     public U8String[] CollectLinesSplit() => ThirdPartyNotices.Split('\n').ToArray();
+
+    [Benchmark]
+    public U8Slices CollectLinesSplitSlices() => ThirdPartyNotices.Split('\n').ToSlices();
 
     [Benchmark]
     public string[] CollectLinesUtf16Split() => ThirdPartyNoticesU16!.Split('\n');

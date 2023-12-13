@@ -54,8 +54,8 @@ public readonly record struct U8SplitPair
 }
 
 public readonly struct U8Split(U8String value, U8String separator) :
-    ICollection<U8String>,
-    IU8Enumerable<U8Split.Enumerator>
+    IU8Enumerable<U8Split.Enumerator>,
+    IU8SliceCollection
 {
     readonly U8String _value = value;
     readonly U8String _separator = separator;
@@ -78,6 +78,12 @@ public readonly struct U8Split(U8String value, U8String separator) :
 
             return 0;
         }
+    }
+
+    public U8String Source
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _value;
     }
 
     public bool Contains(U8String item)
@@ -112,6 +118,7 @@ public readonly struct U8Split(U8String value, U8String separator) :
 
     public U8String[] ToArray() => this.ToArray<U8Split, Enumerator, U8String>();
     public List<U8String> ToList() => this.ToList<U8Split, Enumerator, U8String>();
+    public U8Slices ToSlices() => this.ToSlices<U8Split, Enumerator>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.
@@ -179,8 +186,8 @@ public readonly struct U8Split(U8String value, U8String separator) :
 
 // Beats Rust's split iterator by a wide margin :)
 public readonly struct U8Split<TSeparator> :
-    ICollection<U8String>,
-    IU8Enumerable<U8Split<TSeparator>.Enumerator>
+    IU8Enumerable<U8Split<TSeparator>.Enumerator>,
+    IU8SliceCollection
         where TSeparator : unmanaged
 {
     readonly U8String _value;
@@ -200,6 +207,12 @@ public readonly struct U8Split<TSeparator> :
             return !value.IsEmpty
                 ? U8Searching.Count(value.UnsafeSpan, _separator) + 1 : 0;
         }
+    }
+
+    public U8String Source
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _value;
     }
 
     public bool Contains(U8String item)
@@ -234,6 +247,7 @@ public readonly struct U8Split<TSeparator> :
 
     public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator, U8String>();
     public List<U8String> ToList() => this.ToList<U8Split<TSeparator>, Enumerator, U8String>();
+    public U8Slices ToSlices() => this.ToSlices<U8Split<TSeparator>, Enumerator>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.
@@ -299,8 +313,8 @@ public readonly struct U8Split<TSeparator> :
 }
 
 public readonly struct U8Split<TSeparator, TComparer> :
-    ICollection<U8String>,
-    IU8Enumerable<U8Split<TSeparator, TComparer>.Enumerator>
+    IU8Enumerable<U8Split<TSeparator, TComparer>.Enumerator>,
+    IU8SliceCollection
         where TSeparator : struct
         where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
 {
@@ -323,6 +337,12 @@ public readonly struct U8Split<TSeparator, TComparer> :
             return !value.IsEmpty
                 ? U8Searching.Count(value.UnsafeSpan, _separator, _comparer) + 1 : 0;
         }
+    }
+
+    public U8String Source
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _value;
     }
 
     public bool Contains(U8String item)
@@ -944,6 +964,27 @@ public readonly ref struct U8RefSplit
         }
 
         return [];
+    }
+
+    public U8Slices ToSlices()
+    {
+        var split = this;
+        var count = split.Count;
+        if (count > 0)
+        {
+            var ranges = new U8Range[count];
+
+            var i = 0;
+            ref var dst = ref ranges.AsRef();
+            foreach (var item in split)
+            {
+                dst.Add(i++) = item._inner;
+            }
+
+            return new U8Slices(split._value._value, ranges);
+        }
+
+        return default;
     }
 
     public readonly Enumerator GetEnumerator() => new(_value, _separator);

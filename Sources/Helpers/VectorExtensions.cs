@@ -7,11 +7,11 @@ namespace U8;
 internal static class VectorExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int GetMatchCount<T>(this Vector512<T> mask)
+    internal static nuint GetMatchCount<T>(this Vector512<T> mask)
     {
         if (Vector512.IsHardwareAccelerated)
         {
-            return BitOperations.PopCount(mask.ExtractMostSignificantBits());
+            return (uint)BitOperations.PopCount(mask.ExtractMostSignificantBits());
         }
 
         if (Vector256.IsHardwareAccelerated)
@@ -34,11 +34,11 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int GetMatchCount<T>(this Vector256<T> mask)
+    internal static nuint GetMatchCount<T>(this Vector256<T> mask)
     {
         if (Vector256.IsHardwareAccelerated)
         {
-            return BitOperations.PopCount(mask.ExtractMostSignificantBits());
+            return (uint)BitOperations.PopCount(mask.ExtractMostSignificantBits());
         }
 
         var (lower, upper) = mask;
@@ -49,24 +49,24 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int GetMatchCount<T>(this Vector128<T> mask)
+    internal static nuint GetMatchCount<T>(this Vector128<T> mask)
     {
         if (AdvSimd.Arm64.IsSupported)
         {
             return AdvSimd.Arm64
                 .AddAcross(AdvSimd.PopCount(mask.AsByte()))
-                .ToScalar() / (8 * Unsafe.SizeOf<T>());
+                .ToScalar() / (8 * (nuint)Unsafe.SizeOf<T>());
         }
 
-        return BitOperations.PopCount(mask.ExtractMostSignificantBits());
+        return (uint)BitOperations.PopCount(mask.ExtractMostSignificantBits());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int GetMatchCount<T>(this Vector64<T> mask)
+    internal static nuint GetMatchCount<T>(this Vector64<T> mask)
     {
         return AdvSimd.Arm64
             .AddAcross(AdvSimd.PopCount(mask.AsByte()))
-            .ToScalar() / (8 * Unsafe.SizeOf<T>());
+            .ToScalar() / (8 * (nuint)Unsafe.SizeOf<T>());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

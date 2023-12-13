@@ -71,25 +71,24 @@ public readonly partial struct U8String
         readonly int _length = value.Length;
         int _index = -1;
 
-        // Still cheaper than MemoryMarshal clever variants
-        public readonly byte Current => _value![_offset + _index];
+        public readonly byte Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => _value!.AsRef(_offset + _index);
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext() => (uint)(++_index) < (uint)_length;
-        // {
-        //     var index = _index;
-        //     if (++index < _length)
-        //     {
-        //         // Current = Unsafe.Add(
-        //         //     ref MemoryMarshal.GetArrayDataReference(_value!),
-        //         //     (nint)(uint)(_offset + index));
-        //         Current = _value![_offset + index];
-        //         _index = index;
-        //         return true;
-        //     }
+        public bool MoveNext()
+        {
+            var index = _index + 1;
+            if ((uint)index < (uint)_length)
+            {
+                _index = index;
+                return true;
+            }
 
-        //     return false;
-        // }
+            return false;
+        }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Reset() => _index = -1;

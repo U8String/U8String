@@ -1,9 +1,13 @@
 using System.Runtime.InteropServices;
 
 using U8.Abstractions;
+using U8.Primitives;
 
 namespace U8.Shared;
 
+// TODO: Implement specialized paths for U8Split<T: byte, char and Rune>, and for 1-4 byte sequences
+// specifically implement 'MakeSeparatorListVectorized'-style bespoke path with a loop body
+// which scans and stores the slices inline without making a per-slice call to 'NonPackedIndexOfValueType'
 // TODO: Unsafe opt. strided broadcast / scatter byte[] reference onto U8String[]
 // in a SIMD way (is there a way to make it not explode and not be a total UB?)
 internal static class U8Enumeration
@@ -16,7 +20,7 @@ internal static class U8Enumeration
         var count = source.Count;
         if (count > 0)
         {
-            source.FillUnchecked<T, E, U>(destination[..count]);
+            source.FillUnchecked<T, E, U>(ref destination[..count].AsRef());
         }
     }
 
@@ -164,7 +168,7 @@ internal static class U8Enumeration
         if (count > 0)
         {
             var result = new U[count];
-            source.FillUnchecked<T, E, U>(result);
+            source.FillUnchecked<T, E, U>(ref result.AsRef());
 
             return result;
         }
@@ -182,7 +186,7 @@ internal static class U8Enumeration
 
         CollectionsMarshal.SetCount(result, count);
         var span = CollectionsMarshal.AsSpan(result);
-        source.FillUnchecked<T, E, U>(span);
+        source.FillUnchecked<T, E, U>(ref span.AsRef());
 
         return result;
     }
@@ -194,7 +198,7 @@ internal static class U8Enumeration
         where U : struct
     {
         var result = new U[maxLength];
-        var count = source.FillUnchecked<T, E, U>(result);
+        var count = source.FillUnchecked<T, E, U>(ref result.AsRef());
         if (count != maxLength)
         {
             Array.Resize(ref result, count);
@@ -212,22 +216,50 @@ internal static class U8Enumeration
 
         CollectionsMarshal.SetCount(result, maxLength);
         var span = CollectionsMarshal.AsSpan(result);
-        var count = source.FillUnchecked<T, E, U>(span);
+        var count = source.FillUnchecked<T, E, U>(ref span.AsRef());
         CollectionsMarshal.SetCount(result, count);
 
         return result;
     }
 
-    static int FillUnchecked<T, E, U>(this T source, Span<U> destination)
+    static int FillUnchecked<T, E, U>(this T source, ref U dst)
         where T : struct, IEnumerable<U, E>
         where E : struct, IEnumerator<U>
         where U : struct
     {
         var i = 0;
-        ref var ptr = ref destination.AsRef();
         foreach (var item in source)
         {
-            ptr.Add(i++) = item;
+            dst.Add(i++) = item;
+        }
+
+        return i;
+    }
+
+    internal static U8Slices ToSlices<T, E>(this T collection)
+        where T : struct, IU8SliceCollection, IEnumerable<U8String, E>
+        where E : struct, IU8Enumerator
+    {
+        var count = collection.Count;
+        if (count > 0)
+        {
+            var ranges = new U8Range[count];
+            collection.FillRangesUnchecked<T, E>(ref ranges.AsRef());
+
+            return new(collection.Source._value, ranges);
+        }
+
+        return default;
+    }
+
+    static int FillRangesUnchecked<T, E>(this T source, ref U8Range dst)
+        where T : struct, IEnumerable<U8String, E>
+        where E : struct, IU8Enumerator
+    {
+        var i = 0;
+        foreach (var item in source)
+        {
+            dst.Add(i++) = item.Range;
         }
 
         return i;

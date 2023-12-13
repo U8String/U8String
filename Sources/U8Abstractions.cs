@@ -72,3 +72,12 @@ public interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
     where TEnumerator : struct, IU8Enumerator;
 
 public interface IU8Enumerator : IEnumerator<U8String>;
+
+internal interface IU8SliceCollection : ICollection<U8String>
+{
+    // TODO: Better naming?
+    // It does make sense that the .Source of U8String is U8Source while
+    // the .Source of U8Slices is U8String but I'm concerned that it might
+    // be confusing.
+    U8String Source { get; }
+}

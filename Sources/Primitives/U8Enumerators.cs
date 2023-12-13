@@ -383,8 +383,8 @@ public readonly struct U8RuneIndices(U8String value) :
 /// </summary>
 /// <param name="value">The string to enumerate over.</param>
 public readonly struct U8Lines(U8String value) :
-    ICollection<U8String>,
-    IU8Enumerable<U8Lines.Enumerator>
+    IU8Enumerable<U8Lines.Enumerator>,
+    IU8SliceCollection
 {
     readonly U8String _value = value;
 
@@ -404,6 +404,15 @@ public readonly struct U8Lines(U8String value) :
 
             return 0;
         }
+    }
+
+    /// <summary>
+    /// The source <see cref="U8Lines"/>.
+    /// </summary>
+    public U8String Source
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _value;
     }
 
     public bool Contains(U8String item)
@@ -438,6 +447,7 @@ public readonly struct U8Lines(U8String value) :
 
     public U8String[] ToArray() => this.ToArray<U8Lines, Enumerator, U8String>();
     public List<U8String> ToList() => this.ToList<U8Lines, Enumerator, U8String>();
+    public U8Slices ToSlices() => this.ToSlices<U8Lines, Enumerator>();
 
     /// <summary>
     /// Returns a <see cref="Enumerator"/> over the provided string.

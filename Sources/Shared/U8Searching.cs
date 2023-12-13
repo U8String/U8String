@@ -204,14 +204,14 @@ internal static class U8Searching
     // into the loops which is very much not what we want. In this case
     // PGO wins are minor compared to regressions for some of its decisions.
     [MethodImpl(MethodImplOptions.AggressiveOptimization)]
-    internal static int CountRunes(ref byte src, nuint length)
+    internal static nuint CountRunes(ref byte src, nuint length)
     {
         Debug.Assert(length > 0);
 
         // Adopted from https://github.com/simdutf/simdutf/blob/master/src/generic/utf8.h#L10
         // This method achieves width x2 unrolling by relying on new struct promotion and
         // helpers in VectorExtensions. Operations on 512b and 256b are intentional.
-        var count = 0;
+        var count = (nuint)0;
         var offset = (nuint)0;
         ref var ptr = ref Unsafe.As<byte, sbyte>(ref src);
 
@@ -273,7 +273,7 @@ internal static class U8Searching
         while (offset < length)
         {
             // Branchless: x86_64: cmp + setge; arm64: cmn + cset
-            count += U8Info.IsContinuationByte((byte)ptr.Add(offset)) ? 0 : 1;
+            count += U8Info.IsContinuationByte((byte)ptr.Add(offset)) ? (nuint)0 : 1;
             offset++;
         }
 

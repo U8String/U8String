@@ -138,7 +138,7 @@ public readonly partial struct U8String :
         {
             if (!IsEmpty)
             {
-                return U8Searching.CountRunes(ref UnsafeRef, (uint)Length);
+                return (int)(uint)U8Searching.CountRunes(ref UnsafeRef, (uint)Length);
             }
 
             return 0;
