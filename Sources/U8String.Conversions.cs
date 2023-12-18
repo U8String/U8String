@@ -213,7 +213,9 @@ public readonly partial struct U8String
         var deref = this;
         if (!deref.IsEmpty)
         {
-            return deref.UnsafeSpan.ToArray();
+            var bytes = new byte[(nint)(uint)deref.Length];
+            deref.UnsafeSpan.CopyToUnsafe(ref bytes.AsRef());
+            return bytes;
         }
 
         return [];

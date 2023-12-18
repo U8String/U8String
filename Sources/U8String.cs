@@ -326,7 +326,7 @@ public readonly partial struct U8String :
         }
     }
 
-    [EditorBrowsable(EditorBrowsableState.Never)]
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ref readonly byte GetPinnableReference() => ref DangerousRef;
 
@@ -340,9 +340,7 @@ public readonly partial struct U8String :
 
     string DebuggerDisplay()
     {
-        return Length < 1024
-            ? ToString()
-            : $"{this[..FloorRuneIndex(1024)]}...";
+        return Length < 1024 ? ToString() : $"{SliceRounding(0, 1024)}...";
     }
 
     void IList<byte>.Insert(int index, byte item) => throw new NotSupportedException();

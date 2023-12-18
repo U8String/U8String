@@ -23,7 +23,7 @@ public readonly struct U8Slices : IList<U8String>
         set => throw new NotSupportedException();
     }
 
-    public bool IsEmpty => _source is null;
+    public bool IsEmpty => Count <= 0;
 
     public int Count => _ranges?.Length ?? 0;
 

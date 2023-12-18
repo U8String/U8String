@@ -1,5 +1,7 @@
 using System.Buffers;
+using System.Collections.Concurrent;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
@@ -11,6 +13,7 @@ namespace U8;
 [InterpolatedStringHandler]
 [EditorBrowsable(EditorBrowsableState.Never)]
 #pragma warning disable RCS1003 // Add braces to multi-line expression. Why: more compact and readable here.
+#pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
 public struct InterpolatedU8StringHandler
 {
     static readonly ConditionalWeakTable<string, byte[]> LiteralPool = [];
@@ -134,13 +137,31 @@ public struct InterpolatedU8StringHandler
     // the body, the format-specific branches are optimized away.
     [MethodImpl(MethodImplOptions.NoInlining)]
     public void AppendFormatted<T>(T value)
-        where T : IUtf8SpanFormattable
     {
     Retry:
-        if (value.TryFormat(Free, out var written, default, _provider))
+        if (value is IUtf8SpanFormattable)
         {
-            BytesWritten += written;
-            return;
+            if (((IUtf8SpanFormattable)value)
+                .TryFormat(Free, out var written, default, _provider))
+            {
+                BytesWritten += written;
+                return;
+            }
+        }
+        else if (typeof(T).IsEnum)
+        {
+#nullable disable
+            var formattable = new EnumU8StringFormat<T>(value);
+#nullable restore
+            if (formattable.TryFormat(Free, out var written))
+            {
+                BytesWritten += written;
+                return;
+            }
+        }
+        else
+        {
+            UnsupportedAppend<T>();
         }
 
         Grow();
@@ -236,6 +257,78 @@ public struct InterpolatedU8StringHandler
         {
             ArrayPool<byte>.Shared.Return(rented);
         }
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    static void UnsupportedAppend<T>()
+    {
+        throw new NotSupportedException(
+            $"The type '{typeof(T)}' does not implement '{typeof(IUtf8SpanFormattable)}' or is not '{typeof(Enum)}'.");
+    }
+}
+
+readonly struct EnumU8StringFormat<T>(T value) // : IUtf8SpanFormattable
+    where T : notnull //, struct, Enum
+{
+    readonly static ConcurrentDictionary<T, byte[]> Cache = [];
+
+    // This counter can be very imprecise but that's acceptable, we only
+    // need to limit the cache size to some reasonable amount, tracking
+    // the exact number of entries is not necessary.
+    static uint Count;
+    const int MaxCapacity = 1024;
+
+    public bool TryFormat(Span<byte> destination, out int bytesWritten)
+    {
+        var bytes = GetBytes(value);
+        var span = bytes.SliceUnsafe(0, bytes.Length - 1);
+        if (destination.Length >= span.Length)
+        {
+            span.CopyToUnsafe(ref destination.AsRef());
+            bytesWritten = span.Length;
+            return true;
+        }
+
+        bytesWritten = 0;
+        return false;
+    }
+
+    public U8String ToU8String()
+    {
+        var bytes = GetBytes(value);
+        return new(bytes, 0, bytes.Length - 1);
+    }
+
+    public static implicit operator EnumU8StringFormat<T>(T value) => new(value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static byte[] GetBytes(T value)
+    {
+        if (Cache.TryGetValue(value, out var cached))
+        {
+            return cached;
+        }
+
+        return Add(value);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static byte[] Add(T value)
+    {
+        var utf16 = value.ToString();
+        var length = Encoding.UTF8.GetByteCount(utf16!);
+        var bytes = new byte[length + 1];
+
+        Encoding.UTF8.GetBytes(utf16, bytes);
+
+        var count = Count;
+        if (count <= MaxCapacity)
+        {
+            Count = count + 1;
+            Cache[value] = bytes;
+        }
+
+        return bytes;
     }
 }
 

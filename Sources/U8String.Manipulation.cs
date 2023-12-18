@@ -800,16 +800,11 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Retrieves a substring from this instance. The substring starts at a specified
-    /// character position and continues to the end of the string.
+    /// Forms a slice out of the current <see cref="U8String"/> instance starting at a specified index.
     /// </summary>
-    /// <param name="start">The zero-based starting character position of a substring in this instance.</param>
-    /// <returns>A substring view that begins at <paramref name="start"/>.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="start"/> is less than zero or greater than the length of this instance.
-    /// </exception>
-    /// <exception cref="ArgumentException">
-    /// The resulting substring splits at a UTF-8 code point boundary and would result in an invalid UTF-8 string.
+    /// <paramref name="start"/> is less than zero or greater than the length of this instance or
+    /// when the resulting slice offsets point to the middle of a UTF-8 code point.
     /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(int start)
@@ -831,17 +826,11 @@ public readonly partial struct U8String
     }
 
     /// <summary>
-    /// Retrieves a substring from this instance. The substring starts at a specified
-    /// character position and has a specified length.
+    /// Forms a slice out of the current <see cref="U8String"/> instance starting at a specified index for a specified length.
     /// </summary>
-    /// <param name="start">The zero-based starting character position of a substring in this instance.</param>
-    /// <param name="length">The number of bytes in the substring.</param>
-    /// <returns>A substring view that begins at <paramref name="start"/> and has <paramref name="length"/> bytes.</returns>
     /// <exception cref="ArgumentOutOfRangeException">
-    /// <paramref name="start"/> or <paramref name="length"/> is less than zero, or the sum of <paramref name="start"/> and <paramref name="length"/> is greater than the length of the current instance.
-    /// </exception>
-    /// <exception cref="ArgumentException">
-    /// The resulting substring splits at a UTF-8 code point boundary and would result in an invalid UTF-8 string.
+    /// <paramref name="start"/> is less than zero or greater than the length of this instance or
+    /// when the resulting slice offsets point to the middle of a UTF-8 code point.
     /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(int start, int length)
@@ -857,25 +846,79 @@ public readonly partial struct U8String
         // - Slice(0, str.Length)
         // - enregisteredLocal.Slice(...)
         // - heap/stackReference.Slice(...)
-        var (value, offset, sourceLength) = this;
-        if ((ulong)(uint)start + (ulong)(uint)length > (ulong)(uint)sourceLength)
+        var source = this;
+        if ((ulong)(uint)start + (ulong)(uint)length > (ulong)(uint)source.Length)
         {
             ThrowHelpers.ArgumentOutOfRange();
         }
 
+        var offset = source.Offset;
         if (length > 0)
         {
-            ref var ptr = ref value!.AsRef(offset += start);
+            ref var ptr = ref source._value!.AsRef(offset += start);
             if ((start > 0 && U8Info
                     .IsContinuationByte(in ptr)) ||
-                (length < (sourceLength - start) && U8Info
+                (length < (source.Length - start) && U8Info
                     .IsContinuationByte(in ptr.Add(length))))
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }
         }
 
-        return new(value, offset, length);
+        return new(source._value, offset, length);
+    }
+
+    /// <summary>
+    /// Forms a slice out of the current <see cref="U8String"/> instance starting at a specified index for a specified length.
+    /// </summary>
+    /// <remarks>
+    /// In the instance where <paramref name="start"/> and/or <paramref name="length"/> are negative,
+    /// out of range, or point to the middle of a UTF-8 code point, the resulting slice will have
+    /// its start and/or end adjusted to the nearest valid UTF-8 code point boundaries rounding
+    /// towards the middle of the string. This method will never throw and will always return a
+    /// valid slice.
+    /// <para />
+    /// Example:
+    /// <example>
+    /// <code>
+    /// var str = (U8String)"Привіт, Всесвіт!"u8;
+    /// var slice = str.SliceNarrow(1, 12);
+    /// Assert.Equal("ривіт"u8, slice);
+    ///
+    /// var slice2 = str.SliceNarrow(int.MinValue, int.MaxValue);
+    /// Assert.Equal(str, slice2);
+    /// </code>
+    /// </example>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String SliceRounding(int start, int length)
+    {
+        var source = this;
+        var offset = source.Offset + (start > 0 ? Math.Min(start, source.Length) : 0);
+        var newlength = Math.Min(length, source.Length - offset);
+        if (newlength > 0)
+        {
+            ref var ptr = ref source._value!.AsRef(offset);
+            if (start > 0)
+            {
+                var searchStart = 0;
+                while (searchStart < newlength
+                    && U8Info.IsContinuationByte(in ptr.Add(searchStart)))
+                {
+                    searchStart++;
+                }
+                offset += searchStart;
+                newlength -= searchStart;
+            }
+
+            while (newlength > 0
+                && U8Info.IsContinuationByte(in ptr.Add(newlength - 1)))
+            {
+                newlength--;
+            }
+        }
+
+        return new(source._value, offset, newlength);
     }
 
     /// <summary>

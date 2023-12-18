@@ -95,15 +95,13 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void CopyToUnsafe<T>(this Span<T> source, ref T destination)
-        where T : struct
+    internal static void CopyToUnsafe(this ReadOnlySpan<byte> source, ref byte destination)
     {
         source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void CopyToUnsafe<T>(this ReadOnlySpan<T> source, ref T destination)
-        where T : struct
+    internal static void CopyToUnsafe(this Span<byte> source, ref byte destination)
     {
         source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
     }
@@ -113,7 +111,7 @@ internal static class UnsafeExtensions
         where T : struct
     {
         Debug.Assert(value != null);
-        Debug.Assert((uint)start < (uint)value.Length);
+        Debug.Assert((uint)start <= (uint)value.Length);
 
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(value), (nint)(uint)start),
@@ -146,7 +144,7 @@ internal static class UnsafeExtensions
     internal static Span<T> SliceUnsafe<T>(this Span<T> value, int start)
         where T : struct
     {
-        Debug.Assert((uint)start < (uint)value.Length);
+        Debug.Assert((uint)start <= (uint)value.Length);
 
         return MemoryMarshal.CreateSpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)start),
@@ -167,7 +165,7 @@ internal static class UnsafeExtensions
     internal static ReadOnlySpan<T> SliceUnsafe<T>(this ReadOnlySpan<T> value, int start)
         where T : struct
     {
-        Debug.Assert((uint)start < (uint)value.Length);
+        Debug.Assert((uint)start <= (uint)value.Length);
 
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)start),

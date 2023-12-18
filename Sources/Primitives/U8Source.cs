@@ -16,6 +16,7 @@ public readonly struct U8Source : IEquatable<U8Source>
         Value = value;
     }
 
+    // TODO: Port .Slice optimizations from U8String?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Slice(U8Range range)
     {

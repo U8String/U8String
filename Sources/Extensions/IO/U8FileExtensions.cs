@@ -29,10 +29,17 @@ public static class U8FileExtensions
         {
             // TODO: Should we just read the first int.MaxValue bytes?
             var buffer = new byte[int.CreateSaturating(length + 1)];
+            var bytesStart = 0;
             var bytesRead = RandomAccess.Read(handle, buffer, offset);
 
-            U8String.Validate(buffer.SliceUnsafe(0, bytesRead));
-            return new U8String(buffer, 0, bytesRead);
+            if (HasBOM(buffer))
+            {
+                bytesStart = 3;
+                bytesRead -= 3;
+            }
+
+            U8String.Validate(buffer.SliceUnsafe(bytesStart, bytesRead));
+            return new U8String(buffer, bytesStart, bytesRead);
         }
 
         return default;
@@ -63,12 +70,37 @@ public static class U8FileExtensions
         if (length > 0)
         {
             var buffer = new byte[int.CreateSaturating(length + 1)];
-            var bytesRead = await RandomAccess.ReadAsync(handle, buffer, offset, ct).ConfigureAwait(false);
+            var bytesStart = 0;
+            var bytesRead = await RandomAccess
+                .ReadAsync(handle, buffer, offset, ct)
+                .ConfigureAwait(false);
 
-            U8String.Validate(buffer.SliceUnsafe(0, bytesRead));
-            return new U8String(buffer, 0, bytesRead);
+            if (HasBOM(buffer))
+            {
+                bytesStart = 3;
+                bytesRead -= 3;
+            }
+
+            U8String.Validate(buffer.SliceUnsafe(bytesStart, bytesRead));
+            return new U8String(buffer, bytesStart, bytesRead);
         }
 
         return default;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static bool HasBOM(ReadOnlySpan<byte> buffer)
+    {
+        if (buffer.Length >= 3)
+        {
+            ref var ptr = ref buffer.AsRef();
+
+            var b01 = ptr.Cast<byte, ushort>();
+            var b2 = ptr.Add(2);
+
+            return b01 is (0xEF | 0xBB << 8) && b2 is 0xBF;
+        }
+
+        return false;
     }
 }

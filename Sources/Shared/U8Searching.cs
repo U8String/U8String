@@ -273,7 +273,7 @@ internal static class U8Searching
         while (offset < length)
         {
             // Branchless: x86_64: cmp + setge; arm64: cmn + cset
-            count += U8Info.IsContinuationByte((byte)ptr.Add(offset)) ? (nuint)0 : 1;
+            count += (nuint)(ptr.Add(offset) < -64 ? 0 : 1);
             offset++;
         }
 

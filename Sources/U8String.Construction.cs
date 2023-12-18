@@ -3,6 +3,8 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization.Metadata;
 using System.Text.Unicode;
 
 using Microsoft.Win32.SafeHandles;
@@ -31,6 +33,8 @@ public readonly partial struct U8String
     /// </remarks>
     public U8String(byte[] value)
     {
+        // TODO: move newarr and memmove into a local function and forceinline
+        // null, length and validity checks?
         ThrowHelpers.CheckNull(value);
 
         var span = (ReadOnlySpan<byte>)value;
@@ -55,8 +59,11 @@ public readonly partial struct U8String
     /// <remarks>
     /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String(ReadOnlySpan<byte> value)
     {
+        // AggressiveInlining is here to allow the compiler to unroll
+        // memmove and optimize away length and null-termination checks.
         if (value.Length > 0)
         {
             Validate(value);
@@ -422,6 +429,12 @@ public readonly partial struct U8String
         SafeFileHandle handle, long offset = 0, CancellationToken ct = default)
     {
         return handle.ReadToU8StringAsync(offset, ct);
+    }
+
+    public static U8String Serialize<T>(T value, JsonTypeInfo<T> info)
+    {
+        var bytes = JsonSerializer.SerializeToUtf8Bytes(value, info);
+        return new(bytes, 0, bytes.Length);
     }
 
     public static bool TryCreate(byte[]? value, out U8String result)

@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 using U8.Primitives;
@@ -8,12 +9,12 @@ namespace U8.InteropServices;
 /// <summary>
 /// Provides unsafe/unchecked methods for creating and manipulating <see cref="U8String"/> instances.
 /// </summary>
+[EditorBrowsable(EditorBrowsableState.Advanced)]
 public static class U8Marshal
 {
     /// <summary>
     /// Returns a <see cref="ReadOnlySpan{T}"/> view of the current <see cref="U8String"/>.
     /// </summary>
-    /// <param name="str"></param>
     /// <exception cref="NullReferenceException">
     /// Thrown when <see cref="U8String._value"/> is <see langword="null"/>.
     /// </exception>
@@ -83,14 +84,36 @@ public static class U8Marshal
         return new(value, offset, separatorLength);
     }
 
+    /// <summary>
+    /// Counts the number of unicode code points starting at the given <paramref name="ptr"/>
+    /// for the given <paramref name="length"/> of bytes.
+    /// </summary>
+    /// <param name="ptr">Pointer to the start of the UTF-8 byte sequence.</param>
+    /// <param name="length">The number of bytes to count code points for.</param>
+    /// <exception cref="NullReferenceException">
+    /// Thrown when <paramref name="ptr"/> is <see langword="null"/> when <paramref name="length"/> is greater than zero.
+    /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint CountRunes(ref byte ptr, nuint length)
     {
-        return U8Searching.CountRunes(ref ptr, length);
+        if (length > 0)
+        {
+            return U8Searching.CountRunes(ref ptr, length);
+        }
+
+        return 0;
     }
 
+    /// <inheritdoc cref="CountRunes(ref byte, nuint)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe nuint CountRunes(byte* ptr, nuint length)
     {
-        return U8Searching.CountRunes(ref Unsafe.AsRef<byte>(ptr), length);
+        if (length > 0)
+        {
+            return U8Searching.CountRunes(ref Unsafe.AsRef<byte>(ptr), length);
+        }
+
+        return 0;
     }
 
     /// <summary>
