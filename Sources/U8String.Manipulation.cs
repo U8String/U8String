@@ -882,10 +882,10 @@ public readonly partial struct U8String
     /// <example>
     /// <code>
     /// var str = (U8String)"Привіт, Всесвіт!"u8;
-    /// var slice = str.SliceNarrow(1, 12);
+    /// var slice = str.SliceRounding(1, 12);
     /// Assert.Equal("ривіт"u8, slice);
     ///
-    /// var slice2 = str.SliceNarrow(int.MinValue, int.MaxValue);
+    /// var slice2 = str.SliceRounding(int.MinValue, int.MaxValue);
     /// Assert.Equal(str, slice2);
     /// </code>
     /// </example>

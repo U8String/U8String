@@ -2,15 +2,7 @@ using U8.Abstractions;
 
 namespace U8.Comparison;
 
-public readonly struct U8OrdinalComparer :
-    IU8Comparer,
-    IU8EqualityComparer,
-    IU8ContainsOperator,
-    IU8CountOperator,
-    IU8IndexOfOperator,
-    IU8LastIndexOfOperator,
-    IU8StartsWithOperator,
-    IU8EndsWithOperator
+public readonly struct U8OrdinalComparer : IU8Comparer
 {
     public static U8OrdinalComparer Instance => default;
 

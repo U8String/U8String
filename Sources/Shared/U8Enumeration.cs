@@ -246,7 +246,7 @@ internal static class U8Enumeration
             var ranges = new U8Range[count];
             collection.FillRangesUnchecked<T, E>(ref ranges.AsRef());
 
-            return new(collection.Source._value, ranges);
+            return new(collection.Value._value, ranges);
         }
 
         return default;

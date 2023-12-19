@@ -409,7 +409,7 @@ public readonly struct U8Lines(U8String value) :
     /// <summary>
     /// The source <see cref="U8Lines"/>.
     /// </summary>
-    public U8String Source
+    public U8String Value
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value;

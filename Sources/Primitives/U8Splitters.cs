@@ -7,6 +7,7 @@ using U8.Shared;
 
 namespace U8.Primitives;
 
+#pragma warning disable IDE0032, RCS1085 // Use auto property. Why: explict struct contents annotation.
 public readonly record struct U8SplitPair
 {
     readonly U8String _value;
@@ -80,7 +81,7 @@ public readonly struct U8Split(U8String value, U8String separator) :
         }
     }
 
-    public U8String Source
+    public U8String Value
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value;
@@ -88,7 +89,18 @@ public readonly struct U8Split(U8String value, U8String separator) :
 
     public bool Contains(U8String item)
     {
-        return U8Searching.SplitContains(_value, _separator, item);
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
+    }
+
+    public bool Contains(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
     }
 
     public void CopyTo(U8String[] array, int index)
@@ -114,6 +126,22 @@ public readonly struct U8Split(U8String value, U8String separator) :
     public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Split, Enumerator, U8String>(index);
+    }
+
+    public int FindOffset(U8String item)
+    {
+        return U8Searching.IndexOfSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
+    }
+
+    public int FindOffset(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.IndexOfSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split, Enumerator, U8String>();
@@ -209,7 +237,7 @@ public readonly struct U8Split<TSeparator> :
         }
     }
 
-    public U8String Source
+    public U8String Value
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value;
@@ -217,7 +245,18 @@ public readonly struct U8Split<TSeparator> :
 
     public bool Contains(U8String item)
     {
-        return U8Searching.SplitContains(_value, _separator, item);
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
+    }
+
+    public bool Contains(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
     }
 
     public void CopyTo(U8String[] array, int index)
@@ -243,6 +282,22 @@ public readonly struct U8Split<TSeparator> :
     public U8String ElementAtOrDefault(int index)
     {
         return this.ElementAtOrDefault<U8Split<TSeparator>, Enumerator, U8String>(index);
+    }
+
+    public int FindOffset(U8String item)
+    {
+        return U8Searching.IndexOfSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
+    }
+
+    public int FindOffset(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.IndexOfSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator, U8String>();
@@ -316,7 +371,7 @@ public readonly struct U8Split<TSeparator, TComparer> :
     IU8Enumerable<U8Split<TSeparator, TComparer>.Enumerator>,
     IU8SliceCollection
         where TSeparator : struct
-        where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+        where TComparer : IU8Comparer
 {
     readonly U8String _value;
     readonly TSeparator _separator;
@@ -339,7 +394,7 @@ public readonly struct U8Split<TSeparator, TComparer> :
         }
     }
 
-    public U8String Source
+    public U8String Value
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value;
@@ -347,7 +402,20 @@ public readonly struct U8Split<TSeparator, TComparer> :
 
     public bool Contains(U8String item)
     {
-        return U8Searching.SplitContains(_value, _separator, item, _comparer);
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator,
+            comparer: _comparer);
+    }
+
+    public bool Contains(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator,
+            comparer: _comparer);
     }
 
     public void CopyTo(U8String[] array, int index)
@@ -830,7 +898,18 @@ public readonly ref struct U8RefSplit
 
     public bool Contains(U8String item)
     {
-        return U8Searching.SplitContains(_value, _separator, item);
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
+    }
+
+    public bool Contains(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.ContainsSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
     }
 
     public void CopyTo(U8String[] array, int index)
@@ -919,6 +998,22 @@ public readonly ref struct U8RefSplit
         }
 
         return default;
+    }
+
+    public int FindOffset(U8String item)
+    {
+        return U8Searching.IndexOfSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
+    }
+
+    public int FindOffset(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.IndexOfSegment(
+            haystack: _value,
+            needle: item,
+            separator: _separator);
     }
 
     public U8String[] ToArray()
@@ -1040,7 +1135,7 @@ public readonly ref struct U8RefSplit
 }
 
 public readonly ref struct U8RefSplit<TComparer>
-    where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    where TComparer : IU8Comparer
 {
     readonly U8String _value;
     readonly ReadOnlySpan<byte> _separator;
@@ -1072,7 +1167,20 @@ public readonly ref struct U8RefSplit<TComparer>
 
     public bool Contains(U8String item)
     {
-        return U8Searching.SplitContains(_value, _separator, item, _comparer);
+        return U8Searching.SplitContains(
+            haystack: _value,
+            needle: item,
+            separator: _separator,
+            comparer: _comparer);
+    }
+
+    public bool Contains(ReadOnlySpan<byte> item)
+    {
+        return U8Searching.SplitContains(
+            haystack: _value,
+            needle: item,
+            separator: _separator,
+            comparer: _comparer);
     }
 
     public void CopyTo(U8String[] array, int index)

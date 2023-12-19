@@ -10,15 +10,7 @@ namespace U8.Comparison;
 // TODO: Optimize impls.
 // TODO: Decide where in the sort order should the case-folded characters go.
 #pragma warning disable RCS1003, IDE0045 // Add braces and simplify branching. Why: manual block ordering.
-public readonly struct U8AsciiIgnoreCaseComparer :
-    IU8Comparer,
-    IU8EqualityComparer,
-    IU8ContainsOperator,
-    IU8CountOperator,
-    IU8IndexOfOperator,
-    IU8LastIndexOfOperator,
-    IU8StartsWithOperator,
-    IU8EndsWithOperator
+public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
 {
     [ThreadStatic]
     static XxHash3? Hasher;
@@ -236,25 +228,25 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         // Performance of this implementation jumps off a cliff on sequences of repeated
         // needle candidates, e.g. "aaaaa". The comparer itself is probably a stop-gap measure
         // until there is proper U8OrdinalIgnoreCaseComparer implementation.
-        int index;
+        var index = 0;
         var candidate = value[0];
         while (true)
         {
-            index = IndexOf(source, candidate).Offset;
-            if (index < 0) break;
+            var matchOffset = IndexOf(source, candidate).Offset;
+            if (matchOffset < 0) break;
 
-            source = source.SliceUnsafe(index);
+            index += matchOffset;
+            source = source.SliceUnsafe(matchOffset);
             if (source.Length < value.Length) break;
 
-            if (EqualsCore(
-                    ref source.AsRef(),
-                    ref value.AsRef(),
-                    (uint)value.Length))
+            var commonPrefix = CommonPrefixLength(source, value);
+            if (commonPrefix == value.Length)
             {
                 return (index, value.Length);
             }
 
-            source = source.SliceUnsafe(value.Length);
+            index += commonPrefix;
+            source = source.SliceUnsafe(commonPrefix);
         }
 
         return (-1, 0);
@@ -270,6 +262,7 @@ public readonly struct U8AsciiIgnoreCaseComparer :
         return (source.LastIndexOfAny(value, (byte)(value ^ 0x20)), 1);
     }
 
+    // TODO: !FIX ME!
     public (int Offset, int Length) LastIndexOf(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
         if (value.Length is 0 || value.Length > source.Length)
@@ -277,14 +270,13 @@ public readonly struct U8AsciiIgnoreCaseComparer :
             return (-1, 0);
         }
 
-        int index;
         var firstByte = value[0];
         while (true)
         {
-            index = LastIndexOf(source, firstByte).Offset;
-            if (index < 0) break;
+            var matchOffset = LastIndexOf(source, firstByte).Offset;
+            if (matchOffset < 0) break;
 
-            var candidate = source.SliceUnsafe(index);
+            var candidate = source.SliceUnsafe(matchOffset);
             if (candidate.Length < value.Length) break;
 
             if (EqualsCore(
@@ -292,10 +284,10 @@ public readonly struct U8AsciiIgnoreCaseComparer :
                     ref value.AsRef(),
                     (nuint)value.Length))
             {
-                return (index, value.Length);
+                return (matchOffset, value.Length);
             }
 
-            source = source.SliceUnsafe(0, index);
+            source = source.SliceUnsafe(0, matchOffset);
         }
 
         return (-1, 0);

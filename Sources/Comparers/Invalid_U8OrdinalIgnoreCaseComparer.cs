@@ -9,13 +9,7 @@ namespace U8.Comparison;
 // case folding. What should be the policy for 54 characters that are affected by this?
 // TODO: Double check if there are non-ascii characters that would evaluate to ascii
 // characters when case-folded. Maybe it is fine since this is ordinal and not invariant?
-internal readonly struct U8OrdinalIgnoreCaseComparer :
-    IU8Comparer,
-    IU8EqualityComparer,
-    IU8ContainsOperator,
-    IU8CountOperator,
-    IU8IndexOfOperator,
-    IU8LastIndexOfOperator
+internal readonly struct U8OrdinalIgnoreCaseComparer : IU8Comparer
 {
     public int Compare(U8String x, U8String y)
     {
@@ -229,6 +223,26 @@ internal readonly struct U8OrdinalIgnoreCaseComparer :
     public int GetHashCode(U8String value) => GetHashCode(value.AsSpan());
 
     public int GetHashCode(ReadOnlySpan<byte> value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> source, byte value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool StartsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> source, byte value)
+    {
+        throw new NotImplementedException();
+    }
+
+    public bool EndsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
         throw new NotImplementedException();
     }

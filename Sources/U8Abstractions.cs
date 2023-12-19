@@ -1,5 +1,18 @@
 namespace U8.Abstractions;
 
+public interface IU8Comparer :
+    IComparer<U8String>,
+    IU8EqualityComparer,
+    IU8ContainsOperator,
+    IU8CountOperator,
+    IU8IndexOfOperator,
+    IU8LastIndexOfOperator,
+    IU8StartsWithOperator,
+    IU8EndsWithOperator
+{
+    int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y);
+}
+
 public interface IU8ContainsOperator
 {
     bool Contains(ReadOnlySpan<byte> source, byte value);
@@ -39,11 +52,6 @@ public interface IU8EndsWithOperator
     bool EndsWith(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value);
 }
 
-public interface IU8Comparer : IComparer<U8String>
-{
-    int Compare(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y);
-}
-
 public interface IU8EqualityComparer : IEqualityComparer<U8String>
 {
     bool Equals(ReadOnlySpan<byte> x, ReadOnlySpan<byte> y);
@@ -79,5 +87,5 @@ internal interface IU8SliceCollection : ICollection<U8String>
     // It does make sense that the .Source of U8String is U8Source while
     // the .Source of U8Slices is U8String but I'm concerned that it might
     // be confusing.
-    U8String Source { get; }
+    U8String Value { get; }
 }

@@ -9,13 +9,19 @@ public class Formatting
 {
     static readonly DateTime DateTime = new(2021, 10, 10, 10, 10, 10, DateTimeKind.Utc);
     static readonly Guid Guid = Guid.NewGuid();
-    static readonly decimal Decimal = 42.42m;
+    const decimal Decimal = 42.42m;
 
     [Benchmark]
     public U8String FormatDateTime() => U8String.Format($"Date is {DateTime}");
 
     [Benchmark]
     public string FormatDateTimeU16() => $"Date is {DateTime}";
+
+    [Benchmark]
+    public U8String FormatEnum() => U8String.Format($"Enum is ${StringComparison.Ordinal}");
+
+    [Benchmark]
+    public string FormatEnumU16() => $"Enum is ${StringComparison.Ordinal}";
 
     [Benchmark]
     public U8String FormatBool() => U8String.Format($"{true} {false}");

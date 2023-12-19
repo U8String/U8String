@@ -43,8 +43,8 @@ public class Serialization
         ID = U8String.CreateUnchecked("123456789"u8)
     };
 
-    private static readonly byte[] PersonBytes = JsonSerializer
-        .SerializeToUtf8Bytes(PersonValue, JsonContext.Default.Person);
+    private static readonly U8String PersonBytes = U8String
+        .Serialize(PersonValue, JsonContext.Default.Person);
 
     [Benchmark(Baseline = true)]
     public Person? DeserializePerson() =>
@@ -63,12 +63,12 @@ public class Serialization
         JsonSerializer.Serialize(PersonU8Value, JsonContext.Default.PersonU8);
 
     [Benchmark]
-    public byte[] SerializePersonToUtf8() =>
-        JsonSerializer.SerializeToUtf8Bytes(PersonValue, JsonContext.Default.Person);
+    public U8String SerializePersonToUtf8() =>
+        U8String.Serialize(PersonValue, JsonContext.Default.Person);
 
     [Benchmark]
-    public byte[] SerializePersonU8ToUtf8() =>
-        JsonSerializer.SerializeToUtf8Bytes(PersonU8Value, JsonContext.Default.PersonU8);
+    public U8String SerializePersonU8ToUtf8() =>
+        U8String.Serialize(PersonU8Value, JsonContext.Default.PersonU8);
 }
 
 [JsonSerializable(typeof(Serialization.Person))]

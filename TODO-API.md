@@ -69,11 +69,13 @@
     - [x] Remove
     - [ ] Remove(..., T comparer)
     - [ ] RemoveAny(...)
+    - [x] Slice
+    - [x] SliceRounding
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
     - [x] ToLower/ToUpper (invariant case converter not implemented yet)
     - [x] ToLowerAscii/ToUpperAscii
 - [ ] Memory-optimized collections
-    - [ ] `U8SliceArray` or maybe `U8SplitArray`?
+    - [x] `U8SliceArray` or maybe `U8SplitArray`?
     - [ ] `U8SliceDictionary<T>` (?)
 - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
 - [ ] Transcoding: UTF8<->UTF32

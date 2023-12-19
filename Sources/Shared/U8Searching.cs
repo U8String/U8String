@@ -90,43 +90,281 @@ internal static class U8Searching
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool SplitContains<T>(
-        ReadOnlySpan<byte> value, T separator, ReadOnlySpan<byte> item)
+    internal static bool ContainsSegment<T>(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        T separator) where T : unmanaged
+    {
+        Debug.Assert(separator is byte or char or Rune);
+        Debug.Assert(separator is not char s || !char.IsSurrogate(s));
+
+        return separator switch
+        {
+            byte b => ContainsSegment(haystack, needle, b),
+
+            char c => char.IsAscii(c)
+                ? ContainsSegment(haystack, needle, (byte)c)
+                : ContainsSegment(haystack, needle, new U8Scalar(c, checkAscii: false).AsSpan()),
+
+            Rune r => r.IsAscii
+                ? ContainsSegment(haystack, needle, (byte)r.Value)
+                : ContainsSegment(haystack, needle, new U8Scalar(r, checkAscii: false).AsSpan()),
+
+            _ => ThrowHelpers.Unreachable<bool>()
+        };
+    }
+
+    internal static bool ContainsSegment(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        byte separator)
+    {
+        var found = false;
+        if (!needle.Contains(separator))
+        {
+            while (true)
+            {
+                var matchOffset = haystack.IndexOf(needle);
+                // Remaining search space contains no more candidates.
+                if (matchOffset < 0)
+                {
+                    break;
+                }
+                // Candidate is at the start of the search space.
+                else if (matchOffset is 0)
+                {
+                    // Candidate either equals the search space or is followed by the separator.
+                    if (haystack.Length == needle.Length ||
+                        haystack.AsRef(needle.Length) == separator)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                // Candidate is at the end of the search space.
+                else if (matchOffset == haystack.Length - needle.Length)
+                {
+                    // Candidate is preceded by the separator.
+                    if (haystack.AsRef(matchOffset - 1) == separator)
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                // Candidate is in the middle of the search space.
+                else if (
+                    haystack.AsRef(matchOffset - 1) == separator &&
+                    haystack.AsRef(matchOffset + needle.Length) == separator)
+                {
+                    found = true;
+                    break;
+                }
+
+                // Candidate was not at the end of the search space and was
+                // not followed by the separator, so we can skip an extra byte.
+                haystack = haystack.SliceUnsafe(matchOffset + needle.Length + 1);
+            }
+        }
+
+        return found;
+    }
+
+    internal static bool ContainsSegment(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        ReadOnlySpan<byte> separator)
+    {
+        var found = false;
+        if (!Contains(needle, separator))
+        {
+            while (true)
+            {
+                var matchOffset = haystack.IndexOf(needle);
+                // Remaining search space contains no more candidates.
+                if (matchOffset < 0)
+                {
+                    break;
+                }
+                // Candidate is at the start of the search space.
+                else if (matchOffset is 0)
+                {
+                    // Candidate either equals the search space or is followed by the separator.
+                    if (haystack.Length == needle.Length ||
+                        haystack.SliceUnsafe(needle.Length)
+                                .StartsWith(separator))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                // Candidate is at the end of the search space.
+                else if (matchOffset == haystack.Length - needle.Length)
+                {
+                    // Candidate is preceded by the separator.
+                    if (haystack.SliceUnsafe(0, matchOffset)
+                                .EndsWith(separator))
+                    {
+                        found = true;
+                        break;
+                    }
+                }
+                // Candidate is in the middle of the search space.
+                else if (
+                    haystack.SliceUnsafe(0, matchOffset)
+                            .EndsWith(separator) &&
+                    haystack.SliceUnsafe(matchOffset + needle.Length)
+                            .StartsWith(separator))
+                {
+                    found = true;
+                    break;
+                }
+
+                // Candidate was not at the end of the search space and was
+                // not followed by the separator, so we can skip separator.Length too.
+                haystack = haystack.SliceUnsafe(
+                    matchOffset + needle.Length + separator.Length);
+            }
+        }
+
+        return found;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool ContainsSegment<T, C>(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        T separator,
+        C comparer)
             where T : struct
+            where C : IU8Comparer
     {
-        return !Contains(item, separator) && Contains(value, item);
+        Debug.Assert(separator is byte or char or Rune or U8String);
+        Debug.Assert(separator is not char s || !char.IsSurrogate(s));
+
+        return separator switch
+        {
+            byte b => ContainsSegment(haystack, needle, b, comparer),
+
+            char c => char.IsAscii(c)
+                ? ContainsSegment(haystack, needle, (byte)c, comparer)
+                : SplitContains(haystack, needle, new U8Scalar(c, checkAscii: false).AsSpan(), comparer),
+
+            Rune r => r.IsAscii
+                ? ContainsSegment(haystack, needle, (byte)r.Value, comparer)
+                : SplitContains(haystack, needle, new U8Scalar(r, checkAscii: false).AsSpan(), comparer),
+
+            U8String str => SplitContains(haystack, needle, str.AsSpan(), comparer),
+
+            _ => ThrowHelpers.Unreachable<bool>()
+        };
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool SplitContains(
-        ReadOnlySpan<byte> value,
-        ReadOnlySpan<byte> separator,
-        ReadOnlySpan<byte> item)
+    internal static bool ContainsSegment<C>(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        byte separator,
+        C comparer) where C : IU8Comparer
     {
-        // When the item we are looking for contains the separator, it means that it will
-        // never be found in the split since it would be pointing to the split boundary.
-        return !Contains(item, separator) && Contains(value, item);
+        if (!comparer.Contains(needle, separator))
+        {
+            while (true)
+            {
+                var (matchOffset, matchLength) = comparer.IndexOf(haystack, needle);
+                // Remaining search space contains no more candidates.
+                if (matchOffset < 0)
+                {
+                    break;
+                }
+                // Candidate is at the start of the search space.
+                else if (matchOffset is 0)
+                {
+                    // Candidate either equals the search space or is followed by the separator.
+                    if (haystack.Length == matchLength ||
+                        comparer.StartsWith(haystack.SliceUnsafe(matchLength), separator))
+                    {
+                        goto Match;
+                    }
+                }
+                // Candidate is at the end of the search space.
+                else if (matchOffset == haystack.Length - matchLength)
+                {
+                    // Candidate is preceded by the separator.
+                    if (comparer.EndsWith(haystack.SliceUnsafe(0, matchOffset), separator))
+                    {
+                        goto Match;
+                    }
+                }
+                // Candidate is in the middle of the search space.
+                else if (
+                    comparer.EndsWith(haystack.SliceUnsafe(0, matchOffset), separator) &&
+                    comparer.StartsWith(haystack.SliceUnsafe(matchOffset + matchLength), separator))
+                {
+                    goto Match;
+                }
+
+                haystack = haystack.SliceUnsafe(matchOffset + matchLength);
+            }
+        }
+
+        return false;
+
+    // Merging return blocks manually because compiler doesn't want to.
+    Match:
+        return true;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool SplitContains<T, C>(
-        ReadOnlySpan<byte> value, T separator, ReadOnlySpan<byte> item, C comparer)
-            where T : struct
-            where C : IU8ContainsOperator
-    {
-        return !Contains(item, separator, comparer) && Contains(value, item, comparer);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static bool SplitContains<T>(
-        ReadOnlySpan<byte> value,
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
         ReadOnlySpan<byte> separator,
-        ReadOnlySpan<byte> item,
-        T comparer) where T : IU8ContainsOperator
+        T comparer) where T : IU8Comparer
     {
-        // When the item we are looking for contains the separator, it means that it will
-        // never be found in the split since it would be pointing to the split boundary.
-        return !Contains(item, separator, comparer) && Contains(value, item, comparer);
+        if (!comparer.Contains(needle, separator))
+        {
+            while (true)
+            {
+                var (matchOffset, matchLength) = comparer.IndexOf(haystack, needle);
+                // Remaining search space contains no more candidates.
+                if (matchOffset < 0)
+                {
+                    break;
+                }
+                // Candidate is at the start of the search space.
+                else if (matchOffset is 0)
+                {
+                    // Candidate either equals the search space or is followed by the separator.
+                    if (haystack.Length == matchLength ||
+                        comparer.StartsWith(haystack.SliceUnsafe(matchLength), separator))
+                    {
+                        goto Match;
+                    }
+                }
+                // Candidate is at the end of the search space.
+                else if (matchOffset == haystack.Length - matchLength)
+                {
+                    // Candidate is preceded by the separator.
+                    if (comparer.EndsWith(haystack.SliceUnsafe(0, matchOffset), separator))
+                    {
+                        goto Match;
+                    }
+                }
+                // Candidate is in the middle of the search space.
+                else if (
+                    comparer.EndsWith(haystack.SliceUnsafe(0, matchOffset), separator) &&
+                    comparer.StartsWith(haystack.SliceUnsafe(matchOffset + matchLength), separator))
+                {
+                    goto Match;
+                }
+
+                haystack = haystack.SliceUnsafe(matchOffset + matchLength);
+            }
+        }
+
+        return false;
+
+    // Merging return blocks manually because compiler doesn't want to.
+    Match:
+        return true;
     }
 
     /// <summary>
@@ -244,8 +482,8 @@ internal static class U8Searching
                 count += 32 - matches.AsByte().GetMatchCount();
                 offset += (nuint)Vector256<byte>.Count;
 
-            // Skip this loop if we took the V512 path above
-            // since we can only do a single iteration at most.
+                // Skip this loop if we took the V512 path above
+                // since we can only do a single iteration at most.
             } while (!Vector256.IsHardwareAccelerated && offset <= lastvec);
         }
 
@@ -469,5 +707,153 @@ internal static class U8Searching
         return value.Length is 1
             ? comparer.LastIndexOf(source, value[0])
             : comparer.LastIndexOf(source, value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static int IndexOfSegment<T>(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        T separator)
+            where T : unmanaged
+    {
+        Debug.Assert(separator is byte or char or Rune);
+        Debug.Assert(separator is not char s || !char.IsSurrogate(s));
+
+        return separator switch
+        {
+            byte b => IndexOfSegment(haystack, needle, b),
+
+            char c => char.IsAscii(c)
+                ? IndexOfSegment(haystack, needle, (byte)c)
+                : IndexOfSegment(haystack, needle, new U8Scalar(c, checkAscii: false).AsSpan()),
+
+            Rune r => r.IsAscii
+                ? IndexOfSegment(haystack, needle, (byte)r.Value)
+                : IndexOfSegment(haystack, needle, new U8Scalar(r, checkAscii: false).AsSpan()),
+
+            _ => ThrowHelpers.Unreachable<int>()
+        };
+    }
+
+    internal static int IndexOfSegment(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        byte separator)
+    {
+        var index = 0;
+        if (!needle.Contains(separator))
+        {
+            while (true)
+            {
+                var matchOffset = haystack.IndexOf(needle);
+                index += matchOffset;
+
+                // Remaining search space contains no more candidates.
+                if (matchOffset < 0)
+                {
+                    index = -1;
+                    break;
+                }
+                // Candidate is at the start of the search space.
+                else if (matchOffset is 0)
+                {
+                    // Candidate either equals the search space or is followed by the separator.
+                    if (haystack.Length == needle.Length ||
+                        haystack.AsRef(needle.Length) == separator)
+                    {
+                        break;
+                    }
+                }
+                // Candidate is at the end of the search space.
+                else if (matchOffset == haystack.Length - needle.Length)
+                {
+                    // Candidate is preceded by the separator.
+                    if (haystack.AsRef(matchOffset - 1) == separator)
+                    {
+                        break;
+                    }
+                }
+                // Candidate is in the middle of the search space.
+                else if (
+                    haystack.AsRef(matchOffset - 1) == separator &&
+                    haystack.AsRef(matchOffset + needle.Length) == separator)
+                {
+                    break;
+                }
+
+                // Candidate was not at the end of the search space and was
+                // not followed by the separator, so we can skip an extra byte.
+                index += needle.Length + 1;
+                haystack = haystack.SliceUnsafe(matchOffset + needle.Length + 1);
+            }
+        }
+        else if (needle != [])
+        {
+            index = -1;
+        }
+
+        return index;
+    }
+
+    internal static int IndexOfSegment(
+        ReadOnlySpan<byte> haystack,
+        ReadOnlySpan<byte> needle,
+        ReadOnlySpan<byte> separator)
+    {
+        var index = -1;
+        var skipLength = needle.Length + separator.Length;
+
+        if (!Contains(needle, separator))
+        {
+            while (true)
+            {
+                var matchOffset = haystack.IndexOf(needle);
+                index += matchOffset;
+
+                // Remaining search space contains no more candidates.
+                if (matchOffset < 0)
+                {
+                    index = -1;
+                    break;
+                }
+                // Candidate is at the start of the search space.
+                else if (matchOffset is 0)
+                {
+                    // Candidate either equals the search space or is followed by the separator.
+                    if (haystack.Length == needle.Length ||
+                        haystack.SliceUnsafe(needle.Length)
+                                .StartsWith(separator))
+                    {
+                        break;
+                    }
+                }
+                // Candidate is at the end of the search space.
+                else if (matchOffset == haystack.Length - needle.Length)
+                {
+                    // Candidate is preceded by the separator.
+                    if (haystack.SliceUnsafe(0, matchOffset)
+                                .EndsWith(separator))
+                    {
+                        break;
+                    }
+                }
+                // Candidate is in the middle of the search space.
+                else if (
+                    haystack.SliceUnsafe(0, matchOffset)
+                            .EndsWith(separator) &&
+                    haystack.SliceUnsafe(matchOffset + needle.Length)
+                            .StartsWith(separator))
+                {
+                    break;
+                }
+
+                // Candidate was not at the end of the search space and was
+                // not followed by the separator, so we can skip separator.Length too.
+                index += skipLength;
+                haystack = haystack.SliceUnsafe(matchOffset + skipLength);
+            }
+        }
+
+        return index;
     }
 }
