@@ -296,38 +296,50 @@ internal static class U8Manipulation
 
     // Contract:
     // - values.Length is greater than 1
-    // - separator is a non-ascii byte, char, Rune or U8Scalar
-    internal static U8String JoinUnchecked(byte separator, ReadOnlySpan<U8String> value)
+    // - separator is an ascii byte
+    internal static U8String JoinUnchecked(byte separator, ReadOnlySpan<U8String> values)
     {
-        Debug.Assert(value.Length > 1);
+        Debug.Assert(values.Length > 1);
 
-        var length = value.Length - 1;
-        foreach (var item in value)
+        var length = values.Length - 1;
+        var llength = (long)(uint)length;
+        foreach (var item in values)
         {
-            length += item.Length;
+            llength += (uint)item.Length;
         }
 
-        var result = new byte[length + 1]; // null-terminate
-        ref var dst = ref result.AsRef();
+        // Implicitly check if the total length is within Array.MaxLength,
+        // without risking integer overflow.
+        var result = new byte[llength + 1]; // null-terminate
+        length = (int)(uint)llength;
 
-        var first = value.AsRef();
-        first.AsSpan().CopyToUnsafe(ref dst);
-        dst = ref dst.Add(first.Length);
+        var first = values.AsRef();
+        first.AsSpan().CopyTo(result);
 
-        var offset = 1;
-        ref var ptr = ref value.AsRef();
+        ref var src = ref values.AsRef(1);
+        ref var dst = ref result.AsRef(first.Length);
+        ref var end = ref dst.Add(length);
+        var count = values.Length - 1;
 
-        // foreach emits rngcheck so we have to do this manually.
-        while (offset < value.Length)
+        for (var i = 0; i < count; i++)
         {
+            var item = src.Add(i);
+            var segmentLength = item.Length + 1;
+
+            if (dst.Add(segmentLength)
+                   .GreaterThan(ref end))
+            {
+                ThrowHelpers.DestinationTooShort();
+            }
+
             dst = separator;
             dst = ref dst.Add(1);
 
-            var item = ptr.Add(offset);
-            item.AsSpan().CopyToUnsafe(ref dst);
-            dst = ref dst.Add(item.Length);
-
-            offset++;
+            if (!item.IsEmpty)
+            {
+                item.UnsafeSpan.CopyToUnsafe(ref dst);
+                dst = ref dst.Add(item.Length);
+            }
         }
 
         return new(result, 0, length);
@@ -336,92 +348,169 @@ internal static class U8Manipulation
     // Contract:
     // - values.Length is greater than 1
     // - separator is a non-ascii byte, char, Rune or U8Scalar
+    // - will not write past the end of the destination buffer
+    // if values are mutated in the middle of the join, but
+    // the length of the resulting string may exceed the written bytes count.
     internal static U8String JoinUnchecked(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
     {
         Debug.Assert(values.Length > 1);
         Debug.Assert(separator.Length > 1);
 
         var length = separator.Length * (values.Length - 1);
-        foreach (var value in values)
+        var llength = (long)(uint)length;
+        foreach (var item in values)
         {
-            length += value.Length;
+            llength += (uint)item.Length;
         }
 
-        var result = new byte[length + 1]; // null-terminate
-        ref var dst = ref result.AsRef();
+        var result = new byte[llength + 1]; // null-terminate
+        length = (int)(uint)llength;
 
         var first = values.AsRef();
-        first.AsSpan().CopyToUnsafe(ref dst);
-        dst = ref dst.Add(first.Length);
-        values = values.SliceUnsafe(1);
+        first.AsSpan().CopyTo(result);
+
+        ref var src = ref values.AsRef(1);
+        ref var dst = ref result.AsRef(first.Length);
+        ref var end = ref dst.Add(length);
+        var count = values.Length - 1;
 
         switch (separator.Length)
         {
             case 2:
-                var twoBytes = Unsafe.As<byte, ushort>(ref separator.AsRef());
-                JoinTwoBytes(twoBytes, values, ref dst);
+                var twoBytes = separator.AsRef().Cast<byte, ushort>();
+                JoinTwoBytes(ref src, ref dst, ref end, count, twoBytes);
                 break;
             case 3:
-                var threeBytes = (uint)(
-                    Unsafe.As<byte, ushort>(ref separator.AsRef()) | (separator[2] << 16));
-                JoinThreeBytes(threeBytes, values, ref dst);
+                var b01 = separator.AsRef().Cast<byte, ushort>();
+                var b2 = separator.AsRef(2);
+                JoinThreeBytes(ref src, ref dst, ref end, count, b01, b2);
                 break;
             case 4:
-                var fourBytes = Unsafe.As<byte, uint>(ref separator.AsRef());
-                JoinFourBytes(fourBytes, values, ref dst);
+                var fourBytes = separator.AsRef().Cast<byte, uint>();
+                JoinFourBytes(ref src, ref dst, ref end, count, fourBytes);
                 break;
             default:
-                JoinSpan(separator, values, ref dst);
+                JoinSpan(ref src, ref dst, ref end, count, separator);
                 break;
         }
 
         return new(result, 0, length);
 
-        static void JoinTwoBytes(ushort separator, ReadOnlySpan<U8String> values, ref byte dst)
+        static void JoinTwoBytes(
+            ref U8String src,
+            ref byte dst,
+            ref byte end,
+            int count,
+            ushort separator)
         {
-            foreach (var value in values)
+            for (var i = 0; i < count; i++)
             {
-                Unsafe.As<byte, ushort>(ref dst) = separator;
+                var item = src.Add(i);
+                var segmentLength = item.Length + 2;
+
+                if (dst.Add(segmentLength)
+                       .GreaterThan(ref end))
+                {
+                    ThrowHelpers.DestinationTooShort();
+                }
+
+                dst.Cast<byte, ushort>() = separator;
                 dst = ref dst.Add(2);
 
-                value.AsSpan().CopyToUnsafe(ref dst);
-                dst = ref dst.Add(value.Length);
+                if (!item.IsEmpty)
+                {
+                    item.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(item.Length);
+                }
             }
         }
 
-        static void JoinThreeBytes(uint separator, ReadOnlySpan<U8String> values, ref byte dst)
+        static void JoinThreeBytes(
+            ref U8String src,
+            ref byte dst,
+            ref byte end,
+            int count,
+            ushort b01,
+            byte b2)
         {
-            foreach (var value in values)
+            for (var i = 0; i < count; i++)
             {
-                Unsafe.As<byte, uint>(ref dst) = separator;
+                var item = src.Add(i);
+                var segmentLength = item.Length + 3;
+
+                if (dst.Add(segmentLength)
+                       .GreaterThan(ref end))
+                {
+                    ThrowHelpers.DestinationTooShort();
+                }
+
+                dst.Cast<byte, ushort>() = b01;
+                dst.Add(2) = b2;
                 dst = ref dst.Add(3);
 
-                value.AsSpan().CopyToUnsafe(ref dst);
-                dst = ref dst.Add(value.Length);
+                if (!item.IsEmpty)
+                {
+                    item.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(item.Length);
+                }
             }
         }
 
-        static void JoinFourBytes(uint separator, ReadOnlySpan<U8String> values, ref byte dst)
+        static void JoinFourBytes(
+            ref U8String src,
+            ref byte dst,
+            ref byte end,
+            int count,
+            uint separator)
         {
-            foreach (var value in values)
+            for (var i = 0; i < count; i++)
             {
-                Unsafe.As<byte, uint>(ref dst) = separator;
+                var item = src.Add(i);
+                var segmentLength = item.Length + 4;
+
+                if (dst.Add(segmentLength)
+                       .GreaterThan(ref end))
+                {
+                    ThrowHelpers.DestinationTooShort();
+                }
+
+                dst.Cast<byte, uint>() = separator;
                 dst = ref dst.Add(4);
 
-                value.AsSpan().CopyToUnsafe(ref dst);
-                dst = ref dst.Add(value.Length);
+                if (!item.IsEmpty)
+                {
+                    item.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(item.Length);
+                }
             }
         }
 
-        static void JoinSpan(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values, ref byte dst)
+        static void JoinSpan(
+            ref U8String src,
+            ref byte dst,
+            ref byte end,
+            int count,
+            ReadOnlySpan<byte> separator)
         {
-            foreach (var value in values)
+            for (var i = 0; i < count; i++)
             {
+                var item = src.Add(i);
+                var segmentLength = item.Length + separator.Length;
+
+                if (dst.Add(segmentLength)
+                       .GreaterThan(ref end))
+                {
+                    ThrowHelpers.DestinationTooShort();
+                }
+
                 separator.CopyToUnsafe(ref dst);
                 dst = ref dst.Add(separator.Length);
 
-                value.AsSpan().CopyToUnsafe(ref dst);
-                dst = ref dst.Add(value.Length);
+                if (!item.IsEmpty)
+                {
+                    item.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(item.Length);
+                }
             }
         }
     }

@@ -107,6 +107,13 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool GreaterThan<T>(this ref T left, ref T right)
+        where T : unmanaged
+    {
+        return Unsafe.IsAddressGreaterThan(ref left, ref right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Span<T> SliceUnsafe<T>(this T[] value, int start)
         where T : struct
     {

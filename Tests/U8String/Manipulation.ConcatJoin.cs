@@ -4,6 +4,7 @@ using U8.InteropServices;
 
 namespace U8.Tests.U8StringTests;
 
+#pragma warning disable xUnit1042 // TheoryData has implementation issues preventing its use here
 public partial class Manipulation
 {
     [Theory, MemberData(nameof(Strings))]
@@ -238,5 +239,260 @@ public partial class Manipulation
 
         Assert.Throws<FormatException>(() => u8str + Invalid.AsSpan());
         Assert.Throws<FormatException>(() => Invalid.AsSpan() + u8str);
+    }
+
+    // TODO: Dedup like Join
+    [Theory, MemberData(nameof(Strings))]
+    public void ConcatStringArray_ProducesCorrectValue(byte[] value)
+    {
+        var strings = Enumerable.Repeat(value, 10).Select(U8String.Create).ToArray();
+        var expected = Enumerable.Repeat(value, 10).Flatten().ToArray();
+
+        var actual = U8String.Concat(strings);
+
+        Assert.Equal(expected, actual);
+        Assert.True(actual.Equals(expected));
+        Assert.True(actual.IsEmpty || actual.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatStringArry_ReturnsSourceForSingleElement()
+    {
+        var value = (U8String)"Hello, World!"u8;
+        var strings = new[] { value };
+
+        var actual = U8String.Concat(strings);
+
+        Assert.True(actual.Equals(value));
+        Assert.True(actual.SourceEquals(value));
+    }
+
+    [Fact]
+    public void ConcatStringArray_ThrowsOnNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.Concat(null!));
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void ConcatStringSpan_ProducesCorrectValue(byte[] value)
+    {
+        var strings = Enumerable.Repeat(value, 10).Select(U8String.Create).ToArray();
+        var expected = Enumerable.Repeat(value, 10).Flatten().ToArray();
+
+        var actual = U8String.Concat(strings.AsSpan());
+
+        Assert.Equal(expected, actual);
+        Assert.True(actual.Equals(expected));
+        Assert.True(actual.IsEmpty || actual.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatStringSpan_ReturnsSourceForSingleElement()
+    {
+        var value = (U8String)"Hello, World!"u8;
+        var actual = U8String.Concat([value]);
+
+        Assert.True(actual.Equals(value));
+        Assert.True(actual.SourceEquals(value));
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void ConcatStringEnumerable_ProducesCorrectValue(byte[] value)
+    {
+        var strings = Enumerable.Repeat(value, 10).Select(U8String.Create);
+        var expected = Enumerable.Repeat(value, 10).Flatten().ToArray();
+
+        var actual = U8String.Concat(strings);
+
+        Assert.Equal(expected, actual);
+        Assert.True(actual.Equals(expected));
+        Assert.True(actual.IsEmpty || actual.IsNullTerminated);
+    }
+
+    [Fact]
+    public void ConcatStringEnumerable_ReturnsSourceForSingleElement()
+    {
+        // Relies on .TryGetNonEnumeratedCount
+        var value = (U8String)"Hello, World!"u8;
+        var strings = (IEnumerable<U8String>)[value];
+
+        var actual = U8String.Concat(strings);
+
+        Assert.True(actual.Equals(value));
+        Assert.True(actual.SourceEquals(value));
+    }
+
+    [Fact]
+    public void ConcatStringEnumerable_ThrowsOnNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.Concat(null!));
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void JoinStringsOnByte_ProducesCorrectValue(byte[] value)
+    {
+        var pair = (IEnumerable<byte[]>)[[Byte], value];
+        var expected = Enumerable
+            .Repeat(pair, 9)
+            .Flatten()
+            .Prepend(value)
+            .Flatten()
+            .ToArray();
+
+        IEnumerable<U8String> Overloads()
+        {
+            var strings = Enumerable.Repeat(value, 10).Select(U8String.Create);
+            var array = strings.ToArray();
+
+            yield return U8String.Join(Byte, array);
+            yield return U8String.Join(Byte, array.AsSpan());
+            yield return U8String.Join(Byte, strings);
+            yield return U8String.Join(Byte, strings.ToList());
+        }
+
+        foreach (var actual in Overloads())
+        {
+            Assert.Equal(expected, actual);
+            Assert.True(actual.Equals(expected));
+            Assert.True(actual.IsEmpty || actual.IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void JoinStringsOnByte_ReturnsSourceForSingleElement()
+    {
+        var value = (U8String)"Hello, World!"u8;
+
+        var overloads = (U8String[])
+        [
+            U8String.Join(Byte, [value]),
+            U8String.Join(Byte, (U8String[])[value]),
+            U8String.Join(Byte, (List<U8String>)[value]),
+            U8String.Join(Byte, (IEnumerable<U8String>)[value])
+        ];
+
+        foreach (var actual in overloads)
+        {
+            Assert.True(actual.Equals(value));
+            Assert.True(actual.SourceEquals(value));
+        }
+    }
+
+    [Fact]
+    public void JoinStringArrayOnByte_ThrowsOnNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.Join(Byte, null!));
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void JoinStringsOnChar_ProducesCorrectValue(byte[] value)
+    {
+        var utf16 = Encoding.UTF8.GetString(value);
+
+        foreach (var c in new[] { OneByteChar, TwoByteChar, ThreeByteChar })
+        {
+            var expected = Encoding.UTF8.GetBytes(
+                string.Join(c, Enumerable.Repeat(utf16, 10)));
+
+            IEnumerable<U8String> Overloads()
+            {
+                var strings = Enumerable.Repeat(utf16, 10).Select(U8String.Create);
+                var array = strings.ToArray();
+
+                yield return U8String.Join(c, array);
+                yield return U8String.Join(c, array.AsSpan());
+                yield return U8String.Join(c, strings);
+                yield return U8String.Join(c, strings.ToList());
+            }
+
+            foreach (var actual in Overloads())
+            {
+                Assert.Equal(expected, actual);
+                Assert.True(actual.Equals(expected));
+                Assert.True(actual.IsEmpty || actual.IsNullTerminated);
+            }
+        }
+    }
+
+    [Fact]
+    public void JoinStringsOnChar_ReturnsSourceForSingleElement()
+    {
+        var value = (U8String)"Hello, World!"u8;
+
+        var overloads = (U8String[])
+        [
+            U8String.Join(TwoByteChar, [value]),
+            U8String.Join(TwoByteChar, (U8String[])[value]),
+            U8String.Join(TwoByteChar, (List<U8String>)[value]),
+            U8String.Join(TwoByteChar, (IEnumerable<U8String>)[value])
+        ];
+
+        foreach (var actual in overloads)
+        {
+            Assert.True(actual.Equals(value));
+            Assert.True(actual.SourceEquals(value));
+        }
+    }
+
+    [Fact]
+    public void JoinStringArrayOnChar_ThrowsOnNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.Join(TwoByteChar, null!));
+    }
+
+    [Theory, MemberData(nameof(Strings))]
+    public void JoinStringsOnRune_ProducesCorrectValue(byte[] value)
+    {
+        var utf16 = Encoding.UTF8.GetString(value);
+
+        foreach (var r in new[] { OneByteRune, TwoByteRune, ThreeByteRune, FourByteRune })
+        {
+            var expected = Encoding.UTF8.GetBytes(
+                string.Join(r.ToString(), Enumerable.Repeat(utf16, 10)));
+
+            IEnumerable<U8String> Overloads()
+            {
+                var strings = Enumerable.Repeat(utf16, 10).Select(U8String.Create);
+                var array = strings.ToArray();
+
+                yield return U8String.Join(r, array);
+                yield return U8String.Join(r, array.AsSpan());
+                yield return U8String.Join(r, strings);
+                yield return U8String.Join(r, strings.ToList());
+            }
+
+            foreach (var actual in Overloads())
+            {
+                Assert.Equal(expected, actual);
+                Assert.True(actual.Equals(expected));
+                Assert.True(actual.IsEmpty || actual.IsNullTerminated);
+            }
+        }
+    }
+
+    [Fact]
+    public void JoinStringsOnRune_ReturnsSourceForSingleElement()
+    {
+        var value = (U8String)"Hello, World!"u8;
+
+        var overloads = (U8String[])
+        [
+            U8String.Join(ThreeByteRune, [value]),
+            U8String.Join(ThreeByteRune, (U8String[])[value]),
+            U8String.Join(ThreeByteRune, (List<U8String>)[value]),
+            U8String.Join(ThreeByteRune, (IEnumerable<U8String>)[value])
+        ];
+
+        foreach (var actual in overloads)
+        {
+            Assert.True(actual.Equals(value));
+            Assert.True(actual.SourceEquals(value));
+        }
+    }
+
+    [Fact]
+    public void JoinStringArrayOnRune_ThrowsOnNull()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.Join(ThreeByteRune, null!));
     }
 }

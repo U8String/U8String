@@ -64,6 +64,9 @@ internal static class ThrowHelpers
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CheckNull([NotNull] object? value)
     {
+        // TODO: There is argument name mismatch - it's always "value".
+        // Examine the codegen impact of using built-in ArgumentNullException.ThrowIfNull
+        // or, alternatively, see if minimal/no impact can be achieved here manually.
         if (value is null)
         {
             NullValue();
@@ -86,6 +89,12 @@ internal static class ThrowHelpers
         {
             SurrogateChar();
         }
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    internal static void DestinationTooShort()
+    {
+        throw new ArgumentException("The destination buffer is too short.");
     }
 
     [DoesNotReturn, StackTraceHidden]

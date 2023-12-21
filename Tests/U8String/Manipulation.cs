@@ -23,7 +23,7 @@ public partial class Manipulation
     static readonly byte[] Mixed = "HelloПривітこんにちは📈"u8.ToArray();
     static readonly byte[] Invalid = [0x80, 0x80, 0x80, 0x80];
 
-    public static readonly object[][] Strings = [[Empty], [Latin], [Cyrillic], [Japanese], [Emoji], [Mixed]];
+    public static readonly TheoryData<byte[]> Strings = new() { Empty, Latin, Cyrillic, Japanese, Emoji, Mixed };
 
     [Fact]
     public void NullTerminate_NullTerminatesEmpty()

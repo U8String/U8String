@@ -195,22 +195,29 @@ public readonly partial struct U8String
     {
         if (values.Length > 1)
         {
-            var length = 0;
+            var llength = (long)0;
             foreach (var value in values)
             {
-                length += value.Length;
+                llength += (uint)value.Length;
             }
 
-            if (length > 0)
+            if (llength > 0)
             {
-                var value = new byte[length + 1];
+                var value = new byte[llength + 1];
+                var length = (int)(uint)llength;
 
-                var offset = 0;
-                ref var dst = ref value.AsRef();
+                var destination = value.AsSpan();
                 foreach (var source in values)
                 {
-                    source.AsSpan().CopyToUnsafe(ref dst.Add(offset));
-                    offset += source.Length;
+                    if (!source.IsEmpty)
+                    {
+                        // !Do not skip bounds check! because we cannot guarantee that
+                        // the contents of the 'values' have not changed since the
+                        // length was calculated. This matches the behavior of the
+                        // string.Concat(params string[]) overload.
+                        source.UnsafeSpan.CopyTo(destination);
+                        destination = destination.SliceUnsafe(source.Length);
+                    }
                 }
 
                 return new U8String(value, 0, length);
