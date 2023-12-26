@@ -23,26 +23,11 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     {
         if (destination.Length < source.Length)
         {
-            ThrowHelpers.ArgumentOutOfRange();
+            ThrowHelpers.DestinationTooShort();
         }
 
         ToLowerCore(ref source.AsRef(), ref destination.AsRef(), (uint)source.Length);
         return source.Length;
-    }
-
-    // TODO: Consider for abstraction?
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector256<byte> ToLower(Vector256<byte> utf8)
-    {
-        var lower = Vector256.Create((byte)'A');
-        var upper = Vector256.Create((byte)'Z');
-        var mask = Vector256.Create((byte)0x20);
-
-        var changeCase = mask
-            & utf8.Gte(lower)
-            & utf8.Lte(upper);
-
-        return utf8 | changeCase;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -141,25 +126,11 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     {
         if (destination.Length < source.Length)
         {
-            ThrowHelpers.ArgumentOutOfRange();
+            ThrowHelpers.DestinationTooShort();
         }
 
         ToUpperCore(ref source.AsRef(), ref destination.AsRef(), (uint)source.Length);
         return source.Length;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector256<byte> ToUpper(Vector256<byte> utf8)
-    {
-        var lower = Vector256.Create((byte)'a');
-        var upper = Vector256.Create((byte)'z');
-        var mask = Vector256.Create((byte)0x20);
-
-        var changeCase = mask
-            & utf8.Gte(lower)
-            & utf8.Lte(upper);
-
-        return utf8 ^ changeCase;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,3 +1,5 @@
+using U8.CaseConversion;
+
 namespace U8.Tests.CaseConversion;
 
 public class AsciiCaseConverterTests
@@ -28,6 +30,15 @@ public class AsciiCaseConverterTests
         }
     }
 
+    [Fact]
+    public void AsciiCaseConverter_ToLowerThrowsOnTooShortDestination()
+    {
+        var source = (U8String)"Hello, World!"u8;
+
+        Assert.Throws<ArgumentException>(() => U8AsciiCaseConverter.Instance.ToLower(source, []));
+        Assert.Throws<ArgumentException>(() => U8AsciiCaseConverter.Instance.ToLower(source, new byte[source.Length - 1]));
+    }
+
     [Theory, MemberData(nameof(ValidStrings))]
     public void AsciiCaseConverter_ToUpperReturnsCorrectValue(ReferenceText text)
     {
@@ -50,5 +61,14 @@ public class AsciiCaseConverterTests
             Assert.True(result.Equals(expected));
             Assert.True(result.IsEmpty || result.IsNullTerminated);
         }
+    }
+
+    [Fact]
+    public void AsciiCaseConverter_ToUpperThrowsOnTooShortDestination()
+    {
+        var source = (U8String)"Hello, World!"u8;
+
+        Assert.Throws<ArgumentException>(() => U8AsciiCaseConverter.Instance.ToUpper(source, []));
+        Assert.Throws<ArgumentException>(() => U8AsciiCaseConverter.Instance.ToUpper(source, new byte[source.Length - 1]));
     }
 }
