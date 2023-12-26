@@ -246,7 +246,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             var b = src.Add(offset);
             if (U8Info.IsAsciiLetter(b))
             {
-                b &= 0b11011111; // (byte)~0x20
+                b &= unchecked((byte)~0x20);
             }
 
             dst.Add(offset) = b;
