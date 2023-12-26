@@ -343,26 +343,6 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static bool TryFormatLiteral<T>(T value, out U8String literal)
-    {
-        if (value is byte u8)
-        {
-            literal = U8Literals.GetByte(u8);
-            return true;
-        }
-        else if (value is sbyte i8 && U8Literals.TryGetInt8(i8, out literal)) return true;
-        else if (value is short i16 && U8Literals.TryGetInt16(i16, out literal)) return true;
-        else if (value is ushort u16 && U8Literals.TryGetUInt16(u16, out literal)) return true;
-        else if (value is int i32 && U8Literals.TryGetInt32(i32, out literal)) return true;
-        else if (value is uint u32 && U8Literals.TryGetUInt32(u32, out literal)) return true;
-        else if (value is long i64 && U8Literals.TryGetInt64(i64, out literal)) return true;
-        else if (value is ulong u64 && U8Literals.TryGetUInt64(u64, out literal)) return true;
-
-        Unsafe.SkipInit(out literal);
-        return false;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatPresized<T>(T value, out U8String result)
         where T : IUtf8SpanFormattable
     {
