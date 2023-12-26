@@ -10,7 +10,7 @@ public partial class Manipulation
     [Theory, MemberData(nameof(Strings))]
     public void ConcatByte_ProducesCorrectValue(byte[] source)
     {
-        var u8str = U8Marshal.Create(source);
+        var u8str = U8Marshal.CreateUnsafe(source);
         var actualRight = u8str + Byte;
         var expectedRight = source.Append(Byte).ToArray();
 
@@ -109,7 +109,7 @@ public partial class Manipulation
     [Fact]
     public void ConcatString_ProducesCorrectValue()
     {
-        var u8str = U8Marshal.Create(Mixed);
+        var u8str = U8Marshal.CreateUnsafe(Mixed);
         var actual = u8str + u8str;
         var expected = Mixed.Concat(Mixed).ToArray();
 
@@ -144,7 +144,7 @@ public partial class Manipulation
     [Theory, MemberData(nameof(Strings))]
     public void ConcatArray_ProducesCorrectValue(byte[] source)
     {
-        var u8str = U8Marshal.Create(source);
+        var u8str = U8Marshal.CreateUnsafe(source);
         var actualRight = u8str + Mixed;
         var expectedRight = source.Concat(Mixed).ToArray();
 
@@ -194,7 +194,7 @@ public partial class Manipulation
     [Theory, MemberData(nameof(Strings))]
     public void ConcatSpan_ProducesCorrectValue(byte[] source)
     {
-        var u8str = U8Marshal.Create(source);
+        var u8str = U8Marshal.CreateUnsafe(source);
         var actualRight = u8str + Mixed.AsSpan();
         var expectedRight = source.Concat(Mixed).ToArray().AsSpan();
 

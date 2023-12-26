@@ -26,7 +26,12 @@ public class Slicing
     public U8String SliceStart() => Value[Start..];
 
     [Benchmark]
-    public U8String SliceRoundingStart() => Value.SliceRounding(Start, Value.Length - Start);
+    public U8String SliceRoundingStart()
+    {
+        var start = Start;
+        var value = Value;
+        return value.SliceRounding(start, value.Length - start);
+    }
 
     [Benchmark]
     public string Slice16Start() => Value16[Start..];

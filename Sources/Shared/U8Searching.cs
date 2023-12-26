@@ -450,69 +450,70 @@ internal static class U8Searching
         // This method achieves width x2 unrolling by relying on new struct promotion and
         // helpers in VectorExtensions. Operations on 512b and 256b are intentional.
         var count = (nuint)0;
-        var offset = (nuint)0;
         ref var ptr = ref Unsafe.As<byte, sbyte>(ref src);
+        ref var end = ref ptr.Add(length);
 
         if (Vector256.IsHardwareAccelerated &&
             length >= (nuint)Vector512<byte>.Count)
         {
             var continuations = Vector512.Create((sbyte)-64);
-            var lastvec = length - (nuint)Vector512<byte>.Count;
+            ref var lastvec = ref end.Substract(Vector512<byte>.Count);
             do
             {
-                var chunk = Vector512.LoadUnsafe(ref ptr, offset);
+                var chunk = Vector512.LoadUnsafe(ref ptr);
                 var matches = Vector512.LessThan(chunk, continuations);
 
                 count += 64 - matches.AsByte().GetMatchCount();
-                offset += (nuint)Vector512<byte>.Count;
-            } while (offset <= lastvec);
+                ptr = ref ptr.Add(Vector512<byte>.Count);
+            } while (ptr.LessThanOrEqual(ref lastvec));
         }
 
         // All platforms targeted by .NET 8+ are supposed to support 128b SIMD.
         // If this is not the case, please file an issue (it will work but slowly).
-        if (length >= offset + (nuint)Vector256<byte>.Count)
+        if (ptr.Add(Vector256<byte>.Count).LessThanOrEqual(ref end))
         {
             var continuations = Vector256.Create((sbyte)-64);
-            var lastvec = length - (nuint)Vector256<byte>.Count;
+            ref var lastvec = ref end.Substract(Vector256<byte>.Count);
             do
             {
-                var chunk = Vector256.LoadUnsafe(ref ptr, offset);
+                var chunk = Vector256.LoadUnsafe(ref ptr);
                 var matches = Vector256.LessThan(chunk, continuations);
 
                 count += 32 - matches.AsByte().GetMatchCount();
-                offset += (nuint)Vector256<byte>.Count;
+                ptr = ref ptr.Add(Vector256<byte>.Count);
 
                 // Skip this loop if we took the V512 path above
                 // since we can only do a single iteration at most.
-            } while (!Vector256.IsHardwareAccelerated && offset <= lastvec);
+            } while (!Vector256.IsHardwareAccelerated && ptr.LessThanOrEqual(ref lastvec));
         }
 
-        if (length >= offset + (nuint)Vector128<byte>.Count)
+        if (Vector128.IsHardwareAccelerated &&
+            ptr.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
         {
             var continuations = Vector128.Create((sbyte)-64);
-            var chunk = Vector128.LoadUnsafe(ref ptr, offset);
+            var chunk = Vector128.LoadUnsafe(ref ptr);
             var matches = Vector128.LessThan(chunk, continuations);
 
             count += 16 - matches.AsByte().GetMatchCount();
-            offset += (nuint)Vector128<byte>.Count;
+            ptr = ref ptr.Add(Vector128<byte>.Count);
         }
 
         if (AdvSimd.Arm64.IsSupported &&
-            length >= offset + (nuint)Vector64<byte>.Count)
+            ptr.Add(Vector64<byte>.Count).LessThanOrEqual(ref end))
         {
             var continuations = Vector64.Create((sbyte)-64);
-            var chunk = Vector64.LoadUnsafe(ref ptr, offset);
+            var chunk = Vector64.LoadUnsafe(ref ptr);
             var matches = Vector64.LessThan(chunk, continuations);
 
             count += 8 - matches.AsByte().GetMatchCount();
-            offset += (nuint)Vector64<byte>.Count;
+            ptr = ref ptr.Add(Vector64<byte>.Count);
         }
 
-        while (offset < length)
+        while (ptr.LessThan(ref end))
         {
             // Branchless: x86_64: cmp + setge; arm64: cmn + cset
-            count += (nuint)(ptr.Add(offset) < -64 ? 0 : 1);
-            offset++;
+            count += (nuint)(ptr < -64 ? 0 : 1);
+            ptr = ref ptr.Add(1);
         }
 
         return count;

@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
@@ -25,6 +26,43 @@ public static class U8Marshal
     public static ReadOnlySpan<byte> AsSpan(U8String str) => str.UnsafeSpan;
 
     /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
+    /// if it is a valid UTF-8 sequence.
+    /// </summary>
+    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String CreateUnchecked(ReadOnlySpan<byte> value)
+    {
+        return new(value, skipValidation: true);
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
+    /// if it is a valid UTF-8 sequence.
+    /// </summary>
+    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
+    /// <remarks>
+    /// <para>
+    /// The <see cref="U8String"/> will be created by taking the underlying reference from the
+    /// <paramref name="value"/> without copying if the length is greater than 0.
+    /// </para>
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String CreateUnchecked(ImmutableArray<byte> value)
+    {
+        var bytes = ImmutableCollectionsMarshal.AsArray(value);
+        if (bytes != null)
+        {
+            return new(bytes, 0, bytes.Length);
+        }
+
+        return default;
+    }
+
+    /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
     /// without performing UTF-8 validation or copying the data.
     /// </summary>
@@ -35,7 +73,7 @@ public static class U8Marshal
     /// or data corruption.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Create(byte[] value) => new(value, 0, value.Length);
+    public static U8String CreateUnsafe(byte[] value) => new(value, 0, value.Length);
 
     /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
@@ -51,7 +89,7 @@ public static class U8Marshal
     /// <paramref name="value"/>.Length - <paramref name="offset"/>.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Create(byte[]? value, int offset, int length) => new(value, offset, length);
+    public static U8String CreateUnsafe(byte[]? value, int offset, int length) => new(value, offset, length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe U8String CreateFromNullTerminated(byte* ptr)

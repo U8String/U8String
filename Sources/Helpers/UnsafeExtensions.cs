@@ -67,6 +67,7 @@ internal static class UnsafeExtensions
     internal static ref T Add<T>(this ref T value, int offset)
         where T : struct
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref value));
         Debug.Assert(offset >= 0);
         return ref Unsafe.Add(ref value, (nint)(uint)offset);
     }
@@ -75,13 +76,15 @@ internal static class UnsafeExtensions
     internal static ref T Add<T>(this ref T value, nuint offset)
         where T : struct
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref value));
         return ref Unsafe.Add(ref value, offset);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static ref T Subtract<T>(this ref T value, int offset)
+    internal static ref T Substract<T>(this ref T value, int offset)
         where T : struct
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref value));
         Debug.Assert(offset >= 0);
         return ref Unsafe.Subtract(ref value, (nint)(uint)offset);
     }
@@ -91,18 +94,21 @@ internal static class UnsafeExtensions
         where T : unmanaged
         where U : unmanaged
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref value));
         return ref Unsafe.As<T, U>(ref value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyToUnsafe(this ReadOnlySpan<byte> source, ref byte destination)
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref destination));
         source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyToUnsafe(this Span<byte> source, ref byte destination)
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref destination));
         source.CopyTo(MemoryMarshal.CreateSpan(ref destination, source.Length));
     }
 
@@ -110,7 +116,27 @@ internal static class UnsafeExtensions
     internal static bool GreaterThan<T>(this ref T left, ref T right)
         where T : unmanaged
     {
+        Debug.Assert(!Unsafe.IsNullRef(ref left));
+        Debug.Assert(!Unsafe.IsNullRef(ref right));
         return Unsafe.IsAddressGreaterThan(ref left, ref right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool LessThan<T>(this ref T left, ref T right)
+        where T : unmanaged
+    {
+        Debug.Assert(!Unsafe.IsNullRef(ref left));
+        Debug.Assert(!Unsafe.IsNullRef(ref right));
+        return Unsafe.IsAddressLessThan(ref left, ref right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool LessThanOrEqual<T>(this ref T left, ref T right)
+        where T : unmanaged
+    {
+        Debug.Assert(!Unsafe.IsNullRef(ref left));
+        Debug.Assert(!Unsafe.IsNullRef(ref right));
+        return !Unsafe.IsAddressGreaterThan(ref left, ref right);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

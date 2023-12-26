@@ -50,7 +50,7 @@ public static class U8Info
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsBoundaryByte(in byte value)
     {
-        return (sbyte)value >= -0x40;
+        return (sbyte)value >= -64;
     }
 
     /// <summary>
@@ -116,14 +116,19 @@ public static class U8Info
     /// <returns>
     /// If <paramref name="value"/> points at a start of a UTF-8 code point, the length of the
     /// code point in bytes; otherwise, <c>1</c>.
+    /// <para />
+    /// The behavior is undefined if <paramref name="value"/> points at a byte that
+    /// is a part of a malformed UTF-8 byte sequence.
     /// </returns>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int RuneLength(in byte value)
     {
-        var lzcnt = BitOperations.LeadingZeroCount(~(uint)(value << 24));
-        var flag = IsAsciiByte(value);
+        // Do not use ternary here as it produces two jumps instead of one when inlined.
+        // Otherwise, this is branchless. It may not be worth trying to optimize this further.
+        // If you do, please update the hours spent tracker: 3h.
+        var lzcnt = (uint)BitOperations.LeadingZeroCount(~((uint)value << 24));
+        if (lzcnt is 0) lzcnt++;
 
-        // Branchless cmovle / csel.
-        return flag ? 1 : lzcnt;
+        return (int)lzcnt;
     }
 }

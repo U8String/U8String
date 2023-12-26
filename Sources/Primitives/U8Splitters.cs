@@ -2,7 +2,6 @@ using System.Collections;
 using System.Runtime.InteropServices;
 
 using U8.Abstractions;
-using U8.InteropServices;
 using U8.Shared;
 
 namespace U8.Primitives;
@@ -10,16 +9,18 @@ namespace U8.Primitives;
 #pragma warning disable IDE0032, RCS1085 // Use auto property. Why: explict struct contents annotation.
 public readonly record struct U8SplitPair
 {
-    readonly U8String _value;
-    readonly int _offset;
-    readonly int _stride;
+    readonly byte[]? _value;
+    readonly U8Range _segment;
+    readonly U8Range _remainder;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8SplitPair(U8String value, int offset, int stride)
     {
-        _value = value;
-        _offset = offset;
-        _stride = stride;
+        _value = value._value;
+        _segment = new(value.Offset, offset);
+        _remainder = new(
+            value.Offset + offset + stride,
+            value.Length - offset - stride);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -31,13 +32,13 @@ public readonly record struct U8SplitPair
     public U8String Segment
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => U8Marshal.Slice(_value, 0, _offset);
+        get => new(_value, _segment);
     }
 
     public U8String Remainder
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => U8Marshal.Slice(_value, _offset + _stride);
+        get => new(_value, _remainder);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

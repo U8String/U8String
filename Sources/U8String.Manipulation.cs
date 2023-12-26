@@ -688,7 +688,7 @@ public readonly partial struct U8String
             {
                 result = new(value, offset, length + 1);
             }
-            else if (ptr.Subtract(1) is 0)
+            else if (ptr.Substract(1) is 0)
             {
                 result = new(value, offset, length);
             }
@@ -918,10 +918,13 @@ public readonly partial struct U8String
                 newlength -= searchStart;
             }
 
-            while (newlength > 0
-                && U8Info.IsContinuationByte(in ptr.Add(newlength - 1)))
+            if (length < (source.Length - start))
             {
-                newlength--;
+                while (newlength > 0
+                    && U8Info.IsContinuationByte(in ptr.Add(newlength)))
+                {
+                    newlength--;
+                }
             }
         }
 

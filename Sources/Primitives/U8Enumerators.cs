@@ -8,6 +8,7 @@ using System.Text.Unicode;
 using U8.Abstractions;
 using U8.Shared;
 
+#pragma warning disable IDE0032, RCS1085 // Use auto property
 namespace U8.Primitives;
 
 /// <summary>
@@ -238,8 +239,8 @@ public readonly struct U8Runes(U8String value) :
     public struct Enumerator(U8String value) : IEnumerator<Rune>
     {
         readonly byte[]? _value = value._value;
-        readonly int _length = value._inner.Length;
-        int _offset = value._inner.Offset;
+        readonly int _end = value.End;
+        int _offset = value.Offset;
 
         public Rune Current { get; private set; }
 
@@ -247,7 +248,7 @@ public readonly struct U8Runes(U8String value) :
         public bool MoveNext()
         {
             var offset = _offset;
-            if (offset < _length)
+            if (offset < _end)
             {
                 ref var ptr = ref _value!.AsRef(offset);
 
@@ -344,23 +345,22 @@ public readonly struct U8RuneIndices(U8String value) :
     public struct Enumerator(U8String value) : IEnumerator<U8RuneIndex>
     {
         readonly byte[]? _value = value._value;
-        readonly int _length = value._inner.Length;
-        int _offset = value._inner.Offset;
+        readonly int _length = value.Length;
+        readonly int _offset = value.Offset;
 
         public U8RuneIndex Current { get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            var offset = _offset;
-            if (offset < _length)
+            var index = Current.Offset + Current.Length;
+            if (index < _length)
             {
-                ref var ptr = ref _value!.AsRef(offset);
+                ref var ptr = ref _value!.AsRef(_offset + index);
 
                 Current = new(
-                    U8Conversions.CodepointToRune(ref ptr, out var size), offset, size);
+                    U8Conversions.CodepointToRune(ref ptr, out var size), index, size);
 
-                _offset = offset + size;
                 return true;
             }
 

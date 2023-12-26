@@ -255,6 +255,7 @@ public readonly partial struct U8String
     public static U8String Create(byte value) => U8Literals.GetByte(value);
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Create<T>(T value)
         where T : IUtf8SpanFormattable
     {
@@ -373,46 +374,6 @@ public readonly partial struct U8String
         if (value.Length > 0)
         {
             return U8Interning.GetEncoded(value);
-        }
-
-        return default;
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
-    /// if it is a valid UTF-8 sequence.
-    /// </summary>
-    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <remarks>
-    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String CreateUnchecked(ReadOnlySpan<byte> value)
-    {
-        return new(value, skipValidation: true);
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
-    /// if it is a valid UTF-8 sequence.
-    /// </summary>
-    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <remarks>
-    /// <para>
-    /// The <see cref="U8String"/> will be created by taking the underlying reference from the
-    /// <paramref name="value"/> without copying if the length is greater than 0.
-    /// </para>
-    /// <para>
-    /// This is a safe variant of <see cref="U8Marshal.Create(byte[])"/> which does not allocate.
-    /// </para>
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String CreateUnchecked(ImmutableArray<byte> value)
-    {
-        var bytes = ImmutableCollectionsMarshal.AsArray(value);
-        if (bytes != null)
-        {
-            return new(bytes, 0, bytes.Length);
         }
 
         return default;

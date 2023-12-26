@@ -1,9 +1,13 @@
+using System.Diagnostics;
+
 namespace U8.Shared;
 
 static partial class U8Literals
 {
     static class Numbers
     {
+        const int Length = 257;
+
         static readonly U8String[] Values =
         [
             new U8String([(byte)'-', (byte)'1', (byte)'\0'], 0, 2),
@@ -277,7 +281,8 @@ static partial class U8Literals
             var values = Values;
 
             // Values start at -1
-            if ((nuint)(++value) < (nuint)values.Length)
+            Debug.Assert(values.Length is Length);
+            if ((nuint)(++value) < Length)
             {
                 literal = values.AsRef(value);
                 return true;

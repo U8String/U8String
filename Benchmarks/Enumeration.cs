@@ -6,12 +6,13 @@ using U8.Primitives;
 
 namespace U8.Benchmarks;
 
+[ShortRunJob]
 [MemoryDiagnoser]
-[DisassemblyDiagnoser]
+[DisassemblyDiagnoser(maxDepth: 1, exportCombinedDisassemblyReport: true)]
 // [ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 public class Enumeration
 {
-    [Params(100, 1000, 10000)]
+    [Params(100, 1000, int.MaxValue)]
     public int Length;
 
     U8String ThirdPartyNotices;
@@ -26,8 +27,8 @@ public class Enumeration
             .GetAwaiter()
             .GetResult();
 
-        ThirdPartyNotices = notices[..Length];
-        ThirdPartyNoticesU16 = notices[..Length].ToString();
+        ThirdPartyNotices = notices.SliceRounding(0, Length);
+        ThirdPartyNoticesU16 = ThirdPartyNotices.ToString();
     }
 
     [Benchmark]

@@ -70,6 +70,12 @@ public readonly partial struct U8String :
         get => _inner.Offset;
     }
 
+    internal int End
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _inner.Offset + _inner.Length;
+    }
+
     /// <summary>
     /// The number of UTF-8 code units (bytes) in the current <see cref="U8String"/>.
     /// </summary>
@@ -115,7 +121,7 @@ public readonly partial struct U8String :
                 // This is intended since ptr is potentially out of bounds.
                 ref var ptr = ref value.AsRef().Add(end);
 
-                return ((uint)end < (uint)value.Length && ptr is 0) || ptr.Subtract(1) is 0;
+                return ((uint)end < (uint)value.Length && ptr is 0) || ptr.Substract(1) is 0;
             }
 
             return false;

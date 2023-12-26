@@ -2,9 +2,10 @@ using BenchmarkDotNet.Attributes;
 
 namespace U8.Benchmarks;
 
+[ShortRunJob]
 [MemoryDiagnoser]
 // [SimpleJob, SimpleJob(RuntimeMoniker.NativeAot80)]
-// [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
+[DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
 public class Formatting
 {
     static readonly DateTime DateTime = new(2021, 10, 10, 10, 10, 10, DateTimeKind.Utc);

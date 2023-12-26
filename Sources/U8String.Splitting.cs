@@ -475,6 +475,43 @@ public readonly partial struct U8String
         return default;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8SplitPair SplitAt(int index)
+    {
+        var source = this;
+        if ((uint)index > (uint)source.Length)
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        if (index < source.Length
+            && U8Info.IsContinuationByte(source.UnsafeRefAdd(index)))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(source, index, 0);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8SplitPair SplitAt(Index index)
+    {
+        var source = this;
+        var offset = index.GetOffset(source.Length);
+        if ((uint)offset > (uint)source.Length)
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        if (offset < source.Length
+            && U8Info.IsContinuationByte(source.UnsafeRefAdd(offset)))
+        {
+            ThrowHelpers.ArgumentOutOfRange();
+        }
+
+        return new(source, offset, 0);
+    }
+
     public U8Split<byte> Split(byte separator)
     {
         ThrowHelpers.CheckAscii(separator);

@@ -2,13 +2,12 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
 namespace U8.Benchmarks;
 
+[ShortRunJob]
 [MemoryDiagnoser]
-// [DisassemblyDiagnoser(maxDepth: 2)]
-[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+[DisassemblyDiagnoser(maxDepth: 3)]
 public class Serialization
 {
     public record Person
@@ -37,10 +36,10 @@ public class Serialization
 
     private static readonly PersonU8 PersonU8Value = new()
     {
-        FirstName = U8String.CreateUnchecked("John"u8),
-        LastName = U8String.CreateUnchecked("Doe"u8),
-        Title = U8String.CreateUnchecked("Software Engineer"u8),
-        ID = U8String.CreateUnchecked("123456789"u8)
+        FirstName = (U8String)"John"u8,
+        LastName = (U8String)"Doe"u8,
+        Title = (U8String)"Software Engineer"u8,
+        ID = (U8String)"123456789"u8
     };
 
     private static readonly U8String PersonBytes = U8String
