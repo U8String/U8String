@@ -321,6 +321,15 @@ public partial class Manipulation
             yield return (value, [..allRuneBytes, ..value]);
             yield return (value, [..value, ..allRuneBytes]);
             yield return (value, [..allRuneBytes, ..value, ..allRuneBytes]);
+
+            var shifted = new U8String((ReadOnlySpan<byte>)
+            [
+                ..Constants.AsciiWhitespaceBytes,
+                ..value,
+                ..Constants.AsciiWhitespaceBytes
+            ]);
+
+            yield return (value, !shifted.IsEmpty ? shifted[2..^2] : []);
         }
     }
 

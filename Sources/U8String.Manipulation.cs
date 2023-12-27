@@ -962,20 +962,21 @@ public readonly partial struct U8String
         // The code below looks simple but it's surprisingly migraine-inducing
         static U8String TrimCore(byte[] source, int offset, int length)
         {
-            var sourceOffset = offset;
+            ref var ptr = ref source.AsRef(offset);
 
-            ref var ptr = ref source.AsRef();
-            while (offset <= length)
+            var index = 0;
+            while (index < length)
             {
-                if (!U8Info.IsWhitespaceRune(ref ptr.Add(offset), out var size))
+                if (!U8Info.IsWhitespaceRune(ref ptr.Add(index), out var size))
                 {
                     break;
                 }
-                offset += size;
+                index += size;
             }
 
-            ptr = ref ptr.Add(offset);
-            length -= offset - sourceOffset;
+            ptr = ref ptr.Add(index);
+            offset += index;
+            length -= index;
 
             for (var endSearch = length - 1; endSearch >= 0; endSearch--)
             {
