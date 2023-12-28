@@ -4,10 +4,12 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Numerics;
 using System.Runtime.InteropServices;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 
+using U8.InteropServices;
 using U8.Primitives;
 using U8.Serialization;
 using U8.Shared;
@@ -32,6 +34,7 @@ namespace U8;
 [DebuggerDisplay("{DebuggerDisplay()}")]
 [JsonConverter(typeof(U8StringJsonConverter))]
 [CollectionBuilder(typeof(U8String), nameof(Create))]
+[NativeMarshalling(typeof(U8StringMarshalling))]
 public readonly partial struct U8String :
     IEqualityOperators<U8String, U8String, bool>,
     IAdditionOperators<U8String, U8String, U8String>,

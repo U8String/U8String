@@ -694,7 +694,7 @@ public readonly partial struct U8String
             }
             else
             {
-                var bytes = new byte[length + 1];
+                var bytes = new byte[(nint)(uint)(length + 1)];
                 value.SliceUnsafe(offset, length).CopyToUnsafe(ref bytes.AsRef());
                 result = new(bytes, 0, length + 1);
             }
