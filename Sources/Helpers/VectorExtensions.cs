@@ -7,7 +7,7 @@ namespace U8;
 internal static class VectorExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static nuint GetMatchCount<T>(this Vector512<T> mask)
+    internal static uint GetMatchCount<T>(this Vector512<T> mask)
     {
         if (Vector512.IsHardwareAccelerated)
         {
@@ -34,7 +34,7 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static nuint GetMatchCount<T>(this Vector256<T> mask)
+    internal static uint GetMatchCount<T>(this Vector256<T> mask)
     {
         if (Vector256.IsHardwareAccelerated)
         {
@@ -49,33 +49,33 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static nuint GetMatchCount<T>(this Vector128<T> mask)
+    internal static uint GetMatchCount<T>(this Vector128<T> mask)
     {
         if (AdvSimd.Arm64.IsSupported)
         {
             return AdvSimd.Arm64
                 .AddAcross(AdvSimd.PopCount(mask.AsByte()))
-                .ToScalar() / (8 * (nuint)Unsafe.SizeOf<T>());
+                .ToScalar() / (8 * (uint)Unsafe.SizeOf<T>());
         }
 
         return (uint)BitOperations.PopCount(mask.ExtractMostSignificantBits());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static nuint GetMatchCount<T>(this Vector64<T> mask)
+    internal static uint GetMatchCount<T>(this Vector64<T> mask)
     {
         return AdvSimd.Arm64
             .AddAcross(AdvSimd.PopCount(mask.AsByte()))
-            .ToScalar() / (8 * (nuint)Unsafe.SizeOf<T>());
+            .ToScalar() / (8 * (uint)Unsafe.SizeOf<T>());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(this Vector512<T> value, Vector512<T> mask)
+    internal static uint IndexOf<T>(this Vector512<T> value, Vector512<T> mask)
     {
         if (Vector512.IsHardwareAccelerated)
         {
             var eqmask = Vector512.Equals(value, mask);
-            return BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
+            return (uint)BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
         }
 
         if (Vector256.IsHardwareAccelerated)
@@ -86,7 +86,7 @@ internal static class VectorExtensions
             var eqlo = lower.Eq(comparand);
             if (eqlo == Vector256<T>.Zero)
             {
-                return IndexOfMatch(upper.Eq(comparand)) + Vector256<T>.Count;
+                return IndexOfMatch(upper.Eq(comparand)) + (uint)Vector256<T>.Count;
             }
 
             return IndexOfMatch(eqlo);
@@ -105,25 +105,25 @@ internal static class VectorExtensions
                 var eq2 = vec2.Eq(cmp128);
                 if (eq2 == Vector128<T>.Zero)
                 {
-                    return IndexOfMatch(vec3.Eq(cmp128)) + (Vector128<T>.Count * 3);
+                    return IndexOfMatch(vec3.Eq(cmp128)) + ((uint)Vector128<T>.Count * 3);
                 }
 
-                return IndexOfMatch(eq2) + (Vector128<T>.Count * 2);
+                return IndexOfMatch(eq2) + ((uint)Vector128<T>.Count * 2);
             }
 
-            return IndexOfMatch(eq1) + Vector128<T>.Count;
+            return IndexOfMatch(eq1) + (uint)Vector128<T>.Count;
         }
 
         return IndexOfMatch(eq0);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(this Vector256<T> value, Vector256<T> mask)
+    internal static uint IndexOf<T>(this Vector256<T> value, Vector256<T> mask)
     {
         if (Vector256.IsHardwareAccelerated)
         {
             var eqmask = Vector256.Equals(value, mask);
-            return BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
+            return (uint)BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
         }
 
         var comparand = mask.GetLower();
@@ -132,14 +132,14 @@ internal static class VectorExtensions
         var eqlo = lower.Eq(comparand);
         if (eqlo == Vector128<T>.Zero)
         {
-            return IndexOfMatch(upper.Eq(comparand)) + Vector128<T>.Count;
+            return IndexOfMatch(upper.Eq(comparand)) + (uint)Vector128<T>.Count;
         }
 
         return IndexOfMatch(eqlo);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOf<T>(this Vector128<T> value, Vector128<T> mask)
+    internal static uint IndexOf<T>(this Vector128<T> value, Vector128<T> mask)
     {
         if (AdvSimd.Arm64.IsSupported)
         {
@@ -148,32 +148,32 @@ internal static class VectorExtensions
                 .AsUInt64()
                 .ToScalar();
 
-            return BitOperations.TrailingZeroCount(res) / (4 * Unsafe.SizeOf<T>());
+            return (uint)BitOperations.TrailingZeroCount(res) / (4 * (uint)Unsafe.SizeOf<T>());
         }
 
-        return BitOperations.TrailingZeroCount(value.Eq(mask).ExtractMostSignificantBits());
+        return (uint)BitOperations.TrailingZeroCount(value.Eq(mask).ExtractMostSignificantBits());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOfMatch<T>(this Vector256<T> eqmask)
+    internal static uint IndexOfMatch<T>(this Vector256<T> eqmask)
     {
         if (Vector256.IsHardwareAccelerated)
         {
-            return BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
+            return (uint)BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
         }
 
         var (lower, upper) = eqmask;
         var lowerIndex = IndexOfMatch(lower);
-        if (lowerIndex < Vector128<T>.Count)
+        if (lowerIndex < (nuint)Vector128<T>.Count)
         {
             return lowerIndex;
         }
 
-        return IndexOfMatch(upper) + Vector128<T>.Count;
+        return IndexOfMatch(upper) + (uint)Vector128<T>.Count;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static int IndexOfMatch<T>(this Vector128<T> eqmask)
+    internal static uint IndexOfMatch<T>(this Vector128<T> eqmask)
     {
         if (AdvSimd.Arm64.IsSupported)
         {
@@ -182,10 +182,10 @@ internal static class VectorExtensions
                 .AsUInt64()
                 .ToScalar();
 
-            return BitOperations.TrailingZeroCount(res) / (4 * Unsafe.SizeOf<T>());
+            return (uint)BitOperations.TrailingZeroCount(res) / (4 * (uint)Unsafe.SizeOf<T>());
         }
 
-        return BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
+        return (uint)BitOperations.TrailingZeroCount(eqmask.ExtractMostSignificantBits());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

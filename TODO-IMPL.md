@@ -13,6 +13,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
 - [x] Refactor literal formatting to not use Try... pattern which causes degenerate codegen where compiler can't elide the address-taken status of returned value
 - [x] Consider authoring namespaces and renaming `U8Primitives` to just `U8`
+- [ ] Consider implementing surrogate-tolerant Concat and Join on `IEnumerable<char>`
 - [ ] Consider further specializing/refactoring inline conversion of chars and Runes and having bespoke U8Scalar2, 3 and 4 and delegating lookup to them?
 - [ ] Consider authoring certain methods with platform ABI differences in mind (tactical use of `in` and `ref` may needed for methods that have 2+ U8String arguments)
 - [ ] Implement Unicode normalization (review utf8proc and unilib and then write C#-optimized version)

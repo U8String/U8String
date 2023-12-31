@@ -64,7 +64,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
-        return _value.AsMemory(Offset, Length);
+        return Unsafe.As<U8String, ReadOnlyMemory<byte>>(ref Unsafe.AsRef(in this));
     }
 
     /// <summary>

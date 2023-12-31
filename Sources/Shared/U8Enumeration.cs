@@ -237,7 +237,7 @@ internal static class U8Enumeration
     }
 
     internal static U8Slices ToSlices<T, E>(this T collection)
-        where T : struct, IU8SliceCollection, IEnumerable<U8String, E>
+        where T : struct, IU8SliceCollection, IU8Enumerable<E>
         where E : struct, IU8Enumerator
     {
         var count = collection.Count;
@@ -253,7 +253,7 @@ internal static class U8Enumeration
     }
 
     static int FillRangesUnchecked<T, E>(this T source, ref U8Range dst)
-        where T : struct, IEnumerable<U8String, E>
+        where T : struct, IU8Enumerable<E>
         where E : struct, IU8Enumerator
     {
         var i = 0;

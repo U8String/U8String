@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -619,6 +620,334 @@ internal static class U8Manipulation
 
         builder.Dispose();
         return result;
+    }
+
+    internal interface IRunesSource
+    {
+        abstract static void SurrogateCheck();
+    }
+
+    internal struct RunesSource : IRunesSource
+    {
+        public static void SurrogateCheck() { }
+    }
+
+    internal struct CharsSource : IRunesSource
+    {
+        [DoesNotReturn, StackTraceHidden]
+        public static void SurrogateCheck()
+        {
+            throw new ArgumentOutOfRangeException(
+                paramName: "values",
+                "A surrogate char has been encountered in the sequence. " +
+                "Surrogate chars are not representable in UTF-8.");
+        }
+    }
+
+    internal static U8String JoinRunes<TSource>(byte separator, U8String value)
+        where TSource : struct, IRunesSource
+    {
+        Debug.Assert(U8Info.IsAsciiByte(separator));
+
+        // I *think* this could be vectorized given sufficiently clever
+        // branchless code and good SIMD throughput.
+        var count = value.RuneCount;
+        if (count > 1)
+        {
+            ref var src = ref value.UnsafeRef;
+            ref var end = ref src.Add(value.Length);
+
+            var length = value.Length + (count - 1);
+            var nullTerminate = end.Substract(1) != 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
+
+            ref var dst = ref bytes.AsRef();
+
+            // Copy the first rune
+            var b = src;
+            do
+            {
+                dst = b;
+                src = ref src.Add(1);
+                dst = ref dst.Add(1);
+                b = src;
+            } while (U8Info.IsContinuationByte(b));
+
+            while (src.LessThan(ref end))
+            {
+                switch (U8Info.RuneLength(in src))
+                {
+                    case 1:
+                        dst.Cast<byte, ushort>() = (ushort)(separator | (uint)src << 8);
+                        src = ref src.Add(1);
+                        dst = ref dst.Add(2);
+                        continue;
+
+                    case 2:
+                        dst = separator;
+                        dst.Add(1).Cast<byte, ushort>() = src.Cast<byte, ushort>();
+                        src = ref src.Add(2);
+                        dst = ref dst.Add(3);
+                        continue;
+
+                    case 3:
+                        dst.Cast<byte, uint>() =
+                            separator |
+                            (uint)src.Cast<byte, ushort>() << 8 |
+                            (uint)src.Add(2) << 24;
+                        src = ref src.Add(3);
+                        dst = ref dst.Add(4);
+                        continue;
+
+                    default:
+                        TSource.SurrogateCheck();
+                        dst = separator;
+                        dst.Add(1).Cast<byte, uint>() = src.Cast<byte, uint>();
+                        src = ref src.Add(4);
+                        dst = ref dst.Add(5);
+                        continue;
+                }
+            }
+
+            return new(bytes, 0, length);
+        }
+        else if (count is 1)
+        {
+            return value;
+        }
+
+        return default;
+    }
+
+    internal static U8String JoinRunes<TSource>(ReadOnlySpan<byte> separator, U8String value)
+        where TSource : struct, IRunesSource
+    {
+        Debug.Assert(separator.Length > 1);
+
+        var count = value.RuneCount;
+        if (count > 1)
+        {
+            ref var src = ref value.UnsafeRef;
+            ref var end = ref src.Add(value.Length);
+
+            var length = value.Length + ((count - 1) * separator.Length);
+            var nullTerminate = end.Substract(1) is 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
+
+            ref var dst = ref bytes.AsRef();
+
+            // Copy the first rune
+            var b = src;
+            do
+            {
+                dst = b;
+                src = ref src.Add(1);
+                dst = ref dst.Add(1);
+                b = src;
+            } while (U8Info.IsContinuationByte(b));
+
+            switch (separator.Length)
+            {
+                case 2:
+                    var twoBytes = separator.AsRef().Cast<byte, ushort>();
+                    JoinTwoBytes(ref src, ref end, ref dst, twoBytes);
+                    break;
+                case 3:
+                    var b01 = separator.AsRef().Cast<byte, ushort>();
+                    var b2 = separator.AsRef(2);
+                    JoinThreeBytes(ref src, ref end, ref dst, b01, b2);
+                    break;
+                case 4:
+                    var fourBytes = separator.AsRef().Cast<byte, uint>();
+                    JoinFourBytes(ref src, ref end, ref dst, fourBytes);
+                    break;
+                default:
+                    JoinSpan(ref src, ref end, ref dst, separator);
+                    break;
+            }
+
+            return new(bytes, 0, length);
+        }
+        else if (count is 1)
+        {
+            return value;
+        }
+
+        return default;
+
+        static void JoinTwoBytes(
+            ref byte src,
+            ref byte end,
+            ref byte dst,
+            ushort separator)
+        {
+            while (src.LessThan(ref end))
+            {
+                switch (U8Info.RuneLength(in src))
+                {
+                    case 1:
+                        dst.Cast<byte, ushort>() = separator;
+                        dst.Add(2) = src;
+                        src = ref src.Add(1);
+                        dst = ref dst.Add(3);
+                        continue;
+
+                    case 2:
+                        dst.Cast<byte, uint>() =
+                            separator | (uint)src.Cast<byte, ushort>() << 16;
+                        src = ref src.Add(2);
+                        dst = ref dst.Add(4);
+                        continue;
+
+                    case 3:
+                        dst.Cast<byte, uint>() =
+                            separator | (uint)src.Cast<byte, ushort>() << 16;
+                        dst.Add(4) = src.Add(2);
+                        src = ref src.Add(3);
+                        dst = ref dst.Add(5);
+                        continue;
+
+                    default:
+                        TSource.SurrogateCheck();
+                        dst.Cast<byte, ushort>() = separator;
+                        dst.Add(2).Cast<byte, uint>() = src.Cast<byte, uint>();
+                        src = ref src.Add(4);
+                        dst = ref dst.Add(6);
+                        continue;
+                }
+            }
+        }
+
+        static void JoinThreeBytes(
+            ref byte src,
+            ref byte end,
+            ref byte dst,
+            ushort b01,
+            byte b2)
+        {
+            while (src.LessThan(ref end))
+            {
+                switch (U8Info.RuneLength(in src))
+                {
+                    case 1:
+                        dst.Cast<byte, ushort>() = b01;
+                        dst.Add(2).Cast<byte, ushort>() = (ushort)(b2 | (uint)src << 8);
+                        src = ref src.Add(1);
+                        dst = ref dst.Add(4);
+                        continue;
+
+                    case 2:
+                        dst.Cast<byte, uint>() =
+                            b01 | (uint)b2 << 16 | (uint)src << 24;
+                        dst.Add(4) = src.Add(1);
+                        src = ref src.Add(2);
+                        dst = ref dst.Add(5);
+                        continue;
+
+                    case 3:
+                        dst.Cast<byte, uint>() =
+                            b01 | (uint)b2 << 16 | (uint)src << 24;
+                        dst.Add(4).Cast<byte, ushort>() = src.Add(1).Cast<byte, ushort>();
+                        src = ref src.Add(3);
+                        dst = ref dst.Add(6);
+                        continue;
+
+                    default:
+                        TSource.SurrogateCheck();
+                        dst.Cast<byte, uint>() = b01;
+                        dst.Add(2) = b2;
+                        dst.Add(3).Cast<byte, uint>() = src.Cast<byte, uint>();
+                        src = ref src.Add(4);
+                        dst = ref dst.Add(7);
+                        continue;
+                }
+            }
+        }
+
+        static void JoinFourBytes(
+            ref byte src,
+            ref byte end,
+            ref byte dst,
+            uint separator)
+        {
+            while (src.LessThan(ref end))
+            {
+                switch (U8Info.RuneLength(in src))
+                {
+                    case 1:
+                        dst.Cast<byte, uint>() = separator;
+                        dst.Add(4) = src;
+                        src = ref src.Add(1);
+                        dst = ref dst.Add(5);
+                        continue;
+
+                    case 2:
+                        dst.Cast<byte, uint>() = separator;
+                        dst.Add(4).Cast<byte, ushort>() = src.Cast<byte, ushort>();
+                        src = ref src.Add(2);
+                        dst = ref dst.Add(6);
+                        continue;
+
+                    case 3:
+                        dst.Cast<byte, uint>() = separator;
+                        dst.Add(4).Cast<byte, ushort>() = src.Cast<byte, ushort>();
+                        dst.Add(6) = src.Add(2);
+                        src = ref src.Add(3);
+                        dst = ref dst.Add(7);
+                        continue;
+
+                    default:
+                        TSource.SurrogateCheck();
+                        dst.Cast<byte, ulong>() =
+                            separator | (ulong)src.Cast<byte, uint>() << 32;
+                        src = ref src.Add(4);
+                        dst = ref dst.Add(8);
+                        continue;
+                }
+            }
+        }
+
+        static void JoinSpan(
+            ref byte src,
+            ref byte end,
+            ref byte dst,
+            ReadOnlySpan<byte> separator)
+        {
+            while (src.LessThan(ref end))
+            {
+                separator.CopyToUnsafe(ref dst);
+                dst = ref dst.Add(separator.Length);
+
+                switch (U8Info.RuneLength(in src))
+                {
+                    case 1:
+                        dst = src;
+                        src = ref src.Add(1);
+                        dst = ref dst.Add(1);
+                        continue;
+
+                    case 2:
+                        dst.Cast<byte, ushort>() = src.Cast<byte, ushort>();
+                        src = ref src.Add(2);
+                        dst = ref dst.Add(2);
+                        continue;
+
+                    case 3:
+                        dst.Cast<byte, ushort>() = src.Cast<byte, ushort>();
+                        dst.Add(2) = src.Add(2);
+                        src = ref src.Add(3);
+                        dst = ref dst.Add(3);
+                        continue;
+
+                    default:
+                        TSource.SurrogateCheck();
+                        dst.Cast<byte, uint>() = src.Cast<byte, uint>();
+                        src = ref src.Add(4);
+                        dst = ref dst.Add(4);
+                        continue;
+                }
+            }
+        }
     }
 
     internal static U8String Replace(

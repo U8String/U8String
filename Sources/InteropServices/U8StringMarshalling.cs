@@ -1,26 +1,29 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
 namespace U8.InteropServices;
 
+[CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8StringMarshalling))]
 [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(FullCStr))]
 public static unsafe class U8StringMarshalling
 {
-    static readonly byte[] Empty = new byte[1];
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String ConvertToManaged(byte* unmanaged)
+    {
+        return new U8String(unmanaged);
+    }
 
     [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(LightweightCStr))]
     public static class LightweightCStr
     {
+        static byte Empty = (byte)'\0';
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte* ConvertToUnmanaged(U8String managed)
         {
-            var ptr = (byte*)null;
-            if (!managed.IsEmpty)
-            {
-                ptr = (byte*)Unsafe.AsPointer(ref managed.UnsafeRef);
-            }
-
-            return ptr;
+            return (byte*)Unsafe.AsPointer(
+                ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -30,10 +33,13 @@ public static unsafe class U8StringMarshalling
             {
                 return ref managed.UnsafeRef;
             }
+            else if (managed.IsEmpty)
+            {
+                return ref Empty;
+            }
 
             return ref NullTerminate(managed);
 
-            [MethodImpl(MethodImplOptions.NoInlining)]
             static ref byte NullTerminate(U8String managed)
             {
                 ref var ptr = ref Unsafe.NullRef<byte>();
@@ -47,7 +53,7 @@ public static unsafe class U8StringMarshalling
                 }
                 else
                 {
-                    ptr = ref Empty.AsRef();
+                    ptr = ref Empty;
                 }
 
                 return ref ptr;
@@ -58,60 +64,56 @@ public static unsafe class U8StringMarshalling
     [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(FullCStr))]
     public ref struct FullCStr
     {
-        InlineBuffer128 _buffer;
+        static byte Empty = (byte)'\0';
+
         ref byte _ptr;
         bool _allocated;
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public FullCStr()
-        {
-            Unsafe.SkipInit(out _buffer);
-        }
+        public static int BufferSize => 256;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void FromManaged(U8String managed)
+        public void FromManaged(U8String managed, Span<byte> buffer)
         {
+            _allocated = false;
+
             if (managed.IsNullTerminated)
             {
                 _ptr = ref managed.UnsafeRef;
             }
+            else if (managed.IsEmpty)
+            {
+                _ptr = ref Empty;
+            }
             else
             {
-                NullTerminate(managed);
+                NullTerminate(
+                    ref managed.UnsafeRef,
+                    ref buffer.AsRef(),
+                    managed.Length + 1);
             }
         }
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        void NullTerminate(U8String managed)
+        void NullTerminate(ref byte src, [UnscopedRef] ref byte dst, int length)
         {
-            if (!managed.IsEmpty)
+            if (length > BufferSize)
             {
-                ref var dst = ref Unsafe.NullRef<byte>();
-                var length = (nuint)(uint)managed.Length + 1;
-
-                if (length <= InlineBuffer128.Length)
-                {
-                    dst = ref _ptr = ref _buffer.AsSpan().AsRef();
-                }
-                else
-                {
-                    dst = ref _ptr = ref Unsafe.AsRef<byte>((byte*)NativeMemory.Alloc(length));
-                    _allocated = true;
-                }
-
-                managed.UnsafeSpan.CopyToUnsafe(ref dst);
-                dst.Add((int)length - 1) = 0;
+                dst = ref Unsafe.AsRef<byte>((byte*)NativeMemory.Alloc((uint)length));
+                _allocated = true;
             }
-            else
-            {
-                _ptr = ref Empty.AsRef();
-            }
+
+            MemoryMarshal.CreateSpan(ref src, length).CopyToUnsafe(ref dst);
+            dst.Add(length - 1) = 0;
+
+            _ptr = ref dst;
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref readonly byte GetPinnableReference() => ref _ptr;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly byte* ToUnmanaged() => (byte*)Unsafe.AsPointer(ref _ptr);
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly void Free()
         {
             if (_allocated)
@@ -124,17 +126,19 @@ public static unsafe class U8StringMarshalling
     [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(AssumeNullTerminated))]
     public static class AssumeNullTerminated
     {
+        static byte Empty = (byte)'\0';
+
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte* ConvertToUnmanaged(U8String managed)
         {
             return (byte*)Unsafe.AsPointer(
-                ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty.AsRef());
+                ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly byte GetPinnableReference(U8String managed)
         {
-            return ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty.AsRef();
+            return ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty;
         }
     }
 }

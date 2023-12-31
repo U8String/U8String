@@ -24,7 +24,7 @@ public readonly record struct U8SplitPair
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8SplitPair NotFound(U8String value)
+    internal static U8SplitPair NotFound(U8String value)
     {
         return new(value, value.Length, 0);
     }

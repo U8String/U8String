@@ -38,6 +38,12 @@ public readonly struct U8Chars(U8String value) :
         }
     }
 
+    internal U8String Value
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _value;
+    }
+
     public bool Contains(char item) => _value.Contains(item);
 
     /// <inheritdoc />
@@ -195,6 +201,12 @@ public readonly struct U8Runes(U8String value) :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _value.RuneCount;
+    }
+
+    internal U8String Value
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _value;
     }
 
     public bool Contains(Rune item) => _value.Contains(item);

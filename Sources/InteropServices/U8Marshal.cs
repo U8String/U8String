@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 
 using U8.Primitives;
 using U8.Shared;
@@ -63,6 +64,32 @@ public static class U8Marshal
     }
 
     /// <summary>
+    /// Creates a new <see cref="U8String"/> from null-terminated <paramref name="str"/> without verifying
+    /// if it is a valid UTF-8 sequence.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static unsafe U8String CreateUnchecked(byte* str)
+    {
+        var length = IndexOfNullByte(str);
+        if (length > (nuint)Array.MaxLength - 1)
+        {
+            ThrowHelpers.DestinationTooShort();
+        }
+
+        if (length > 0)
+        {
+            var bytes = new byte[length + 1];
+            MemoryMarshal
+                .CreateSpan(ref Unsafe.AsRef<byte>(str), (int)(uint)length)
+                .CopyToUnsafe(ref bytes.AsRef());
+
+            return new(bytes, 0, (int)(uint)length);
+        }
+
+        return default;
+    }
+
+    /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
     /// without performing UTF-8 validation or copying the data.
     /// </summary>
@@ -77,7 +104,7 @@ public static class U8Marshal
 
     /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
-    /// without performing bounds checking, UTF-8 validation or copying the data.
+    /// without checking the bounds, UTF-8 validation or copying the data.
     /// </summary>
     /// <param name="value">The UTF-8 buffer to construct U8String around.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
@@ -90,27 +117,6 @@ public static class U8Marshal
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String CreateUnsafe(byte[]? value, int offset, int length) => new(value, offset, length);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe U8String CreateFromNullTerminated(byte* ptr)
-    {
-        return CreateFromNullTerminated(ref Unsafe.AsRef<byte>(ptr));
-    }
-
-    public static U8String CreateFromNullTerminated(ref byte ptr)
-    {
-        // TODO: Move into separate helper class with logic to account for PAGESIZE
-        // to prevent SEGFAULTs from occuring due to SIMD reads past the end of the buffer.
-        var span = MemoryMarshal.CreateReadOnlySpan(ref ptr, int.MaxValue);
-        var length = span.IndexOf((byte)'\0');
-        if (length < 0)
-        {
-            // TODO: EH UX
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
-        return new(span.SliceUnsafe(0, length), skipValidation: true);
-    }
 
     /// <summary>
     /// Creates a new <see cref="U8SplitPair"/> representing a split of the given <paramref name="value"/>
@@ -152,6 +158,42 @@ public static class U8Marshal
         }
 
         return 0;
+    }
+
+    /// <summary>
+    /// Searches for the first occurence of a null byte starting at the given <paramref name="ptr"/>.
+    /// </summary>
+    public static unsafe nuint IndexOfNullByte(byte* ptr)
+    {
+        var start = ptr;
+
+        // TODO: Optimize this
+        while ((nuint)ptr % 16 != 0)
+        {
+            if (*ptr is 0)
+            {
+                goto Done;
+            }
+
+            ptr++;
+        }
+
+        var zeroes = Vector128<byte>.Zero;
+        while (true)
+        {
+            var mask = Vector128.LoadAligned(ptr).Eq(zeroes);
+            if (mask == zeroes)
+            {
+                ptr += Vector128<byte>.Count;
+                continue;
+            }
+
+            ptr += mask.IndexOfMatch();
+            break;
+        }
+
+    Done:
+        return (nuint)ptr - (nuint)start;
     }
 
     /// <summary>

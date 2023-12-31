@@ -16,10 +16,8 @@ namespace U8;
 #pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
 public struct InterpolatedU8StringHandler
 {
-    static readonly ConditionalWeakTable<string, byte[]> LiteralPool = [];
-
-    readonly IFormatProvider? _provider;
     InlineBuffer128 _inline;
+    readonly IFormatProvider? _provider;
     byte[]? _rented;
 
     public int BytesWritten { get; private set; }
@@ -184,15 +182,10 @@ public struct InterpolatedU8StringHandler
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    void AppendLiteralString(string s)
+    void AppendLiteralString([ConstantExpected] string s)
     {
-        if (!LiteralPool.TryGetValue(s, out var literal))
-        {
-            literal = Encoding.UTF8.GetBytes(s);
-            LiteralPool.AddOrUpdate(s, literal);
-        }
-
-        AppendBytes(literal);
+        var literal = U8Literals.Utf16.GetLiteral(s);
+        AppendBytes(literal.SliceUnsafe(0, literal.Length - 1));
     }
 
     void AppendByte(byte value)

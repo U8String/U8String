@@ -490,6 +490,89 @@ public readonly partial struct U8String
         return U8Manipulation.Join(separator, values);
     }
 
+    public static U8String Join(byte separator, U8Chars chars)
+    {
+        ThrowHelpers.CheckAscii(separator);
+
+        return U8Manipulation.JoinRunes<U8Manipulation.CharsSource>(separator, chars.Value);
+    }
+
+    public static U8String Join(char separator, U8Chars chars)
+    {
+        ThrowHelpers.CheckSurrogate(separator);
+
+        return char.IsAscii(separator)
+            ? U8Manipulation.JoinRunes<U8Manipulation.CharsSource>((byte)separator, chars.Value)
+            : JoinSpan<U8Manipulation.CharsSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), chars.Value);
+    }
+
+    public static U8String Join(Rune separator, U8Chars chars)
+    {
+        return separator.IsAscii
+            ? U8Manipulation.JoinRunes<U8Manipulation.CharsSource>((byte)separator.Value, chars.Value)
+            : JoinSpan<U8Manipulation.CharsSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), chars.Value);
+    }
+
+    public static U8String Join(ReadOnlySpan<byte> separator, U8Chars chars)
+    {
+        ValidatePossibleConstant(separator);
+
+        return JoinSpan<U8Manipulation.CharsSource>(separator, chars.Value);
+    }
+
+    public static U8String Join(U8String separator, U8Chars chars)
+    {
+        return JoinSpan<U8Manipulation.CharsSource>(separator, chars.Value);
+    }
+
+    public static U8String Join(byte separator, U8Runes runes)
+    {
+        ThrowHelpers.CheckAscii(separator);
+
+        return U8Manipulation.JoinRunes<U8Manipulation.RunesSource>(separator, runes.Value);
+    }
+
+    public static U8String Join(char separator, U8Runes runes)
+    {
+        ThrowHelpers.CheckSurrogate(separator);
+
+        return char.IsAscii(separator)
+            ? U8Manipulation.JoinRunes<U8Manipulation.RunesSource>((byte)separator, runes.Value)
+            : JoinSpan<U8Manipulation.RunesSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), runes.Value);
+    }
+
+    public static U8String Join(Rune separator, U8Runes runes)
+    {
+        return separator.IsAscii
+            ? U8Manipulation.JoinRunes<U8Manipulation.RunesSource>((byte)separator.Value, runes.Value)
+            : JoinSpan<U8Manipulation.RunesSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), runes.Value);
+    }
+
+    public static U8String Join(ReadOnlySpan<byte> separator, U8Runes runes)
+    {
+        ValidatePossibleConstant(separator);
+
+        return JoinSpan<U8Manipulation.RunesSource>(separator, runes.Value);
+    }
+
+    public static U8String Join(U8String separator, U8Runes runes)
+    {
+        return JoinSpan<U8Manipulation.RunesSource>(separator, runes.Value);
+    }
+
+    static U8String JoinSpan<TSource>(ReadOnlySpan<byte> separator, U8String value)
+        where TSource : struct, U8Manipulation.IRunesSource
+    {
+        if (separator.Length > 0)
+        {
+            return separator.Length is 1
+                ? U8Manipulation.JoinRunes<TSource>(separator[0], value)
+                : U8Manipulation.JoinRunes<TSource>(separator, value);
+        }
+
+        return value;
+    }
+
     public static U8String Join<T>(
         byte separator,
         T[] values,
@@ -873,6 +956,37 @@ public readonly partial struct U8String
         }
 
         return new(source._value, offset, length);
+    }
+
+    /// <summary>
+    /// Forms a slice out of the current <see cref="U8String"/> instance starting at a specified index.
+    /// </summary>
+    /// <remarks>
+    /// For more information, see <see cref="SliceRounding(int,int)"/>.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String SliceRounding(int start)
+    {
+        var source = this;
+        var offset = source.Offset + (start > 0 ? Math.Min(start, source.Length) : 0);
+        var newlength = source.Length - offset;
+        if (newlength > 0)
+        {
+            ref var ptr = ref source._value!.AsRef(offset);
+            if (start > 0)
+            {
+                var searchStart = 0;
+                while (searchStart < newlength
+                    && U8Info.IsContinuationByte(in ptr.Add(searchStart)))
+                {
+                    searchStart++;
+                }
+                offset += searchStart;
+                newlength -= searchStart;
+            }
+        }
+
+        return new(source._value, offset, newlength);
     }
 
     /// <summary>

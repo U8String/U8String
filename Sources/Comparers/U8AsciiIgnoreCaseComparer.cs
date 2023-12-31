@@ -64,7 +64,7 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
                 var neqmask = ~((lvec | lcmask).Eq(rvec | rcmask));
                 if (neqmask != Vector256<byte>.Zero)
                 {
-                    return neqmask.IndexOfMatch() + (int)offset;
+                    return (int)(uint)(neqmask.IndexOfMatch() + offset);
                 }
                 offset += (nuint)Vector256<byte>.Count;
             } while (offset <= lastvec);
@@ -81,7 +81,7 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
             var neqmask = ~lcvec.Eq(rcvec);
             if (neqmask != Vector128<byte>.Zero)
             {
-                return neqmask.IndexOfMatch() + (int)offset;
+                return (int)(uint)(neqmask.IndexOfMatch() + offset);
             }
             offset += (nuint)Vector128<byte>.Count;
         }

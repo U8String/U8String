@@ -454,6 +454,37 @@ public class Construction
     }
 
     [Theory, MemberData(nameof(ValidStrings))]
+    public unsafe void CtorNullTerminatedPointer_ProducesCorrectResult(ReferenceText text)
+    {
+        if (text.Utf8 is []) return;
+
+        var bytes = (byte[])[..text.Utf8, 0];
+        if (bytes is [0, ..])
+            bytes = bytes[1..];
+
+        fixed (byte* ptr = bytes)
+        {
+            bytes = bytes[..^1];
+
+            var actual = new[]
+            {
+                new U8String(ptr),
+                U8String.Create(ptr)
+            };
+
+            foreach (var str in actual)
+            {
+                Assert.Equal(bytes, str);
+                Assert.Equal(0, str.Offset);
+                Assert.Equal(bytes.Length, str.Length);
+                Assert.Equal(bytes.Length + 1, str._value!.Length);
+                Assert.True(str.Equals(bytes));
+                Assert.True(str.IsNullTerminated);
+            }
+        }
+    }
+
+    [Theory, MemberData(nameof(ValidStrings))]
     public void CtorArrayIntInt_ProducesCorrectResult(ReferenceText text)
     {
         var bytes = text.Utf8.ToArray();

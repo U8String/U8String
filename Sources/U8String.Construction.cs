@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -177,6 +178,49 @@ public readonly partial struct U8String
         }
     }
 
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified null-terminated UTF-8 string
+    /// represented by a pointer to its first byte.
+    /// </summary>
+    /// <param name="str">A pointer to the first byte of a null-terminated UTF-8 string.</param>
+    /// <exception cref="NullReferenceException">Thrown when <paramref name="str"/> is null.</exception>
+    /// <exception cref="FormatException">Thrown when <paramref name="str"/> contains malformed UTF-8 data.</exception>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the resulting <see cref="U8String"/> would exceed the maximum supported length.
+    /// </exception>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by copying the bytes starting at the <paramref name="str"/>
+    /// up to the first null byte if the null byte offset is greater than 0.
+    /// </remarks>
+    public unsafe U8String(byte* str)
+    {
+        // TODO: This pretty much traverses the source three times:
+        // 1. Finds NUL
+        // 2. Validates UTF-8
+        // 3. Copies to newly allocated byte[]
+        // Ideally, at least the first two steps need to be combined,
+        // to get more work done per CPU cycle as this otherwise will be
+        // quite a bit slower than creating from sources of known length.
+        var length = U8Marshal.IndexOfNullByte(str);
+        if (length > (nuint)Array.MaxLength - 1)
+        {
+            ThrowHelpers.DestinationTooShort();
+        }
+
+        if (length > 0)
+        {
+            var source = MemoryMarshal.CreateSpan(
+                ref Unsafe.AsRef<byte>(str), (int)(uint)length);
+            Validate(source);
+            var bytes = new byte[(nint)(length + 1)];
+
+            source.CopyToUnsafe(ref bytes.AsRef());
+
+            _value = bytes;
+            _inner = new U8Range(0, (int)(uint)length);
+        }
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String(ReadOnlySpan<byte> value, bool skipValidation)
     {
@@ -228,6 +272,17 @@ public readonly partial struct U8String
             inner.Offset + inner.Length) <= (uint)value.Length);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8String(byte[] value, int length, bool neverEmpty)
+    {
+        _value = value;
+        _inner = new U8Range(0, length);
+
+        Debug.Assert(neverEmpty);
+        Debug.Assert(value != null);
+        Debug.Assert(length > 0 && length <= value.Length);
+    }
+
     /// <inheritdoc cref="U8String(byte[])"/>
     public static U8String Create(byte[] value) => new(value);
 
@@ -242,6 +297,9 @@ public readonly partial struct U8String
 
     /// <inheritdoc cref="U8String(ReadOnlySpan{char})"/>
     public static U8String Create(ReadOnlySpan<char> value) => new(value);
+
+    /// <inheritdoc cref="U8String(byte*)"/>
+    public static unsafe U8String Create(byte* ptr) => new(ptr);
 
     /// <summary>
     /// Converts the <see cref="bool"/> value to its equivalent UTF-8 string representation (either
@@ -423,6 +481,25 @@ public readonly partial struct U8String
         if (value.Length > 0)
         {
             return U8Interning.GetEncoded(value);
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    /// Retrieves a <see cref="U8String"/> from the literal pool for the specified constant <see cref="string"/>.
+    /// </summary>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> is not a constant string.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String FromLiteral([ConstantExpected] string value)
+    {
+        ThrowHelpers.CheckNull(value);
+
+        if (value.Length > 0)
+        {
+            var bytes = U8Literals.Utf16.GetLiteral(value);
+            return new(bytes, bytes.Length - 1, neverEmpty: true);
         }
 
         return default;
