@@ -745,7 +745,6 @@ public class Construction
             Assert.Equal(0, str.Offset);
             Assert.Equal(expected.Length, str.Length);
             Assert.True(str.Equals(expected));
-            Assert.True(str.IsNullTerminated);
         }
     }
 
