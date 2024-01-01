@@ -678,7 +678,7 @@ internal static class U8Manipulation
                 switch (U8Info.RuneLength(in src))
                 {
                     case 1:
-                        dst.Cast<byte, ushort>() = (ushort)(separator | (uint)src << 8);
+                        dst.Cast<byte, ushort>() = (ushort)(separator | ((uint)src << 8));
                         src = ref src.Add(1);
                         dst = ref dst.Add(2);
                         continue;
@@ -693,8 +693,8 @@ internal static class U8Manipulation
                     case 3:
                         dst.Cast<byte, uint>() =
                             separator |
-                            (uint)src.Cast<byte, ushort>() << 8 |
-                            (uint)src.Add(2) << 24;
+                            ((uint)src.Cast<byte, ushort>() << 8) |
+                            ((uint)src.Add(2) << 24);
                         src = ref src.Add(3);
                         dst = ref dst.Add(4);
                         continue;
@@ -731,7 +731,7 @@ internal static class U8Manipulation
             ref var end = ref src.Add(value.Length);
 
             var length = value.Length + ((count - 1) * separator.Length);
-            var nullTerminate = end.Substract(1) is 0;
+            var nullTerminate = end.Substract(1) != 0;
             var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
 
             ref var dst = ref bytes.AsRef();
@@ -794,14 +794,14 @@ internal static class U8Manipulation
 
                     case 2:
                         dst.Cast<byte, uint>() =
-                            separator | (uint)src.Cast<byte, ushort>() << 16;
+                            separator | ((uint)src.Cast<byte, ushort>() << 16);
                         src = ref src.Add(2);
                         dst = ref dst.Add(4);
                         continue;
 
                     case 3:
                         dst.Cast<byte, uint>() =
-                            separator | (uint)src.Cast<byte, ushort>() << 16;
+                            separator | ((uint)src.Cast<byte, ushort>() << 16);
                         dst.Add(4) = src.Add(2);
                         src = ref src.Add(3);
                         dst = ref dst.Add(5);
@@ -831,14 +831,14 @@ internal static class U8Manipulation
                 {
                     case 1:
                         dst.Cast<byte, ushort>() = b01;
-                        dst.Add(2).Cast<byte, ushort>() = (ushort)(b2 | (uint)src << 8);
+                        dst.Add(2).Cast<byte, ushort>() = (ushort)(b2 | ((uint)src << 8));
                         src = ref src.Add(1);
                         dst = ref dst.Add(4);
                         continue;
 
                     case 2:
                         dst.Cast<byte, uint>() =
-                            b01 | (uint)b2 << 16 | (uint)src << 24;
+                            b01 | ((uint)b2 << 16) | ((uint)src << 24);
                         dst.Add(4) = src.Add(1);
                         src = ref src.Add(2);
                         dst = ref dst.Add(5);
@@ -846,7 +846,7 @@ internal static class U8Manipulation
 
                     case 3:
                         dst.Cast<byte, uint>() =
-                            b01 | (uint)b2 << 16 | (uint)src << 24;
+                            b01 | ((uint)b2 << 16) | ((uint)src << 24);
                         dst.Add(4).Cast<byte, ushort>() = src.Add(1).Cast<byte, ushort>();
                         src = ref src.Add(3);
                         dst = ref dst.Add(6);
@@ -899,7 +899,7 @@ internal static class U8Manipulation
                     default:
                         TSource.SurrogateCheck();
                         dst.Cast<byte, ulong>() =
-                            separator | (ulong)src.Cast<byte, uint>() << 32;
+                            separator | ((ulong)src.Cast<byte, uint>() << 32);
                         src = ref src.Add(4);
                         dst = ref dst.Add(8);
                         continue;
