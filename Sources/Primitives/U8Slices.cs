@@ -4,36 +4,38 @@ using U8.Abstractions;
 
 namespace U8.Primitives;
 
-public readonly struct U8Slices : IList<U8String>
+public readonly struct U8Slices :
+    IU8Enumerable<U8Slices.Enumerator>,
+    IList<U8String>
 {
-    readonly byte[]? _source;
-    readonly U8Range[]? _ranges;
+    internal readonly byte[]? Source;
+    internal readonly U8Range[]? Ranges;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8Slices(byte[]? source, U8Range[] slices)
     {
-        _source = source;
-        _ranges = slices;
+        Source = source;
+        Ranges = slices;
     }
 
     public U8String this[int index]
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_source, _ranges![index]);
+        get => new(Source, Ranges![index]);
         set => throw new NotSupportedException();
     }
 
     public bool IsEmpty => Count <= 0;
 
-    public int Count => _ranges?.Length ?? 0;
+    public int Count => Ranges?.Length ?? 0;
 
     bool ICollection<U8String>.IsReadOnly => true;
 
     // TODO: Optimize this
     public bool Contains(U8String item)
     {
-        var source = _source;
-        var ranges = _ranges;
+        var source = Source;
+        var ranges = Ranges;
         if (ranges != null)
         {
             for (var i = 0; i < ranges.Length; i++)
@@ -52,8 +54,8 @@ public readonly struct U8Slices : IList<U8String>
     public void CopyTo(U8String[] array, int arrayIndex)
     {
         var span = array.AsSpan()[arrayIndex..][..Count];
-        var source = _source;
-        var ranges = _ranges;
+        var source = Source;
+        var ranges = Ranges;
         ref var dst = ref span.AsRef();
 
         if (ranges != null)
@@ -68,8 +70,8 @@ public readonly struct U8Slices : IList<U8String>
     // TODO: Optimize this
     public int IndexOf(U8String item)
     {
-        var source = _source;
-        var ranges = _ranges;
+        var source = Source;
+        var ranges = Ranges;
         if (ranges != null)
         {
             for (var i = 0; i < ranges.Length; i++)
@@ -84,7 +86,7 @@ public readonly struct U8Slices : IList<U8String>
         return -1;
     }
 
-    public Enumerator GetEnumerator() => new(_source, _ranges ?? []);
+    public Enumerator GetEnumerator() => new(Source, Ranges ?? []);
 
     IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
 

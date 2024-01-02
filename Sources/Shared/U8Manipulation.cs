@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Text;
 
+using U8.Abstractions;
 using U8.Primitives;
 
 namespace U8.Shared;
@@ -96,16 +97,17 @@ internal static class U8Manipulation
 
             if (enumerator.MoveNext())
             {
-                builder.Write(enumerator.Current.AsSpan());
+                var first = enumerator.Current;
+                builder.Write(first, first.Length + 1);
 
                 while (enumerator.MoveNext())
                 {
-                    builder.Write(separator);
+                    builder.WriteUnchecked(separator);
 
                     var current = enumerator.Current;
                     if (!current.IsEmpty)
                     {
-                        builder.Write(current.UnsafeSpan);
+                        builder.Write(current.UnsafeSpan, current.Length + 1);
                     }
                 }
             }
@@ -622,6 +624,201 @@ internal static class U8Manipulation
         return result;
     }
 
+    internal static U8String Join<T, E>(byte separator, T values)
+        where T : struct, IU8Enumerable<E>
+        where E : struct, IU8Enumerator
+    {
+        var builder = new ArrayBuilder();
+        var enumerator = values.GetEnumerator();
+
+        var notEmpty = enumerator.MoveNext();
+        var first = enumerator.Current;
+        Debug.Assert(notEmpty);
+
+        builder.Write(first, first.Length + 1);
+        while (enumerator.MoveNext())
+        {
+            builder.WriteUnchecked(separator);
+            var current = enumerator.Current;
+            builder.Write(current, current.Length + 1);
+        }
+
+        var result = new U8String(builder.Written, skipValidation: true);
+        builder.Dispose();
+        return result;
+    }
+
+    internal static U8String Join<T, E>(ReadOnlySpan<byte> separator, T values)
+        where T : struct, IU8Enumerable<E>
+        where E : struct, IU8Enumerator
+    {
+        Debug.Assert(separator.Length > 1);
+
+        var builder = new ArrayBuilder();
+        var enumerator = values.GetEnumerator();
+
+        var notEmpty = enumerator.MoveNext();
+        var first = enumerator.Current;
+        Debug.Assert(notEmpty);
+
+        builder.Write(first);
+        while (enumerator.MoveNext())
+        {
+            // TODO: Optimize further
+            builder.Write(separator);
+            builder.Write(enumerator.Current);
+        }
+
+        var result = new U8String(builder.Written, skipValidation: true);
+        builder.Dispose();
+        return result;
+    }
+
+    internal static U8String JoinSized<T, E>(byte separator, T values, int length)
+        where T : struct, IU8Enumerable<E>
+        where E : struct, IU8Enumerator
+    {
+        Debug.Assert(length > 0);
+
+        var bytes = new byte[(nint)(uint)length + 1];
+        var enumerator = values.GetEnumerator();
+
+        var notEmpty = enumerator.MoveNext();
+        var first = enumerator.Current;
+        Debug.Assert(notEmpty);
+
+        ref var dst = ref bytes.AsRef();
+        if (!first.IsEmpty)
+        {
+            first.UnsafeSpan.CopyToUnsafe(ref dst);
+            dst = ref dst.Add(first.Length);
+        }
+
+        while (enumerator.MoveNext())
+        {
+            dst = separator;
+            dst = ref dst.Add(1);
+
+            var current = enumerator.Current;
+            if (!current.IsEmpty)
+            {
+                current.UnsafeSpan.CopyToUnsafe(ref dst);
+                dst = ref dst.Add(current.Length);
+            }
+        }
+
+        return new(bytes, length, neverEmpty: true);
+    }
+
+    internal static U8String JoinSized<T, E>(ReadOnlySpan<byte> separator, T values, int lenght)
+        where T : struct, IU8Enumerable<E>
+        where E : struct, IU8Enumerator
+    {
+        Debug.Assert(separator.Length > 1);
+        Debug.Assert(lenght > 0);
+
+        var bytes = new byte[(nint)(uint)lenght + 1];
+        var enumerator = values.GetEnumerator();
+
+        var notEmpty = enumerator.MoveNext();
+        var first = enumerator.Current;
+        Debug.Assert(notEmpty);
+
+        ref var dst = ref bytes.AsRef();
+        if (!first.IsEmpty)
+        {
+            first.UnsafeSpan.CopyToUnsafe(ref dst);
+            dst = ref dst.Add(first.Length);
+        }
+
+        switch (separator.Length)
+        {
+            case 2:
+                var twoBytes = separator.AsRef().Cast<byte, ushort>();
+                JoinTwoBytes(enumerator, ref dst, twoBytes);
+                break;
+            case 3:
+                var b01 = separator.AsRef().Cast<byte, ushort>();
+                var b2 = separator.AsRef(2);
+                JoinThreeBytes(enumerator, ref dst, b01, b2);
+                break;
+            case 4:
+                var fourBytes = separator.AsRef().Cast<byte, uint>();
+                JoinFourBytes(enumerator, ref dst, fourBytes);
+                break;
+            default:
+                JoinSpan(enumerator, ref dst, separator);
+                break;
+        }
+
+        return new(bytes, lenght, neverEmpty: true);
+
+        static void JoinTwoBytes(E enumerator, ref byte dst, ushort separator)
+        {
+            while (enumerator.MoveNext())
+            {
+                dst.Cast<byte, ushort>() = separator;
+                dst = ref dst.Add(2);
+
+                var current = enumerator.Current;
+                if (!current.IsEmpty)
+                {
+                    current.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(current.Length);
+                }
+            }
+        }
+
+        static void JoinThreeBytes(E enumerator, ref byte dst, ushort b01, byte b2)
+        {
+            while (enumerator.MoveNext())
+            {
+                dst.Cast<byte, ushort>() = b01;
+                dst.Add(2) = b2;
+                dst = ref dst.Add(3);
+
+                var current = enumerator.Current;
+                if (!current.IsEmpty)
+                {
+                    current.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(current.Length);
+                }
+            }
+        }
+
+        static void JoinFourBytes(E enumerator, ref byte dst, uint separator)
+        {
+            while (enumerator.MoveNext())
+            {
+                dst.Cast<byte, uint>() = separator;
+                dst = ref dst.Add(4);
+
+                var current = enumerator.Current;
+                if (!current.IsEmpty)
+                {
+                    current.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(current.Length);
+                }
+            }
+        }
+
+        static void JoinSpan(E enumerator, ref byte dst, ReadOnlySpan<byte> separator)
+        {
+            while (enumerator.MoveNext())
+            {
+                separator.CopyToUnsafe(ref dst);
+                dst = ref dst.Add(separator.Length);
+
+                var current = enumerator.Current;
+                if (!current.IsEmpty)
+                {
+                    current.UnsafeSpan.CopyToUnsafe(ref dst);
+                    dst = ref dst.Add(current.Length);
+                }
+            }
+        }
+    }
+
     internal interface IRunesSource
     {
         abstract static void SurrogateCheck();
@@ -1016,7 +1213,11 @@ internal static class U8Manipulation
                 new U8Scalar(newValue).AsSpan());
     }
 
-    internal static U8String Replace(U8String source, ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
+    internal static U8String Replace(
+        U8String source,
+        ReadOnlySpan<byte> oldValue,
+        ReadOnlySpan<byte> newValue,
+        bool validate = true)
     {
         if (oldValue.Length is 0)
         {
@@ -1037,7 +1238,7 @@ internal static class U8Manipulation
                 return Replace(source, oldValue[0], newValue[0]);
             }
 
-            return ReplaceCore(source, oldValue, newValue);
+            return ReplaceCore(source, oldValue, newValue, validate);
         }
 
         return default;
@@ -1250,6 +1451,42 @@ internal static class U8Manipulation
         }
 
         return default;
+    }
+
+    internal static U8String LineEndingsToCustom(U8String source, byte lineEnding)
+    {
+        var lines = source.Lines;
+        if (lines.Count > 1)
+        {
+            var crlfOffset = source.IndexOf("\r\n"u8);
+            if (crlfOffset >= 0)
+            {
+                var builder = new ArrayBuilder();
+                var enumerator = lines.GetEnumerator();
+
+                var notEmpty = enumerator.MoveNext();
+                Debug.Assert(notEmpty);
+
+                var line = enumerator.Current;
+                builder.Write(line, line.Length + 1);
+
+                while (enumerator.MoveNext())
+                {
+                    builder.WriteUnchecked(lineEnding);
+                    line = enumerator.Current;
+                    builder.Write(line, line.Length + 1);
+                }
+
+                var result = new U8String(builder.Written, skipValidation: true);
+
+                builder.Dispose();
+                return result;
+            }
+
+            return Replace(source, (byte)'\n', lineEnding, validate: false);
+        }
+
+        return source;
     }
 
     internal static U8String LineEndingsToCustom(U8String source, ReadOnlySpan<byte> lineEnding)

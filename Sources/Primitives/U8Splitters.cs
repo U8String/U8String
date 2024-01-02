@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 
 using U8.Abstractions;
@@ -88,6 +89,12 @@ public readonly struct U8Split(U8String value, U8String separator) :
         get => _value;
     }
 
+    public U8String Separator
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _separator;
+    }
+
     public bool Contains(U8String item)
     {
         return U8Searching.ContainsSegment(
@@ -146,6 +153,7 @@ public readonly struct U8Split(U8String value, U8String separator) :
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split, Enumerator, U8String>();
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
     public List<U8String> ToList() => this.ToList<U8Split, Enumerator, U8String>();
     public U8Slices ToSlices() => this.ToSlices<U8Split, Enumerator>();
 
@@ -244,6 +252,12 @@ public readonly struct U8Split<TSeparator> :
         get => _value;
     }
 
+    public TSeparator Separator
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _separator;
+    }
+
     public bool Contains(U8String item)
     {
         return U8Searching.ContainsSegment(
@@ -302,6 +316,7 @@ public readonly struct U8Split<TSeparator> :
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split<TSeparator>, Enumerator, U8String>();
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
     public List<U8String> ToList() => this.ToList<U8Split<TSeparator>, Enumerator, U8String>();
     public U8Slices ToSlices() => this.ToSlices<U8Split<TSeparator>, Enumerator>();
 
@@ -445,6 +460,7 @@ public readonly struct U8Split<TSeparator, TComparer> :
     }
 
     public U8String[] ToArray() => this.ToArray<U8Split<TSeparator, TComparer>, Enumerator, U8String>();
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
     public List<U8String> ToList() => this.ToList<U8Split<TSeparator, TComparer>, Enumerator, U8String>();
 
     /// <summary>
@@ -545,6 +561,8 @@ public readonly struct ConfiguredU8Split(
         var hint = U8Searching.Count(_value, _separator);
         return this.ToArrayUnsized<ConfiguredU8Split, Enumerator, U8String>(hint);
     }
+
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
 
     public List<U8String> ToList()
     {
@@ -661,6 +679,8 @@ public readonly struct ConfiguredU8Split<TSeparator> :
         var hint = U8Searching.Count(_value, _separator);
         return this.ToArrayUnsized<ConfiguredU8Split<TSeparator>, Enumerator, U8String>(hint);
     }
+
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
 
     public List<U8String> ToList()
     {
@@ -784,6 +804,8 @@ public readonly struct ConfiguredU8Split<TSeparator, TComparer> :
         var hint = U8Searching.Count(_value, _separator, _comparer);
         return this.ToArrayUnsized<ConfiguredU8Split<TSeparator, TComparer>, Enumerator, U8String>(hint);
     }
+
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
 
     public List<U8String> ToList()
     {
@@ -1038,6 +1060,8 @@ public readonly ref struct U8RefSplit
 
         return [];
     }
+
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
 
     public List<U8String> ToList()
     {
@@ -1294,6 +1318,8 @@ public readonly ref struct U8RefSplit<TComparer>
         return [];
     }
 
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
+
     public List<U8String> ToList()
     {
         var split = this;
@@ -1476,6 +1502,8 @@ public readonly ref struct ConfiguredU8RefSplit
 
         return [];
     }
+
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
 
     public List<U8String> ToList()
     {
@@ -1679,6 +1707,8 @@ public readonly ref struct ConfiguredU8RefSplit<TComparer>
 
         return [];
     }
+
+    public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
 
     public List<U8String> ToList()
     {

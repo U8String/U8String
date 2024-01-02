@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
@@ -105,6 +106,31 @@ internal struct ArrayBuilder : IDisposable
 
         Grow();
         goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Write(ReadOnlySpan<byte> span, int reserve)
+    {
+        Debug.Assert(reserve >= span.Length);
+
+    Retry:
+        var free = Free;
+        if ((uint)free.Length >= (uint)reserve)
+        {
+            span.CopyToUnsafe(ref free.AsRef());
+            BytesWritten += span.Length;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteUnchecked(byte value)
+    {
+        Free.AsRef() = value;
+        BytesWritten++;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

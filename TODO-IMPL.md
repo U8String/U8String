@@ -12,7 +12,9 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
     - [ ] Main theme: uses of Rune.DecodeFromUtf8, missed easy vectorized case folding opportunities, surrogate finding, etc.
     - [ ] Discuss code deduplication to centralize the types which "own" the knowledge and are the source of truth
 - [x] Refactor literal formatting to not use Try... pattern which causes degenerate codegen where compiler can't elide the address-taken status of returned value
+- [ ] Move back UTF-8 validation from CoreLib to local polyfill and optimize calling convention to prevent codegen bloat
 - [x] Consider authoring namespaces and renaming `U8Primitives` to just `U8`
+- [ ] Consider replacing U8SplitOptions enum with a generic argument to make make it zero-cost
 - [ ] Consider implementing surrogate-tolerant Concat and Join on `IEnumerable<char>`
 - [ ] Consider further specializing/refactoring inline conversion of chars and Runes and having bespoke U8Scalar2, 3 and 4 and delegating lookup to them?
 - [ ] Consider authoring certain methods with platform ABI differences in mind (tactical use of `in` and `ref` may needed for methods that have 2+ U8String arguments)

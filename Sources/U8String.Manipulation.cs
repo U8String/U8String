@@ -1,3 +1,5 @@
+using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -281,6 +283,22 @@ public readonly partial struct U8String
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Concat<T>(T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        return values switch
+        {
+            U8Lines lines => U8Manipulation.StripLineEndings(lines.Value),
+            U8Split split => split.Value.Remove(split.Separator),
+            U8Split<byte> bsplit => bsplit.Value.Remove(bsplit.Separator),
+            U8Split<char> csplit => csplit.Value.Remove(csplit.Separator),
+            U8Split<Rune> rsplit => rsplit.Value.Remove(rsplit.Separator),
+            ImmutableArray<U8String> array => Concat(array.AsSpan()),
+            _ => Concat((IEnumerable<U8String>)values)
+        };
+    }
+
     public static U8String Concat<T>(
         T[] values,
         ReadOnlySpan<char> format = default,
@@ -488,6 +506,123 @@ public readonly partial struct U8String
         ValidatePossibleConstant(separator);
 
         return U8Manipulation.Join(separator, values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join<T>(byte separator, T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        ThrowHelpers.CheckAscii(separator);
+
+        return values switch
+        {
+            U8Lines lines => lines.Value.ReplaceLineEndings(separator),
+
+            U8Slices slices => slices.Count switch
+            {
+                > 1 => U8Manipulation.JoinSized<U8Slices, U8Slices.Enumerator>(
+                    separator, slices, slices.Ranges!.TotalLength()),
+                1 => slices[0],
+                _ => default,
+            },
+
+            U8Split split => U8Manipulation.ReplaceCore(split.Value, split.Separator, new Span<byte>(ref separator), validate: false),
+            U8Split<byte> bsplit => U8Manipulation.Replace(bsplit.Value, bsplit.Separator, separator, validate: false),
+            U8Split<char> csplit => U8Manipulation.Replace(csplit.Value, csplit.Separator, (char)separator),
+            U8Split<Rune> rsplit => U8Manipulation.Replace(rsplit.Value, rsplit.Separator, new Rune(separator)),
+
+            ConfiguredU8Split split => U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split),
+            ConfiguredU8Split<byte> bsplit => U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, bsplit),
+            ConfiguredU8Split<char> csplit => U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, csplit),
+            ConfiguredU8Split<Rune> rsplit => U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, rsplit),
+
+            ImmutableArray<U8String> array => Join(separator, array.AsSpan()),
+
+            _ => Join(separator, (IEnumerable<U8String>)values)
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static U8String Join<T>(char separator, T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        ThrowHelpers.CheckSurrogate(separator);
+
+        return char.IsAscii(separator)
+            ? Join((byte)separator, values)
+            : JoinSpan(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static U8String Join<T>(Rune separator, T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        return separator.IsAscii
+            ? Join((byte)separator.Value, values)
+            : JoinSpan(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static U8String Join<T>(ReadOnlySpan<byte> separator, T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        ValidatePossibleConstant(separator);
+
+        return separator.Length switch
+        {
+            0 => Concat(values),
+            1 => Join(separator[0], values),
+            _ => JoinSpan(separator, values)
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static U8String Join<T>(U8String separator, T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        return !separator.IsEmpty ? separator.Length switch
+        {
+            1 => Join(separator.UnsafeRef, values),
+            _ => JoinSpan(separator, values)
+        } : Concat(values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    static U8String JoinSpan<T>(ReadOnlySpan<byte> separator, T values)
+        where T : struct, IEnumerable<U8String>
+    {
+        Debug.Assert(separator.Length > 1);
+
+        return values switch
+        {
+            U8Lines lines => lines.Value.ReplaceLineEndings(separator),
+
+            U8Slices slices => slices.Count switch
+            {
+                > 1 => U8Manipulation.JoinSized<U8Slices, U8Slices.Enumerator>(
+                    separator, slices, slices.Ranges!.TotalLength()),
+                1 => slices[0],
+                _ => default,
+            },
+
+            U8Split split => U8Manipulation
+                .ReplaceCore(split.Value, split.Separator, separator, validate: false),
+            U8Split<byte> bsplit => U8Manipulation
+                .Replace(bsplit.Value, new U8Scalar(bsplit.Separator).AsSpan(), separator, validate: false),
+            U8Split<char> csplit => U8Manipulation
+                .Replace(csplit.Value, new U8Scalar(csplit.Separator).AsSpan(), separator, validate: false),
+            U8Split<Rune> rsplit => U8Manipulation
+                .Replace(rsplit.Value, new U8Scalar(rsplit.Separator).AsSpan(), separator, validate: false),
+
+            ConfiguredU8Split split => U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split),
+            ConfiguredU8Split<byte> bsplit => U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, bsplit),
+            ConfiguredU8Split<char> csplit => U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, csplit),
+            ConfiguredU8Split<Rune> rsplit => U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, rsplit),
+
+            ImmutableArray<U8String> array => Join(separator, array.AsSpan()),
+
+            _ => Join(separator, (IEnumerable<U8String>)values)
+        };
     }
 
     public static U8String Join(byte separator, U8Chars chars)
@@ -858,6 +993,42 @@ public readonly partial struct U8String
         return OperatingSystem.IsWindows()
             ? U8Manipulation.LineEndingsToCRLF(this)
             : U8Manipulation.LineEndingsToLF(this);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String ReplaceLineEndings(byte lineEnding)
+    {
+        ThrowHelpers.CheckAscii(lineEnding);
+
+        if (!BitConverter.IsLittleEndian)
+        {
+            ThrowHelpers.NotSupportedBigEndian();
+        }
+
+        if (lineEnding is (byte)'\n')
+        {
+            return U8Manipulation.LineEndingsToLF(this);
+        }
+
+        return U8Manipulation.LineEndingsToCustom(this, lineEnding);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String ReplaceLineEndings(char lineEnding)
+    {
+        ThrowHelpers.CheckSurrogate(lineEnding);
+
+        return char.IsAscii(lineEnding)
+            ? ReplaceLineEndings((byte)lineEnding)
+            : U8Manipulation.LineEndingsToCustom(this, new U8Scalar(lineEnding, checkAscii: false).AsSpan());
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String ReplaceLineEndings(Rune lineEnding)
+    {
+        return lineEnding.IsAscii
+            ? ReplaceLineEndings((byte)lineEnding.Value)
+            : U8Manipulation.LineEndingsToCustom(this, new U8Scalar(lineEnding, checkAscii: false).AsSpan());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
