@@ -39,7 +39,7 @@
 - [x] Lines view
     - [ ] CopyTo(span)
 - [ ] Splitting
-    - [ ] CopyTo(span)
+    - [x] CopyTo(span)
     - [x] Split (byte, char, Rune)
     - [x] Split (`ReadOnlySpan<byte>`) - `U8RefSplit`
     - [ ] `SplitAny (byte, char, Rune, ROS, U8String, SearchValues<byte>, SearchValues<U8String>)`
@@ -77,6 +77,10 @@
 - [ ] Memory-optimized collections
     - [x] `U8SliceArray` or maybe `U8SplitArray`?
     - [ ] `U8SliceDictionary<T>` (?)
+- [ ] Advanced text segmentation iterators (`U8.TextSegmentation` or just `U8.Text`?)
+    - [ ] `.Graphemes`
+    - [ ] `.Words`
+    - [ ] `.Sentences`
 - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
 - [ ] Transcoding: UTF8<->UTF32
 - [x] TryCreate construction variants
@@ -91,7 +95,7 @@
     - [x] (OS-specific) NewLine
     - [x] (OS-specific) PathSeparator
     - [x] ReplacementChar
-- [ ] DebuggerViewProxy
+- [x] DebuggerViewProxy
 - [x] ~~Meta: improve the UX of "validate-and-move" options to construct a U8String. The implementation is really fragile to malformed UTF-8 and it is problematic to guard against it well without sacrificing a lot of performance. Therefore, it is really important not to push the users towards using the unsafe API.~~
 ----------------
 - [ ] Extensions
@@ -100,6 +104,7 @@
     - [ ] Streams? Pipelines?
         - [ ] U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.
 - [ ] Analyzers
+    - [ ] Suppress 'use slice operator' warning for select methods like `.SliceRounding(...)`
     - [ ] Replace string literal comparison with a UTF-8 one
     - [ ] Replace direct for/foreach over a U8String with U8String.AsSpan()
     - [ ] Consider deallocating NativeU8String allocated in the current scope with `using var ...`

@@ -288,11 +288,19 @@ public readonly struct U8Runes(U8String value) :
 /// <summary>
 /// A collection of Rune indices (unicode scalar values and their offsets) in a provided <see cref="U8String"/>.
 /// </summary>
+[DebuggerTypeProxy(typeof(DebugView))]
+[DebuggerDisplay("Count = {_value.RuneCount}")]
 public readonly struct U8RuneIndices(U8String value) :
     ICollection<U8RuneIndex>,
     IEnumerable<U8RuneIndex, U8RuneIndices.Enumerator>
 {
     readonly U8String _value = value;
+
+    sealed class DebugView(U8RuneIndices indices)
+    {
+        [DebuggerBrowsable(DebuggerBrowsableState.RootHidden)]
+        public U8RuneIndex[] Items => indices.ToArray();
+    }
 
     public int Count
     {

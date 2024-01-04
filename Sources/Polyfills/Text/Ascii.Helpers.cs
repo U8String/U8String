@@ -66,8 +66,8 @@ internal static partial class Ascii
 
             // Read first byte
             value = BitOperations.RotateLeft(value, 1);
-            uint allBytesUpToNowAreAscii = value & 1;
-            uint numAsciiBytes = allBytesUpToNowAreAscii;
+            var allBytesUpToNowAreAscii = value & 1;
+            var numAsciiBytes = allBytesUpToNowAreAscii;
 
             // Read second byte
             value = BitOperations.RotateLeft(value, 8);

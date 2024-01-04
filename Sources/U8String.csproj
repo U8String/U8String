@@ -3,8 +3,8 @@
   <PropertyGroup>
     <Authors>neon-sunset</Authors>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/neon-sunset/U8String</RepositoryUrl>
-    <PackageProjectUrl>https://github.com/neon-sunset/U8String</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/U8String/U8String</RepositoryUrl>
+    <PackageProjectUrl>https://github.com/U8String/U8String</PackageProjectUrl>
     <PackageTags>Utf8;Utf8String;UTF-8;Unicode;String;U8String;Parsing;Interop;Performance</PackageTags>
     <PackageIcon>logo.png</PackageIcon>
     <PackageReadmeFile>README.md</PackageReadmeFile>

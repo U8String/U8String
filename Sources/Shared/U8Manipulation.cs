@@ -300,7 +300,7 @@ internal static class U8Manipulation
     // Contract:
     // - values.Length is greater than 1
     // - separator is an ascii byte
-    internal static U8String JoinUnchecked(byte separator, ReadOnlySpan<U8String> values)
+    static U8String JoinUnchecked(byte separator, ReadOnlySpan<U8String> values)
     {
         Debug.Assert(values.Length > 1);
 
@@ -354,7 +354,7 @@ internal static class U8Manipulation
     // - will not write past the end of the destination buffer
     // if values are mutated in the middle of the join, but
     // the length of the resulting string may exceed the written bytes count.
-    internal static U8String JoinUnchecked(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
+    static U8String JoinUnchecked(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
     {
         Debug.Assert(values.Length > 1);
         Debug.Assert(separator.Length > 1);
@@ -518,7 +518,7 @@ internal static class U8Manipulation
         }
     }
 
-    internal static U8String JoinUnchecked<T>(
+    static U8String JoinUnchecked<T>(
         byte separator,
         ReadOnlySpan<T> values,
         ReadOnlySpan<char> format = default,
@@ -542,7 +542,7 @@ internal static class U8Manipulation
         return result;
     }
 
-    internal static U8String JoinUnchecked<T>(
+    static U8String JoinUnchecked<T>(
         ReadOnlySpan<byte> separator,
         ReadOnlySpan<T> values,
         ReadOnlySpan<char> format = default,
@@ -567,7 +567,7 @@ internal static class U8Manipulation
         return result;
     }
 
-    internal static U8String JoinUnchecked<T>(
+    static U8String JoinUnchecked<T>(
         byte separator,
         IEnumerable<T> values,
         ReadOnlySpan<char> format = default,
@@ -595,7 +595,7 @@ internal static class U8Manipulation
         return result;
     }
 
-    internal static U8String JoinUnchecked<T>(
+    static U8String JoinUnchecked<T>(
         ReadOnlySpan<byte> separator,
         IEnumerable<T> values,
         ReadOnlySpan<char> format = default,

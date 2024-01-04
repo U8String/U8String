@@ -543,7 +543,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static U8String Join<T>(char separator, T values)
+    public static U8String Join<T>(char separator, T values)
         where T : struct, IEnumerable<U8String>
     {
         ThrowHelpers.CheckSurrogate(separator);
@@ -554,7 +554,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static U8String Join<T>(Rune separator, T values)
+    public static U8String Join<T>(Rune separator, T values)
         where T : struct, IEnumerable<U8String>
     {
         return separator.IsAscii
@@ -563,7 +563,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static U8String Join<T>(ReadOnlySpan<byte> separator, T values)
+    public static U8String Join<T>(ReadOnlySpan<byte> separator, T values)
         where T : struct, IEnumerable<U8String>
     {
         ValidatePossibleConstant(separator);
@@ -1266,7 +1266,7 @@ public readonly partial struct U8String
             for (var endSearch = length - 1; endSearch >= 0; endSearch--)
             {
                 var b = ptr.Add(endSearch);
-                if (!U8Info.IsContinuationByte(b))
+                if (U8Info.IsBoundaryByte(b))
                 {
                     if (U8Info.IsAsciiByte(b)
                         ? U8Info.IsAsciiWhitespace(b)
@@ -1277,10 +1277,7 @@ public readonly partial struct U8String
                         // we will end up trimming away continuation bytes at the end of the string.
                         length = endSearch;
                     }
-                    else
-                    {
-                        break;
-                    }
+                    else break;
                 }
             }
 
@@ -1312,7 +1309,7 @@ public readonly partial struct U8String
                 start += size;
             }
 
-            return U8Marshal.Slice(source, start);
+            return new(source._value, source.Offset + start, source.Length - start);
         }
 
         return default;
@@ -1336,7 +1333,7 @@ public readonly partial struct U8String
             for (var endSearch = end; endSearch >= 0; endSearch--)
             {
                 var b = ptr.Add(endSearch);
-                if (!U8Info.IsContinuationByte(b))
+                if (U8Info.IsBoundaryByte(b))
                 {
                     if (U8Info.IsAsciiByte(b)
                         ? U8Info.IsAsciiWhitespace(b)
@@ -1344,14 +1341,11 @@ public readonly partial struct U8String
                     {
                         end = endSearch - 1;
                     }
-                    else
-                    {
-                        break;
-                    }
+                    else break;
                 }
             }
 
-            return U8Marshal.Slice(source, 0, end + 1);
+            return new(source._value, source.Offset, end + 1);
         }
 
         return default;
@@ -1364,12 +1358,14 @@ public readonly partial struct U8String
     /// A sub-slice that remains after all ASCII whitespace characters
     /// are removed from the start and end of the current string.
     /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String TrimAscii()
     {
         var source = this;
-        var range = Ascii.Trim(source);
 
-        return U8Marshal.Slice(source, range);
+        return !source.IsEmpty
+            ? U8Marshal.Slice(source, Ascii.TrimEnd(source.UnsafeSpan))
+            : source;
     }
 
     /// <summary>
@@ -1379,12 +1375,14 @@ public readonly partial struct U8String
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the start of the current string.
     /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String TrimStartAscii()
     {
         var source = this;
-        var range = Ascii.TrimStart(source);
 
-        return U8Marshal.Slice(source, range);
+        return !source.IsEmpty
+            ? U8Marshal.Slice(source, Ascii.TrimStart(source.UnsafeSpan))
+            : source;
     }
 
     /// <summary>
@@ -1394,12 +1392,14 @@ public readonly partial struct U8String
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the end of the current string.
     /// </returns>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String TrimEndAscii()
     {
         var source = this;
-        var range = Ascii.TrimEnd(source);
 
-        return U8Marshal.Slice(source, range);
+        return !source.IsEmpty
+            ? U8Marshal.Slice(source, Ascii.TrimEnd(source.UnsafeSpan))
+            : source;
     }
 
     /// <summary>

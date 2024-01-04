@@ -60,15 +60,15 @@ internal static partial class Ascii
         }
 
         // extractedBits[i] = (value[i] >> 7) & (1 << (12 * (i % 2)));
-        Vector128<byte> mostSignificantBitIsSet = AdvSimd.ShiftRightArithmetic(value.AsSByte(), 7).AsByte();
-        Vector128<byte> extractedBits = AdvSimd.And(mostSignificantBitIsSet, bitmask);
+        var mostSignificantBitIsSet = AdvSimd.ShiftRightArithmetic(value.AsSByte(), 7).AsByte();
+        var extractedBits = AdvSimd.And(mostSignificantBitIsSet, bitmask);
 
         // collapse mask to lower bits
         extractedBits = AdvSimd.Arm64.AddPairwise(extractedBits, extractedBits);
-        ulong mask = extractedBits.AsUInt64().ToScalar();
+        var mask = extractedBits.AsUInt64().ToScalar();
 
         // calculate the index
-        int index = BitOperations.TrailingZeroCount(mask) >> 2;
+        var index = BitOperations.TrailingZeroCount(mask) >> 2;
         Debug.Assert((mask != 0) ? index < 16 : index >= 16);
         return index;
     }
@@ -117,7 +117,7 @@ internal static partial class Ascii
         // byte reference where non-ASCII data begins, so we need this base value to perform the
         // final subtraction at the end of the method to get the index into the original buffer.
 
-        byte* pOriginalBuffer = pBuffer;
+        var pOriginalBuffer = pBuffer;
 
         // Before we drain off byte-by-byte, try a generic vectorized loop.
         // Only run the loop if we have at least two vectors we can pull out.
@@ -132,11 +132,11 @@ internal static partial class Ascii
                 // next aligned boundary, then perform aligned reads from here on out until we find non-ASCII
                 // data or we approach the end of the buffer. It's possible we'll reread data; this is ok.
 
-                byte* pFinalVectorReadPos = pBuffer + bufferLength - Vector512Size;
+                var pFinalVectorReadPos = pBuffer + bufferLength - Vector512Size;
                 pBuffer = (byte*)(((nuint)pBuffer + Vector512Size) & ~(nuint)(Vector512Size - 1));
 
 #if DEBUG
-                long numBytesRead = pBuffer - pOriginalBuffer;
+                var numBytesRead = pBuffer - pOriginalBuffer;
                 Debug.Assert(0 < numBytesRead && numBytesRead <= Vector512Size, "We should've made forward progress of at least one byte.");
                 Debug.Assert((nuint)numBytesRead <= bufferLength, "We shouldn't have read past the end of the input buffer.");
 #endif
@@ -168,12 +168,12 @@ internal static partial class Ascii
                 // next aligned boundary, then perform aligned reads from here on out until we find non-ASCII
                 // data or we approach the end of the buffer. It's possible we'll reread data; this is ok.
 
-                byte* pFinalVectorReadPos = pBuffer + bufferLength - Vector256Size;
+                var pFinalVectorReadPos = pBuffer + bufferLength - Vector256Size;
                 pBuffer = (byte*)(((nuint)pBuffer + Vector256Size) & ~(nuint)(Vector256Size - 1));
 
 #if DEBUG
-                long numBytesRead = pBuffer - pOriginalBuffer;
-                Debug.Assert(0 < numBytesRead && numBytesRead <= Vector256Size, "We should've made forward progress of at least one byte.");
+                var numBytesRead = pBuffer - pOriginalBuffer;
+                Debug.Assert(numBytesRead is > 0 and <= Vector256Size, "We should've made forward progress of at least one byte.");
                 Debug.Assert((nuint)numBytesRead <= bufferLength, "We shouldn't have read past the end of the input buffer.");
 #endif
 
@@ -204,11 +204,11 @@ internal static partial class Ascii
                 // next aligned boundary, then perform aligned reads from here on out until we find non-ASCII
                 // data or we approach the end of the buffer. It's possible we'll reread data; this is ok.
 
-                byte* pFinalVectorReadPos = pBuffer + bufferLength - Vector128Size;
+                var pFinalVectorReadPos = pBuffer + bufferLength - Vector128Size;
                 pBuffer = (byte*)(((nuint)pBuffer + Vector128Size) & ~(nuint)(Vector128Size - 1));
 
 #if DEBUG
-                long numBytesRead = pBuffer - pOriginalBuffer;
+                var numBytesRead = pBuffer - pOriginalBuffer;
                 Debug.Assert(0 < numBytesRead && numBytesRead <= Vector128Size, "We should've made forward progress of at least one byte.");
                 Debug.Assert((nuint)numBytesRead <= bufferLength, "We shouldn't have read past the end of the input buffer.");
 #endif
@@ -247,7 +247,7 @@ internal static partial class Ascii
         for (; bufferLength >= 8; bufferLength -= 8)
         {
             currentUInt32 = Unsafe.ReadUnaligned<uint>(pBuffer);
-            uint nextUInt32 = Unsafe.ReadUnaligned<uint>(pBuffer + 4);
+            var nextUInt32 = Unsafe.ReadUnaligned<uint>(pBuffer + 4);
 
             if (!AllBytesInUInt32AreAscii(currentUInt32 | nextUInt32))
             {
@@ -309,10 +309,9 @@ internal static partial class Ascii
                 pBuffer++;
             }
         }
-
+        
     Finish:
-
-        nuint totalNumBytesRead = (nuint)pBuffer - (nuint)pOriginalBuffer;
+        var totalNumBytesRead = (nuint)pBuffer - (nuint)pOriginalBuffer;
         return totalNumBytesRead;
 
     FoundNonAsciiData:
@@ -334,7 +333,7 @@ internal static partial class Ascii
         // byte reference where non-ASCII data begins, so we need this base value to perform the
         // final subtraction at the end of the method to get the index into the original buffer.
 
-        byte* pOriginalBuffer = pBuffer;
+        var pOriginalBuffer = pBuffer;
 
         // Before we drain off byte-by-byte, try a generic vectorized loop.
         // Only run the loop if we have at least two vectors we can pull out.
@@ -343,7 +342,7 @@ internal static partial class Ascii
 
         if (Vector.IsHardwareAccelerated && bufferLength >= 2 * (uint)Vector<sbyte>.Count)
         {
-            uint SizeOfVectorInBytes = (uint)Vector<sbyte>.Count; // JIT will make this a const
+            var SizeOfVectorInBytes = (uint)Vector<sbyte>.Count; // JIT will make this a const
 
             if (Vector.GreaterThanOrEqualAll(Unsafe.ReadUnaligned<Vector<sbyte>>(pBuffer), Vector<sbyte>.Zero))
             {
@@ -351,11 +350,11 @@ internal static partial class Ascii
                 // next aligned boundary, then perform aligned reads from here on out until we find non-ASCII
                 // data or we approach the end of the buffer. It's possible we'll reread data; this is ok.
 
-                byte* pFinalVectorReadPos = pBuffer + bufferLength - SizeOfVectorInBytes;
+                var pFinalVectorReadPos = pBuffer + bufferLength - SizeOfVectorInBytes;
                 pBuffer = (byte*)(((nuint)pBuffer + SizeOfVectorInBytes) & ~(nuint)(SizeOfVectorInBytes - 1));
 
 #if DEBUG
-                long numBytesRead = pBuffer - pOriginalBuffer;
+                var numBytesRead = pBuffer - pOriginalBuffer;
                 Debug.Assert(0 < numBytesRead && numBytesRead <= SizeOfVectorInBytes, "We should've made forward progress of at least one byte.");
                 Debug.Assert((nuint)numBytesRead <= bufferLength, "We shouldn't have read past the end of the input buffer.");
 #endif
@@ -394,7 +393,7 @@ internal static partial class Ascii
         for (; bufferLength >= 8; bufferLength -= 8)
         {
             currentUInt32 = Unsafe.ReadUnaligned<uint>(pBuffer);
-            uint nextUInt32 = Unsafe.ReadUnaligned<uint>(pBuffer + 4);
+            var nextUInt32 = Unsafe.ReadUnaligned<uint>(pBuffer + 4);
 
             if (!AllBytesInUInt32AreAscii(currentUInt32 | nextUInt32))
             {
@@ -459,7 +458,7 @@ internal static partial class Ascii
 
     Finish:
 
-        nuint totalNumBytesRead = (nuint)pBuffer - (nuint)pOriginalBuffer;
+        var totalNumBytesRead = (nuint)pBuffer - (nuint)pOriginalBuffer;
         return totalNumBytesRead;
 
     FoundNonAsciiData:
@@ -503,7 +502,7 @@ internal static partial class Ascii
         }
         else if (AdvSimd.Arm64.IsSupported)
         {
-            Vector128<byte> maxBytes = AdvSimd.Arm64.MaxPairwise(asciiVector, asciiVector);
+            var maxBytes = AdvSimd.Arm64.MaxPairwise(asciiVector, asciiVector);
             return (maxBytes.AsUInt64().ToScalar() & 0x8080808080808080) != 0;
         }
         else
@@ -520,13 +519,13 @@ internal static partial class Ascii
         {
             if (Sse41.IsSupported)
             {
-                Vector128<ushort> asciiMaskForTestZ = Vector128.Create((ushort)0xFF80);
+                var asciiMaskForTestZ = Vector128.Create((ushort)0xFF80);
                 // If a non-ASCII bit is set in any WORD of the vector, we have seen non-ASCII data.
                 return !Sse41.TestZ(utf16Vector.AsInt16(), asciiMaskForTestZ.AsInt16());
             }
             else
             {
-                Vector128<ushort> asciiMaskForAddSaturate = Vector128.Create((ushort)0x7F80);
+                var asciiMaskForAddSaturate = Vector128.Create((ushort)0x7F80);
                 // The operation below forces the 0x8000 bit of each WORD to be set iff the WORD element
                 // has value >= 0x0800 (non-ASCII). Then we'll treat the vector as a BYTE vector in order
                 // to extract the mask. Reminder: the 0x0080 bit of each WORD should be ignored.
@@ -537,13 +536,13 @@ internal static partial class Ascii
         {
             // First we pick four chars, a larger one from all four pairs of adjecent chars in the vector.
             // If any of those four chars has a non-ASCII bit set, we have seen non-ASCII data.
-            Vector128<ushort> maxChars = AdvSimd.Arm64.MaxPairwise(utf16Vector, utf16Vector);
+            var maxChars = AdvSimd.Arm64.MaxPairwise(utf16Vector, utf16Vector);
             return (maxChars.AsUInt64().ToScalar() & 0xFF80FF80FF80FF80) != 0;
         }
         else
         {
             const ushort asciiMask = ushort.MaxValue - 127; // 0xFF80
-            Vector128<ushort> zeroIsAscii = utf16Vector & Vector128.Create(asciiMask);
+            var zeroIsAscii = utf16Vector & Vector128.Create(asciiMask);
             // If a non-ASCII bit is set in any WORD of the vector, we have seen non-ASCII data.
             return zeroIsAscii != Vector128<ushort>.Zero;
         }
@@ -554,13 +553,13 @@ internal static partial class Ascii
     {
         if (Avx.IsSupported)
         {
-            Vector256<ushort> asciiMaskForTestZ = Vector256.Create((ushort)0xFF80);
+            var asciiMaskForTestZ = Vector256.Create((ushort)0xFF80);
             return !Avx.TestZ(utf16Vector.AsInt16(), asciiMaskForTestZ.AsInt16());
         }
         else
         {
             const ushort asciiMask = ushort.MaxValue - 127; // 0xFF80
-            Vector256<ushort> zeroIsAscii = utf16Vector & Vector256.Create(asciiMask);
+            var zeroIsAscii = utf16Vector & Vector256.Create(asciiMask);
             // If a non-ASCII bit is set in any WORD of the vector, we have seen non-ASCII data.
             return zeroIsAscii != Vector256<ushort>.Zero;
         }
@@ -570,7 +569,7 @@ internal static partial class Ascii
     private static bool VectorContainsNonAsciiChar(Vector512<ushort> utf16Vector)
     {
         const ushort asciiMask = ushort.MaxValue - 127; // 0xFF80
-        Vector512<ushort> zeroIsAscii = utf16Vector & Vector512.Create(asciiMask);
+        var zeroIsAscii = utf16Vector & Vector512.Create(asciiMask);
         // If a non-ASCII bit is set in any WORD of the vector, we have seen non-ASCII data.
         return zeroIsAscii != Vector512<ushort>.Zero;
     }

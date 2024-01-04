@@ -505,12 +505,72 @@ public readonly partial struct U8String
         return default;
     }
 
+    /// <inheritdoc cref="FromAscii(ReadOnlySpan{char})"/>
+    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String FromAscii(string value)
+    {
+        ThrowHelpers.CheckNull(value);
+        return FromAscii(value.AsSpan());
+    }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified <paramref name="value"/>
+    /// containing ASCII characters.
+    /// </summary>
+    /// <exception cref="FormatException">Thrown when the <paramref name="value"/> is not valid ASCII sequence.</exception>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by performing a narrowing copy of the <see cref="char"/>s
+    /// from the <paramref name="value"/> if the length is greater than 0. Unlike the regular constructor,
+    /// this method does not have to calculate the UTF-8 byte count of the <paramref name="value"/>
+    /// and traverses it only once.
+    /// </remarks>
+    public static U8String FromAscii(ReadOnlySpan<char> value)
+    {
+        if (value.Length > 0)
+        {
+            var nullTerminate = value[^1] != 0;
+            var bytes = new byte[(nint)(uint)value.Length + (nullTerminate ? 1 : 0)];
+
+            var status = Ascii.FromUtf16(
+                source: value,
+                destination: bytes,
+                bytesWritten: out _);
+
+            if (status != OperationStatus.Done)
+            {
+                ThrowHelpers.InvalidAscii();
+            }
+
+            return new(bytes, 0, value.Length);
+        }
+
+        return default;
+    }
+
+    /// <summary>
+    /// Reads the contents of the file represented by the specified <see cref="SafeFileHandle"/>
+    /// into a new <see cref="U8String"/>.
+    /// </summary>
+    /// <exception cref="ArgumentException">Thrown when the file or file segment is too large to be read into a <see cref="U8String"/>, or when the <paramref name="handle"/> is invalid.</exception>
+    /// <exception cref="ArgumentNullException">Thrown when the <paramref name="handle"/> is null.</exception>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the <paramref name="offset"/> is either negative or greater than the length of the file.</exception>
+    /// <exception cref="FormatException">Thrown when the file contains malformed UTF-8 data.</exception>
+    /// <exception cref="ObjectDisposedException">Thrown when the <paramref name="handle"/> is disposed.</exception>
+    /// <exception cref="NotSupportedException">Thrown when the <paramref name="handle"/> does not support seeking (pipe or socket).</exception>
+    /// <exception cref="UnauthorizedAccessException">Thrown when the <paramref name="handle"/> does not have read access.</exception>
+    /// <exception cref="IOException">Thrown when an I/O error has occurred.</exception>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by pre-allocating a buffer of the file size
+    /// and reading the file contents into it. If the file has a UTF-8 BOM, it will be sliced off.
+    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Read(SafeFileHandle handle, long offset = 0)
     {
         return handle.ReadToU8String(offset);
     }
 
+    /// <inheritdoc cref="Read(SafeFileHandle, long)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static Task<U8String> ReadAsync(
         SafeFileHandle handle, long offset = 0, CancellationToken ct = default)

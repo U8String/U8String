@@ -1,9 +1,11 @@
+using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
 
 namespace U8.InteropServices;
 
+[EditorBrowsable(EditorBrowsableState.Advanced)]
 [CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8StringMarshalling))]
 [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(FullCStr))]
 public static unsafe class U8StringMarshalling
@@ -140,5 +142,12 @@ public static unsafe class U8StringMarshalling
         {
             return ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty;
         }
+    }
+
+    public static byte* ConvertToUnmanaged(U8String managed)
+    {
+        throw new NotSupportedException(
+            "Use one of the member types for explicitly specified marshalling: " +
+            $"{nameof(FullCStr)}, {nameof(LightweightCStr)} or {nameof(AssumeNullTerminated)}.");
     }
 }

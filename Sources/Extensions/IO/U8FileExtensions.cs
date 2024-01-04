@@ -4,8 +4,7 @@ namespace U8.IO;
 
 public static class U8FileExtensions
 {
-    // TODO: Handle possible scenario where length == 0 for files that are unseekable or of unknown length
-    // TODO: Detect and strip BOMs. Check if this requires BE to LE conversion.
+    /// <inheritdoc cref="U8String.Read(SafeFileHandle, long)"/>
     public static U8String ReadToU8String(this SafeFileHandle handle, long offset = 0)
     {
         if (offset < 0)
@@ -45,6 +44,7 @@ public static class U8FileExtensions
         return default;
     }
 
+    /// <inheritdoc cref="U8String.Read(SafeFileHandle, long)"/>
     public static async Task<U8String> ReadToU8StringAsync(
         this SafeFileHandle handle,
         long offset = 0,

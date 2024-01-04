@@ -31,6 +31,7 @@ namespace U8;
 /// unless specified otherwise. If an operation would produce invalid UTF-8, an exception is thrown.</para>
 /// <para>By default, U8String is indexed by the underlying UTF-8 bytes but offers alternate Rune and Char projections.</para>
 /// </remarks>
+[DebuggerTypeProxy(typeof(DebugView))]
 [DebuggerDisplay("{DebuggerDisplay()}")]
 [JsonConverter(typeof(U8StringJsonConverter))]
 [CollectionBuilder(typeof(U8String), nameof(Create))]
