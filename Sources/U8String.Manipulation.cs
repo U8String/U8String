@@ -290,6 +290,7 @@ public readonly partial struct U8String
         return values switch
         {
             U8Lines lines => U8Manipulation.StripLineEndings(lines.Value),
+            U8Slices slices => ConcatSlices(slices),
             U8Split split => split.Value.Remove(split.Separator),
             U8Split<byte> bsplit => bsplit.Value.Remove(bsplit.Separator),
             U8Split<char> csplit => csplit.Value.Remove(csplit.Separator),
@@ -297,6 +298,31 @@ public readonly partial struct U8String
             ImmutableArray<U8String> array => Concat(array.AsSpan()),
             _ => Concat((IEnumerable<U8String>)values)
         };
+
+        static U8String ConcatSlices(U8Slices slices)
+        {
+            if (slices.Count > 1)
+            {
+                var length = slices.Ranges!.TotalLength();
+                if (length > 0)
+                {
+                    var bytes = new byte[(nint)(uint)length + 1];
+                    var source = slices.Source;
+                    ref var dst = ref bytes.AsRef();
+                    foreach (var range in slices.Ranges!)
+                    {
+                        source!.SliceUnsafe(range.Offset, range.Length).CopyToUnsafe(ref dst);
+                        dst = ref dst.Add(range.Length);
+                    }
+                }
+            }
+            else if (slices.Count is 1)
+            {
+                return slices[0];
+            }
+
+            return default;
+        }
     }
 
     public static U8String Concat<T>(
@@ -516,30 +542,56 @@ public readonly partial struct U8String
 
         return values switch
         {
-            U8Lines lines => lines.Value.ReplaceLineEndings(separator),
-
-            U8Slices slices => slices.Count switch
-            {
-                > 1 => U8Manipulation.JoinSized<U8Slices, U8Slices.Enumerator>(
-                    separator, slices, slices.Ranges!.TotalLength()),
-                1 => slices[0],
-                _ => default,
-            },
-
-            U8Split split => U8Manipulation.ReplaceCore(split.Value, split.Separator, new Span<byte>(ref separator), validate: false),
-            U8Split<byte> bsplit => U8Manipulation.Replace(bsplit.Value, bsplit.Separator, separator, validate: false),
-            U8Split<char> csplit => U8Manipulation.Replace(csplit.Value, csplit.Separator, (char)separator),
-            U8Split<Rune> rsplit => U8Manipulation.Replace(rsplit.Value, rsplit.Separator, new Rune(separator)),
-
-            ConfiguredU8Split split => U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split),
-            ConfiguredU8Split<byte> bsplit => U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, bsplit),
-            ConfiguredU8Split<char> csplit => U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, csplit),
-            ConfiguredU8Split<Rune> rsplit => U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, rsplit),
-
+            U8Lines lines => JoinLines(separator, lines),
+            U8Slices slices => JoinSlices(separator, slices),
+            U8Split split => JoinSplit(separator, split),
+            U8Split<byte> bsplit => JoinBSplit(separator, bsplit),
+            U8Split<char> csplit => JoinCSplit(separator, csplit),
+            U8Split<Rune> rsplit => JoinRSplit(separator, rsplit),
+            ConfiguredU8Split split => JoinSplitC(separator, split),
+            ConfiguredU8Split<byte> bsplit => JoinBSplitC(separator, bsplit),
+            ConfiguredU8Split<char> csplit => JoinCSplitC(separator, csplit),
+            ConfiguredU8Split<Rune> rsplit => JoinRSplitC(separator, rsplit),
             ImmutableArray<U8String> array => Join(separator, array.AsSpan()),
-
             _ => Join(separator, (IEnumerable<U8String>)values)
         };
+
+        // These work around inliner limitations and allow to have a graceful failure
+        // mode when the inliner does run out of budget.
+        static U8String JoinLines(byte separator, U8Lines lines) =>
+            lines.Value.ReplaceLineEndings(separator);
+
+        static U8String JoinSlices(byte separator, U8Slices slices) => slices.Count switch
+        {
+            > 1 => U8Manipulation.JoinSized<U8Slices, U8Slices.Enumerator>(
+                separator, slices, slices.Ranges!.TotalLength()),
+            1 => slices[0],
+            _ => default,
+        };
+
+        static U8String JoinSplit(byte separator, U8Split split) =>
+            U8Manipulation.ReplaceCore(split.Value, split.Separator, new Span<byte>(ref separator), validate: false);
+
+        static U8String JoinBSplit(byte separator, U8Split<byte> split) =>
+            U8Manipulation.Replace(split.Value, split.Separator, separator, validate: false);
+
+        static U8String JoinCSplit(byte separator, U8Split<char> split) =>
+            U8Manipulation.Replace(split.Value, split.Separator, (char)separator);
+
+        static U8String JoinRSplit(byte separator, U8Split<Rune> split) =>
+            U8Manipulation.Replace(split.Value, split.Separator, new Rune(separator));
+
+        static U8String JoinSplitC(byte separator, ConfiguredU8Split split) =>
+            U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split);
+
+        static U8String JoinBSplitC(byte separator, ConfiguredU8Split<byte> split) =>
+            U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, split);
+
+        static U8String JoinCSplitC(byte separator, ConfiguredU8Split<char> split) =>
+            U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, split);
+
+        static U8String JoinRSplitC(byte separator, ConfiguredU8Split<Rune> split) =>
+            U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, split);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -595,34 +647,56 @@ public readonly partial struct U8String
 
         return values switch
         {
-            U8Lines lines => lines.Value.ReplaceLineEndings(separator),
-
-            U8Slices slices => slices.Count switch
-            {
-                > 1 => U8Manipulation.JoinSized<U8Slices, U8Slices.Enumerator>(
-                    separator, slices, slices.Ranges!.TotalLength()),
-                1 => slices[0],
-                _ => default,
-            },
-
-            U8Split split => U8Manipulation
-                .ReplaceCore(split.Value, split.Separator, separator, validate: false),
-            U8Split<byte> bsplit => U8Manipulation
-                .Replace(bsplit.Value, new U8Scalar(bsplit.Separator).AsSpan(), separator, validate: false),
-            U8Split<char> csplit => U8Manipulation
-                .Replace(csplit.Value, new U8Scalar(csplit.Separator).AsSpan(), separator, validate: false),
-            U8Split<Rune> rsplit => U8Manipulation
-                .Replace(rsplit.Value, new U8Scalar(rsplit.Separator).AsSpan(), separator, validate: false),
-
-            ConfiguredU8Split split => U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split),
-            ConfiguredU8Split<byte> bsplit => U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, bsplit),
-            ConfiguredU8Split<char> csplit => U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, csplit),
-            ConfiguredU8Split<Rune> rsplit => U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, rsplit),
-
+            U8Lines lines => JoinLines(separator, lines),
+            U8Slices slices => JoinSlices(separator, slices),
+            U8Split split => JoinSplit(separator, split),
+            U8Split<byte> bsplit => JoinBSplit(separator, bsplit),
+            U8Split<char> csplit => JoinCSplit(separator, csplit),
+            U8Split<Rune> rsplit => JoinRSplit(separator, rsplit),
+            ConfiguredU8Split split => JoinSplitC(separator, split),
+            ConfiguredU8Split<byte> bsplit => JoinBSplitC(separator, bsplit),
+            ConfiguredU8Split<char> csplit => JoinCSplitC(separator, csplit),
+            ConfiguredU8Split<Rune> rsplit => JoinRSplitC(separator, rsplit),
             ImmutableArray<U8String> array => Join(separator, array.AsSpan()),
-
             _ => Join(separator, (IEnumerable<U8String>)values)
         };
+
+        // These work around inliner limitations and allow to have a graceful failure
+        // mode when the inliner does run out of budget.
+        static U8String JoinLines(ReadOnlySpan<byte> separator, U8Lines lines) =>
+            lines.Value.ReplaceLineEndings(separator);
+
+        static U8String JoinSlices(ReadOnlySpan<byte> separator, U8Slices slices) => slices.Count switch
+        {
+            > 1 => U8Manipulation.JoinSized<U8Slices, U8Slices.Enumerator>(
+                separator, slices, slices.Ranges!.TotalLength()),
+            1 => slices[0],
+            _ => default,
+        };
+
+        static U8String JoinSplit(ReadOnlySpan<byte> separator, U8Split split) =>
+            U8Manipulation.ReplaceCore(split.Value, split.Separator, separator, validate: false);
+
+        static U8String JoinBSplit(ReadOnlySpan<byte> separator, U8Split<byte> split) =>
+            U8Manipulation.Replace(split.Value, new U8Scalar(split.Separator).AsSpan(), separator, validate: false);
+
+        static U8String JoinCSplit(ReadOnlySpan<byte> separator, U8Split<char> split) =>
+            U8Manipulation.Replace(split.Value, new U8Scalar(split.Separator).AsSpan(), separator, validate: false);
+
+        static U8String JoinRSplit(ReadOnlySpan<byte> separator, U8Split<Rune> split) =>
+            U8Manipulation.Replace(split.Value, new U8Scalar(split.Separator).AsSpan(), separator, validate: false);
+
+        static U8String JoinSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split split) =>
+            U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split);
+
+        static U8String JoinBSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split<byte> split) =>
+            U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, split);
+
+        static U8String JoinCSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split<char> split) =>
+            U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, split);
+
+        static U8String JoinRSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split<Rune> split) =>
+            U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, split);
     }
 
     public static U8String Join(byte separator, U8Chars chars)

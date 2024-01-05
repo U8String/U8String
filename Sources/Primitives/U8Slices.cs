@@ -96,6 +96,7 @@ public readonly struct U8Slices :
     {
         readonly byte[]? _source;
         readonly U8Range[] _ranges;
+        U8Range _current;
         int _index;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -106,15 +107,17 @@ public readonly struct U8Slices :
             _index = -1;
         }
 
-        public readonly U8String Current => new(_source, _ranges.AsRef(_index));
+        public readonly U8String Current => new(_source, _current);
 
         readonly object IEnumerator.Current => Current;
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
             var index = _index + 1;
             if ((uint)index < (uint)_ranges.Length)
             {
+                _current = _ranges[index];
                 _index = index;
                 return true;
             }
@@ -122,9 +125,13 @@ public readonly struct U8Slices :
             return false;
         }
 
-        public void Reset() => _index = -1;
+        public void Reset()
+        {
+            _current = default;
+            _index = -1;
+        }
 
-        public void Dispose() { }
+        public readonly void Dispose() { }
     }
 
     void IList<U8String>.Insert(int index, U8String item) => throw new NotSupportedException();
