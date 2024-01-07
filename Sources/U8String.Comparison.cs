@@ -234,8 +234,7 @@ public readonly partial struct U8String
             if (deref.Length > 0 && (
                 deref.Offset != other.Offset || !deref.SourceEquals(other)))
             {
-                return deref.UnsafeSpan.SequenceEqual(
-                    other.UnsafeSpan.SliceUnsafe(0, deref.Length));
+                return deref.UnsafeSpan.SequenceEqual(other.UnsafeSpan);
             }
 
             return true;

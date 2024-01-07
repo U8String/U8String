@@ -7,6 +7,7 @@ public static class U8FileExtensions
     /// <inheritdoc cref="U8String.Read(SafeFileHandle, long)"/>
     public static U8String ReadToU8String(this SafeFileHandle handle, long offset = 0)
     {
+        // TODO: the length overload and round offsets overload
         if (offset < 0)
         {
             ThrowHelpers.ArgumentOutOfRange(nameof(offset));

@@ -5,7 +5,8 @@
 - [ ] Contribute JsonWriter.WriteStringValue(bytes) optimization to dotnet/runtime (or work around it)
 - [ ] Contribute IsAsciiWhitespace codegen shape to CoreLib, check out if Utf8Length can be ported too
 - [ ] Contribute optimized versions of span enumerators
-- [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs 
+- [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs
+- [ ] Contribute optimized `File.InternalReadAllLinesAsync` and adjacent methods?
 scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
     - [ ] Invariant
     - [ ] Ordinal + .Utf8 (Ordinal.Utf8.cs)
