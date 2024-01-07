@@ -4,6 +4,7 @@ using System.Runtime.Intrinsics;
 
 using U8.Abstractions;
 using U8.CaseConversion;
+using U8.Shared;
 
 namespace U8.Comparison;
 
@@ -172,14 +173,15 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
 
     public int Count(ReadOnlySpan<byte> source, byte value)
     {
-        var count = source.Count(value);
+        var count = U8Searching.CountByte(value, ref source.AsRef(), (uint)source.Length);
 
+        // TODO: Impl. CountTwoBytes
         if (U8Info.IsAsciiLetter(value))
         {
-            count += source.Count((byte)(value ^ 0x20));
+            count += U8Searching.CountByte((byte)(value ^ 0x20), ref source.AsRef(), (uint)source.Length);
         }
 
-        return count;
+        return (int)(uint)count;
     }
 
     public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)

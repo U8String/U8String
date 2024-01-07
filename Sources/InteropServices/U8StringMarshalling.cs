@@ -76,6 +76,11 @@ public static unsafe class U8StringMarshalling
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void FromManaged(U8String managed, Span<byte> buffer)
         {
+            if (buffer.Length < BufferSize)
+            {
+                ThrowHelpers.DestinationTooShort();
+            }
+
             _allocated = false;
 
             if (managed.IsNullTerminated)

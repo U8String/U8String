@@ -1285,7 +1285,6 @@ internal static class U8Manipulation
         if (count > 0)
         {
             var length = source.Length - (oldValue.Length * count) + (newValue.Length * count);
-
             var result = new byte[length + 1];
 
             var offset = 0;
@@ -1316,10 +1315,10 @@ internal static class U8Manipulation
 
     internal static U8String Remove(U8String source, byte value)
     {
-        var count = source.AsSpan().Count(value);
+        var count = U8Searching.CountByte(value, ref source.DangerousRef, (uint)source.Length);
         if (count > 0)
         {
-            var length = source.Length - count;
+            var length = (uint)source.Length - count;
             var result = new byte[length + 1];
 
             var offset = 0;
@@ -1335,7 +1334,7 @@ internal static class U8Manipulation
                 U8String.Validate(result);
             }
 
-            return new(result, 0, result.Length);
+            return new(result, 0, (int)(uint)length);
         }
 
         return source;
@@ -1361,7 +1360,7 @@ internal static class U8Manipulation
             {
                 U8String.Validate(result);
             }
-            return new(result, 0, result.Length);
+            return new(result, 0, length);
         }
 
         return source;

@@ -219,6 +219,12 @@ internal static class VectorExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector512<T> Eq<T>(this Vector512<T> left, Vector512<T> right)
+    {
+        return Vector512.Equals(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Vector256<T> Eq<T>(this Vector256<T> left, Vector256<T> right)
     {
         return Vector256.Equals(left, right);
@@ -228,6 +234,12 @@ internal static class VectorExtensions
     internal static Vector128<T> Eq<T>(this Vector128<T> left, Vector128<T> right)
     {
         return Vector128.Equals(left, right);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector64<T> Eq<T>(this Vector64<T> left, Vector64<T> right)
+    {
+        return Vector64.Equals(left, right);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -1,4 +1,5 @@
 using U8.Abstractions;
+using U8.Shared;
 
 namespace U8.Comparison;
 
@@ -28,12 +29,12 @@ public readonly struct U8OrdinalComparer : IU8Comparer
 
     public int Count(ReadOnlySpan<byte> source, byte value)
     {
-        return source.Count(value);
+        return (int)(uint)U8Searching.CountByte(value, ref source.AsRef(), (uint)source.Length);
     }
 
     public int Count(ReadOnlySpan<byte> source, ReadOnlySpan<byte> value)
     {
-        return value.Length is 1 ? source.Count(value[0]) : source.Count(value);
+        return value.Length is 1 ? Count(source, value[0]) : source.Count(value);
     }
 
     public bool StartsWith(ReadOnlySpan<byte> source, byte value)

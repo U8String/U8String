@@ -417,12 +417,10 @@ public readonly struct U8Lines(U8String value) :
         get
         {
             var value = _value;
-            if (!value.IsEmpty)
-            {
-                return value.UnsafeSpan.Count((byte)'\n') + 1;
-            }
-
-            return 0;
+            return !value.IsEmpty
+                ? (int)(uint)U8Searching.CountByte(
+                    (byte)'\n', ref value.UnsafeRef, (uint)value.Length) + 1
+                : 0;
         }
     }
 

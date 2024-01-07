@@ -1,4 +1,4 @@
-# U8String
+# U8String [![nuget](https://img.shields.io/nuget/v/U8String.svg)](https://www.nuget.org/packages/U8String/)
 [work-in-progress] Highly functional and performant UTF-8 string primitive for C# and .NET.
 
 This library adopts the lessons learned from .NET 5's `Utf8String` prototype, Rust and Go string implementations to provide first-class UTF-8 string primitive which has been historically missing in .NET.

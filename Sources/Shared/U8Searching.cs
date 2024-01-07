@@ -379,14 +379,14 @@ internal static class U8Searching
 
         return value switch
         {
-            byte b => source.Count(b),
+            byte b => (int)(uint)CountByte(b, ref source.AsRef(), (uint)source.Length),
 
             char c => char.IsAscii(c)
-                ? source.Count((byte)c)
+                ? (int)(uint)CountByte((byte)c, ref source.AsRef(), (uint)source.Length)
                 : source.Count(new U8Scalar(c, checkAscii: false).AsSpan()),
 
             Rune r => r.IsAscii
-                ? source.Count((byte)r.Value)
+                ? (int)(uint)CountByte((byte)r.Value, ref source.AsRef(), (uint)source.Length)
                 : source.Count(new U8Scalar(r, checkAscii: false).AsSpan()),
 
             U8String str => Count(source, str.AsSpan()),
@@ -402,7 +402,9 @@ internal static class U8Searching
         // is not inlineable due to a loop in the default arm of its switch.
         // Therefore, we have to pre-check this here in order to improve the case
         // where item is a single-byte literal, which is expected to be relatively common.
-        return item.Length is 1 ? value.Count(item[0]) : value.Count(item);
+        return item.Length is 1
+            ? (int)(uint)CountByte(item[0], ref value.AsRef(), (uint)value.Length)
+            : value.Count(item);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -436,6 +438,137 @@ internal static class U8Searching
         where T : IU8CountOperator
     {
         return comparer.Count(source, value);
+    }
+
+    internal static nuint CountByte(byte value, ref byte src, nuint length)
+    {
+        if (AdvSimd.Arm64.IsSupported)
+        {
+            return CountByteArm64(value, ref src, length);
+        }
+
+        var count = (nuint)0;
+        if (length is 0) goto Empty;
+
+        ref var end = ref src.Add(length);
+        if (Vector256.IsHardwareAccelerated &&
+            length >= (nuint)Vector512<byte>.Count)
+        {
+            var needle = Vector512.Create(value);
+            ref var lastvec = ref end.Substract(Vector512<byte>.Count);
+            do
+            {
+                count += Vector512
+                    .LoadUnsafe(ref src)
+                    .Eq(needle)
+                    .GetMatchCount();
+
+                src = ref src.Add(Vector512<byte>.Count);
+            } while (src.LessThanOrEqual(ref lastvec));
+        }
+
+        // All platforms targeted by .NET 8+ are supposed to support 128b SIMD.
+        // If this is not the case, please file an issue (it will work but slowly).
+        if (src.Add(Vector256<byte>.Count).LessThanOrEqual(ref end))
+        {
+            var needle = Vector256.Create(value);
+            ref var lastvec = ref end.Substract(Vector256<byte>.Count);
+            do
+            {
+                count += Vector256
+                    .LoadUnsafe(ref src)
+                    .Eq(needle)
+                    .GetMatchCount();
+
+                src = ref src.Add(Vector256<byte>.Count);
+
+                // Skip this loop if we took the V512 path above
+                // since we can only do a single iteration at most.
+            } while (!Vector256.IsHardwareAccelerated && src.LessThanOrEqual(ref lastvec));
+        }
+
+        if (Vector128.IsHardwareAccelerated &&
+            src.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
+        {
+            var needle = Vector128.Create(value);
+            count += Vector128
+                .LoadUnsafe(ref src)
+                .Eq(needle)
+                .GetMatchCount();
+
+            src = ref src.Add(Vector128<byte>.Count);
+        }
+
+        while (src.LessThan(ref end))
+        {
+            // Branchless: x86_64: cmp + setge; arm64: cmn + cset
+            count += (nuint)(src == value ? 1 : 0);
+            src = ref src.Add(1);
+        }
+
+    Empty:
+        return count;
+    }
+
+    internal static nuint CountByteArm64(byte value, ref byte src, nuint length)
+    {
+        Debug.Assert(AdvSimd.Arm64.IsSupported);
+
+        var count = (nuint)0;
+        if (length is 0) goto Empty;
+
+        ref var end = ref src.Add(length);
+        if (length >= (nuint)Vector256<byte>.Count)
+        {
+            var acc = Vector256<byte>.Zero;
+            var one = Vector256.Create(value);
+            var needle = Vector256.Create(value);
+            ref var lastvec = ref end.Substract(Vector256<byte>.Count);
+            do
+            {
+                acc += Vector256
+                    .LoadUnsafe(ref src)
+                    .Eq(needle) & one;
+
+                src = ref src.Add(Vector256<byte>.Count);
+            } while (src.LessThanOrEqual(ref lastvec));
+
+            // We can accumulate to a vector and then do horizontal sum
+            // because this is just a couple of addv's for unrolled 128x2.
+            count += Vector256.Sum(acc);
+        }
+
+        if (src.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
+        {
+            var needle = Vector128.Create(value);
+            count += Vector128
+                .LoadUnsafe(ref src)
+                .Eq(needle)
+                .GetMatchCount();
+
+            src = ref src.Add(Vector128<byte>.Count);
+        }
+
+        if (src.Add(Vector64<byte>.Count).LessThanOrEqual(ref end))
+        {
+            var needle = Vector64.Create(value);
+            count += Vector64
+                .LoadUnsafe(ref src)
+                .Eq(needle)
+                .GetMatchCount();
+
+            src = ref src.Add(Vector64<byte>.Count);
+        }
+
+        while (src.LessThan(ref end))
+        {
+            // Branchless: x86_64: cmp + setge; arm64: cmn + cset
+            count += (nuint)(src == value ? 1 : 0);
+            src = ref src.Add(1);
+        }
+
+    Empty:
+        return count;
     }
 
     // Bypass DynamicPGO because it sometimes moves VectorXXX.Create
