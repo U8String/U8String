@@ -58,8 +58,9 @@ public readonly record struct U8RuneIndex : IEquatable<U8RuneIndex>
     public static implicit operator Rune(U8RuneIndex index) => index.Value;
     public static implicit operator int(U8RuneIndex index) => index.Offset;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override int GetHashCode()
     {
-        return HashCode.Combine(Value, Offset);
+        return Unsafe.BitCast<(Rune, int), long>((Value, Offset)).GetHashCode();
     }
 }
