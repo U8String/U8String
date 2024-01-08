@@ -8,6 +8,7 @@ internal static class VectorExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static uint GetMatchCount<T>(this Vector512<T> mask)
+        where T : INumberBase<T>
     {
         if (Vector512.IsHardwareAccelerated)
         {
@@ -35,6 +36,7 @@ internal static class VectorExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static uint GetMatchCount<T>(this Vector256<T> mask)
+        where T : INumberBase<T>
     {
         if (Vector256.IsHardwareAccelerated)
         {
@@ -50,12 +52,11 @@ internal static class VectorExtensions
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static uint GetMatchCount<T>(this Vector128<T> mask)
+        where T : INumberBase<T>
     {
         if (AdvSimd.Arm64.IsSupported)
         {
-            return AdvSimd.Arm64
-                .AddAcross(AdvSimd.PopCount(mask.AsByte()))
-                .ToScalar() / (8 * (uint)Unsafe.SizeOf<T>());
+            return uint.CreateTruncating(Vector128.Sum(mask & Vector128<T>.One));
         }
 
         return (uint)BitOperations.PopCount(mask.ExtractMostSignificantBits());

@@ -12,6 +12,7 @@ public static class U8Constants
     readonly static byte[] _lf = [(byte)'\n', 0];
     readonly static byte[] _nullByte = new byte[1];
     readonly static byte[] _replacementChar = [239, 191, 189, 0];
+    readonly static byte[] _asciiShrug = [194, 175, 92, 95, 40, 227, 131, 132, 41, 95, 47, 194, 175, 0];
 
     public static byte DirectorySeparator
     {
@@ -36,6 +37,12 @@ public static class U8Constants
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(_replacementChar, 0, 3);
+    }
+
+    public static U8String AsciiShrug
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => new(_asciiShrug, 0, 13);
     }
 }
 

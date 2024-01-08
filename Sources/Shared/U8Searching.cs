@@ -487,8 +487,7 @@ internal static class U8Searching
             } while (!Vector256.IsHardwareAccelerated && src.LessThanOrEqual(ref lastvec));
         }
 
-        if (Vector128.IsHardwareAccelerated &&
-            src.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
+        if (src.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
         {
             var needle = Vector128.Create(value);
             count += Vector128
@@ -510,6 +509,8 @@ internal static class U8Searching
         return count;
     }
 
+    // TODO: Consolidate this back to CounByte - the initial optimization was invalid,
+    // and now its adapted form in VectorExtensions can be handled by .NET in a good enough way.
     internal static nuint CountByteArm64(byte value, ref byte src, nuint length)
     {
         Debug.Assert(AdvSimd.Arm64.IsSupported);
@@ -520,22 +521,18 @@ internal static class U8Searching
         ref var end = ref src.Add(length);
         if (length >= (nuint)Vector256<byte>.Count)
         {
-            var acc = Vector256<byte>.Zero;
             var one = Vector256.Create((byte)1);
             var needle = Vector256.Create(value);
             ref var lastvec = ref end.Substract(Vector256<byte>.Count);
             do
             {
-                acc += Vector256
+                count += Vector256
                     .LoadUnsafe(ref src)
-                    .Eq(needle) & one;
+                    .Eq(needle)
+                    .GetMatchCount();
 
                 src = ref src.Add(Vector256<byte>.Count);
             } while (src.LessThanOrEqual(ref lastvec));
-
-            // We can accumulate to a vector and then do horizontal sum
-            // because this is just a couple of addv's for unrolled 128x2.
-            count += Vector256.Sum(acc);
         }
 
         if (src.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
@@ -589,8 +586,8 @@ internal static class U8Searching
         if (Vector256.IsHardwareAccelerated &&
             length >= (nuint)Vector512<byte>.Count)
         {
-            var continuations = Vector512.Create((sbyte)-64);
             ref var lastvec = ref end.Substract(Vector512<byte>.Count);
+            var continuations = Vector512.Create((sbyte)-64);
             do
             {
                 var chunk = Vector512.LoadUnsafe(ref ptr);
@@ -605,8 +602,8 @@ internal static class U8Searching
         // If this is not the case, please file an issue (it will work but slowly).
         if (ptr.Add(Vector256<byte>.Count).LessThanOrEqual(ref end))
         {
-            var continuations = Vector256.Create((sbyte)-64);
             ref var lastvec = ref end.Substract(Vector256<byte>.Count);
+            var continuations = Vector256.Create((sbyte)-64);
             do
             {
                 var chunk = Vector256.LoadUnsafe(ref ptr);
