@@ -97,7 +97,7 @@ public struct InterpolatedU8StringHandler
             return;
         }
 
-        AppendBytes(new U8Scalar(value, checkAscii: false).AsSpan());
+        AppendBytes(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
     public void AppendFormatted(Rune value)
@@ -108,7 +108,12 @@ public struct InterpolatedU8StringHandler
             return;
         }
 
-        AppendBytes(new U8Scalar(value, checkAscii: false).AsSpan());
+        AppendBytes(value.Value switch
+        {
+            <= 0x7FF => value.AsTwoBytes(),
+            <= 0xFFFF => value.AsThreeBytes(),
+            _ => value.AsFourBytes()
+        });
     }
 
     public void AppendFormatted(U8String value)

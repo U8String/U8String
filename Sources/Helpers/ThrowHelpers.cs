@@ -138,7 +138,7 @@ internal static class ThrowHelpers
         throw new InvalidOperationException($"Unreachable code reached at {path}:{line}.");
     }
 
-    [DoesNotReturn]
+    [DoesNotReturn, StackTraceHidden]
     internal static void NotSupportedBigEndian()
     {
         throw new NotSupportedException(

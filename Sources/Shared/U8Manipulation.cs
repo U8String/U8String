@@ -1356,10 +1356,11 @@ internal static class U8Manipulation
                 offset += segment.Length;
             }
 
-            if (validate)
+            if (validate && !U8String.IsValid(value))
             {
                 U8String.Validate(result);
             }
+
             return new(result, 0, length);
         }
 

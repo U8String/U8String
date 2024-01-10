@@ -14,31 +14,49 @@ public static class U8Constants
     readonly static byte[] _replacementChar = [239, 191, 189, 0];
     readonly static byte[] _asciiShrug = [194, 175, 92, 95, 40, 227, 131, 132, 41, 95, 47, 194, 175, 0];
 
+    /// <summary>
+    /// The directory separator character.
+    /// </summary>
+    /// <returns>'\' on Windows, '/' on Unix.</returns>
     public static byte DirectorySeparator
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => OperatingSystem.IsWindows() ? (byte)'\\' : (byte)'/';
     }
 
+    /// <summary>
+    /// The newline separator string.
+    /// </summary>
+    /// <returns>"\r\n" on Windows, "\n" on Unix.</returns>
     public static U8String NewLine
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => OperatingSystem.IsWindows() ? new(_crlf, 0, 2) : new(_lf, 0, 1);
     }
 
-    // This will be used in interop scenarios for empty strings.
+    /// <summary>
+    /// The null byte string.
+    /// </summary>
+    /// <returns>"\0"</returns>
     public static U8String NullByte
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(_nullByte, 0, 1);
     }
 
+    /// <summary>
+    /// Replacement character for invalid UTF-8 sequences.
+    /// </summary>
+    /// <returns>'�'</returns>
     public static U8String ReplacementChar
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(_replacementChar, 0, 3);
     }
 
+    /// <summary>
+    /// ¯\_(ツ)_/¯
+    /// </summary>
     public static U8String AsciiShrug
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

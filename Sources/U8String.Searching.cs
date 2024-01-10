@@ -3,6 +3,7 @@ using System.Text;
 
 using U8.Abstractions;
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8;
 
@@ -10,6 +11,46 @@ namespace U8;
 #pragma warning disable RCS1003, RCS1179, IDE0045
 public readonly partial struct U8String
 {
+    /// <summary>
+    /// Calculates the number of occurrences of the specified <see cref="byte"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int Count(byte value)
+    {
+        return !IsEmpty ? U8Searching.Count(UnsafeSpan, value) : 0;
+    }
+
+    /// <summary>
+    /// Calculates the number of occurrences of the specified <see cref="char"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    public int Count(char value)
+    {
+        ThrowHelpers.CheckSurrogate(value);
+
+        return !IsEmpty ? U8Searching.Count(UnsafeSpan, value) : 0;
+    }
+
+    /// <summary>
+    /// Calculates the number of occurrences of the specified <see cref="Rune"/>
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    public int Count(Rune value)
+    {
+        return !IsEmpty ? U8Searching.Count(UnsafeSpan, value) : 0;
+    }
+
+    /// <summary>
+    /// Calculates the number of occurrences of the specified byte sequence
+    /// in the current <see cref="U8String"/>.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int Count(ReadOnlySpan<byte> value)
+    {
+        return !IsEmpty ? U8Searching.Count(UnsafeSpan, value) : 0;
+    }
+
     /// <summary>
     /// Calculates the length of the common prefix between
     /// this <see cref="U8String"/> and <paramref name="other"/>.
@@ -61,9 +102,7 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return char.IsAscii(value)
-            ? Contains((byte)value)
-            : ContainsRune(new U8Scalar(value, checkAscii: false).AsSpan());
+        return !IsEmpty && U8Searching.Contains(UnsafeSpan, value);
     }
 
     /// <summary>
@@ -72,22 +111,7 @@ public readonly partial struct U8String
     /// </summary>
     public bool Contains(Rune value)
     {
-        return value.IsAscii
-            ? Contains((byte)value.Value)
-            : ContainsRune(new U8Scalar(value, checkAscii: false).AsSpan());
-    }
-
-    // This method exists to reduce codegen size and remove duplicate calls
-    // which occur when Contains(span) is called from Contains(char/Rune).
-    // It is also not being forcibly inlined because it may cause the inlining
-    // of the enclosing Contains(char/Rune) as well, which takes quite a bit
-    // of space due to conversion to UTF-8.
-    bool ContainsRune(ReadOnlySpan<byte> value)
-    {
-        Debug.Assert(value.Length is >= 2 and <= 4);
-
-        var deref = this;
-        return !deref.IsEmpty && deref.UnsafeSpan.IndexOf(value) >= 0;
+        return !IsEmpty && U8Searching.Contains(UnsafeSpan, value);
     }
 
     /// <summary>
@@ -211,28 +235,37 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? StartsWith((byte)value)
-            : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan());
+            : StartsWith(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
     /// <summary>
     /// Indicates whether current <see cref="U8String"/> starts with
     /// specified <see cref="Rune"/>.
     /// </summary>
-    public bool StartsWith(Rune value) => value.IsAscii
-        ? StartsWith((byte)value.Value)
-        : StartsWith(new U8Scalar(value, checkAscii: false).AsSpan());
+    public bool StartsWith(Rune value)
+    {
+        return value.IsAscii
+            ? StartsWith((byte)value.Value)
+            : StartsWith(value.Value switch
+            {
+                <= 0x7FF => value.AsTwoBytes(),
+                <= 0xFFFF => value.AsThreeBytes(),
+                _ => value.AsFourBytes()
+            });
+    }
 
     /// <summary>
     /// Indicates whether current <see cref="U8String"/> starts with
     /// specified <paramref name="value"/>.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(U8String value)
     {
         bool result;
         var deref = this;
         if (!value.IsEmpty)
         {
-            if (!deref.IsEmpty && value.Length <= deref.Length)
+            if (value.Length <= deref.Length)
             {
                 result = deref.UnsafeSpan.StartsWith(value.UnsafeSpan);
             }
@@ -247,11 +280,12 @@ public readonly partial struct U8String
     /// Indicates whether current <see cref="U8String"/> starts with
     /// specified <paramref name="value"/>.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool StartsWith(ReadOnlySpan<byte> value)
     {
         bool result;
         var deref = this;
-        if (!deref.IsEmpty && value.Length <= deref.Length)
+        if (value.Length <= deref.Length)
         {
             result = deref.UnsafeSpan.StartsWith(value);
         }
@@ -345,7 +379,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? EndsWith((byte)value)
-            : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan());
+            : EndsWith(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
     /// <summary>
@@ -354,19 +388,25 @@ public readonly partial struct U8String
     /// </summary>
     public bool EndsWith(Rune value) => value.IsAscii
         ? EndsWith((byte)value.Value)
-        : EndsWith(new U8Scalar(value, checkAscii: false).AsSpan());
+        : EndsWith(value.Value switch
+        {
+            <= 0x7FF => value.AsTwoBytes(),
+            <= 0xFFFF => value.AsThreeBytes(),
+            _ => value.AsFourBytes()
+        });
 
     /// <summary>
     /// Indicates whether current <see cref="U8String"/> ends with
     /// specified <paramref name="value"/>.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(U8String value)
     {
         bool result;
         var deref = this;
         if (!value.IsEmpty)
         {
-            if (!deref.IsEmpty && value.Length <= deref.Length)
+            if (value.Length <= deref.Length)
             {
                 result = deref.UnsafeSpan.EndsWith(value.UnsafeSpan);
             }
@@ -381,11 +421,12 @@ public readonly partial struct U8String
     /// Indicates whether current <see cref="U8String"/> ends with
     /// specified <paramref name="value"/>.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool EndsWith(ReadOnlySpan<byte> value)
     {
         bool result;
         var deref = this;
-        if (!deref.IsEmpty && value.Length <= deref.Length)
+        if (value.Length <= deref.Length)
         {
             result = deref.UnsafeSpan.EndsWith(value);
         }
@@ -486,7 +527,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? IndexOf((byte)value)
-            : IndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
+            : IndexOfRune(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
     /// <summary>
@@ -501,7 +542,12 @@ public readonly partial struct U8String
     {
         return value.IsAscii
             ? IndexOf((byte)value.Value)
-            : IndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
+            : IndexOfRune(value.Value switch
+            {
+                <= 0x7FF => value.AsTwoBytes(),
+                <= 0xFFFF => value.AsThreeBytes(),
+                _ => value.AsFourBytes()
+            });
     }
 
     int IndexOfRune(ReadOnlySpan<byte> value)
@@ -674,7 +720,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(value)
             ? LastIndexOf((byte)value)
-            : LastIndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
+            : LastIndexOfRune(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
     /// <summary>
@@ -689,7 +735,12 @@ public readonly partial struct U8String
     {
         return value.IsAscii
             ? LastIndexOf((byte)value.Value)
-            : LastIndexOfRune(new U8Scalar(value, checkAscii: false).AsSpan());
+            : LastIndexOfRune(value.Value switch
+            {
+                <= 0x7FF => value.AsTwoBytes(),
+                <= 0xFFFF => value.AsThreeBytes(),
+                _ => value.AsFourBytes()
+            });
     }
 
     int LastIndexOfRune(ReadOnlySpan<byte> value)

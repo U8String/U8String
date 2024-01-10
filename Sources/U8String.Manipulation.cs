@@ -19,6 +19,7 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentException">
     /// <paramref name="right"/> is not an ASCII byte.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat(U8String left, byte right)
     {
         ThrowHelpers.CheckAscii(right);
@@ -38,7 +39,7 @@ public readonly partial struct U8String
 
         return char.IsAscii(right)
             ? U8Manipulation.ConcatUnchecked(left, (byte)right)
-            : U8Manipulation.ConcatUnchecked(left, new U8Scalar(right, checkAscii: false).AsSpan());
+            : U8Manipulation.ConcatUnchecked(left, right <= 0x7FF ? right.AsTwoBytes() : right.AsThreeBytes());
     }
 
     /// <summary>
@@ -48,7 +49,12 @@ public readonly partial struct U8String
     {
         return right.IsAscii
             ? U8Manipulation.ConcatUnchecked(left, (byte)right.Value)
-            : U8Manipulation.ConcatUnchecked(left, new U8Scalar(right, checkAscii: false).AsSpan());
+            : U8Manipulation.ConcatUnchecked(left, right.Value switch
+            {
+                <= 0x7FF => right.AsTwoBytes(),
+                <= 0xFFFF => right.AsThreeBytes(),
+                _ => right.AsFourBytes()
+            });
     }
 
     /// <summary>
@@ -57,6 +63,7 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentException">
     /// <paramref name="left"/> is not an ASCII byte.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat(byte left, U8String right)
     {
         ThrowHelpers.CheckAscii(left);
@@ -76,7 +83,8 @@ public readonly partial struct U8String
 
         return char.IsAscii(left)
             ? U8Manipulation.ConcatUnchecked((byte)left, right)
-            : U8Manipulation.ConcatUnchecked(new U8Scalar(left, checkAscii: false).AsSpan(), right);
+            : U8Manipulation.ConcatUnchecked(
+                left <= 0x7FF ? left.AsTwoBytes() : left.AsThreeBytes(), right);
     }
 
     /// <summary>
@@ -92,6 +100,7 @@ public readonly partial struct U8String
     /// <summary>
     /// Creates a new <see cref="U8String"/> from <paramref name="left"/> and <paramref name="right"/> appended together.
     /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat(U8String left, U8String right)
     {
         if (!left.IsEmpty)
@@ -115,6 +124,7 @@ public readonly partial struct U8String
     /// <exception cref="FormatException">
     /// <paramref name="right"/> is not a valid UTF-8 byte sequence.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat(U8String left, ReadOnlySpan<byte> right)
     {
         if (right.Length > 0)
@@ -137,6 +147,7 @@ public readonly partial struct U8String
     /// <exception cref="FormatException">
     /// <paramref name="left"/> is not a valid UTF-8 byte sequence.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat(ReadOnlySpan<byte> left, U8String right)
     {
         if (left.Length > 0)
@@ -183,6 +194,7 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentNullException">
     /// <paramref name="values"/> is <see langword="null"/>.
     /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat(U8String[] values)
     {
         ThrowHelpers.CheckNull(values);
@@ -325,6 +337,7 @@ public readonly partial struct U8String
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat<T>(
         T[] values,
         ReadOnlySpan<char> format = default,
@@ -444,6 +457,7 @@ public readonly partial struct U8String
         AsSpan().CopyTo(destination.AsSpan()[index..]);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(byte separator, U8String[] values)
     {
         ThrowHelpers.CheckNull(values);
@@ -451,6 +465,7 @@ public readonly partial struct U8String
         return Join(separator, values.AsSpan());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(byte separator, ReadOnlySpan<U8String> values)
     {
         ThrowHelpers.CheckAscii(separator);
@@ -458,13 +473,16 @@ public readonly partial struct U8String
         return U8Manipulation.Join(separator, values);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(byte separator, IEnumerable<U8String> values)
     {
         ThrowHelpers.CheckAscii(separator);
+        ThrowHelpers.CheckNull(values);
 
         return U8Manipulation.Join(separator, values);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(char separator, U8String[] values)
     {
         ThrowHelpers.CheckNull(values);
@@ -478,18 +496,24 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(),
+                values);
     }
 
     public static U8String Join(char separator, IEnumerable<U8String> values)
     {
         ThrowHelpers.CheckSurrogate(separator);
+        ThrowHelpers.CheckNull(values);
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(),
+                values);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(Rune separator, U8String[] values)
     {
         ThrowHelpers.CheckNull(values);
@@ -501,7 +525,12 @@ public readonly partial struct U8String
     {
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, values);
     }
 
     public static U8String Join(Rune separator, IEnumerable<U8String> values)
@@ -510,9 +539,15 @@ public readonly partial struct U8String
 
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+            : U8Manipulation.Join(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, values);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(ReadOnlySpan<byte> separator, U8String[] values)
     {
         ThrowHelpers.CheckNull(values);
@@ -520,6 +555,7 @@ public readonly partial struct U8String
         return Join(separator, values.AsSpan());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
     {
         ValidatePossibleConstant(separator);
@@ -527,9 +563,11 @@ public readonly partial struct U8String
         return U8Manipulation.Join(separator, values);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
     {
         ValidatePossibleConstant(separator);
+        ThrowHelpers.CheckNull(values);
 
         return U8Manipulation.Join(separator, values);
     }
@@ -594,7 +632,6 @@ public readonly partial struct U8String
             U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, split);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(char separator, T values)
         where T : struct, IEnumerable<U8String>
     {
@@ -602,16 +639,22 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? Join((byte)separator, values)
-            : JoinSpan(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+            : JoinSpan(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(),
+                values);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(Rune separator, T values)
         where T : struct, IEnumerable<U8String>
     {
         return separator.IsAscii
             ? Join((byte)separator.Value, values)
-            : JoinSpan(new U8Scalar(separator, checkAscii: false).AsSpan(), values);
+            : JoinSpan(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, values);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -699,6 +742,7 @@ public readonly partial struct U8String
             U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, split);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(byte separator, U8Chars chars)
     {
         ThrowHelpers.CheckAscii(separator);
@@ -712,14 +756,20 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.JoinRunes<U8Manipulation.CharsSource>((byte)separator, chars.Value)
-            : JoinSpan<U8Manipulation.CharsSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), chars.Value);
+            : JoinSpan<U8Manipulation.CharsSource>(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(), chars.Value);
     }
 
     public static U8String Join(Rune separator, U8Chars chars)
     {
         return separator.IsAscii
             ? U8Manipulation.JoinRunes<U8Manipulation.CharsSource>((byte)separator.Value, chars.Value)
-            : JoinSpan<U8Manipulation.CharsSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), chars.Value);
+            : JoinSpan<U8Manipulation.CharsSource>(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, chars.Value);
     }
 
     public static U8String Join(ReadOnlySpan<byte> separator, U8Chars chars)
@@ -734,6 +784,7 @@ public readonly partial struct U8String
         return JoinSpan<U8Manipulation.CharsSource>(separator, chars.Value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(byte separator, U8Runes runes)
     {
         ThrowHelpers.CheckAscii(separator);
@@ -747,14 +798,20 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.JoinRunes<U8Manipulation.RunesSource>((byte)separator, runes.Value)
-            : JoinSpan<U8Manipulation.RunesSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), runes.Value);
+            : JoinSpan<U8Manipulation.RunesSource>(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(), runes.Value);
     }
 
     public static U8String Join(Rune separator, U8Runes runes)
     {
         return separator.IsAscii
             ? U8Manipulation.JoinRunes<U8Manipulation.RunesSource>((byte)separator.Value, runes.Value)
-            : JoinSpan<U8Manipulation.RunesSource>(new U8Scalar(separator, checkAscii: false).AsSpan(), runes.Value);
+            : JoinSpan<U8Manipulation.RunesSource>(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, runes.Value);
     }
 
     public static U8String Join(ReadOnlySpan<byte> separator, U8Runes runes)
@@ -769,19 +826,20 @@ public readonly partial struct U8String
         return JoinSpan<U8Manipulation.RunesSource>(separator, runes.Value);
     }
 
-    static U8String JoinSpan<TSource>(ReadOnlySpan<byte> separator, U8String value)
+    static U8String JoinSpan<TSource>(ReadOnlySpan<byte> separator, U8String runes)
         where TSource : struct, U8Manipulation.IRunesSource
     {
         if (separator.Length > 0)
         {
             return separator.Length is 1
-                ? U8Manipulation.JoinRunes<TSource>(separator[0], value)
-                : U8Manipulation.JoinRunes<TSource>(separator, value);
+                ? U8Manipulation.JoinRunes<TSource>(separator[0], runes)
+                : U8Manipulation.JoinRunes<TSource>(separator, runes);
         }
 
-        return value;
+        return runes;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(
         byte separator,
         T[] values,
@@ -793,6 +851,7 @@ public readonly partial struct U8String
         return Join<T>(separator, values.AsSpan(), format, provider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(
         byte separator,
         ReadOnlySpan<T> values,
@@ -804,6 +863,7 @@ public readonly partial struct U8String
         return U8Manipulation.Join(separator, values, format, provider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(
         byte separator,
         IEnumerable<T> values,
@@ -816,6 +876,7 @@ public readonly partial struct U8String
         return U8Manipulation.Join(separator, values, format, provider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(
         char separator,
         T[] values,
@@ -837,7 +898,9 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values, format, provider)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(),
+                values, format, provider);
     }
 
     public static U8String Join<T>(
@@ -850,9 +913,12 @@ public readonly partial struct U8String
 
         return char.IsAscii(separator)
             ? U8Manipulation.Join((byte)separator, values, format, provider)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(
+                separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes(),
+                values, format, provider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(
         Rune separator,
         T[] values,
@@ -872,7 +938,12 @@ public readonly partial struct U8String
     {
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values, format, provider)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, values, format, provider);
     }
 
     public static U8String Join<T>(
@@ -885,9 +956,15 @@ public readonly partial struct U8String
 
         return separator.IsAscii
             ? U8Manipulation.Join((byte)separator.Value, values, format, provider)
-            : U8Manipulation.Join(new U8Scalar(separator, checkAscii: false).AsSpan(), values, format, provider);
+            : U8Manipulation.Join(separator.Value switch
+            {
+                <= 0x7FF => separator.AsTwoBytes(),
+                <= 0xFFFF => separator.AsThreeBytes(),
+                _ => separator.AsFourBytes()
+            }, values, format, provider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(
         ReadOnlySpan<byte> separator,
         T[] values,
@@ -1001,24 +1078,38 @@ public readonly partial struct U8String
 #pragma warning restore RCS1179
 
     /// <inheritdoc cref="Remove(U8String)"/>
+    /// <exception cref="FormatException">
+    /// The resulting <see cref="U8String"/> is not a valid UTF-8 byte sequence.
+    /// </exception>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Remove(byte value) => U8Manipulation.Remove(this, value);
 
     /// <inheritdoc cref="Remove(U8String)"/>
+    /// <exception cref="ArgumentException">
+    /// The <paramref name="value"/> is a surrogate.
+    /// </exception>
     public U8String Remove(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
         return char.IsAscii(value)
             ? U8Manipulation.Remove(this, (byte)value)
-            : U8Manipulation.Remove(this, new U8Scalar(value, checkAscii: false).AsSpan(), validate: false);
+            : U8Manipulation.Remove(
+                this, value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes(), validate: false);
     }
 
     /// <inheritdoc cref="Remove(U8String)"/>
     public U8String Remove(Rune value) => value.IsAscii
         ? U8Manipulation.Remove(this, (byte)value.Value)
-        : U8Manipulation.Remove(this, new U8Scalar(value, checkAscii: false).AsSpan());
+        : U8Manipulation.Remove(this, value.Value switch
+        {
+            <= 0x7FF => value.AsTwoBytes(),
+            <= 0xFFFF => value.AsThreeBytes(),
+            _ => value.AsFourBytes()
+        }, validate: false);
 
     /// <inheritdoc cref="Remove(U8String)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Remove(ReadOnlySpan<byte> value) => value.Length is 1
         ? U8Manipulation.Remove(this, value[0])
         : U8Manipulation.Remove(this, value);
@@ -1027,6 +1118,7 @@ public readonly partial struct U8String
     /// Removes all occurrences of <paramref name="value"/> from the current <see cref="U8String"/>.
     /// </summary>
     /// <param name="value">The element to remove from the current <see cref="U8String"/>.</param>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Remove(U8String value) => value.Length is 1
         ? U8Manipulation.Remove(this, value.UnsafeRef)
         : U8Manipulation.Remove(this, value, validate: false);
@@ -1087,14 +1179,14 @@ public readonly partial struct U8String
         return U8Manipulation.LineEndingsToCustom(this, lineEnding);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String ReplaceLineEndings(char lineEnding)
     {
         ThrowHelpers.CheckSurrogate(lineEnding);
 
         return char.IsAscii(lineEnding)
             ? ReplaceLineEndings((byte)lineEnding)
-            : U8Manipulation.LineEndingsToCustom(this, new U8Scalar(lineEnding, checkAscii: false).AsSpan());
+            : U8Manipulation.LineEndingsToCustom(
+                this, lineEnding <= 0x7FF ? lineEnding.AsTwoBytes() : lineEnding.AsThreeBytes());
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1102,7 +1194,12 @@ public readonly partial struct U8String
     {
         return lineEnding.IsAscii
             ? ReplaceLineEndings((byte)lineEnding.Value)
-            : U8Manipulation.LineEndingsToCustom(this, new U8Scalar(lineEnding, checkAscii: false).AsSpan());
+            : U8Manipulation.LineEndingsToCustom(this, lineEnding.Value switch
+            {
+                <= 0x7FF => lineEnding.AsTwoBytes(),
+                <= 0xFFFF => lineEnding.AsThreeBytes(),
+                _ => lineEnding.AsFourBytes()
+            });
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

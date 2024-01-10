@@ -24,6 +24,7 @@ internal static class U8Searching
     internal static bool Contains<T>(ReadOnlySpan<byte> source, T value)
         where T : struct
     {
+        Debug.Assert(value is not char s || !char.IsSurrogate(s));
         Debug.Assert(value is byte or char or Rune or U8String);
 
         return value switch
@@ -32,11 +33,16 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? source.Contains((byte)c)
-                : source.IndexOf(new U8Scalar(c, checkAscii: false).AsSpan()) >= 0,
+                : source.IndexOf(c <= 0x7FF ? c.AsTwoBytes() : c.AsThreeBytes()) >= 0,
 
             Rune r => r.IsAscii
                 ? source.Contains((byte)r.Value)
-                : source.IndexOf(new U8Scalar(r, checkAscii: false).AsSpan()) >= 0,
+                : source.IndexOf(r.Value switch
+                {
+                    <= 0x7FF => r.AsTwoBytes(),
+                    <= 0xFFFF => r.AsThreeBytes(),
+                    _ => r.AsFourBytes()
+                }) >= 0,
 
             U8String str => Contains(source, str.AsSpan()),
 
@@ -104,11 +110,16 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? ContainsSegment(haystack, needle, (byte)c)
-                : ContainsSegment(haystack, needle, new U8Scalar(c, checkAscii: false).AsSpan()),
+                : ContainsSegment(haystack, needle, c <= 0x7FF ? c.AsTwoBytes() : c.AsThreeBytes()),
 
             Rune r => r.IsAscii
                 ? ContainsSegment(haystack, needle, (byte)r.Value)
-                : ContainsSegment(haystack, needle, new U8Scalar(r, checkAscii: false).AsSpan()),
+                : ContainsSegment(haystack, needle, r.Value switch
+                {
+                    <= 0x7FF => r.AsTwoBytes(),
+                    <= 0xFFFF => r.AsThreeBytes(),
+                    _ => r.AsFourBytes()
+                }),
 
             _ => ThrowHelpers.Unreachable<bool>()
         };
@@ -383,11 +394,20 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? (int)(uint)CountByte((byte)c, ref source.AsRef(), (uint)source.Length)
-                : source.Count(new U8Scalar(c, checkAscii: false).AsSpan()),
+                : source.Count((ushort)c switch
+                {
+                    <= 0x7FF => c.AsTwoBytes(),
+                    _ => c.AsThreeBytes()
+                }),
 
             Rune r => r.IsAscii
                 ? (int)(uint)CountByte((byte)r.Value, ref source.AsRef(), (uint)source.Length)
-                : source.Count(new U8Scalar(r, checkAscii: false).AsSpan()),
+                : source.Count(r.Value switch
+                {
+                    <= 0x7FF => r.AsTwoBytes(),
+                    <= 0xFFFF => r.AsThreeBytes(),
+                    _ => r.AsFourBytes()
+                }),
 
             U8String str => Count(source, str.AsSpan()),
 
@@ -670,8 +690,23 @@ internal static class U8Searching
                     return (source.IndexOf((byte)c), 1);
                 }
 
-                var scalar = new U8Scalar(c, checkAscii: false);
-                return (source.IndexOf(scalar.AsSpan()), scalar.Length);
+                ReadOnlySpan<byte> scalar;
+                int scalarLength;
+
+                switch ((ushort)c)
+                {
+                    case <= 0x7FF:
+                        scalar = c.AsTwoBytes();
+                        scalarLength = 2;
+                        break;
+
+                    default:
+                        scalar = c.AsThreeBytes();
+                        scalarLength = 3;
+                        break;
+                }
+
+                return (source.IndexOf(scalar), scalarLength);
 
             case Rune r:
                 if (r.IsAscii)
@@ -679,8 +714,28 @@ internal static class U8Searching
                     return (source.IndexOf((byte)r.Value), 1);
                 }
 
-                var rune = new U8Scalar(r, checkAscii: false);
-                return (source.IndexOf(rune.AsSpan()), rune.Length);
+                ReadOnlySpan<byte> rune;
+                int runeLength;
+
+                switch (r.Value)
+                {
+                    case <= 0x7FF:
+                        rune = r.AsTwoBytes();
+                        runeLength = 2;
+                        break;
+
+                    case <= 0xFFFF:
+                        rune = r.AsThreeBytes();
+                        runeLength = 3;
+                        break;
+
+                    default:
+                        rune = r.AsFourBytes();
+                        runeLength = 4;
+                        break;
+                }
+
+                return (source.IndexOf(rune), runeLength);
 
             case U8String str:
                 var span = str.AsSpan();
@@ -764,8 +819,23 @@ internal static class U8Searching
                     return (source.LastIndexOf((byte)c), 1);
                 }
 
-                var scalar = new U8Scalar(c, checkAscii: false);
-                return (source.LastIndexOf(scalar.AsSpan()), scalar.Length);
+                ReadOnlySpan<byte> scalar;
+                int scalarLength;
+
+                switch ((ushort)c)
+                {
+                    case <= 0x7FF:
+                        scalar = c.AsTwoBytes();
+                        scalarLength = 2;
+                        break;
+
+                    default:
+                        scalar = c.AsThreeBytes();
+                        scalarLength = 3;
+                        break;
+                }
+
+                return (source.LastIndexOf(scalar), scalarLength);
 
             case Rune r:
                 if (r.IsAscii)
@@ -773,8 +843,28 @@ internal static class U8Searching
                     return (source.LastIndexOf((byte)r.Value), 1);
                 }
 
-                var rune = new U8Scalar(r, checkAscii: false);
-                return (source.LastIndexOf(rune.AsSpan()), rune.Length);
+                ReadOnlySpan<byte> rune;
+                int runeLength;
+
+                switch (r.Value)
+                {
+                    case <= 0x7FF:
+                        rune = r.AsTwoBytes();
+                        runeLength = 2;
+                        break;
+
+                    case <= 0xFFFF:
+                        rune = r.AsThreeBytes();
+                        runeLength = 3;
+                        break;
+
+                    default:
+                        rune = r.AsFourBytes();
+                        runeLength = 4;
+                        break;
+                }
+
+                return (source.LastIndexOf(rune), runeLength);
 
             case U8String str:
                 var span = str.AsSpan();
@@ -856,11 +946,16 @@ internal static class U8Searching
 
             char c => char.IsAscii(c)
                 ? IndexOfSegment(haystack, needle, (byte)c)
-                : IndexOfSegment(haystack, needle, new U8Scalar(c, checkAscii: false).AsSpan()),
+                : IndexOfSegment(haystack, needle, c <= 0x7FF ? c.AsTwoBytes() : c.AsThreeBytes()),
 
             Rune r => r.IsAscii
                 ? IndexOfSegment(haystack, needle, (byte)r.Value)
-                : IndexOfSegment(haystack, needle, new U8Scalar(r, checkAscii: false).AsSpan()),
+                : IndexOfSegment(haystack, needle, r.Value switch
+                {
+                    <= 0x7FF => r.AsTwoBytes(),
+                    <= 0xFFFF => r.AsThreeBytes(),
+                    _ => r.AsFourBytes()
+                }),
 
             _ => ThrowHelpers.Unreachable<int>()
         };

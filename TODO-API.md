@@ -61,6 +61,7 @@
     - [x] Join
     - [x] Trim, TrimStart, TrimEnd
     - [x] TrimAscii, TrimStartAscii, TrimEndAscii
+    - [ ] Trim(value), TrimStart(value), TrimEnd(value) + comparer variants
     - [x] Replace(byte)
     - [x] Replace(...)
     - [ ] Replace(..., T comparer)

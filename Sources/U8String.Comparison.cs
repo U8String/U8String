@@ -269,6 +269,8 @@ public readonly partial struct U8String
         var deref = this;
         if (deref.Length == other.Length)
         {
+            // We cannot replace this with !deref.IsEmpty because .NET won't fold
+            // deref.Length > 0 even if other.Length is a greater than zero constant.
             if (deref.Length > 0)
             {
                 return deref.UnsafeSpan.SequenceEqual(other);

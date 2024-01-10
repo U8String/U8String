@@ -46,7 +46,8 @@ public readonly partial struct U8String
             return SplitFirst((byte)separator);
         }
 
-        return SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+        return SplitFirstUnchecked(
+            separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes());
     }
 
     public U8SplitPair SplitFirst(Rune separator)
@@ -56,7 +57,12 @@ public readonly partial struct U8String
             return SplitFirst((byte)separator.Value);
         }
 
-        return SplitFirstUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+        return SplitFirstUnchecked(separator.Value switch
+        {
+            <= 0x7FF => separator.AsTwoBytes(),
+            <= 0xFFFF => separator.AsThreeBytes(),
+            _ => separator.AsFourBytes(),
+        });
     }
 
     public U8SplitPair SplitFirst(U8String separator)
@@ -251,7 +257,8 @@ public readonly partial struct U8String
             return SplitLast((byte)separator);
         }
 
-        return SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+        return SplitLastUnchecked(
+            separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes());
     }
 
     public U8SplitPair SplitLast(Rune separator)
@@ -261,7 +268,12 @@ public readonly partial struct U8String
             return SplitLast((byte)separator.Value);
         }
 
-        return SplitLastUnchecked(new U8Scalar(separator, checkAscii: false).AsSpan());
+        return SplitLastUnchecked(separator.Value switch
+        {
+            <= 0x7FF => separator.AsTwoBytes(),
+            <= 0xFFFF => separator.AsThreeBytes(),
+            _ => separator.AsFourBytes(),
+        });
     }
 
     public U8SplitPair SplitLast(U8String separator)
@@ -477,7 +489,10 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public U8Split<Rune> Split(Rune separator) => new(this, separator);
+    public U8Split<Rune> Split(Rune separator)
+    {
+        return new(this, separator);
+    }
 
     public U8Split Split(U8String separator)
     {
@@ -505,7 +520,10 @@ public readonly partial struct U8String
         return new(this, separator, options);
     }
 
-    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options) => new(this, separator, options);
+    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options)
+    {
+        return new(this, separator, options);
+    }
 
     public ConfiguredU8Split Split(U8String separator, U8SplitOptions options)
     {

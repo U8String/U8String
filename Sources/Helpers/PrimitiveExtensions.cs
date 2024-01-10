@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace U8.Primitives;
 
 static class PrimitiveExtensions
@@ -12,4 +14,10 @@ static class PrimitiveExtensions
 
         return total;
     }
+
+    internal static U8TwoBytes AsTwoBytes(this char c) => new(c);
+    internal static U8TwoBytes AsTwoBytes(this Rune r) => new(r);
+    internal static U8ThreeBytes AsThreeBytes(this char c) => new(c);
+    internal static U8ThreeBytes AsThreeBytes(this Rune r) => new(r);
+    internal static U8FourBytes AsFourBytes(this Rune r) => new(r);
 }
