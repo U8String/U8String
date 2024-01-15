@@ -12,4 +12,11 @@ public readonly partial struct U8String
         public int Length => value.Length;
         public U8RuneIndices Runes => value.RuneIndices;
     }
+
+    string DebuggerDisplay()
+    {
+        var source = this;
+        return source.Length <= 1024
+            ? ToString() : $"{source.SliceRounding(0, 1024)}...";
+    }
 }

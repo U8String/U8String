@@ -178,6 +178,13 @@ public readonly partial struct U8String
         }
     }
 
+    /// <inheritdoc cref="Format"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String(ref InterpolatedU8StringHandler handler)
+    {
+        this = Format(ref handler);
+    }
+
     /// <summary>
     /// Creates a new <see cref="U8String"/> from the specified null-terminated UTF-8 string
     /// represented by a pointer to its first byte.
@@ -420,6 +427,12 @@ public readonly partial struct U8String
         }
 
         return u8str;
+    }
+
+    /// <inheritdoc cref="Format"/>
+    public static U8String Create(ref InterpolatedU8StringHandler handler)
+    {
+        return Format(ref handler);
     }
 
     // TODO: Documentation

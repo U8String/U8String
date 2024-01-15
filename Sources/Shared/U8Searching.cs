@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 using System.Runtime.Intrinsics.Arm;
 using System.Text;
@@ -21,33 +22,48 @@ internal static class U8Searching
     /// </para>
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool Contains<T>(ReadOnlySpan<byte> source, T value)
-        where T : struct
+    internal static bool Contains<T>(T value, ref byte src, int length)
+        where T : unmanaged
     {
         Debug.Assert(value is not char s || !char.IsSurrogate(s));
-        Debug.Assert(value is byte or char or Rune or U8String);
+        Debug.Assert(value is byte or char or Rune);
 
         return value switch
         {
-            byte b => source.Contains(b),
-
-            char c => char.IsAscii(c)
-                ? source.Contains((byte)c)
-                : source.IndexOf(c <= 0x7FF ? c.AsTwoBytes() : c.AsThreeBytes()) >= 0,
-
-            Rune r => r.IsAscii
-                ? source.Contains((byte)r.Value)
-                : source.IndexOf(r.Value switch
-                {
-                    <= 0x7FF => r.AsTwoBytes(),
-                    <= 0xFFFF => r.AsThreeBytes(),
-                    _ => r.AsFourBytes()
-                }) >= 0,
-
-            U8String str => Contains(source, str.AsSpan()),
-
+            byte b => ContainsByte(b, ref src, length),
+            char c => ContainsChar(c, ref src, length),
+            Rune r => ContainsRune(r, ref src, length),
             _ => ThrowHelpers.Unreachable<bool>()
         };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool ContainsByte(byte value, ref byte src, int length)
+        {
+            return MemoryMarshal.CreateReadOnlySpan(ref src, length).Contains(value);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool ContainsChar(char value, ref byte src, int length)
+        {
+            var span = MemoryMarshal.CreateReadOnlySpan(ref src, length);
+            return char.IsAscii(value)
+                ? span.Contains((byte)value)
+                : span.IndexOf(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes()) >= 0;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static bool ContainsRune(Rune value, ref byte src, int length)
+        {
+            var span = MemoryMarshal.CreateReadOnlySpan(ref src, length);
+            return value.IsAscii
+                ? span.Contains((byte)value.Value)
+                : span.IndexOf(value.Value switch
+                {
+                    <= 0x7FF => value.AsTwoBytes(),
+                    <= 0xFFFF => value.AsThreeBytes(),
+                    _ => value.AsFourBytes()
+                }) >= 0;
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

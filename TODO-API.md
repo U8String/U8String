@@ -82,6 +82,7 @@
     - [ ] `.Graphemes`
     - [ ] `.Words`
     - [ ] `.Sentences`
+- [ ] Consider `.Prelude` (or `.Syntax`) namespace/static class for shorthand declaration syntax through `uisng static` e.g. `STR("Hello, world!")`, `U8(nonConstant)`, `U8($"Today is {DateTime.Now}")`, etc. Extra style points for the API being offensive to Java devs.
 - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
 - [ ] Transcoding: UTF8<->UTF32
 - [x] TryCreate construction variants

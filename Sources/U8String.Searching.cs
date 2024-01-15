@@ -102,7 +102,7 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return !IsEmpty && U8Searching.Contains(UnsafeSpan, value);
+        return !IsEmpty && U8Searching.Contains(value, ref UnsafeRef, Length);
     }
 
     /// <summary>
@@ -111,7 +111,7 @@ public readonly partial struct U8String
     /// </summary>
     public bool Contains(Rune value)
     {
-        return !IsEmpty && U8Searching.Contains(UnsafeSpan, value);
+        return !IsEmpty && U8Searching.Contains(value, ref UnsafeRef, Length);
     }
 
     /// <summary>
@@ -285,11 +285,15 @@ public readonly partial struct U8String
     {
         bool result;
         var deref = this;
-        if (value.Length <= deref.Length)
+        if (value.Length > 0)
         {
-            result = deref.UnsafeSpan.StartsWith(value);
+            if (value.Length <= deref.Length)
+            {
+                result = deref.UnsafeSpan.StartsWith(value);
+            }
+            else result = false;
         }
-        else result = value.IsEmpty;
+        else result = true;
 
         return result;
     }
@@ -426,11 +430,15 @@ public readonly partial struct U8String
     {
         bool result;
         var deref = this;
-        if (value.Length <= deref.Length)
+        if (value.Length > 0)
         {
-            result = deref.UnsafeSpan.EndsWith(value);
+            if (value.Length <= deref.Length)
+            {
+                result = deref.UnsafeSpan.EndsWith(value);
+            }
+            else result = false;
         }
-        else result = value.IsEmpty;
+        else result = true;
 
         return result;
     }

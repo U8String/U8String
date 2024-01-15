@@ -16,6 +16,10 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [x] Refactor `char` and `Rune` overloads to use `...TwoBytes`, `...ThreeBytes` and `...FourBytes` specialized handlers over spilling into span and then doing extra SequenceEqual/etc. calls which is expensive
     - [x] ~~`U8(Scalar/Rune)Split`-like internal API shape?~~
     - [ ] Do a similar optimization pass for comparer-based paths
+- [ ] Do an optimization pass for comparer-based `SplitFirst/Last` overloads targeted at reducing IL churn
+- [ ] Add SourceLink support
+- [ ] CliWrap or a similar form of integration, package for Pipelines?
+- [ ] Investigate if there is GC pause time impact from dependent handles that track objects in Non-GC heaps (e.g. literal pools)
 - [ ] Audit the uses of `MethodImplOptions.AggressiveInlining` on methods which accept u8 literals and use `ValidatePossibleConstant`; review the conditions under which the methods get inlined on passing a constant without the attribute and stay not inlined when the validation cannot be optimized away
 - [ ] Move back UTF-8 validation from CoreLib to local polyfill and optimize calling convention to prevent codegen bloat
 - [x] Consider authoring namespaces and renaming `U8Primitives` to just `U8`

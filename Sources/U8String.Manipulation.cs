@@ -672,7 +672,7 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static U8String Join<T>(U8String separator, T values)
+    public static U8String Join<T>(U8String separator, T values)
         where T : struct, IEnumerable<U8String>
     {
         return !separator.IsEmpty ? separator.Length switch
@@ -1310,8 +1310,10 @@ public readonly partial struct U8String
     public U8String SliceRounding(int start)
     {
         var source = this;
-        var offset = source.Offset + (start > 0 ? Math.Min(start, source.Length) : 0);
+        var offset = start > 0 ? Math.Min(start, source.Length) : 0;
         var newlength = source.Length - offset;
+        offset += source.Offset;
+
         if (newlength > 0)
         {
             ref var ptr = ref source._value!.AsRef(offset);
@@ -1357,8 +1359,10 @@ public readonly partial struct U8String
     public U8String SliceRounding(int start, int length)
     {
         var source = this;
-        var offset = source.Offset + (start > 0 ? Math.Min(start, source.Length) : 0);
+        var offset = start > 0 ? Math.Min(start, source.Length) : 0;
         var newlength = Math.Min(length, source.Length - offset);
+        offset += source.Offset;
+
         if (newlength > 0)
         {
             ref var ptr = ref source._value!.AsRef(offset);
@@ -1385,6 +1389,78 @@ public readonly partial struct U8String
         }
 
         return new(source._value, offset, newlength);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String StripPrefix(ReadOnlySpan<byte> prefix)
+    {
+        ValidatePossibleConstant(prefix);
+
+        var source = this;
+        if (!source.IsEmpty &&
+            prefix.Length <= source.Length &&
+            source.UnsafeSpan.StartsWith(prefix))
+        {
+            return new(
+                source._value,
+                source.Offset + prefix.Length,
+                source.Length - prefix.Length);
+        }
+
+        return source;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String StripPrefix(U8String prefix)
+    {
+        var source = this;
+        if (!prefix.IsEmpty &&
+            prefix.Length <= source.Length &&
+            source.UnsafeSpan.StartsWith(prefix))
+        {
+            return new(
+                source._value,
+                source.Offset + prefix.Length,
+                source.Length - prefix.Length);
+        }
+
+        return source;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String StripSuffix(ReadOnlySpan<byte> suffix)
+    {
+        ValidatePossibleConstant(suffix);
+
+        var source = this;
+        if (!source.IsEmpty &&
+            suffix.Length <= source.Length &&
+            source.UnsafeSpan.EndsWith(suffix))
+        {
+            return new(
+                source._value,
+                source.Offset,
+                source.Length - suffix.Length);
+        }
+
+        return source;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String StripSuffix(U8String suffix)
+    {
+        var source = this;
+        if (!suffix.IsEmpty &&
+            suffix.Length <= source.Length &&
+            source.UnsafeSpan.EndsWith(suffix))
+        {
+            return new(
+                source._value,
+                source.Offset,
+                source.Length - suffix.Length);
+        }
+
+        return source;
     }
 
     /// <summary>

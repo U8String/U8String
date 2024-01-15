@@ -207,8 +207,7 @@ public readonly partial struct U8String :
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => MemoryMarshal.CreateReadOnlySpan(
-            ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset),
-            Length);
+            ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset), Length);
     }
 
     /// <summary>
@@ -346,11 +345,6 @@ public readonly partial struct U8String :
         value = _value;
         offset = Offset;
         length = Length;
-    }
-
-    string DebuggerDisplay()
-    {
-        return Length < 1024 ? ToString() : $"{SliceRounding(0, 1024)}...";
     }
 
     void IList<byte>.Insert(int index, byte item) => throw new NotSupportedException();

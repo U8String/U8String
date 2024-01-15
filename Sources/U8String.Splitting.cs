@@ -18,23 +18,28 @@ public enum U8SplitOptions : byte
 
 public readonly partial struct U8String
 {
-    // TODO: Dedup SplitFirst/Last
     public U8SplitPair SplitFirst(byte separator)
     {
         ThrowHelpers.CheckAscii(separator);
 
         var source = this;
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
         if (!source.IsEmpty)
         {
             var span = source.UnsafeSpan;
             var index = span.IndexOf(separator);
             if (index >= 0)
             {
-                return new(source, index, 1);
+                remainder = new(
+                    segment.Offset + index + 1,
+                    segment.Length - index - 1);
+                segment = new(segment.Offset, index);
             }
         }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
     public U8SplitPair SplitFirst(char separator)
@@ -46,7 +51,7 @@ public readonly partial struct U8String
             return SplitFirst((byte)separator);
         }
 
-        return SplitFirstUnchecked(
+        return SplitFirstRune(
             separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes());
     }
 
@@ -57,7 +62,7 @@ public readonly partial struct U8String
             return SplitFirst((byte)separator.Value);
         }
 
-        return SplitFirstUnchecked(separator.Value switch
+        return SplitFirstRune(separator.Value switch
         {
             <= 0x7FF => separator.AsTwoBytes(),
             <= 0xFFFF => separator.AsThreeBytes(),
@@ -67,62 +72,87 @@ public readonly partial struct U8String
 
     public U8SplitPair SplitFirst(U8String separator)
     {
-        // TODO: Reconsider empty separator handling:
-        // should the empty cause the entire string to be Remainder?
         var source = this;
-        if (!source.IsEmpty && !separator.IsEmpty)
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
+        if (!separator.IsEmpty)
         {
-            var span = source.UnsafeSpan;
-            var index = span.IndexOf(separator.UnsafeSpan);
-            if (index >= 0)
+            if (!source.IsEmpty)
             {
-                return new(source, index, separator.Length);
+                var span = source.UnsafeSpan;
+                var index = span.IndexOf(separator.UnsafeSpan);
+                if (index >= 0)
+                {
+                    remainder = new(
+                        segment.Offset + index + separator.Length,
+                        segment.Length - index - separator.Length);
+                    segment = new(segment.Offset, index);
+                }
             }
         }
+        else
+        {
+            (segment, remainder) = (default, segment);
+        }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitFirst(ReadOnlySpan<byte> separator)
     {
-        // TODO: check if separator starts with boundary byte instead
-        // TODO: maybe check if separator ends with last rune byte instead (if it's cheap and amenable to const. fold)
-        var source = this;
-        if (!source.IsEmpty && separator.Length > 0)
-        {
-            var index = source.UnsafeSpan.IndexOf(separator);
-            if (index >= 0)
-            {
-                var end = index + separator.Length;
-                if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) || (end < source.Length &&
-                    U8Info.IsContinuationByte(source.UnsafeRefAdd(end))))
-                {
-                    ThrowHelpers.InvalidSplit();
-                }
+        ValidatePossibleConstant(separator);
 
-                return new(source, index, separator.Length);
+        var source = this;
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
+        if (separator.Length > 0)
+        {
+            if (!source.IsEmpty)
+            {
+                var index = source.UnsafeSpan.IndexOf(separator);
+                if (index >= 0)
+                {
+                    remainder = new(
+                        segment.Offset + index + separator.Length,
+                        segment.Length - index - separator.Length);
+                    segment = new(segment.Offset, index);
+                }
             }
         }
+        else
+        {
+            (segment, remainder) = (default, segment);
+        }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
-    U8SplitPair SplitFirstUnchecked(ReadOnlySpan<byte> separator)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    U8SplitPair SplitFirstRune(ReadOnlySpan<byte> separator)
     {
-        Debug.Assert(separator.Length > 0);
+        Debug.Assert(separator.Length is 2 or 3 or 4);
 
         var source = this;
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
         if (!source.IsEmpty)
         {
             var span = source.UnsafeSpan;
             var index = span.IndexOf(separator);
             if (index >= 0)
             {
-                return new(source, index, separator.Length);
+                remainder = new(
+                    segment.Offset + index + separator.Length,
+                    segment.Length - index - separator.Length);
+                segment = new(segment.Offset, index);
             }
         }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
     public U8SplitPair SplitFirst<T>(byte separator, T comparer)
@@ -235,17 +265,23 @@ public readonly partial struct U8String
         ThrowHelpers.CheckAscii(separator);
 
         var source = this;
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
         if (!source.IsEmpty)
         {
             var span = source.UnsafeSpan;
             var index = span.LastIndexOf(separator);
             if (index >= 0)
             {
-                return new(source, index, 1);
+                remainder = new(
+                    segment.Offset + index + 1,
+                    segment.Length - index - 1);
+                segment = new(segment.Offset, index);
             }
         }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
     public U8SplitPair SplitLast(char separator)
@@ -257,7 +293,7 @@ public readonly partial struct U8String
             return SplitLast((byte)separator);
         }
 
-        return SplitLastUnchecked(
+        return SplitLastRune(
             separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes());
     }
 
@@ -268,7 +304,7 @@ public readonly partial struct U8String
             return SplitLast((byte)separator.Value);
         }
 
-        return SplitLastUnchecked(separator.Value switch
+        return SplitLastRune(separator.Value switch
         {
             <= 0x7FF => separator.AsTwoBytes(),
             <= 0xFFFF => separator.AsThreeBytes(),
@@ -279,57 +315,86 @@ public readonly partial struct U8String
     public U8SplitPair SplitLast(U8String separator)
     {
         var source = this;
-        if (!source.IsEmpty && !separator.IsEmpty)
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
+        if (!separator.IsEmpty)
         {
-            var span = source.UnsafeSpan;
-            var index = span.LastIndexOf(separator.UnsafeSpan);
-            if (index >= 0)
+            if (!source.IsEmpty)
             {
-                return new(source, index, separator.Length);
+                var span = source.UnsafeSpan;
+                var index = span.LastIndexOf(separator.UnsafeSpan);
+                if (index >= 0)
+                {
+                    remainder = new(
+                        segment.Offset + index + separator.Length,
+                        segment.Length - index - separator.Length);
+                    segment = new(segment.Offset, index);
+                }
             }
         }
+        else
+        {
+            (segment, remainder) = (default, segment);
+        }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitLast(ReadOnlySpan<byte> separator)
     {
-        var source = this;
-        if (!source.IsEmpty && separator.Length > 0)
-        {
-            var index = source.UnsafeSpan.LastIndexOf(separator);
-            if (index >= 0)
-            {
-                var end = index + separator.Length;
-                if (U8Info.IsContinuationByte(source.UnsafeRefAdd(index)) || (end < source.Length &&
-                    U8Info.IsContinuationByte(source.UnsafeRefAdd(end))))
-                {
-                    ThrowHelpers.InvalidSplit();
-                }
+        ValidatePossibleConstant(separator);
 
-                return new(source, index, separator.Length);
+        var source = this;
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
+        if (separator.Length > 0)
+        {
+            if (!source.IsEmpty)
+            {
+                var index = source.UnsafeSpan.LastIndexOf(separator);
+                if (index >= 0)
+                {
+                    remainder = new(
+                        segment.Offset + index + separator.Length,
+                        segment.Length - index - separator.Length);
+                    segment = new(segment.Offset, index);
+                }
             }
         }
+        else
+        {
+            (segment, remainder) = (default, segment);
+        }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
-    internal U8SplitPair SplitLastUnchecked(ReadOnlySpan<byte> separator)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    U8SplitPair SplitLastRune(ReadOnlySpan<byte> separator)
     {
-        Debug.Assert(separator.Length > 0);
+        Debug.Assert(separator.Length is 2 or 3 or 4);
 
         var source = this;
+        var segment = source._inner;
+        var remainder = default(U8Range);
+
         if (!source.IsEmpty)
         {
             var span = source.UnsafeSpan;
             var index = span.LastIndexOf(separator);
             if (index >= 0)
             {
-                return new(source, index, separator.Length);
+                remainder = new(
+                    segment.Offset + index + separator.Length,
+                    segment.Length - index - separator.Length);
+                segment = new(segment.Offset, index);
             }
         }
 
-        return U8SplitPair.NotFound(source);
+        return new(source._value, segment, remainder);
     }
 
     public U8SplitPair SplitLast<T>(byte separator, T comparer)

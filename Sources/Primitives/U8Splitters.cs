@@ -25,6 +25,14 @@ public readonly record struct U8SplitPair
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8SplitPair(byte[]? value, U8Range segment, U8Range remainder)
+    {
+        _value = value;
+        _segment = segment;
+        _remainder = remainder;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static U8SplitPair NotFound(U8String value)
     {
         return new(value, value.Length, 0);
@@ -33,13 +41,13 @@ public readonly record struct U8SplitPair
     public U8String Segment
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_value, _segment);
+        get => new(_value, _segment.Offset, _segment.Length);
     }
 
     public U8String Remainder
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_value, _remainder);
+        get => new(_value, _remainder.Offset, _remainder.Length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
