@@ -18,6 +18,8 @@ public enum U8SplitOptions : byte
 
 public readonly partial struct U8String
 {
+    // Does not get inlined on NativeAOT otherwise which is a codegen size regression.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitFirst(byte separator)
     {
         ThrowHelpers.CheckAscii(separator);
@@ -70,6 +72,7 @@ public readonly partial struct U8String
         });
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitFirst(U8String separator)
     {
         var source = this;
@@ -260,6 +263,7 @@ public readonly partial struct U8String
         return U8SplitPair.NotFound(source);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitLast(byte separator)
     {
         ThrowHelpers.CheckAscii(separator);
@@ -312,6 +316,7 @@ public readonly partial struct U8String
         });
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitLast(U8String separator)
     {
         var source = this;

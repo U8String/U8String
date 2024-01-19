@@ -52,6 +52,11 @@ public readonly struct U8Chars(U8String value) :
         _value.CopyTo(destination.AsSpan()[index..], out _);
     }
 
+    public void CopyTo(Span<char> destination)
+    {
+        _value.CopyTo(destination, out _);
+    }
+
     public void Deconstruct(out char first, out char second)
     {
         this.Deconstruct<U8Chars, Enumerator, char>(out first, out second);
@@ -87,7 +92,7 @@ public readonly struct U8Chars(U8String value) :
             return chars;
         }
 
-        return [];
+        return U8Constants.EmptyChars;
     }
 
     public List<char> ToList()
@@ -218,6 +223,11 @@ public readonly struct U8Runes(U8String value) :
         this.CopyTo<U8Runes, Enumerator, Rune>(destination.AsSpan()[index..]);
     }
 
+    public void CopyTo(Span<Rune> destination)
+    {
+        this.CopyTo<U8Runes, Enumerator, Rune>(destination);
+    }
+
     public void Deconstruct(out Rune first, out Rune second)
     {
         this.Deconstruct<U8Runes, Enumerator, Rune>(out first, out second);
@@ -332,6 +342,11 @@ public readonly struct U8RuneIndices(U8String value) :
         this.CopyTo<U8RuneIndices, Enumerator, U8RuneIndex>(destination.AsSpan()[index..]);
     }
 
+    public void CopyTo(Span<U8RuneIndex> destination)
+    {
+        this.CopyTo<U8RuneIndices, Enumerator, U8RuneIndex>(destination);
+    }
+
     public void Deconstruct(out U8RuneIndex first, out U8RuneIndex second)
     {
         this.Deconstruct<U8RuneIndices, Enumerator, U8RuneIndex>(out first, out second);
@@ -441,6 +456,11 @@ public readonly struct U8Lines(U8String value) :
     public void CopyTo(U8String[] destination, int index)
     {
         this.CopyTo<U8Lines, Enumerator, U8String>(destination.AsSpan()[index..]);
+    }
+
+    public void CopyTo(Span<U8String> destination)
+    {
+        this.CopyTo<U8Lines, Enumerator, U8String>(destination);
     }
 
     public void Deconstruct(out U8String first, out U8String second)

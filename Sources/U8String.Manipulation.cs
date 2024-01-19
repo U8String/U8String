@@ -255,13 +255,9 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckNull(values);
 
-        if (values is U8String[] array)
+        if (values.TryGetSpan(out var span))
         {
-            return Concat(array.AsSpan());
-        }
-        else if (values is List<U8String> list)
-        {
-            return Concat(CollectionsMarshal.AsSpan(list));
+            return Concat(span);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -353,6 +349,16 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        // A few odd cases that may not be likely, but we can handle them for free so why not?
+        if (typeof(T) == typeof(char))
+        {
+            return new(values.Cast<T, char>());
+        }
+        else if (typeof(T) == typeof(U8String))
+        {
+            return Concat(values.Cast<T, U8String>());
+        }
+
         if (values.Length > 1)
         {
             var builder = new ArrayBuilder();
@@ -381,13 +387,13 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckNull(values);
 
-        if (values is T[] array)
+        if (typeof(T) == typeof(U8String))
         {
-            return Concat<T>(array.AsSpan(), format, provider);
+            return Concat(values.Cast<T, U8String>());
         }
-        else if (values is List<T> list)
+        else if (values.TryGetSpan(out var span))
         {
-            return Concat<T>(CollectionsMarshal.AsSpan(list), format, provider);
+            return Concat(span, format, provider);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -678,7 +684,7 @@ public readonly partial struct U8String
         return !separator.IsEmpty ? separator.Length switch
         {
             1 => Join(separator.UnsafeRef, values),
-            _ => JoinSpan(separator, values)
+            _ => JoinSpan(separator.UnsafeSpan, values)
         } : Concat(values);
     }
 

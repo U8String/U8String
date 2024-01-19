@@ -557,7 +557,6 @@ internal static class U8Searching
         ref var end = ref src.Add(length);
         if (length >= (nuint)Vector256<byte>.Count)
         {
-            var one = Vector256.Create((byte)1);
             var needle = Vector256.Create(value);
             ref var lastvec = ref end.Substract(Vector256<byte>.Count);
             do

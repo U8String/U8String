@@ -41,13 +41,13 @@ public readonly record struct U8SplitPair
     public U8String Segment
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_value, _segment.Offset, _segment.Length);
+        get => new(_value, _segment);
     }
 
     public U8String Remainder
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => new(_value, _remainder.Offset, _remainder.Length);
+        get => new(_value, _remainder);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -918,12 +918,8 @@ public readonly ref struct U8RefSplit
             var value = _value;
             var separator = _separator;
 
-            if (!value.IsEmpty)
-            {
-                return U8Searching.Count(value.UnsafeSpan, separator) + 1;
-            }
-
-            return 0;
+            return !value.IsEmpty
+                ? U8Searching.Count(value.UnsafeSpan, separator) + 1 : 0;
         }
     }
 
@@ -1066,7 +1062,7 @@ public readonly ref struct U8RefSplit
             return result;
         }
 
-        return [];
+        return U8Constants.EmptyStrings;
     }
 
     public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
@@ -1323,7 +1319,7 @@ public readonly ref struct U8RefSplit<TComparer>
             return result;
         }
 
-        return [];
+        return U8Constants.EmptyStrings;
     }
 
     public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
@@ -1508,7 +1504,7 @@ public readonly ref struct ConfiguredU8RefSplit
             return result;
         }
 
-        return [];
+        return U8Constants.EmptyStrings;
     }
 
     public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());
@@ -1713,7 +1709,7 @@ public readonly ref struct ConfiguredU8RefSplit<TComparer>
             return result;
         }
 
-        return [];
+        return U8Constants.EmptyStrings;
     }
 
     public ImmutableArray<U8String> ToImmutableArray() => ImmutableCollectionsMarshal.AsImmutableArray(ToArray());

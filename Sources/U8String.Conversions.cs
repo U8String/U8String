@@ -160,7 +160,7 @@ public readonly partial struct U8String
     static bool IParsable<U8String>.TryParse(
         [NotNullWhen(true)] string? s,
         IFormatProvider? _,
-        [MaybeNullWhen(false)] out U8String result) => TryCreate(s, out result);
+        out U8String result) => TryCreate(s, out result);
 
     /// <inheritdoc />
     static bool ISpanParsable<U8String>.TryParse(
@@ -218,7 +218,7 @@ public readonly partial struct U8String
             return bytes;
         }
 
-        return [];
+        return U8Constants.EmptyBytes;
     }
 
     /// <summary>

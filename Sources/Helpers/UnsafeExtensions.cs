@@ -99,6 +99,27 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ReadOnlySpan<U> Cast<T, U>(this ReadOnlySpan<T> value)
+    {
+        Debug.Assert(Unsafe.SizeOf<T>() == Unsafe.SizeOf<U>());
+        Debug.Assert(
+            RuntimeHelpers.IsReferenceOrContainsReferences<T>() ==
+            RuntimeHelpers.IsReferenceOrContainsReferences<U>());
+
+        return MemoryMarshal.CreateReadOnlySpan(
+            ref Unsafe.As<T, U>(ref MemoryMarshal.GetReference(value)), value.Length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static IEnumerable<U> Cast<T, U>(this IEnumerable<T> value)
+    {
+        // Safe - restrict to specializing for now
+        Debug.Assert(typeof(T) == typeof(U));
+
+        return Unsafe.As<IEnumerable<U>>(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyToUnsafe(this ReadOnlySpan<byte> source, ref byte destination)
     {
         Debug.Assert(!Unsafe.IsNullRef(ref destination));

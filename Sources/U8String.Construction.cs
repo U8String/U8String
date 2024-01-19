@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Collections.Immutable;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
@@ -178,12 +179,44 @@ public readonly partial struct U8String
         }
     }
 
-    /// <inheritdoc cref="Format"/>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified string interpolation.
+    /// </summary>
+    /// <param name="handler">The string interpolation handler.</param>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by writing the contents of the interpolated handler
+    /// constructed by Roslyn into a newly allocated buffer.
+    /// <para/>
+    /// This method has consuming semantics and calls <see cref="InterpolatedU8StringHandler.Dispose"/>
+    /// on the provided <paramref name="handler"/> after the <see cref="U8String"/> is created.
+    /// </remarks>
+    // [MethodImpl(MethodImplOptions.NoInlining)] <-- reconsider
     public U8String(ref InterpolatedU8StringHandler handler)
     {
-        this = Format(ref handler);
+        this = new U8String(handler.Written, skipValidation: true);
+        handler.Dispose();
     }
+
+    /// <summary>
+    /// Creates a new <see cref="U8String"/> from the specified string interpolation with the specified format provider.
+    /// </summary>
+    /// <param name="provider">The format provider to use.</param>
+    /// <param name="handler">The string interpolation handler.</param>
+    /// <remarks>
+    /// The <see cref="U8String"/> will be created by writing the contents of the interpolated handler
+    /// constructed by Roslyn into a newly allocated buffer.
+    /// <para/>
+    /// This method has consuming semantics and calls <see cref="InterpolatedU8StringHandler.Dispose"/>
+    /// on the provided <paramref name="handler"/> after the <see cref="U8String"/> is created.
+    /// </remarks>
+#pragma warning disable IDE0060, RCS1163 // Unused parameter. Why: it is passed to the handler ctor.
+    public U8String(IFormatProvider provider,
+        [InterpolatedStringHandlerArgument(nameof(provider))] ref InterpolatedU8StringHandler handler)
+    {
+        this = new U8String(handler.Written, skipValidation: true);
+        handler.Dispose();
+    }
+#pragma warning restore IDE0060, RCS1163
 
     /// <summary>
     /// Creates a new <see cref="U8String"/> from the specified null-terminated UTF-8 string
@@ -195,10 +228,15 @@ public readonly partial struct U8String
     /// <exception cref="ArgumentException">
     /// Thrown when the resulting <see cref="U8String"/> would exceed the maximum supported length.
     /// </exception>
+    /// <exception cref="AccessViolationException">
+    /// Thrown when <paramref name="str"/> is not a valid pointer or when the null-terminator is not found within readable memory.
+    /// This exception cannot be caught.
+    /// </exception>
     /// <remarks>
     /// The <see cref="U8String"/> will be created by copying the bytes starting at the <paramref name="str"/>
     /// up to the first null byte if the null byte offset is greater than 0.
     /// </remarks>
+    [EditorBrowsable(EditorBrowsableState.Advanced)]
     public unsafe U8String(byte* str)
     {
         // TODO: This pretty much traverses the source three times:
@@ -429,10 +467,17 @@ public readonly partial struct U8String
         return u8str;
     }
 
-    /// <inheritdoc cref="Format"/>
+    /// <inheritdoc cref="U8String(ref InterpolatedU8StringHandler)"/>
     public static U8String Create(ref InterpolatedU8StringHandler handler)
     {
-        return Format(ref handler);
+        return new(ref handler);
+    }
+
+    /// <inheritdoc cref="U8String(IFormatProvider, ref InterpolatedU8StringHandler)"/>
+    public static U8String Create(IFormatProvider provider,
+        [InterpolatedStringHandlerArgument(nameof(provider))] ref InterpolatedU8StringHandler handler)
+    {
+        return new(provider, ref handler);
     }
 
     // TODO: Documentation

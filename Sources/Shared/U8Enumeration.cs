@@ -1,4 +1,5 @@
 using System.Runtime.InteropServices;
+using System.Text;
 
 using U8.Abstractions;
 using U8.Primitives;
@@ -173,7 +174,23 @@ internal static class U8Enumeration
             return result;
         }
 
-        return [];
+        return Empty();
+
+        static U[] Empty()
+        {
+            if (typeof(U) == typeof(byte))
+                return Unsafe.As<U[]>(U8Constants.EmptyBytes);
+            if (typeof(U) == typeof(char))
+                return Unsafe.As<U[]>(U8Constants.EmptyChars);
+            if (typeof(U) == typeof(Rune))
+                return Unsafe.As<U[]>(U8Constants.EmptyRunes);
+            if (typeof(U) == typeof(U8RuneIndex))
+                return Unsafe.As<U[]>(U8Constants.EmptyRuneIndices);
+            if (typeof(U) == typeof(U8String))
+                return Unsafe.As<U[]>(U8Constants.EmptyStrings);
+
+            return [];
+        }
     }
 
     internal static List<U> ToList<T, E, U>(this T source)

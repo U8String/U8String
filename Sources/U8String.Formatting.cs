@@ -11,10 +11,10 @@ using U8.Shared;
 namespace U8;
 
 [InterpolatedStringHandler]
-[EditorBrowsable(EditorBrowsableState.Never)]
+[EditorBrowsable(EditorBrowsableState.Advanced)]
 #pragma warning disable RCS1003 // Add braces to multi-line expression. Why: more compact and readable here.
 #pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
-public struct InterpolatedU8StringHandler
+public ref struct InterpolatedU8StringHandler
 {
     InlineBuffer128 _inline;
     readonly IFormatProvider? _provider;
@@ -32,6 +32,11 @@ public struct InterpolatedU8StringHandler
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
+    }
+
+    public InterpolatedU8StringHandler()
+    {
+        Unsafe.SkipInit(out _inline);
     }
 
     public InterpolatedU8StringHandler(
@@ -64,7 +69,7 @@ public struct InterpolatedU8StringHandler
                 return;
             }
 
-            AppendLiteralString(s);
+            AppendConstantString(s);
         }
     }
 
@@ -187,7 +192,7 @@ public struct InterpolatedU8StringHandler
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    void AppendLiteralString([ConstantExpected] string s)
+    void AppendConstantString([ConstantExpected] string s)
     {
         var literal = U8Literals.Utf16.GetLiteral(s);
         AppendBytes(literal.SliceUnsafe(0, literal.Length - 1));
@@ -248,9 +253,17 @@ public struct InterpolatedU8StringHandler
         }
     }
 
-    internal readonly void Dispose()
+    /// <summary>
+    /// Resets the buffer and returns pooled array if applicable.
+    /// </summary>
+    /// <remarks>
+    /// The buffer may be reused after calling this method.
+    /// </remarks>
+    public void Dispose()
     {
-        var rented = _rented;
+        BytesWritten = 0;
+        (var rented, _rented) = (_rented, null);
+
         if (rented != null)
         {
             ArrayPool<byte>.Shared.Return(rented);
@@ -332,14 +345,6 @@ readonly struct EnumU8StringFormat<T>(T value) // : IUtf8SpanFormattable
 
 public readonly partial struct U8String
 {
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public static U8String Format(ref InterpolatedU8StringHandler handler)
-    {
-        var result = new U8String(handler.Written, skipValidation: true);
-        handler.Dispose();
-        return result;
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatPresized<T>(T value, out U8String result)
         where T : IUtf8SpanFormattable

@@ -6,6 +6,7 @@
 - [ ] Contribute IsAsciiWhitespace codegen shape to CoreLib, check out if Utf8Length can be ported too
 - [ ] Contribute optimized versions of span enumerators
 - [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs
+- [ ] Contribute various `ArrayBufferWriter<T>` optimizations - it is kind of underwhelming
 - [ ] Contribute optimized `File.InternalReadAllLinesAsync` and adjacent methods?
 scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
     - [ ] Invariant
@@ -16,15 +17,19 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [x] Refactor `char` and `Rune` overloads to use `...TwoBytes`, `...ThreeBytes` and `...FourBytes` specialized handlers over spilling into span and then doing extra SequenceEqual/etc. calls which is expensive
     - [x] ~~`U8(Scalar/Rune)Split`-like internal API shape?~~
     - [ ] Do a similar optimization pass for comparer-based paths
+- [ ] Drop stuct records in favour of implementing the rest of behavior manually as it is more trim-friendly
+- [x] Add empty array readonly static - `[]` creates a cctor check on NativeAOT 😢
 - [ ] Do an optimization pass for comparer-based `SplitFirst/Last` overloads targeted at reducing IL churn
 - [ ] Add SourceLink support
 - [ ] CliWrap or a similar form of integration, package for Pipelines?
 - [ ] Investigate if there is GC pause time impact from dependent handles that track objects in Non-GC heaps (e.g. literal pools)
+- [ ] Audit collections dispatch specializations for `.Concat`, `.Join` and the like to minimize duplicate checks
 - [ ] Audit the uses of `MethodImplOptions.AggressiveInlining` on methods which accept u8 literals and use `ValidatePossibleConstant`; review the conditions under which the methods get inlined on passing a constant without the attribute and stay not inlined when the validation cannot be optimized away
 - [ ] Move back UTF-8 validation from CoreLib to local polyfill and optimize calling convention to prevent codegen bloat
 - [x] Consider authoring namespaces and renaming `U8Primitives` to just `U8`
 - [ ] Consider replacing U8SplitOptions enum with a generic argument to make make it zero-cost
-- [ ] Consider implementing surrogate-tolerant Concat and Join on `IEnumerable<char>`
+- [ ] Resolve the mess with suppressions list
+- [x] ~~Consider implementing surrogate-tolerant Concat and Join on `IEnumerable<char>`~~ replaced with surrogate-intolerant implementation which is consistent with CoreLib behavior
 - [ ] Consider further specializing/refactoring inline conversion of chars and Runes and having bespoke U8Scalar2, 3 and 4 and delegating lookup to them?
 - [ ] Consider authoring certain methods with platform ABI differences in mind (tactical use of `in` and `ref` may needed for methods that have 2+ U8String arguments)
 - [ ] Implement Unicode normalization (review utf8proc and unilib and then write C#-optimized version)
@@ -42,7 +47,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [ ] Ensure correct behavior for all Split/Any overlods when supplied with empty separator
 - [x] Validate that all call-sites have char.IsSurrogate guards and remove extra check from U8Searching impl. once done
 - [ ] Coalesce CaseConversion and Comparison into Casing (e.g. U8Casing, U8OrdinalCasing, U8AsciiCasing)
-- [ ] Consider bringing back some of the checked CopyTo for inputs that might be changed concurrently
+- [x] Consider bringing back some of the checked CopyTo for inputs that might be changed concurrently
 - [ ] Setup self-hosted or paid runner for ARM64
 - [ ] Setup continuous benchmarking pipeline (should I just pay for good runners? self-host?)
 - [ ] Align (to 16B boundary) large inputs in vectorized methods

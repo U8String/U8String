@@ -1,8 +1,12 @@
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
+using System.Text;
+
+using U8.Primitives;
 
 namespace U8;
 
+#pragma warning disable IDE1006, IDE0300, CA1825 // Pre-init arrays manually as described below
 public static class U8Constants
 {
     // Storing these as byte[] achieves two things:
@@ -62,6 +66,14 @@ public static class U8Constants
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => new(_asciiShrug, 0, 13);
     }
+
+    internal readonly static byte[] EmptyBytes = new byte[0];
+    internal readonly static char[] EmptyChars = new char[0];
+    internal readonly static Rune[] EmptyRunes = new Rune[0];
+    internal readonly static U8RuneIndex[] EmptyRuneIndices = new U8RuneIndex[0];
+
+    // Zero-length arrays of non-primitive type are pre-initialized too.
+    internal readonly static U8String[] EmptyStrings = new U8String[0];
 }
 
 static class U8HashSeed

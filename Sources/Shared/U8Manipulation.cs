@@ -12,7 +12,7 @@ internal static class U8Manipulation
 {
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, byte right)
     {
-        Debug.Assert(U8Info.IsAsciiByte(right));
+        Debug.Assert(U8Info.IsAsciiByte(in right));
 
         var length = left.Length + 1;
         var value = new byte[length + 1];
@@ -26,7 +26,7 @@ internal static class U8Manipulation
 
     internal static U8String ConcatUnchecked(byte left, ReadOnlySpan<byte> right)
     {
-        Debug.Assert(U8Info.IsAsciiByte(left));
+        Debug.Assert(U8Info.IsAsciiByte(in left));
 
         var length = right.Length + 1;
         var value = new byte[length + 1];
@@ -68,13 +68,9 @@ internal static class U8Manipulation
 
     internal static U8String Join(byte separator, IEnumerable<U8String> values)
     {
-        if (values is U8String[] array)
+        if (values.TryGetSpan(out var span))
         {
-            return Join(separator, array.AsSpan());
-        }
-        else if (values is List<U8String> list)
-        {
-            return Join(separator, CollectionsMarshal.AsSpan(list));
+            return Join(separator, span);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -144,13 +140,9 @@ internal static class U8Manipulation
 
     internal static U8String Join(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
     {
-        if (values is U8String[] array)
+        if (values.TryGetSpan(out var span))
         {
-            return Join(separator, array.AsSpan());
-        }
-        else if (values is List<U8String> list)
-        {
-            return Join(separator, CollectionsMarshal.AsSpan(list));
+            return Join(separator, span);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -200,6 +192,11 @@ internal static class U8Manipulation
         ReadOnlySpan<char> format,
         IFormatProvider? provider) where T : IUtf8SpanFormattable
     {
+        if (typeof(T) == typeof(U8String))
+        {
+            return Join(separator, values.Cast<T, U8String>());
+        }
+
         if (values.Length > 1)
         {
             return JoinUnchecked(separator, values, format, provider);
@@ -218,13 +215,13 @@ internal static class U8Manipulation
         ReadOnlySpan<char> format,
         IFormatProvider? provider) where T : IUtf8SpanFormattable
     {
-        if (values is T[] array)
+        if (typeof(T) == typeof(U8String))
         {
-            return Join<T>(separator, array.AsSpan(), format, provider);
+            return Join(separator, values.Cast<T, U8String>());
         }
-        else if (values is List<T> list)
+        else if (values.TryGetSpan(out var span))
         {
-            return Join<T>(separator, CollectionsMarshal.AsSpan(list), format, provider);
+            return Join<T>(separator, span, format, provider);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -247,7 +244,11 @@ internal static class U8Manipulation
         ReadOnlySpan<char> format,
         IFormatProvider? provider) where T : IUtf8SpanFormattable
     {
-        if (values.Length > 1)
+        if (typeof(T) == typeof(U8String))
+        {
+            return Join(separator, values.Cast<T, U8String>());
+        }
+        else if (values.Length > 1)
         {
             if (separator.Length > 1)
             {
@@ -274,13 +275,13 @@ internal static class U8Manipulation
         ReadOnlySpan<char> format,
         IFormatProvider? provider) where T : IUtf8SpanFormattable
     {
-        if (values is T[] array)
+        if (typeof(T) == typeof(U8String))
         {
-            return Join<T>(separator, array.AsSpan(), format, provider);
+            return Join(separator, values.Cast<T, U8String>());
         }
-        else if (values is List<T> list)
+        else if (values.TryGetSpan(out var span))
         {
-            return Join<T>(separator, CollectionsMarshal.AsSpan(list), format, provider);
+            return Join(separator, span, format, provider);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -525,6 +526,7 @@ internal static class U8Manipulation
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
         Debug.Assert(values.Length > 1);
+        Debug.Assert(typeof(T) != typeof(U8String));
 
         var builder = new ArrayBuilder();
         var first = MemoryMarshal.GetReference(values);
@@ -550,6 +552,7 @@ internal static class U8Manipulation
     {
         Debug.Assert(separator.Length > 1);
         Debug.Assert(values.Length > 1);
+        Debug.Assert(typeof(T) != typeof(U8String));
 
         var builder = new ArrayBuilder();
         var first = MemoryMarshal.GetReference(values);
@@ -573,6 +576,7 @@ internal static class U8Manipulation
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        Debug.Assert(typeof(T) != typeof(U8String));
         Debug.Assert(values is not (T[] or List<T>));
 
         using var enumerator = values.GetEnumerator();
@@ -602,6 +606,7 @@ internal static class U8Manipulation
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
         Debug.Assert(separator.Length > 1);
+        Debug.Assert(typeof(T) != typeof(U8String));
         Debug.Assert(values is not (T[] or List<T>));
 
         using var enumerator = values.GetEnumerator();
@@ -821,15 +826,15 @@ internal static class U8Manipulation
 
     internal interface IRunesSource
     {
-        abstract static void SurrogateCheck();
+        static abstract void SurrogateCheck();
     }
 
-    internal struct RunesSource : IRunesSource
+    internal readonly struct RunesSource : IRunesSource
     {
         public static void SurrogateCheck() { }
     }
 
-    internal struct CharsSource : IRunesSource
+    internal readonly struct CharsSource : IRunesSource
     {
         [DoesNotReturn, StackTraceHidden]
         public static void SurrogateCheck()

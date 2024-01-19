@@ -24,6 +24,10 @@
     - [x] Adopt the abstraction for .Contains, .IndexOf, etc.
 - [x] IList, IEnumerable
 - [x] Format(InterpolatedU8StringHandler)
+- [ ] Construction
+    - [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
+    - [ ] Create(in ReadOnlySequence<byte> sequence)
+    - [x] Create(interpolated string)
 - [x] Comparison
     - [x] OrdinalComparer
     - [x] ~~AsciiIgnoreCaseComparer~~
@@ -31,13 +35,15 @@
     - [x] ~~UnicodeNormalizedComparer (all normalization forms)~~
 - [x] Runes view (IEnumerable, or stateful IList?)
     - [ ] CopyTo(span)
+- [ ] U8Builder
+    - [ ] Special-case `Append(byte)` (do it for interpolated handlers too)
 - [x] RuneIndices / RuneOffsets / RunePositions (an advanced Runes view similar to https://github.com/dotnet/runtime/issues/28507)
     - [ ] Likely projects to (Rune, int offset), but perhaps it's better to steal RunePosition (if yes, maybe just wrap U8Scalar?)
 - [x] Chars view (same as above)
-    - [ ] CopyTo(span)
+    - [x] CopyTo(span)
     - [ ] Optimize `U8Chars.Enumerator` and contribute to dotnet/runtime
 - [x] Lines view
-    - [ ] CopyTo(span)
+    - [x] CopyTo(span)
 - [ ] Splitting
     - [x] CopyTo(span)
     - [x] Split (byte, char, Rune)
@@ -83,7 +89,6 @@
     - [ ] `.Words`
     - [ ] `.Sentences`
 - [ ] Consider `.Prelude` (or `.Syntax`) namespace/static class for shorthand declaration syntax through `uisng static` e.g. `STR("Hello, world!")`, `U8(nonConstant)`, `U8($"Today is {DateTime.Now}")`, etc. Extra style points for the API being offensive to Java devs.
-- [ ] CreateLossy (replaces invalid UTF-8 with U+FFFD)
 - [ ] Transcoding: UTF8<->UTF32
 - [x] TryCreate construction variants
 - [x] IsLatin/IsAlphanumeric?

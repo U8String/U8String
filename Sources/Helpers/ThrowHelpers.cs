@@ -123,6 +123,12 @@ internal static class ThrowHelpers
     }
 
     [DoesNotReturn, StackTraceHidden]
+    internal static void NonConstantString()
+    {
+        throw new ArgumentException("The argument is not a constant string.", "value");
+    }
+
+    [DoesNotReturn, StackTraceHidden]
     internal static void Unreachable(
         [CallerFilePath] string? path = null,
         [CallerLineNumber] int line = 0)

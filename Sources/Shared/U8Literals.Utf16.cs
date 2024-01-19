@@ -12,7 +12,7 @@ static partial class U8Literals
     {
         readonly static ConditionalWeakTable<string, byte[]> LiteralPool = [];
 
-        internal static unsafe byte[] GetLiteral([ConstantExpected] string value)
+        internal static byte[] GetLiteral([ConstantExpected] string value)
         {
             Debug.Assert(!string.IsNullOrEmpty(value));
 
@@ -25,7 +25,7 @@ static partial class U8Literals
             var gcgen = GC.GetGeneration(value);
             if (gcgen != int.MaxValue)
             {
-                ThrowHelpers.ArgumentException();
+                ThrowHelpers.NonConstantString();
             }
 
             var length = Encoding.UTF8.GetByteCount(value);

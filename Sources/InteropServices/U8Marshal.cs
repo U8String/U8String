@@ -65,7 +65,7 @@ public static class U8Marshal
 
     /// <summary>
     /// Creates a new <see cref="U8String"/> from null-terminated <paramref name="str"/> without verifying
-    /// if it is a valid UTF-8 sequence.
+    /// if it is a valid UTF-8 sequence. This is an unchecked variant of <see cref="U8String.Create(byte*)"/>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe U8String CreateUnchecked(byte* str)
@@ -122,7 +122,7 @@ public static class U8Marshal
     /// Creates a new <see cref="U8SplitPair"/> representing a split of the given <paramref name="value"/>
     /// without performing bounds check or UTF-8 validation.
     /// </summary>
-    /// [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
     {
         return new(value, offset, separatorLength);
@@ -136,6 +136,10 @@ public static class U8Marshal
     /// <param name="length">The number of bytes to count code points for.</param>
     /// <exception cref="NullReferenceException">
     /// Thrown when <paramref name="ptr"/> is <see langword="null"/> when <paramref name="length"/> is greater than zero.
+    /// </exception>
+    /// <exception cref="AccessViolationException">
+    /// Thrown when <paramref name="ptr"/> is not a valid pointer or <paramref name="length"/> is greater than the maximum
+    /// range of memory that can be addressed from <paramref name="ptr"/>.
     /// </exception>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static nuint CountRunes(ref byte ptr, nuint length)

@@ -84,9 +84,9 @@ var concatenated = U8String.Concat([hello, world, greeting2]);
 // Prints "00:0A:14:1E"
 var joined = U8String.Join(':', [0, 10, 20, 30], "X2");
 
-// Format an interpolated string, Roslyn unrolls this into a special builder pattern
+// From an interpolated string, Roslyn unrolls this into a special builder pattern
 // which writes the data directly to UTF-8 buffer
-var formatted = U8String.Format($"Today is {DateTime.Now:yyyy-MM-dd}.");
+var formatted = new U8String($"Today is {DateTime.Now:yyyy-MM-dd}.");
 ```
 
 ## Evaluation
