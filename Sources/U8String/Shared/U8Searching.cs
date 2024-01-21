@@ -476,13 +476,18 @@ internal static class U8Searching
         return comparer.Count(source, value);
     }
 
+    // This works around NativeAOT not inlining CountByte with further dispatch to Arm64 version.
+    // Moving the impl. to CountByteCore and hoisting the dispatch to small CountByte method fixes it.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static nuint CountByte(byte value, ref byte src, nuint length)
     {
-        if (AdvSimd.Arm64.IsSupported)
-        {
-            return CountByteArm64(value, ref src, length);
-        }
+        return AdvSimd.Arm64.IsSupported
+            ? CountByteArm64(value, ref src, length)
+            : CountByteCore(value, ref src, length);
+    }
 
+    internal static nuint CountByteCore(byte value, ref byte src, nuint length)
+    {
         var count = (nuint)0;
         if (length is 0) goto Empty;
 

@@ -1,4 +1,3 @@
-using System.Buffers.Text;
 using System.Globalization;
 using System.Text;
 
@@ -15,8 +14,8 @@ public class FoldConversions : ISourceGenerator
     record Conversion(
         int Line,
         int Character,
-        SyntaxKind ConversionKind,
-        string Value);
+        string ConstantType,
+        object Value);
 
     readonly static UTF8Encoding UTF8 = new(
         encoderShouldEmitUTF8Identifier: false,
@@ -27,6 +26,7 @@ public class FoldConversions : ISourceGenerator
     // TODO: Port to F# if possible, or not
     public void Execute(GeneratorExecutionContext context)
     {
+        // TODO: Coalesce identical constants to avoid duplicate literals
         var files = new Dictionary<string, List<Conversion>>();
         var compilation = context.Compilation;
 
@@ -40,15 +40,12 @@ public class FoldConversions : ISourceGenerator
                 .DescendantNodes()
                 .OfType<InvocationExpressionSyntax>();
 
-            foreach (var (location, conversion) in EnumerateConversions(semanticModel, invocations))
+            foreach (var conversion in EnumerateConversions(semanticModel, invocations))
             {
-                var fileName = GetFilePath(location.SourceTree?.FilePath, compilation);
+                var fileName = GetFilePath(syntaxTree.FilePath, compilation);
 
                 var conversions = files.TryGetValue(fileName, out var list)
                     ? list : files[fileName] = [];
-
-                var line = location.GetLineSpan();
-                if (!line.IsValid) continue;
 
                 // TODO: This looks embarrassing, is there a better way?
                 conversions.Add(conversion);
@@ -80,7 +77,32 @@ public class FoldConversions : ISourceGenerator
 
             foreach (var conversion in conversions)
             {
-                var utf16 = conversion.Value;
+                var constant = conversion.Value;
+                var constantType = conversion.ConstantType;
+
+                // TODO: Figure out a way to reliably not conflict with
+                // culture-specific formatting while retaining the ability
+                // to actually fold these.
+                var utf16 = constant switch
+                {
+                    byte u8 => u8.ToString(CultureInfo.InvariantCulture),
+                    sbyte i8 => i8.ToString(CultureInfo.InvariantCulture),
+                    ushort u16 => u16.ToString(CultureInfo.InvariantCulture),
+                    short i16 => i16.ToString(CultureInfo.InvariantCulture),
+                    uint u32 => u32.ToString(CultureInfo.InvariantCulture),
+                    int i32 => i32.ToString(CultureInfo.InvariantCulture),
+                    ulong u64 => u64.ToString(CultureInfo.InvariantCulture),
+                    long i64 => i64.ToString(CultureInfo.InvariantCulture),
+
+                    float f32 => f32.ToString(CultureInfo.InvariantCulture),
+                    double f64 => f64.ToString(CultureInfo.InvariantCulture),
+                    decimal d128 => d128.ToString(CultureInfo.InvariantCulture),
+
+                    char c => c.ToString(CultureInfo.InvariantCulture),
+                    string s => s,
+                    _ => null
+                };
+
                 if (utf16 is null or []) continue;
 
                 var nullTerminate = utf16[^1] != 0;
@@ -95,6 +117,12 @@ public class FoldConversions : ISourceGenerator
                     continue;
                 }
 
+                var prefix =
+                    constantType != typeof(string).Name &&
+                    constantType != typeof(bool).Name &&
+                    constantType != typeof(byte).Name
+                        ? $"<{constantType}>" : string.Empty;
+
                 var literalName = $"_u8literal_{conversion.Line}_{conversion.Character}";
                 var literalAccessor = $"GetU8Literal_{conversion.Line}_{conversion.Character}";
                 var byteLiteral = string.Join(",",
@@ -104,7 +132,7 @@ public class FoldConversions : ISourceGenerator
                         
                         static readonly byte[] {{literalName}} = new byte[] {{{byteLiteral}}};
                         [System.Runtime.CompilerServices.InterceptsLocation(@"{{file}}", line: {{conversion.Line}}, character: {{conversion.Character}})]
-                        internal static U8String {{literalAccessor}}(string _) => U8Marshal.CreateUnsafe({{literalName}}, 0, {{bytes.Length}});
+                        internal static U8String {{literalAccessor}}{{prefix}}({{constantType}} _) => U8Marshal.CreateUnsafe({{literalName}}, 0, {{bytes.Length}});
 
                 """);
             }
@@ -118,7 +146,7 @@ public class FoldConversions : ISourceGenerator
         }
     }
 
-    static IEnumerable<(Location location, Conversion conversion)> EnumerateConversions(
+    static IEnumerable<Conversion> EnumerateConversions(
         SemanticModel model, IEnumerable<InvocationExpressionSyntax> invocations)
     {
         foreach (var invocation in invocations)
@@ -129,7 +157,7 @@ public class FoldConversions : ISourceGenerator
                 && invocation.ArgumentList.Arguments is [var argument])
             {
                 var constant = model.GetConstantValue(argument.Expression);
-                if (constant is { HasValue: true, Value: string constantValue })
+                if (constant is { HasValue: true, Value: object constantValue })
                 {
                     var lineSpan = invocation.GetLocation().GetLineSpan();
                     if (!lineSpan.IsValid) continue;
@@ -138,12 +166,9 @@ public class FoldConversions : ISourceGenerator
                     var line = position.Line + 1;
                     var offset = invocation.Expression.Span.Length - methodSymbol.Name.Length;
                     var character = position.Character + offset + 1;
+                    var literalType = methodSymbol.Parameters[0].Type.MetadataName;
 
-                    var literalType = argument.Expression.Kind();
-
-                    yield return (
-                        invocation.GetLocation(),
-                        new(line, character, literalType, constantValue));
+                    yield return new(line, character, literalType, constantValue);
                 }
             }
         }

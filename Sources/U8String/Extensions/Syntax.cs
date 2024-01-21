@@ -45,6 +45,10 @@ public static unsafe class Syntax
 
     /// <inheritdoc cref="U8String.Create{T}(T)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String U8<T>(T value)
+    public static U8String u8<T>(T value)
         where T : IUtf8SpanFormattable => U8String.Create(value);
+
+    /// <inheritdoc cref="U8String(ref InterpolatedU8StringHandler)"/>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String u8(ref InterpolatedU8StringHandler handler) => new(ref handler);
 }

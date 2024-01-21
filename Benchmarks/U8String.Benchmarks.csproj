@@ -7,10 +7,12 @@
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <NoWarn>IDE1006;CA1822</NoWarn>
+    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);U8.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Sources\U8String\U8String.csproj" />
+    <ProjectReference Include="..\Sources\U8String.Tools\U8String.Tools.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
