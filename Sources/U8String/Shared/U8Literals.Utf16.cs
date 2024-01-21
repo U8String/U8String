@@ -12,6 +12,7 @@ static partial class U8Literals
     {
         readonly static ConditionalWeakTable<string, byte[]> LiteralPool = [];
 
+        // TODO: Consider full de-duplication at the expense of more expensive writes which do full comparison
         internal static byte[] GetLiteral([ConstantExpected] string value)
         {
             Debug.Assert(!string.IsNullOrEmpty(value));

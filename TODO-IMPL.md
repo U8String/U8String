@@ -17,6 +17,8 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [x] Refactor `char` and `Rune` overloads to use `...TwoBytes`, `...ThreeBytes` and `...FourBytes` specialized handlers over spilling into span and then doing extra SequenceEqual/etc. calls which is expensive
     - [x] ~~`U8(Scalar/Rune)Split`-like internal API shape?~~
     - [ ] Do a similar optimization pass for comparer-based paths
+- [ ] Consider adaptive caching of conversions by implementing a bloom-filter-like check for constructors which perform opportunistic lookup in decoded/encoded pool should they possibly contain the same value (though the question regarding thread-safety of bloom filter value calculation remains since it will most likely be 128b or even 256b vector)
+- [ ] Consider Bake/Inline compile-time extensions for F# which to allow folded validation or conversion
 - [ ] Drop stuct records in favour of implementing the rest of behavior manually as it is more trim-friendly
 - [x] Add empty array readonly static - `[]` creates a cctor check on NativeAOT 😢
 - [ ] Do an optimization pass for comparer-based `SplitFirst/Last` overloads targeted at reducing IL churn

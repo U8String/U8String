@@ -190,7 +190,7 @@ public readonly partial struct U8String
     /// This method has consuming semantics and calls <see cref="InterpolatedU8StringHandler.Dispose"/>
     /// on the provided <paramref name="handler"/> after the <see cref="U8String"/> is created.
     /// </remarks>
-    // [MethodImpl(MethodImplOptions.NoInlining)] <-- reconsider
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String(ref InterpolatedU8StringHandler handler)
     {
         this = new U8String(handler.Written, skipValidation: true);
@@ -210,6 +210,7 @@ public readonly partial struct U8String
     /// on the provided <paramref name="handler"/> after the <see cref="U8String"/> is created.
     /// </remarks>
 #pragma warning disable IDE0060, RCS1163 // Unused parameter. Why: it is passed to the handler ctor.
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String(IFormatProvider provider,
         [InterpolatedStringHandlerArgument(nameof(provider))] ref InterpolatedU8StringHandler handler)
     {

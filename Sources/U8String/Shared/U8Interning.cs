@@ -44,6 +44,7 @@ static class U8Interning
         return false;
     }
 
+    // TODO: Consider full de-duplication at the expense of more expensive writes which do full comparison
     internal static U8String GetEncoded(string value)
     {
         // This does not really coalesce the cctor checks for NativeAOT, but at least
@@ -95,6 +96,7 @@ static class U8Interning
         return false;
     }
 
+    // TODO: Consider full de-duplication at the expense of more expensive writes which do full comparison
     internal static string GetDecoded(U8String value)
     {
         Debug.Assert(value.Length > 0);
