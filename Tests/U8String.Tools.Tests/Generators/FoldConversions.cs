@@ -1,7 +1,9 @@
+using System.Text;
+
 namespace U8.Tools.Tests.Generators;
 
 // TODO: Implement rest of the coverage.
-public class FoldConversions
+public partial class FoldConversions
 {
     [Fact]
     public void InlineLiteralDeclaration_IsCorrectlyFolded()
@@ -19,6 +21,52 @@ public class FoldConversions
         {
             Assert.Equal(first, list[i]);
             Assert.Equal("Привіт, Всесвіт!"u8, list[i]);
+            Assert.True(first.Equals(list[i]));
+            Assert.True(first.SourceEquals(list[i]));
+            Assert.True(list[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ReferencedConstDeclaration1KRunes_IsCorrectlyFolded()
+    {
+        var list = new List<U8String>();
+
+        for (var i = 0; i < 3; i++)
+        {
+            list.Add(u8(OneThousandRunes));
+        }
+
+        var first = list[0];
+        var reference = Encoding.UTF8.GetBytes(OneThousandRunes);
+
+        for (var i = 1; i < list.Count; i++)
+        {
+            Assert.Equal(first, list[i]);
+            Assert.Equal(reference.AsSpan(), list[i]);
+            Assert.True(first.Equals(list[i]));
+            Assert.True(first.SourceEquals(list[i]));
+            Assert.True(list[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ReferencedConstDeclaration1MRunes_IsCorrectlyFolded()
+    {
+        var list = new List<U8String>();
+
+        for (var i = 0; i < 3; i++)
+        {
+            list.Add(u8(OneMillionRunes));
+        }
+
+        var first = list[0];
+        var reference = Encoding.UTF8.GetBytes(OneMillionRunes);
+
+        for (var i = 1; i < list.Count; i++)
+        {
+            Assert.Equal(first, list[i]);
+            Assert.Equal(reference.AsSpan(), list[i]);
             Assert.True(first.Equals(list[i]));
             Assert.True(first.SourceEquals(list[i]));
             Assert.True(list[i].IsNullTerminated);
