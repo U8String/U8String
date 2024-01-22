@@ -43,6 +43,13 @@ var text = U8String.Read(file);
 using var http = new HttpClient();
 var example = await http.GetU8StringAsync("http://example.org/");
 
+// Shorthand syntax
+// See U8String.Tools to fold these at compile time
+using static U8.Extensions.Syntax;
+
+var literal = u8("Lorem ipsum dolor");
+var number = u8(42);
+
 // From an immutable byte array
 var array = ImmutableArray.Create("Привіт, Всесвіт!"u8);
 // Does not allocate relying on ImmutableArray semantics
