@@ -22,7 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Sources\U8String\U8String.csproj" />
+    <ProjectReference Include="..\..\Sources\U8String\U8String.csproj" />
   </ItemGroup>
 
 </Project>
