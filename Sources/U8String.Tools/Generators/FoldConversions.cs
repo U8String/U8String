@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 #pragma warning disable RCS1197 // Optimize StringBuilder.Append/AppendLine call. Why: doesn't work well with generated strings
 namespace U8.Tools.Generators;
@@ -21,9 +22,15 @@ public class FoldConversions : ISourceGenerator
         encoderShouldEmitUTF8Identifier: false,
         throwOnInvalidBytes: true);
 
+    readonly static string[] ByteValues = Enumerable
+        .Range(0, 256)
+        .Select(i => i.ToString(CultureInfo.InvariantCulture))
+        .ToArray();
+
     public void Initialize(GeneratorInitializationContext context) { }
 
     // TODO: Port to F# if possible, or not
+    // TODO: Profile and optimize, it really kills build times on large string literals
     public void Execute(GeneratorExecutionContext context)
     {
         // TODO: Coalesce identical constants to avoid duplicate literals
@@ -107,7 +114,7 @@ public class FoldConversions : ISourceGenerator
 
                 var nullTerminate = utf16[^1] != 0;
 
-                byte[] bytes;
+                Span<byte> bytes;
                 try
                 {
                     bytes = UTF8.GetBytes(utf16);
@@ -125,8 +132,15 @@ public class FoldConversions : ISourceGenerator
 
                 var literalName = $"_u8literal_{conversion.Line}_{conversion.Character}";
                 var literalAccessor = $"GetU8Literal_{conversion.Line}_{conversion.Character}";
-                var byteLiteral = string.Join(",",
-                    (nullTerminate ? bytes.Append((byte)0) : bytes).Select(b => b.ToString(CultureInfo.InvariantCulture)));
+                var byteLiteral = new StringBuilder(bytes.Length * 4);
+
+                byteLiteral.Append(ByteValues[bytes[0]]);
+                foreach (var b in bytes[1..])
+                {
+                    byteLiteral.Append(',');
+                    byteLiteral.Append(ByteValues[b]);
+                }
+                if (nullTerminate) byteLiteral.Append(",0");
 
                 source.Append($$"""
                         
