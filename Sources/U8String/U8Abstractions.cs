@@ -81,6 +81,11 @@ public interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
 
 public interface IU8Enumerator : IEnumerator<U8String>;
 
+public interface IU8Formattable : IUtf8SpanFormattable
+{
+    U8String ToU8String(ReadOnlySpan<char> format = default, IFormatProvider? provider = null);
+}
+
 internal interface IU8SliceCollection : ICollection<U8String>
 {
     // TODO: Better naming?
