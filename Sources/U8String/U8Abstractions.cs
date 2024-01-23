@@ -84,6 +84,15 @@ public interface IU8Enumerator : IEnumerator<U8String>;
 public interface IU8Formattable : IUtf8SpanFormattable
 {
     U8String ToU8String(ReadOnlySpan<char> format = default, IFormatProvider? provider = null);
+
+    bool IUtf8SpanFormattable.TryFormat(
+        Span<byte> utf8Destination,
+        out int bytesWritten,
+        ReadOnlySpan<char> format,
+        IFormatProvider? provider)
+    {
+        throw new NotImplementedException();
+    }
 }
 
 internal interface IU8SliceCollection : ICollection<U8String>

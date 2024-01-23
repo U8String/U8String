@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 
 namespace U8;
 
+// TODO: Currently does not parse against numeric values, fix this
 public static class U8Enum
 {
     static class Lookup<T> where T : struct, Enum
@@ -35,7 +36,7 @@ public static class U8Enum
 
     public static T Parse<T>(U8String value, bool ignoreCase) where T : struct, Enum
     {
-        return (ignoreCase ? CaseInsensitiveLookup<T>.Values  : Lookup<T>.Values)[value];
+        return (ignoreCase ? CaseInsensitiveLookup<T>.Values : Lookup<T>.Values)[value];
     }
 
     public static bool TryParse<T>(U8String value, out T result) where T : struct, Enum

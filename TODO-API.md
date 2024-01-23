@@ -120,4 +120,6 @@
     - [ ] Replace predicate on LINQ projection/reduction with direct Contains/Count/etc. call
 - [ ] Source Generators
     - [x] Compile-time conversion of string literals (proof of concept done)
+        - [ ] Add install and uninstall scripts to add/remove to all projects (incl. interceptor toggle) in the solution (similar to OneOf?)
+        - [ ] Add error fixer "add `u8(...)` to string literal to fix this error"
     - [ ] Switch map trie generator to work around C# limitations
