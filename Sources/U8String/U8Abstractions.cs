@@ -95,6 +95,13 @@ public interface IU8Formattable : IUtf8SpanFormattable
     }
 }
 
+internal interface IU8Split<T> : IEnumerable<U8String>
+    where T : struct
+{
+    T Separator { get; }
+    U8String Value { get; }
+}
+
 internal interface IU8SliceCollection : ICollection<U8String>
 {
     // TODO: Better naming?

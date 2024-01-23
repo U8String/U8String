@@ -1,3 +1,4 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Text;
 
@@ -8,13 +9,35 @@ using U8.Shared;
 #pragma warning disable RCS1085, RCS1085FadeOut, IDE0032 // Use auto-implemented property. Why: readable fields.
 namespace U8;
 
-[Flags]
-public enum U8SplitOptions : byte
+public static class U8SplitOptions
 {
-    None = 0,
-    RemoveEmpty = 1,
-    Trim = 2,
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct TrimOptions : IU8SplitOptions;
+    public static TrimOptions Trim => default;
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct RemoveEmptyOptions : IU8SplitOptions;
+    public static RemoveEmptyOptions RemoveEmpty => default;
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public readonly struct TrimRemoveEmptyOptions : IU8SplitOptions;
+    public static TrimRemoveEmptyOptions TrimRemoveEmpty => default;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool ShouldTrim<T>() where T : IU8SplitOptions
+    {
+        return typeof(T) == typeof(TrimOptions) || typeof(T) == typeof(TrimRemoveEmptyOptions);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static bool ShouldRemoveEmpty<T>() where T : IU8SplitOptions
+    {
+        return typeof(T) == typeof(RemoveEmptyOptions) || typeof(T) == typeof(TrimRemoveEmptyOptions);
+    }
 }
+
+[EditorBrowsable(EditorBrowsableState.Never)]
+public interface IU8SplitOptions;
 
 public readonly partial struct U8String
 {
@@ -576,30 +599,6 @@ public readonly partial struct U8String
         return new(this, separator);
     }
 
-    public ConfiguredU8Split<byte> Split(byte separator, U8SplitOptions options)
-    {
-        ThrowHelpers.CheckAscii(separator);
-
-        return new(this, separator, options);
-    }
-
-    public ConfiguredU8Split<char> Split(char separator, U8SplitOptions options)
-    {
-        ThrowHelpers.CheckSurrogate(separator);
-
-        return new(this, separator, options);
-    }
-
-    public ConfiguredU8Split<Rune> Split(Rune separator, U8SplitOptions options)
-    {
-        return new(this, separator, options);
-    }
-
-    public ConfiguredU8Split Split(U8String separator, U8SplitOptions options)
-    {
-        return new(this, separator, options);
-    }
-
     // TODO: Consider aggregating multiple interfaces into a single IU8Searcher (better name???) interface.
     public U8Split<byte, T> Split<T>(byte separator, T comparer)
         where T : IU8Comparer
@@ -637,42 +636,6 @@ public readonly partial struct U8String
         return new(this, separator, comparer);
     }
 
-    public ConfiguredU8Split<byte, T> Split<T>(byte separator, T comparer, U8SplitOptions options)
-        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
-    {
-        ThrowHelpers.CheckAscii(separator);
-
-        return new(this, separator, comparer, options);
-    }
-
-    public ConfiguredU8Split<char, T> Split<T>(char separator, T comparer, U8SplitOptions options)
-        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
-    {
-        ThrowHelpers.CheckSurrogate(separator);
-
-        return new(this, separator, comparer, options);
-    }
-
-    public ConfiguredU8Split<Rune, T> Split<T>(Rune separator, T comparer, U8SplitOptions options)
-        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
-    {
-        return new(this, separator, comparer, options);
-    }
-
-    public ConfiguredU8Split<U8String, T> Split<T>(U8String separator, T comparer, U8SplitOptions options)
-        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
-    {
-        return new(this, separator, comparer, options);
-    }
-
-    public ConfiguredU8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer, U8SplitOptions options)
-        where T : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
-    {
-        ValidatePossibleConstant(separator);
-
-        return new(this, separator, comparer, options);
-    }
-
     public U8RefAnySplit SplitAny(ReadOnlySpan<byte> separators)
     {
         if (!Ascii.IsValid(separators))
@@ -681,5 +644,92 @@ public readonly partial struct U8String
         }
 
         return new(this, separators);
+    }
+}
+
+public static class U8SplitExtensions
+{
+        // Behold, overload resolution oriented programming
+    public static ConfiguredU8Split<byte, TOptions> Split<TOptions>(this U8String value, byte separator, TOptions options)
+        where TOptions : unmanaged, IU8SplitOptions
+    {
+        ThrowHelpers.CheckAscii(separator);
+
+        return new(value, separator);
+    }
+
+    public static ConfiguredU8Split<char, TOptions> Split<TOptions>(this U8String value, char separator, TOptions options)
+        where TOptions : unmanaged, IU8SplitOptions
+    {
+        ThrowHelpers.CheckSurrogate(separator);
+
+        return new(value, separator);
+    }
+
+    public static ConfiguredU8Split<Rune, TOptions> Split<TOptions>(this U8String value, Rune separator, TOptions options)
+        where TOptions : unmanaged, IU8SplitOptions
+    {
+        return new(value, separator);
+    }
+
+    public static ConfiguredU8Split<U8String, TOptions> Split<TOptions>(this U8String value, U8String separator, TOptions options)
+        where TOptions : unmanaged, IU8SplitOptions
+    {
+        return new(value, separator);
+    }
+
+    public static ConfiguredU8Split<byte, TOptions, TComparer> Split<TComparer, TOptions>(
+        this U8String value, byte separator, TOptions options, TComparer comparer)
+            where TOptions : unmanaged, IU8SplitOptions
+            where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        ThrowHelpers.CheckAscii(separator);
+
+        return new(value, separator, comparer);
+    }
+
+    public static ConfiguredU8Split<char, TOptions, TComparer> Split<TComparer, TOptions>(
+        this U8String value, char separator, TOptions options, TComparer comparer)
+            where TOptions : unmanaged, IU8SplitOptions
+            where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        ThrowHelpers.CheckSurrogate(separator);
+
+        return new(value, separator, comparer);
+    }
+
+    public static ConfiguredU8Split<Rune, TOptions, TComparer> Split<TComparer, TOptions>(
+        this U8String value, Rune separator, TOptions options, TComparer comparer)
+            where TOptions : unmanaged, IU8SplitOptions
+            where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        return new(value, separator, comparer);
+    }
+
+    public static ConfiguredU8Split<U8String, TOptions, TComparer> Split<TComparer, TOptions>(
+        this U8String value, U8String separator, TOptions options, TComparer comparer)
+            where TOptions : unmanaged, IU8SplitOptions
+            where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        return new(value, separator, comparer);
+    }
+
+    public static ConfiguredU8RefSplit<TOptions> Split<TOptions>(
+        this U8String value, ReadOnlySpan<byte> separator, TOptions options)
+            where TOptions : unmanaged, IU8SplitOptions
+    {
+        U8String.ValidatePossibleConstant(separator);
+
+        return new(value, separator);
+    }
+
+    public static ConfiguredU8RefSplit<TOptions, TComparer> Split<TComparer, TOptions>(
+        this U8String value, ReadOnlySpan<byte> separator, TOptions options, TComparer comparer)
+            where TOptions : unmanaged, IU8SplitOptions
+            where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
+    {
+        U8String.ValidatePossibleConstant(separator);
+
+        return new(value, separator, comparer);
     }
 }

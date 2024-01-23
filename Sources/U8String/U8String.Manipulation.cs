@@ -592,10 +592,10 @@ public readonly partial struct U8String
             U8Split<byte> bsplit => JoinBSplit(separator, bsplit),
             U8Split<char> csplit => JoinCSplit(separator, csplit),
             U8Split<Rune> rsplit => JoinRSplit(separator, rsplit),
-            ConfiguredU8Split split => JoinSplitC(separator, split),
-            ConfiguredU8Split<byte> bsplit => JoinBSplitC(separator, bsplit),
-            ConfiguredU8Split<char> csplit => JoinCSplitC(separator, csplit),
-            ConfiguredU8Split<Rune> rsplit => JoinRSplitC(separator, rsplit),
+            IU8Split<byte> => JoinSplitOther<byte>(separator, values),
+            IU8Split<char> => JoinSplitOther<char>(separator, values),
+            IU8Split<Rune> => JoinSplitOther<Rune>(separator, values),
+            IU8Split<U8String> => JoinSplitOther<U8String>(separator, values),
             ImmutableArray<U8String> array => Join(separator, array.AsSpan()),
             _ => Join(separator, (IEnumerable<U8String>)values)
         };
@@ -625,19 +625,33 @@ public readonly partial struct U8String
         static U8String JoinRSplit(byte separator, U8Split<Rune> split) =>
             U8Manipulation.Replace(split.Value, split.Separator, new Rune(separator));
 
-        static U8String JoinSplitC(byte separator, ConfiguredU8Split split) =>
-            U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static U8String JoinSplitOther<S>(byte separator, T split)
+            where S : struct
+        {
+            Debug.Assert(split is IU8Split<S>);
 
-        static U8String JoinBSplitC(byte separator, ConfiguredU8Split<byte> split) =>
-            U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, split);
-
-        static U8String JoinCSplitC(byte separator, ConfiguredU8Split<char> split) =>
-            U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, split);
-
-        static U8String JoinRSplitC(byte separator, ConfiguredU8Split<Rune> split) =>
-            U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, split);
+            // I'm sorry
+            return split switch
+            {
+                ConfiguredU8Split<S, U8SplitOptions.TrimOptions> cst =>
+                    U8Manipulation.Join<
+                        ConfiguredU8Split<S, U8SplitOptions.TrimOptions>,
+                        ConfiguredU8Split<S, U8SplitOptions.TrimOptions>.Enumerator>(separator, cst),
+                ConfiguredU8Split<S, U8SplitOptions.RemoveEmptyOptions> csre =>
+                    U8Manipulation.Join<
+                        ConfiguredU8Split<S, U8SplitOptions.RemoveEmptyOptions>,
+                        ConfiguredU8Split<S, U8SplitOptions.RemoveEmptyOptions>.Enumerator>(separator, csre),
+                ConfiguredU8Split<S, U8SplitOptions.TrimRemoveEmptyOptions> cstre =>
+                    U8Manipulation.Join<
+                        ConfiguredU8Split<S, U8SplitOptions.TrimRemoveEmptyOptions>,
+                        ConfiguredU8Split<S, U8SplitOptions.TrimRemoveEmptyOptions>.Enumerator>(separator, cstre),
+                _ => U8Manipulation.Join(separator, split)
+            };
+        }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(char separator, T values)
         where T : struct, IEnumerable<U8String>
     {
@@ -650,6 +664,7 @@ public readonly partial struct U8String
                 values);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join<T>(Rune separator, T values)
         where T : struct, IEnumerable<U8String>
     {
@@ -681,11 +696,12 @@ public readonly partial struct U8String
     public static U8String Join<T>(U8String separator, T values)
         where T : struct, IEnumerable<U8String>
     {
-        return !separator.IsEmpty ? separator.Length switch
+        return separator.Length switch
         {
-            1 => Join(separator.UnsafeRef, values),
-            _ => JoinSpan(separator.UnsafeSpan, values)
-        } : Concat(values);
+            0 => Concat(values),
+            1 => Join(separator[0], values),
+            _ => JoinSpan(separator, values)
+        };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -702,10 +718,10 @@ public readonly partial struct U8String
             U8Split<byte> bsplit => JoinBSplit(separator, bsplit),
             U8Split<char> csplit => JoinCSplit(separator, csplit),
             U8Split<Rune> rsplit => JoinRSplit(separator, rsplit),
-            ConfiguredU8Split split => JoinSplitC(separator, split),
-            ConfiguredU8Split<byte> bsplit => JoinBSplitC(separator, bsplit),
-            ConfiguredU8Split<char> csplit => JoinCSplitC(separator, csplit),
-            ConfiguredU8Split<Rune> rsplit => JoinRSplitC(separator, rsplit),
+            IU8Split<byte> => JoinSplitOther<byte>(separator, values),
+            IU8Split<char> => JoinSplitOther<char>(separator, values),
+            IU8Split<Rune> => JoinSplitOther<Rune>(separator, values),
+            IU8Split<U8String> => JoinSplitOther<U8String>(separator, values),
             ImmutableArray<U8String> array => Join(separator, array.AsSpan()),
             _ => Join(separator, (IEnumerable<U8String>)values)
         };
@@ -735,17 +751,29 @@ public readonly partial struct U8String
         static U8String JoinRSplit(ReadOnlySpan<byte> separator, U8Split<Rune> split) =>
             U8Manipulation.Replace(split.Value, new U8Scalar(split.Separator).AsSpan(), separator, validate: false);
 
-        static U8String JoinSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split split) =>
-            U8Manipulation.Join<ConfiguredU8Split, ConfiguredU8Split.Enumerator>(separator, split);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static U8String JoinSplitOther<S>(ReadOnlySpan<byte> separator, T split)
+            where S : struct
+        {
+            Debug.Assert(split is IU8Split<S>);
 
-        static U8String JoinBSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split<byte> split) =>
-            U8Manipulation.Join<ConfiguredU8Split<byte>, ConfiguredU8Split<byte>.Enumerator>(separator, split);
-
-        static U8String JoinCSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split<char> split) =>
-            U8Manipulation.Join<ConfiguredU8Split<char>, ConfiguredU8Split<char>.Enumerator>(separator, split);
-
-        static U8String JoinRSplitC(ReadOnlySpan<byte> separator, ConfiguredU8Split<Rune> split) =>
-            U8Manipulation.Join<ConfiguredU8Split<Rune>, ConfiguredU8Split<Rune>.Enumerator>(separator, split);
+            return split switch
+            {
+                ConfiguredU8Split<S, U8SplitOptions.TrimOptions> cst =>
+                    U8Manipulation.Join<
+                        ConfiguredU8Split<S, U8SplitOptions.TrimOptions>,
+                        ConfiguredU8Split<S, U8SplitOptions.TrimOptions>.Enumerator>(separator, cst),
+                ConfiguredU8Split<S, U8SplitOptions.RemoveEmptyOptions> csre =>
+                    U8Manipulation.Join<
+                        ConfiguredU8Split<S, U8SplitOptions.RemoveEmptyOptions>,
+                        ConfiguredU8Split<S, U8SplitOptions.RemoveEmptyOptions>.Enumerator>(separator, csre),
+                ConfiguredU8Split<S, U8SplitOptions.TrimRemoveEmptyOptions> cstre =>
+                    U8Manipulation.Join<
+                        ConfiguredU8Split<S, U8SplitOptions.TrimRemoveEmptyOptions>,
+                        ConfiguredU8Split<S, U8SplitOptions.TrimRemoveEmptyOptions>.Enumerator>(separator, cstre),
+                _ => U8Manipulation.Join(separator, split)
+            };
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

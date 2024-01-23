@@ -14,6 +14,7 @@ Some of those have been or will be addressed in scope of this project.
 - https://github.com/dotnet/runtime/issues/95693
 - https://github.com/dotnet/runtime/issues/96372
 - https://github.com/dotnet/runtime/issues/96380
+- https://github.com/dotnet/runtime/issues/81500#issuecomment-1500991818
 
 ## References
 ### Prior art
