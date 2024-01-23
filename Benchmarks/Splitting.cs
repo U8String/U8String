@@ -52,8 +52,7 @@ public class Splitting
 
     [Benchmark]
     public U8String[] SplitOptionsCollect() => Value
-        .Split(',', U8SplitOptions.Trim | U8SplitOptions.RemoveEmpty)
-        .ToArray();
+        .Split(',', U8SplitOptions.TrimRemoveEmpty).ToArray();
 
     [Benchmark]
     public string[] SplitOptionsUtf16Collect() => ValueUtf16!
