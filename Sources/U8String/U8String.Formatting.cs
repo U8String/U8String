@@ -1,5 +1,6 @@
 using System.Buffers;
 using System.Collections.Concurrent;
+using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -34,9 +35,20 @@ public ref struct InterpolatedU8StringHandler
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public InterpolatedU8StringHandler()
     {
         Unsafe.SkipInit(out _inline);
+    }
+
+    public InterpolatedU8StringHandler(int length)
+    {
+        Unsafe.SkipInit(out _inline);
+
+        if (length > InlineBuffer128.Length)
+        {
+            _rented = ArrayPool<byte>.Shared.Rent(length);
+        }
     }
 
     public InterpolatedU8StringHandler(
@@ -83,6 +95,9 @@ public ref struct InterpolatedU8StringHandler
             return;
         }
 
+        // We can't use the length * 2 or * 3 hint here because
+        // it will fail interpolation for 1-1.5GiB strings which
+        // is otherwise a legal operation.
         Grow();
         goto Retry;
     }
@@ -135,6 +150,14 @@ public ref struct InterpolatedU8StringHandler
         AppendBytes(value);
     }
 
+    public void AppendFormatted(string? value)
+    {
+        if (value is not null)
+        {
+            AppendLiteral(value.AsSpan());
+        }
+    }
+
     public void AppendFormatted(ReadOnlySpan<char> value)
     {
         AppendLiteral(value);
@@ -143,7 +166,6 @@ public ref struct InterpolatedU8StringHandler
     // Explicit no-format overload for more compact codegen
     // and specialization so that *if* TryFormat is inlined into
     // the body, the format-specific branches are optimized away.
-    [MethodImpl(MethodImplOptions.NoInlining)]
     public void AppendFormatted<T>(T value)
     {
     Retry:
@@ -166,6 +188,21 @@ public ref struct InterpolatedU8StringHandler
                 BytesWritten += written;
                 return;
             }
+        }
+        else if (typeof(T) == typeof(ImmutableArray<byte>))
+        {
+            AppendFormatted((ImmutableArray<byte>)(object)value!);
+            return;
+        }
+        else if (typeof(T) == typeof(byte[]))
+        {
+            AppendFormatted(Unsafe.As<byte[]?>(value).AsSpan());
+            return;
+        }
+        else if (typeof(T) == typeof(string))
+        {
+            AppendFormatted(Unsafe.As<string?>(value));
+            return;
         }
         else
         {
@@ -224,7 +261,7 @@ public ref struct InterpolatedU8StringHandler
             return;
         }
 
-        Grow();
+        Grow(bytes.Length);
         goto Retry;
     }
 
@@ -241,6 +278,33 @@ public ref struct InterpolatedU8StringHandler
         var newLength = rented is null
             ? initialRentLength
             : rented.Length * 2;
+
+        var newArr = arrayPool.Rent(newLength);
+
+        written.CopyToUnsafe(ref newArr.AsRef());
+        _rented = newArr;
+
+        if (rented != null)
+        {
+            arrayPool.Return(rented);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    void Grow(int hint)
+    {
+        const int initialRentLength = 1024;
+
+        var arrayPool = ArrayPool<byte>.Shared;
+        var rented = _rented;
+        var written = (rented ?? _inline.AsSpan())
+            .SliceUnsafe(0, BytesWritten);
+
+        var newLength = rented is null
+            ? initialRentLength
+            : rented.Length * 2;
+
+        newLength = Math.Max(newLength, written.Length + hint);
 
         var newArr = arrayPool.Rent(newLength);
 
@@ -274,7 +338,7 @@ public ref struct InterpolatedU8StringHandler
     static void UnsupportedAppend<T>()
     {
         throw new NotSupportedException(
-            $"The type '{typeof(T)}' does not implement '{typeof(IUtf8SpanFormattable)}' or is not '{typeof(Enum)}'.");
+            $"The type '{typeof(T)}' is not '{typeof(IUtf8SpanFormattable)}', '{typeof(Enum)}' or a '{typeof(byte)}' array.");
     }
 }
 

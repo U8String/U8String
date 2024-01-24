@@ -28,7 +28,7 @@ jobs:
       - name: Restore dependencies
         run: dotnet restore
 
-      - name: Test
+      - name: Test Debug
         run: dotnet test --no-restore
         env:
           DOTNET_EnableAVX512F: 1
@@ -44,7 +44,7 @@ jobs:
       #   if: matrix.os == 'windows-latest'
       #   run: dotnet test -c Release -a x86
 
-      - name: Test Release x64
+      - name: Test Release
         run: dotnet test -c Release --no-restore
         env:
           DOTNET_EnableAVX512F: 1
