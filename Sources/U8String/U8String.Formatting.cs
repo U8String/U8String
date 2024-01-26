@@ -43,6 +43,8 @@ public ref struct InterpolatedU8StringHandler
 
     public InterpolatedU8StringHandler(int length)
     {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
         Unsafe.SkipInit(out _inline);
 
         if (length > InlineBuffer128.Length)
@@ -229,13 +231,13 @@ public ref struct InterpolatedU8StringHandler
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    void AppendConstantString([ConstantExpected] string s)
+    internal void AppendConstantString([ConstantExpected] string s)
     {
         var literal = U8Literals.Utf16.GetLiteral(s);
         AppendBytes(literal.SliceUnsafe(0, literal.Length - 1));
     }
 
-    void AppendByte(byte value)
+    internal void AppendByte(byte value)
     {
     Retry:
         var free = Free;
@@ -250,7 +252,7 @@ public ref struct InterpolatedU8StringHandler
         goto Retry;
     }
 
-    void AppendBytes(ReadOnlySpan<byte> bytes)
+    internal void AppendBytes(ReadOnlySpan<byte> bytes)
     {
     Retry:
         var free = Free;
@@ -266,7 +268,7 @@ public ref struct InterpolatedU8StringHandler
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    void Grow()
+    internal void Grow()
     {
         const int initialRentLength = 1024;
 
@@ -291,7 +293,7 @@ public ref struct InterpolatedU8StringHandler
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    void Grow(int hint)
+    internal void Grow(int hint)
     {
         const int initialRentLength = 1024;
 

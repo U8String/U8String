@@ -1426,6 +1426,21 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String StripPrefix(byte prefix)
+    {
+        var source = this;
+        if (!source.IsEmpty && source.UnsafeRef == prefix)
+        {
+            return new(
+                source._value,
+                source.Offset + 1,
+                source.Length - 1);
+        }
+
+        return source;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripPrefix(ReadOnlySpan<byte> prefix)
     {
         ValidatePossibleConstant(prefix);
@@ -1456,6 +1471,22 @@ public readonly partial struct U8String
                 source._value,
                 source.Offset + prefix.Length,
                 source.Length - prefix.Length);
+        }
+
+        return source;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String StripSuffix(byte suffix)
+    {
+        var source = this;
+        if (!source.IsEmpty &&
+            source.UnsafeRef.Add(source.Length - 1) == suffix)
+        {
+            return new(
+                source._value,
+                source.Offset,
+                source.Length - 1);
         }
 
         return source;

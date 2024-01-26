@@ -17,6 +17,9 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [x] Refactor `char` and `Rune` overloads to use `...TwoBytes`, `...ThreeBytes` and `...FourBytes` specialized handlers over spilling into span and then doing extra SequenceEqual/etc. calls which is expensive
     - [x] ~~`U8(Scalar/Rune)Split`-like internal API shape?~~
     - [ ] Do a similar optimization pass for comparer-based paths
+- [ ] Implement validate+copy, validate+scan and validate+copy+scan paths for efficient construction for the variety of use cases (the last one especially spends more CPU and bandwidth than necessary for consuming null-terimated C strings)
+- [ ] Reconsider the use of `U8Pattern` abstraction to generalize and coalesce all the IndexOf(Any) codepaths. Maybe `Patern<Kind>`?
+- [ ] Reconsider the decision regarding not introducing `U8Span` - way too many intermediate cases where heap-allocated `U8String` is not required but `ReadOnlySpan<byte>` requires unnecessary re-validations
 - [ ] Consider adaptive caching of conversions by implementing a bloom-filter-like check for constructors which perform opportunistic lookup in decoded/encoded pool should they possibly contain the same value (though the question regarding thread-safety of bloom filter value calculation remains since it will most likely be 128b or even 256b vector)
 - [ ] Configure/fix CI/CD to 1. properly recognize commit message prefixes when building release notes by integrating 'git-cliff', 2. properly package the nuget packages and 3. use better integrated warning/coverage reporting
 - [ ] Consider Bake/Inline compile-time extensions for F# which to allow folded validation or conversion

@@ -122,4 +122,5 @@
     - [x] Compile-time conversion of string literals (proof of concept done)
         - [ ] Add install and uninstall scripts to add/remove to all projects (incl. interceptor toggle) in the solution (similar to OneOf?)
         - [ ] Add error fixer "add `u8(...)` to string literal to fix this error"
+    - [ ] Compile-time UTF-8 validation for u8 literals and replacing the calls with unchecked variants
     - [ ] Switch map trie generator to work around C# limitations
