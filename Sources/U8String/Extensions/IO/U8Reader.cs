@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Text;
 
-using U8.InteropServices;
 using U8.Primitives;
 
 namespace U8.IO;
@@ -21,11 +20,6 @@ public class U8Reader : IDisposable
 
     int _bytesRead;
     int _bytesConsumed;
-
-    public U8Reader()
-    {
-        throw new InvalidOperationException();
-    }
 
     public U8Reader(Stream stream)
     {

@@ -81,6 +81,9 @@
     - [x] ~~SliceUnsafe/SubstringUnsafe (Unchecked or Unvalidated?)~~ `U8Marshal.Slice(...)`
     - [x] ToLower/ToUpper (invariant case converter not implemented yet)
     - [x] ToLowerAscii/ToUpperAscii
+- [ ] IO
+    - [ ] U8Reader, U8WebSocketReader, anything else?
+    - [ ] U8File and U8FileReader
 - [ ] Memory-optimized collections
     - [x] `U8SliceArray` or maybe `U8SplitArray`?
     - [ ] `U8SliceDictionary<T>` (?)

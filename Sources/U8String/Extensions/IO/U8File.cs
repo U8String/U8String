@@ -6,6 +6,7 @@ using Microsoft.Win32.SafeHandles;
 
 using U8.Abstractions;
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8.IO;
 
@@ -212,6 +213,74 @@ public class U8FileReader : IDisposable
         return new(ref builder);
     }
 
+    public ValueTask<U8String?> ReadToAsync(byte delimiter, CancellationToken ct = default)
+    {
+        return ReadToAsyncCore(delimiter, ct);
+    }
+
+    public ValueTask<U8String?> ReadToAsync(char delimiter, CancellationToken ct = default)
+    {
+        ThrowHelpers.CheckSurrogate(delimiter);
+
+        return ReadToAsyncCore(delimiter, ct);
+    }
+
+    public ValueTask<U8String?> ReadToAsync(Rune delimiter, CancellationToken ct = default)
+    {
+        return ReadToAsyncCore(delimiter, ct);
+    }
+
+    public ValueTask<U8String?> ReadToAsync(U8String delimiter, CancellationToken ct = default)
+    {
+        return ReadToAsyncCore(delimiter, ct);
+    }
+
+    public ValueTask<U8String?> ReadToAsync(ReadOnlyMemory<byte> delimiter, CancellationToken ct = default)
+    {
+        return ReadToAsyncCore(delimiter, ct);
+    }
+
+    async ValueTask<U8String?> ReadToAsyncCore<T>(T delimiter, CancellationToken ct)
+        where T : struct
+    {
+        Debug.Assert(delimiter is not U8String s || !s.IsEmpty);
+
+        var unread = await FillAsync(ct);
+        if (unread.Length <= 0)
+        {
+            return null;
+        }
+
+        var (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
+        if (index >= 0)
+        {
+            Advance(index + length);
+            return new(unread.Span.SliceUnsafe(0, index));
+        }
+
+        var builder = new InterpolatedU8StringHandler(unread.Length);
+        Advance(unread.Length);
+        builder.AppendBytes(unread.Span);
+
+        while ((unread = await FillAsync(ct)).Length > 0)
+        {
+            (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
+
+            if (index >= 0)
+            {
+                Advance(index + length);
+                builder.AppendBytes(unread.Span.SliceUnsafe(0, index));
+                break;
+            }
+
+            Advance(unread.Length);
+            builder.AppendBytes(unread.Span);
+        }
+
+        U8String.Validate(builder.Written);
+        return new(ref builder);
+    }
+
     public U8String? ReadToEnd()
     {
         throw new NotImplementedException();
@@ -264,6 +333,37 @@ public class U8FileReader : IDisposable
         return buffer.AsSpan(consumed, read - consumed);
     }
 
+    async ValueTask<Memory<byte>> FillAsync(CancellationToken ct)
+    {
+        var buffer = _buffer;
+        var position = _position;
+        var read = _bytesRead;
+        var consumed = _bytesConsumed;
+
+        if (consumed < read)
+        {
+            goto Done;
+        }
+
+        if (read >= buffer.Length)
+        {
+            Debug.Assert(consumed == read);
+            read = 0;
+            consumed = 0;
+        }
+
+        var filled = await RandomAccess.ReadAsync(
+            _handle, buffer.AsMemory(read, buffer.Length - read), position, ct);
+        read += filled;
+
+        _bytesRead = read;
+        _bytesConsumed = consumed;
+        _position = position + filled;
+
+    Done:
+        return buffer.AsMemory(consumed, read - consumed);
+    }
+
     public void Dispose()
     {
         _handle.Dispose();
@@ -271,9 +371,23 @@ public class U8FileReader : IDisposable
     }
 }
 
-public readonly struct U8FileLines(string path) : IU8Enumerable<U8FileLines.Enumerator>
+public readonly struct U8FileLines(string path) :
+    IU8Enumerable<U8FileLines.Enumerator>,
+    IAsyncEnumerable<U8String>
 {
     public Enumerator GetEnumerator() => new(path);
+
+    // TODO: Move off to a separate type which accepts a CT on ReadLinesAsync call instead?
+    // (would also make the method name consistent)
+    public AsyncEnumerator GetAsyncEnumerator(CancellationToken ct = default)
+    {
+        return new AsyncEnumerator(path, ct);
+    }
+
+    IAsyncEnumerator<U8String> IAsyncEnumerable<U8String>.GetAsyncEnumerator(CancellationToken cancellationToken)
+    {
+        return GetAsyncEnumerator(cancellationToken);
+    }
 
     IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
@@ -302,5 +416,35 @@ public readonly struct U8FileLines(string path) : IU8Enumerable<U8FileLines.Enum
 
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
+    }
+
+    // This explodes when the type is a struct, C# iterators moment.
+    // TODO: Determine if this is a compiler (either Roslyn or JIT/ILC) bug and report if appropriate.
+    public sealed class AsyncEnumerator(string path, CancellationToken ct = default) :
+        IAsyncEnumerator<U8String>
+    {
+        readonly U8FileReader _reader = new(
+            File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous));
+
+        public U8String Current { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async ValueTask<bool> MoveNextAsync()
+        {
+            var line = await _reader.ReadToAsync((byte)'\n', ct);
+            if (line.HasValue)
+            {
+                Current = line.Value.StripSuffix((byte)'\r');
+                return true;
+            }
+
+            return false;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            _reader.Dispose();
+            return ValueTask.CompletedTask;
+        }
     }
 }

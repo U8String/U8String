@@ -697,7 +697,7 @@ internal static class U8Searching
         where T : struct
     {
         Debug.Assert(value is not char i || !char.IsSurrogate(i));
-        Debug.Assert(value is byte or char or Rune or U8String);
+        Debug.Assert(value is byte or char or Rune or U8String /* or ReadOnlyMemory<byte> */);
 
         switch (value)
         {
@@ -760,6 +760,10 @@ internal static class U8Searching
             case U8String str:
                 var span = str.AsSpan();
                 return (IndexOf(source, span), span.Length);
+
+            // TODO: Investigate the impact on inlining regressions due to IL size.
+            // case ReadOnlyMemory<byte> mem:
+            //     return (IndexOf(source, mem.Span), mem.Length);
 
             default:
                 return ThrowHelpers.Unreachable<(int, int)>();

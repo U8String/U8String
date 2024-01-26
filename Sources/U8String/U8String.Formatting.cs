@@ -15,7 +15,9 @@ namespace U8;
 [EditorBrowsable(EditorBrowsableState.Advanced)]
 #pragma warning disable RCS1003 // Add braces to multi-line expression. Why: more compact and readable here.
 #pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
-public ref struct InterpolatedU8StringHandler
+// TODO: Review the impact on async methods (with consideration of upcoming async2)
+// and write analyzers to prevent most common copy-by-value mistakes.
+public /* ref */ struct InterpolatedU8StringHandler
 {
     InlineBuffer128 _inline;
     readonly IFormatProvider? _provider;
