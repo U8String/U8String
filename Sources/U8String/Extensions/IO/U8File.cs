@@ -65,6 +65,17 @@ public class U8FileReader : IDisposable
         return line;
     }
 
+    public async ValueTask<U8String?> ReadLineAsync(CancellationToken ct = default)
+    {
+        var line = await ReadToAsync((byte)'\n', ct);
+        if (line.HasValue)
+        {
+            line = line.Value.StripSuffix((byte)'\r');
+        }
+
+        return line;
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String? ReadTo(byte delimiter)
     {
@@ -235,10 +246,10 @@ public class U8FileReader : IDisposable
         return ReadToAsyncCore(delimiter, ct);
     }
 
-    public ValueTask<U8String?> ReadToAsync(ReadOnlyMemory<byte> delimiter, CancellationToken ct = default)
-    {
-        return ReadToAsyncCore(delimiter, ct);
-    }
+    // public ValueTask<U8String?> ReadToAsync(ReadOnlyMemory<byte> delimiter, CancellationToken ct = default)
+    // {
+    //     return ReadToAsyncCore(delimiter, ct);
+    // }
 
     async ValueTask<U8String?> ReadToAsyncCore<T>(T delimiter, CancellationToken ct)
         where T : struct

@@ -27,8 +27,8 @@ public class Construction
     }
 
     [Benchmark]
-    public U8String FromBytes() => new(Bytes!);
+    public U8String FromBytes() => u8(Bytes!);
 
     [Benchmark]
-    public U8String FromString() => new(Str!);
+    public U8String FromString() => u8(Str!);
 }
