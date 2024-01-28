@@ -1,6 +1,8 @@
+using System.Collections;
 using System.Diagnostics;
 using System.Text;
 
+using U8.Abstractions;
 using U8.Primitives;
 using U8.Shared;
 
@@ -14,21 +16,24 @@ public enum U8ReadResult
     InvalidUtf8 = 2,
 }
 
-public class U8Reader : IDisposable
+public interface IU8ReaderSource<T> : IDisposable // TODO: name?
+    where T : struct, IU8ReaderSource<T>
 {
-    readonly Stream _stream;
-    readonly byte[] _buffer;
+    int Read(Span<byte> buffer);
+    abstract static ValueTask<int> ReadAsync(
+        U8Reader<T> reader,
+        Memory<byte> buffer,
+        CancellationToken ct);
+}
+
+public class U8Reader<TSource>(TSource source) : IDisposable
+    where TSource : struct, IU8ReaderSource<TSource>
+{
+    readonly byte[] _buffer = new byte[8192];
+    internal TSource Source = source;
 
     int _bytesRead;
     int _bytesConsumed;
-
-    public U8Reader(Stream stream)
-    {
-        ThrowHelpers.CheckNull(stream);
-
-        _stream = stream;
-        _buffer = new byte[4096];
-    }
 
     public U8String? Read(int length, bool roundOffsets = false)
     {
@@ -232,13 +237,37 @@ public class U8Reader : IDisposable
         return ReadToAsyncCore(delimiter, ct);
     }
 
+    // TODO: Okay, so it *is* the async depth and yield cost that ruins perfomance.
     async ValueTask<U8String?> ReadToAsyncCore<T>(T delimiter, CancellationToken ct)
         where T : struct
     {
         Debug.Assert(delimiter is not U8String s || !s.IsEmpty);
 
-        var unread = await FillAsync(ct);
-        if (unread.Length == 0)
+        var buffer = _buffer;
+        var read = _bytesRead;
+        var consumed = _bytesConsumed;
+        if (consumed < read)
+        {
+            // Nothing to fill, the reader must consume
+            // the unread bytes first.
+            goto SkipRead;
+        }
+
+        // Check if we need to reset the buffer
+        if (read >= buffer.Length)
+        {
+            Debug.Assert(consumed == read);
+            read = 0;
+            consumed = 0;
+        }
+
+        _bytesRead = read += await TSource.ReadAsync(
+            this, buffer.AsMemory(read, buffer.Length - read), ct);
+        _bytesConsumed = consumed;
+
+    SkipRead:
+        var unread = buffer.AsMemory(consumed, read - consumed);
+        if (unread.Length <= 0)
         {
             return null;
         }
@@ -254,8 +283,38 @@ public class U8Reader : IDisposable
         Advance(unread.Length);
         builder.AppendBytes(unread.Span);
 
-        while ((unread = await FillAsync(ct)).Length > 0)
+        while (true)
         {
+            read = _bytesRead;
+            consumed = _bytesConsumed;
+
+            if (consumed < read)
+            {
+                // Nothing to fill, the reader must consume
+                // the unread bytes first.
+                goto SkipRead2;
+            }
+
+            // Check if we need to reset the buffer
+            if (read >= buffer.Length)
+            {
+                Debug.Assert(consumed == read);
+                read = 0;
+                consumed = 0;
+            }
+
+            _bytesRead = read += await TSource.ReadAsync(
+                this, buffer.AsMemory(read, buffer.Length - read), ct);
+            _bytesConsumed = consumed;
+
+        SkipRead2:
+            unread = buffer.AsMemory(consumed, read - consumed);
+
+            if (unread.Length <= 0)
+            {
+                break;
+            }
+
             (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
 
             if (index >= 0)
@@ -288,6 +347,12 @@ public class U8Reader : IDisposable
         _bytesConsumed += length;
     }
 
+    // TODO: Support "stealing" the buffer with an adaptive strategy.
+    // Likely when the read has fully populated it and it contains
+    // delimiters or desired length/offset past 3/4 of its capacity.
+    // Additionally, when EOF is reached it can be stolen if the difference
+    // between sliced length and its size is below some reasonable threshold,
+    // Maybe it's okay to just keep around the 4KB buffer for some odd 200B string?
     Span<byte> Fill()
     {
         var buffer = _buffer;
@@ -309,7 +374,7 @@ public class U8Reader : IDisposable
             consumed = 0;
         }
 
-        _bytesRead = read += _stream.Read(buffer, read, buffer.Length - read);
+        _bytesRead = read += Source.Read(buffer.AsSpan(read, buffer.Length - read));
         _bytesConsumed = consumed;
 
     Done:
@@ -337,8 +402,8 @@ public class U8Reader : IDisposable
             consumed = 0;
         }
 
-        _bytesRead = read += await _stream.ReadAsync(
-            buffer.AsMemory(read, buffer.Length - read), ct);
+        _bytesRead = read += await TSource.ReadAsync(
+            this, buffer.AsMemory(read, buffer.Length - read), ct);
         _bytesConsumed = consumed;
 
     Done:
@@ -347,7 +412,83 @@ public class U8Reader : IDisposable
 
     public void Dispose()
     {
-        _stream.Dispose();
+        Source.Dispose();
         GC.SuppressFinalize(this);
     }
+}
+
+public readonly struct U8LineReader<T>(U8Reader<T> reader) :
+    IU8Enumerable<U8LineReader<T>.Enumerator>
+        where T : struct, IU8ReaderSource<T>
+{
+    public Enumerator GetEnumerator() => new(reader);
+
+    public struct Enumerator(U8Reader<T> reader) : IU8Enumerator
+    {
+        public U8String Current { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNext()
+        {
+            var line = reader.ReadTo((byte)'\n');
+            if (line.HasValue)
+            {
+                Current = line.Value.StripSuffix((byte)'\r');
+                return true;
+            }
+
+            return false;
+        }
+
+        public readonly void Dispose() => reader.Dispose();
+
+        readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
+    }
+
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+}
+
+// TODO: Look into CT interactions (and file reader too)
+// TODO: Performs as fast as regular ReadLinesAsync which means
+// there are implementation issues which leave a lot of perf on the table.
+public readonly struct U8AsyncLineReader<T>(
+    U8Reader<T> reader, CancellationToken ct = default) : IAsyncEnumerable<U8String>
+        where T : struct, IU8ReaderSource<T>
+{
+    public AsyncEnumerator GetAsyncEnumerator(CancellationToken cancellationToken = default)
+    {
+        cancellationToken = cancellationToken != default
+            ? cancellationToken : ct;
+        return new(reader, cancellationToken);
+    }
+
+    public sealed class AsyncEnumerator(
+        U8Reader<T> reader, CancellationToken ct = default) :
+            IAsyncEnumerator<U8String>
+    {
+        public U8String Current { get; private set; }
+
+        public async ValueTask<bool> MoveNextAsync()
+        {
+            var line = await reader.ReadToAsync((byte)'\n', ct);
+            if (line.HasValue)
+            {
+                Current = line.Value.StripSuffix((byte)'\r');
+                return true;
+            }
+
+            return false;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            reader.Dispose();
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    IAsyncEnumerator<U8String> IAsyncEnumerable<U8String>.GetAsyncEnumerator(
+        CancellationToken cancellationToken) => GetAsyncEnumerator(cancellationToken);
 }

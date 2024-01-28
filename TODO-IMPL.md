@@ -21,6 +21,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [ ] Reconsider the use of `U8Pattern` abstraction to generalize and coalesce all the IndexOf(Any) codepaths. Maybe `Patern<Kind>`?
 - [ ] Reconsider the decision regarding not introducing `U8Span` - way too many intermediate cases where heap-allocated `U8String` is not required but `ReadOnlySpan<byte>` requires unnecessary re-validations
 - [ ] Consider adaptive caching of conversions by implementing a bloom-filter-like check for constructors which perform opportunistic lookup in decoded/encoded pool should they possibly contain the same value (though the question regarding thread-safety of bloom filter value calculation remains since it will most likely be 128b or even 256b vector)
+- [ ] Consider reimplementing a small part of PAL and skipping CoreLib IO APIs to reduce the overhead
 - [ ] Configure/fix CI/CD to 1. properly recognize commit message prefixes when building release notes by integrating 'git-cliff', 2. properly package the nuget packages and 3. use better integrated warning/coverage reporting
 - [ ] Consider Bake/Inline compile-time extensions for F# which to allow folded validation or conversion
 - [x] Consider exposing public API for cached formatting of enum member values that reuses current interpolation logic (U8Enum?)
