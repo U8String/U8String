@@ -25,6 +25,7 @@ public readonly struct U8Range : IEquatable<U8Range>
         get => Unsafe.As<U8Range, long>(ref Unsafe.AsRef(in this));
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8Range(int offset, int length)
     {

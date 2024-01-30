@@ -23,6 +23,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [ ] Consider adaptive caching of conversions by implementing a bloom-filter-like check for constructors which perform opportunistic lookup in decoded/encoded pool should they possibly contain the same value (though the question regarding thread-safety of bloom filter value calculation remains since it will most likely be 128b or even 256b vector)
 - [ ] Consider reimplementing a small part of PAL and skipping CoreLib IO APIs to reduce the overhead
 - [ ] Configure/fix CI/CD to 1. properly recognize commit message prefixes when building release notes by integrating 'git-cliff', 2. properly package the nuget packages and 3. use better integrated warning/coverage reporting
+- [ ] Add copyright header to all files
 - [ ] Consider Bake/Inline compile-time extensions for F# which to allow folded validation or conversion
 - [x] Consider exposing public API for cached formatting of enum member values that reuses current interpolation logic (U8Enum?)
 - [ ] Drop stuct records in favour of implementing the rest of behavior manually as it is more trim-friendly
@@ -60,8 +61,9 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [ ] Setup continuous benchmarking pipeline (should I just pay for good runners? self-host?)
 - [ ] Align (to 16B boundary) large inputs in vectorized methods
 - [ ] Use interceptors to perform additional compile-time work upfront
-    - [ ] Investigate if interception of operator and constructor calls is possible
+    - [x] ~~Investigate if interception of operator and constructor calls is possible~~
     - [ ] Lower `U8String.Create("string literal"u8)`, `new(...)` and `cns.ToU8String()` (incl. non-utf8 forms) to `U8Marshal.Create(cns_byteLiteral, 0, length)`
+    - [ ] Instead of intercepting just the conversions, consider intercepting the methods containing the conversions instead
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [x] Optimize .Replace methods
 - [x] ~~Mirror caching of certain types which cache ToString() with ConditionalWeakTable?~~ Out of scope for 1.0.0

@@ -9,14 +9,23 @@ using U8.IO;
 
 namespace U8.Benchmarks;
 
-// [ShortRunJob]
+[ShortRunJob]
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
+// [DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
 public class FileReading
 {
-    const string Name = "SampleData.txt";
+    [Params("/Users/arseniy/Code/GitHub/U8String/TODO-IMPL.md", "SampleData.txt")]
+    public string Name = "";
 
     [Benchmark(Baseline = true)]
+    public U8String ReadU8String()
+    {
+        using var handle = File.OpenHandle(
+            Name, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return U8String.Read(handle);
+    }
+
+    [Benchmark]
     public void EnumerateLines()
     {
         foreach (var _ in File.ReadLines(Name)) ;
@@ -34,17 +43,31 @@ public class FileReading
         foreach (var _ in ILChertFile.ReadLines(Name)) ;
     }
 
-    //    [Benchmark]
-    //    public async Task EnumerateLinesAsync()
-    //    {
-    //        await foreach (var _ in File.ReadLinesAsync(Name)) ;
-    //    }
+    [Benchmark]
+    public async Task<U8String> ReadU8StringAsync()
+    {
+        using var handle = File.OpenHandle(
+            Name, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
+        return await U8String.ReadAsync(handle);
+    }
 
-    //    [Benchmark]
-    //    public async Task ILChertEnumerateLinesAsync()
-    //    {
-    //        await foreach (var _ in ILChertFile.ReadLinesAsync(Name)) ;
-    //    }
+    [Benchmark]
+    public async Task EnumerateLinesAsync()
+    {
+        await foreach (var _ in File.ReadLinesAsync(Name)) ;
+    }
+
+    [Benchmark]
+    public async Task EnumerateLinesU8Async()
+    {
+        await foreach (var _ in U8File.ReadLinesAsync(Name)) ;
+    }
+
+    [Benchmark]
+    public async Task ILChertEnumerateLinesAsync()
+    {
+        await foreach (var _ in ILChertFile.ReadLinesAsync(Name)) ;
+    }
 }
 
 // Courtesy of https://github.com/Ilchert

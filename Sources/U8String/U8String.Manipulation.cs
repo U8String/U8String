@@ -1412,6 +1412,8 @@ public readonly partial struct U8String
                 newlength -= searchStart;
             }
 
+            // Huh, doesn't this trim away valid code points?
+            // Also check if it looks at the valid ptr after the start was adjusted
             if (length < (source.Length - start))
             {
                 while (newlength > 0

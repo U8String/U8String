@@ -1,6 +1,9 @@
+using System.Buffers;
 using System.Collections;
 using System.Diagnostics;
 using System.Text;
+
+using Microsoft.Win32.SafeHandles;
 
 using U8.Abstractions;
 using U8.Primitives;
@@ -16,22 +19,25 @@ public enum U8ReadResult
     InvalidUtf8 = 2,
 }
 
-public interface IU8ReaderSource<T> : IDisposable // TODO: name?
-    where T : struct, IU8ReaderSource<T>
+public readonly record
+struct U8FileSource(SafeFileHandle Value) : IDisposable
 {
-    int Read(Span<byte> buffer);
-    abstract static ValueTask<int> ReadAsync(
-        U8Reader<T> reader,
-        Memory<byte> buffer,
-        CancellationToken ct);
+    public void Dispose() => Value.Dispose();
+}
+
+public readonly record
+struct U8StreamSource(Stream Value) : IDisposable
+{
+    public void Dispose() => Value.Dispose();
 }
 
 public class U8Reader<TSource>(TSource source) : IDisposable
-    where TSource : struct, IU8ReaderSource<TSource>
+    where TSource : struct, IDisposable
 {
-    readonly byte[] _buffer = new byte[8192];
-    internal TSource Source = source;
+    readonly TSource _source = source;
 
+    byte[] _buffer = ArrayPool<byte>.Shared.Rent(8192);
+    long _offset;
     int _bytesRead;
     int _bytesConsumed;
 
@@ -250,7 +256,7 @@ public class U8Reader<TSource>(TSource source) : IDisposable
         {
             // Nothing to fill, the reader must consume
             // the unread bytes first.
-            goto SkipRead;
+            goto SkipFirstRead;
         }
 
         // Check if we need to reset the buffer
@@ -261,11 +267,14 @@ public class U8Reader<TSource>(TSource source) : IDisposable
             consumed = 0;
         }
 
-        _bytesRead = read += await TSource.ReadAsync(
-            this, buffer.AsMemory(read, buffer.Length - read), ct);
+        var filled = await ReadSourceAsync(
+            buffer.AsMemory(read, buffer.Length - read), ct);
+        AdvanceSource(filled);
+
+        _bytesRead = read += filled;
         _bytesConsumed = consumed;
 
-    SkipRead:
+    SkipFirstRead:
         var unread = buffer.AsMemory(consumed, read - consumed);
         if (unread.Length <= 0)
         {
@@ -292,7 +301,7 @@ public class U8Reader<TSource>(TSource source) : IDisposable
             {
                 // Nothing to fill, the reader must consume
                 // the unread bytes first.
-                goto SkipRead2;
+                goto SkipRead;
             }
 
             // Check if we need to reset the buffer
@@ -303,11 +312,13 @@ public class U8Reader<TSource>(TSource source) : IDisposable
                 consumed = 0;
             }
 
-            _bytesRead = read += await TSource.ReadAsync(
-                this, buffer.AsMemory(read, buffer.Length - read), ct);
+            filled = await ReadSourceAsync(
+                buffer.AsMemory(read, buffer.Length - read), ct);
+
+            _bytesRead = read += filled;
             _bytesConsumed = consumed;
 
-        SkipRead2:
+        SkipRead:
             unread = buffer.AsMemory(consumed, read - consumed);
 
             if (unread.Length <= 0)
@@ -342,9 +353,50 @@ public class U8Reader<TSource>(TSource source) : IDisposable
         throw new NotImplementedException();
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    int ReadSource(Span<byte> buffer)
+    {
+        return _source switch
+        {
+            U8StreamSource stream => stream.Value.Read(buffer),
+            U8FileSource file => RandomAccess.Read(file.Value, buffer, _offset),
+            _ => throw new NotSupportedException()
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    ValueTask<int> ReadSourceAsync(Memory<byte> buffer, CancellationToken ct)
+    {
+        return _source switch
+        {
+            U8StreamSource stream => stream.Value.ReadAsync(buffer, ct),
+            U8FileSource file => RandomAccess.ReadAsync(file.Value, buffer, _offset, ct),
+            _ => throw new NotSupportedException()
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void AdvanceSource(int length)
+    {
+        if (_source is U8FileSource)
+        {
+            _offset += length;
+        }
+    }
+
     void Advance(int length)
     {
-        _bytesConsumed += length;
+        var consumed = _bytesConsumed + length;
+        var read = _bytesRead;
+        if (consumed < read)
+        {
+            _bytesConsumed = consumed;
+        }
+        else
+        {
+            _bytesConsumed = 0;
+            _bytesRead = 0;
+        }
     }
 
     // TODO: Support "stealing" the buffer with an adaptive strategy.
@@ -358,7 +410,6 @@ public class U8Reader<TSource>(TSource source) : IDisposable
         var buffer = _buffer;
         var read = _bytesRead;
         var consumed = _bytesConsumed;
-
         if (consumed < read)
         {
             // Nothing to fill, the reader must consume
@@ -374,52 +425,32 @@ public class U8Reader<TSource>(TSource source) : IDisposable
             consumed = 0;
         }
 
-        _bytesRead = read += Source.Read(buffer.AsSpan(read, buffer.Length - read));
+        var filled = ReadSource(buffer.AsSpan(read, buffer.Length - read));
+        AdvanceSource(filled);
+
+        _bytesRead = read += filled;
         _bytesConsumed = consumed;
 
     Done:
         return buffer.AsSpan(consumed, read - consumed);
     }
 
-    async ValueTask<Memory<byte>> FillAsync(CancellationToken ct)
-    {
-        var buffer = _buffer;
-        var read = _bytesRead;
-        var consumed = _bytesConsumed;
-
-        if (consumed < read)
-        {
-            // Nothing to fill, the reader must consume
-            // the unread bytes first.
-            goto Done;
-        }
-
-        // Check if we need to reset the buffer
-        if (read >= buffer.Length)
-        {
-            Debug.Assert(consumed == read);
-            read = 0;
-            consumed = 0;
-        }
-
-        _bytesRead = read += await TSource.ReadAsync(
-            this, buffer.AsMemory(read, buffer.Length - read), ct);
-        _bytesConsumed = consumed;
-
-    Done:
-        return buffer.AsMemory(consumed, read - consumed);
-    }
-
     public void Dispose()
     {
-        Source.Dispose();
+        var buffer = Interlocked.Exchange(ref _buffer, null!);
+        if (buffer != null)
+        {
+            ArrayPool<byte>.Shared.Return(buffer);
+        }
+
+        _source.Dispose();
         GC.SuppressFinalize(this);
     }
 }
 
 public readonly struct U8LineReader<T>(U8Reader<T> reader) :
     IU8Enumerable<U8LineReader<T>.Enumerator>
-        where T : struct, IU8ReaderSource<T>
+        where T : struct, IDisposable
 {
     public Enumerator GetEnumerator() => new(reader);
 
@@ -455,7 +486,7 @@ public readonly struct U8LineReader<T>(U8Reader<T> reader) :
 // there are implementation issues which leave a lot of perf on the table.
 public readonly struct U8AsyncLineReader<T>(
     U8Reader<T> reader, CancellationToken ct = default) : IAsyncEnumerable<U8String>
-        where T : struct, IU8ReaderSource<T>
+        where T : struct, IDisposable
 {
     public AsyncEnumerator GetAsyncEnumerator(CancellationToken cancellationToken = default)
     {
