@@ -1,0 +1,302 @@
+using System.Diagnostics;
+using System.Text;
+
+using U8.Primitives;
+
+namespace U8.IO;
+
+public partial class U8Reader<TSource>
+{
+    public U8String? Read(int length, bool roundOffsets = false)
+    {
+        // var bytes = new byte[(nint)(uint)length + 1];
+        // var buffer = bytes.AsSpan();
+        // var bytesRead = _stream.Read(buffer);
+
+        throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String? ReadLine()
+    {
+        var line = ReadTo((byte)'\n');
+        if (line.HasValue)
+        {
+            line = line.Value.StripSuffix((byte)'\r');
+        }
+
+        return line;
+    }
+
+    public async ValueTask<U8String?> ReadLineAsync(CancellationToken ct = default)
+    {
+        var line = await ReadToAsync((byte)'\n', ct);
+        if (line.HasValue)
+        {
+            line = line.Value.StripSuffix((byte)'\r');
+        }
+
+        return line;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public U8String? ReadTo(byte delimiter)
+    {
+        // Try to find the delimiter within the first read and
+        // copy it directly to the result.
+        var unread = Fill();
+        var isEOF = false;
+
+    RetryCheckEOF:
+        var index = unread.IndexOf(delimiter);
+        if (index >= 0 || isEOF)
+        {
+            index = index >= 0
+                ? index : unread.Length;
+
+            var result = ShouldStealBuffer(delimiter, index)
+                ? new U8String(_buffer, _bytesConsumed, index)
+                : new U8String(unread.SliceUnsafe(0, index), skipValidation: true);
+
+            AdvanceReader(index + 1, isEOF);
+
+            U8String.Validate(result);
+            return result;
+        }
+        else if (unread is [])
+        {
+            return null;
+        }
+        // Buffer is null when return value of fill is []
+        else if (_bytesRead < _buffer!.Length)
+        {
+            unread = FillCheckEOF(out isEOF);
+            goto RetryCheckEOF;
+        }
+
+        var builder = new InterpolatedU8StringHandler(unread.Length);
+        AdvanceReader(unread.Length);
+        builder.AppendBytes(unread);
+
+        while ((unread = Fill()).Length > 0)
+        {
+            if ((index = unread.IndexOf(delimiter)) >= 0)
+            {
+                AdvanceReader(index + 1);
+                builder.AppendBytes(unread.SliceUnsafe(0, index));
+                break;
+            }
+
+            AdvanceReader(unread.Length);
+            builder.AppendBytes(unread);
+        }
+
+        U8String.Validate(builder.Written);
+        return new(ref builder);
+    }
+
+    public U8String? ReadTo(char delimiter)
+    {
+        ThrowHelpers.CheckSurrogate(delimiter);
+
+        return char.IsAscii(delimiter)
+            ? ReadTo((byte)delimiter)
+            : ReadTo(delimiter <= 0x7ff ? delimiter.AsTwoBytes() : delimiter.AsThreeBytes());
+    }
+
+    public U8String? ReadTo(Rune delimiter)
+    {
+        return delimiter.IsAscii
+            ? ReadTo((byte)delimiter.Value)
+            : ReadTo(delimiter.Value switch
+            {
+                <= 0x7ff => delimiter.AsTwoBytes(),
+                <= 0xffff => delimiter.AsThreeBytes(),
+                _ => delimiter.AsFourBytes()
+            });
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public U8String? ReadTo(ReadOnlySpan<byte> delimiter)
+    {
+        if (delimiter.Length <= 0)
+        {
+            ThrowHelpers.ArgumentException();
+        }
+
+        var unread = Fill();
+        if (unread is [])
+        {
+            return null;
+        }
+
+        // Try to find the delimiter within the first read and
+        // copy it directly to the result.
+        var index = unread.IndexOf(delimiter);
+        if (index >= 0)
+        {
+            AdvanceReader(index + 1);
+            return new(unread.SliceUnsafe(0, index));
+        }
+
+        var builder = new InterpolatedU8StringHandler(unread.Length);
+        AdvanceReader(unread.Length);
+        builder.AppendBytes(unread);
+
+        while ((unread = Fill()).Length > 0)
+        {
+            if ((index = unread.IndexOf(delimiter)) >= 0)
+            {
+                AdvanceReader(index + 1);
+                builder.AppendBytes(unread.SliceUnsafe(0, index));
+                break;
+            }
+
+            AdvanceReader(unread.Length);
+            builder.AppendBytes(unread);
+        }
+
+        U8String.Validate(builder.Written);
+        return new(ref builder);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8String? ReadTo<T>(T delimiter)
+        where T : struct
+    {
+        return delimiter switch
+        {
+            byte b => ReadTo(b),
+            char c => ReadTo(c),
+            Rune r => ReadTo(r),
+            U8String s => ReadTo(s.AsSpan()),
+            _ => throw new NotSupportedException()
+        };
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public U8String? ReadToAny(ReadOnlySpan<byte> delimiters)
+    {
+        if (delimiters.IsEmpty)
+        {
+            ThrowHelpers.ArgumentException();
+        }
+
+        var unread = Fill();
+        if (unread is [])
+        {
+            return null;
+        }
+
+        // Try to find the delimiter within the first read and
+        // copy it directly to the result.
+        var index = unread.IndexOfAny(delimiters);
+        if (index >= 0)
+        {
+            AdvanceReader(index + 1);
+            return new(unread.SliceUnsafe(0, index));
+        }
+
+        var builder = new InterpolatedU8StringHandler(unread.Length);
+        AdvanceReader(unread.Length);
+        builder.AppendBytes(unread);
+
+        while ((unread = Fill()).Length > 0)
+        {
+            if ((index = unread.IndexOfAny(delimiters)) >= 0)
+            {
+                AdvanceReader(index + 1);
+                builder.AppendBytes(unread.SliceUnsafe(0, index));
+                break;
+            }
+
+            AdvanceReader(unread.Length);
+            builder.AppendBytes(unread);
+        }
+
+        U8String.Validate(builder.Written);
+        return new(ref builder);
+    }
+
+    public U8String? ReadToEnd()
+    {
+        throw new NotImplementedException();
+    }
+
+    public U8ReadResult TryRead(int length, out U8String value)
+    {
+        throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    int ReadSource(Span<byte> buffer)
+    {
+        return _source switch
+        {
+            U8StreamSource stream => stream.Value.Read(buffer),
+            U8FileSource file => RandomAccess.Read(file.Value, buffer, _offset),
+            _ => throw new NotSupportedException()
+        };
+    }
+
+    // TODO: How does this interact with e.g. TcpStream and Slowloris attacks?
+    // TODO: Support "stealing" the buffer with an adaptive strategy.
+    // Likely when the read has fully populated it and it contains
+    // delimiters or desired length/offset past 3/4 of its capacity.
+    // Additionally, when EOF is reached it can be stolen if the difference
+    // between sliced length and its size is below some reasonable threshold,
+    // Maybe it's okay to just keep around the 4KB buffer for some odd 200B string?
+    Span<byte> Fill()
+    {
+        // Bail out early if we done reading
+        if (_offset >= 0)
+        {
+            var buffer = _buffer;
+            var read = _bytesRead;
+            var consumed = _bytesConsumed;
+            if (consumed < read)
+            {
+                // Nothing to fill, the reader must consume
+                // the unread bytes first.
+                goto Done;
+            }
+
+            // Check if we need to reset the buffer
+            if (read >= buffer.Length)
+            {
+                Debug.Assert(consumed == read);
+                read = 0;
+                consumed = 0;
+            }
+
+            var filled = ReadSource(buffer.AsSpan(read, buffer.Length - read));
+            AdvanceSource(filled);
+
+            _bytesRead = read += filled;
+            _bytesConsumed = consumed;
+
+        Done:
+            return buffer.AsSpan(consumed, read - consumed);
+        }
+
+        return [];
+    }
+
+    Span<byte> FillCheckEOF(out bool isEOF)
+    {
+        var buffer = _buffer;
+        var read = _bytesRead;
+        var consumed = _bytesConsumed;
+
+        Debug.Assert(_offset >= 0);
+        Debug.Assert(consumed < read);
+        Debug.Assert(read < buffer.Length);
+
+        var filled = ReadSource(buffer.AsSpan(read, buffer.Length - read));
+        AdvanceSource(filled);
+        _bytesRead = read += filled;
+
+        isEOF = filled <= 0;
+        return buffer.AsSpan(consumed, read - consumed);
+    }
+}

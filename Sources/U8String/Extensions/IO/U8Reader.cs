@@ -1,12 +1,8 @@
 using System.Buffers;
-using System.Collections;
 using System.Diagnostics;
-using System.Text;
 
 using Microsoft.Win32.SafeHandles;
 
-using U8.Abstractions;
-using U8.Primitives;
 using U8.Shared;
 
 namespace U8.IO;
@@ -31,348 +27,92 @@ struct U8StreamSource(Stream Value) : IDisposable
     public void Dispose() => Value.Dispose();
 }
 
-public class U8Reader<TSource>(TSource source) : IDisposable
+public partial class U8Reader<TSource>(TSource source) : IDisposable
     where TSource : struct, IDisposable
 {
+    const int BufferSize = 8192;
+
     readonly TSource _source = source;
 
-    byte[] _buffer = ArrayPool<byte>.Shared.Rent(8192);
-    long _offset;
+    byte[] _buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
+    long _offset; // Sentinel value of -1 indicates EOF
     int _bytesRead;
     int _bytesConsumed;
+    bool _isBufferStolen;
 
-    public U8String? Read(int length, bool roundOffsets = false)
-    {
-        // var bytes = new byte[(nint)(uint)length + 1];
-        // var buffer = bytes.AsSpan();
-        // var bytesRead = _stream.Read(buffer);
-
-        throw new NotImplementedException();
-    }
-
+    // TODO: Scenarios like .ReadLines().Take(1) are really hurt by
+    // this implementation. Is it possible to special case them?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8String? ReadLine()
-    {
-        var line = ReadTo((byte)'\n');
-        if (line.HasValue)
-        {
-            line = line.Value.StripSuffix((byte)'\r');
-        }
-
-        return line;
-    }
-
-    public async ValueTask<U8String?> ReadLineAsync(CancellationToken ct = default)
-    {
-        var line = await ReadToAsync((byte)'\n', ct);
-        if (line.HasValue)
-        {
-            line = line.Value.StripSuffix((byte)'\r');
-        }
-
-        return line;
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public U8String? ReadTo(byte delimiter)
-    {
-        var unread = Fill();
-        if (unread is [])
-        {
-            return null;
-        }
-
-        // Try to find the delimiter within the first read and
-        // copy it directly to the result.
-        var index = unread.IndexOf(delimiter);
-        if (index >= 0)
-        {
-            Advance(index + 1);
-            return new(unread.SliceUnsafe(0, index));
-        }
-
-        var builder = new InterpolatedU8StringHandler(unread.Length);
-        Advance(unread.Length);
-        builder.AppendBytes(unread);
-
-        while ((unread = Fill()).Length > 0)
-        {
-            if ((index = unread.IndexOf(delimiter)) >= 0)
-            {
-                Advance(index + 1);
-                builder.AppendBytes(unread.SliceUnsafe(0, index));
-                break;
-            }
-
-            Advance(unread.Length);
-            builder.AppendBytes(unread);
-        }
-
-        U8String.Validate(builder.Written);
-        return new(ref builder);
-    }
-
-    public U8String? ReadTo(char delimiter)
-    {
-        ThrowHelpers.CheckSurrogate(delimiter);
-
-        return char.IsAscii(delimiter)
-            ? ReadTo((byte)delimiter)
-            : ReadTo(delimiter <= 0x7ff ? delimiter.AsTwoBytes() : delimiter.AsThreeBytes());
-    }
-
-    public U8String? ReadTo(Rune delimiter)
-    {
-        return delimiter.IsAscii
-            ? ReadTo((byte)delimiter.Value)
-            : ReadTo(delimiter.Value switch
-            {
-                <= 0x7ff => delimiter.AsTwoBytes(),
-                <= 0xffff => delimiter.AsThreeBytes(),
-                _ => delimiter.AsFourBytes()
-            });
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public U8String? ReadTo(ReadOnlySpan<byte> delimiter)
-    {
-        if (delimiter.Length <= 0)
-        {
-            ThrowHelpers.ArgumentException();
-        }
-
-        var unread = Fill();
-        if (unread is [])
-        {
-            return null;
-        }
-
-        // Try to find the delimiter within the first read and
-        // copy it directly to the result.
-        var index = unread.IndexOf(delimiter);
-        if (index >= 0)
-        {
-            Advance(index + 1);
-            return new(unread.SliceUnsafe(0, index));
-        }
-
-        var builder = new InterpolatedU8StringHandler(unread.Length);
-        Advance(unread.Length);
-        builder.AppendBytes(unread);
-
-        while ((unread = Fill()).Length > 0)
-        {
-            if ((index = unread.IndexOf(delimiter)) >= 0)
-            {
-                Advance(index + 1);
-                builder.AppendBytes(unread.SliceUnsafe(0, index));
-                break;
-            }
-
-            Advance(unread.Length);
-            builder.AppendBytes(unread);
-        }
-
-        U8String.Validate(builder.Written);
-        return new(ref builder);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public U8String? ReadToAny(ReadOnlySpan<byte> delimiters)
-    {
-        if (delimiters.IsEmpty)
-        {
-            ThrowHelpers.ArgumentException();
-        }
-
-        var unread = Fill();
-        if (unread is [])
-        {
-            return null;
-        }
-
-        // Try to find the delimiter within the first read and
-        // copy it directly to the result.
-        var index = unread.IndexOfAny(delimiters);
-        if (index >= 0)
-        {
-            Advance(index + 1);
-            return new(unread.SliceUnsafe(0, index));
-        }
-
-        var builder = new InterpolatedU8StringHandler(unread.Length);
-        Advance(unread.Length);
-        builder.AppendBytes(unread);
-
-        while ((unread = Fill()).Length > 0)
-        {
-            if ((index = unread.IndexOfAny(delimiters)) >= 0)
-            {
-                Advance(index + 1);
-                builder.AppendBytes(unread.SliceUnsafe(0, index));
-                break;
-            }
-
-            Advance(unread.Length);
-            builder.AppendBytes(unread);
-        }
-
-        U8String.Validate(builder.Written);
-        return new(ref builder);
-    }
-
-    public ValueTask<U8String?> ReadToAsync(byte delimiter, CancellationToken ct = default)
-    {
-        return ReadToAsyncCore(delimiter, ct);
-    }
-
-    public ValueTask<U8String?> ReadToAsync(char delimiter, CancellationToken ct = default)
-    {
-        ThrowHelpers.CheckSurrogate(delimiter);
-
-        return ReadToAsyncCore(delimiter, ct);
-    }
-
-    public ValueTask<U8String?> ReadToAsync(Rune delimiter, CancellationToken ct = default)
-    {
-        return ReadToAsyncCore(delimiter, ct);
-    }
-
-    public ValueTask<U8String?> ReadToAsync(U8String delimiter, CancellationToken ct = default)
-    {
-        return ReadToAsyncCore(delimiter, ct);
-    }
-
-    // TODO: Okay, so it *is* the async depth and yield cost that ruins perfomance.
-    async ValueTask<U8String?> ReadToAsyncCore<T>(T delimiter, CancellationToken ct)
+    bool ShouldStealBuffer<T>(T delimiter, int searchStart)
         where T : struct
     {
-        Debug.Assert(delimiter is not U8String s || !s.IsEmpty);
+        // One of the following must be true:
+        // - The buffer is already stolen
+        // - EOF was definitely reached
+        // - The search start is at or before 1/4 of the buffer
+        // - The delimiter is at or past 3/4 of the buffer
+        Debug.Assert((uint)searchStart < BufferSize);
 
-        var buffer = _buffer;
-        var read = _bytesRead;
-        var consumed = _bytesConsumed;
-        if (consumed < read)
+        if (_isBufferStolen)
         {
-            // Nothing to fill, the reader must consume
-            // the unread bytes first.
-            goto SkipFirstRead;
+            return true;
         }
 
-        // Check if we need to reset the buffer
-        if (read >= buffer.Length)
+        return Core(delimiter, searchStart);
+
+        bool Core(T delimiter, int searchStart)
         {
-            Debug.Assert(consumed == read);
-            read = 0;
-            consumed = 0;
-        }
-
-        var filled = await ReadSourceAsync(
-            buffer.AsMemory(read, buffer.Length - read), ct);
-        AdvanceSource(filled);
-
-        _bytesRead = read += filled;
-        _bytesConsumed = consumed;
-
-    SkipFirstRead:
-        var unread = buffer.AsMemory(consumed, read - consumed);
-        if (unread.Length <= 0)
-        {
-            return null;
-        }
-
-        var (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
-        if (index >= 0)
-        {
-            Advance(index + length);
-            return new(unread.Span.SliceUnsafe(0, index));
-        }
-
-        var builder = new InterpolatedU8StringHandler(unread.Length);
-        Advance(unread.Length);
-        builder.AppendBytes(unread.Span);
-
-        while (true)
-        {
-            read = _bytesRead;
-            consumed = _bytesConsumed;
-
-            if (consumed < read)
+            var buffer = _buffer;
+            var read = _bytesRead;
+            var consumed = _bytesConsumed;
+            if (read >= BufferSize / 2)
             {
-                // Nothing to fill, the reader must consume
-                // the unread bytes first.
-                goto SkipRead;
+                // TODO: Edge cases are not compliant with the above
+                // heuristic - fix them and tune as needed.
+                if (read < BufferSize)
+                {
+                    // Assuming we reached EOF
+                    _isBufferStolen = true;
+                    return true;
+                }
+
+                searchStart += consumed;
+                var lastPos = U8Searching.LastIndexOf(
+                    buffer.AsSpan(searchStart, read - searchStart), delimiter).Offset;
+
+                if (lastPos is >= 0 and >= (BufferSize / 2))
+                {
+                    _isBufferStolen = true;
+                    return true;
+                }
+            }
+            else if (read < buffer!.Length)
+            {
+                // This *might* be EOF but even if it's not,
+                // we want to reallocate the buffer to an exact size
+                // and just steal it unconditionally assuming one of the
+                // following is true:
+                // - We reached EOF for a small file or a short stream
+                // - The size of the current transmission or chunk is
+                // small enough we can just keep the downsized buffer around
+                var length = read - consumed;
+                var newBuffer = new byte[length + 1];
+                buffer.AsSpan(consumed, length).CopyTo(newBuffer);
+
+                Debug.Assert(!_isBufferStolen);
+                Debug.Assert(buffer.Length is BufferSize);
+                _buffer = newBuffer;
+                _bytesRead = length;
+                _bytesConsumed = 0;
+                _isBufferStolen = true;
+
+                ArrayPool<byte>.Shared.Return(buffer);
+
+                return true;
             }
 
-            // Check if we need to reset the buffer
-            if (read >= buffer.Length)
-            {
-                Debug.Assert(consumed == read);
-                read = 0;
-                consumed = 0;
-            }
-
-            filled = await ReadSourceAsync(
-                buffer.AsMemory(read, buffer.Length - read), ct);
-
-            _bytesRead = read += filled;
-            _bytesConsumed = consumed;
-
-        SkipRead:
-            unread = buffer.AsMemory(consumed, read - consumed);
-
-            if (unread.Length <= 0)
-            {
-                break;
-            }
-
-            (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
-
-            if (index >= 0)
-            {
-                Advance(index + length);
-                builder.AppendBytes(unread.Span.SliceUnsafe(0, index));
-                break;
-            }
-
-            Advance(unread.Length);
-            builder.AppendBytes(unread.Span);
+            return false;
         }
-
-        U8String.Validate(builder.Written);
-        return new(ref builder);
-    }
-
-    public U8String? ReadToEnd()
-    {
-        throw new NotImplementedException();
-    }
-
-    public U8ReadResult TryRead(int length, out U8String value)
-    {
-        throw new NotImplementedException();
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    int ReadSource(Span<byte> buffer)
-    {
-        return _source switch
-        {
-            U8StreamSource stream => stream.Value.Read(buffer),
-            U8FileSource file => RandomAccess.Read(file.Value, buffer, _offset),
-            _ => throw new NotSupportedException()
-        };
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    ValueTask<int> ReadSourceAsync(Memory<byte> buffer, CancellationToken ct)
-    {
-        return _source switch
-        {
-            U8StreamSource stream => stream.Value.ReadAsync(buffer, ct),
-            U8FileSource file => RandomAccess.ReadAsync(file.Value, buffer, _offset, ct),
-            _ => throw new NotSupportedException()
-        };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -384,142 +124,56 @@ public class U8Reader<TSource>(TSource source) : IDisposable
         }
     }
 
-    void Advance(int length)
+    void AdvanceReader(int length, bool isEOF = false)
     {
         var consumed = _bytesConsumed + length;
         var read = _bytesRead;
+        var isBufferStolen = _isBufferStolen;
         if (consumed < read)
         {
             _bytesConsumed = consumed;
         }
-        else
+        else if (isEOF)
+        {
+            _offset = -1;
+        }
+        else if (!isBufferStolen)
         {
             _bytesConsumed = 0;
             _bytesRead = 0;
         }
-    }
-
-    // TODO: Support "stealing" the buffer with an adaptive strategy.
-    // Likely when the read has fully populated it and it contains
-    // delimiters or desired length/offset past 3/4 of its capacity.
-    // Additionally, when EOF is reached it can be stolen if the difference
-    // between sliced length and its size is below some reasonable threshold,
-    // Maybe it's okay to just keep around the 4KB buffer for some odd 200B string?
-    Span<byte> Fill()
-    {
-        var buffer = _buffer;
-        var read = _bytesRead;
-        var consumed = _bytesConsumed;
-        if (consumed < read)
+        else if (_offset >= 0)
         {
-            // Nothing to fill, the reader must consume
-            // the unread bytes first.
-            goto Done;
+            // Must not be reached if we done reading
+            Debug.Assert(_buffer != null);
+            Debug.Assert(_isBufferStolen);
+            // Allocate a new array instead of stealing it from the pool,
+            // if we stole it from the reader previously.
+            // This also allows to give back a BufferSize array to the pool
+            // instead of constantly draining it in some cases.
+            _buffer = new byte[BufferSize];
+            _bytesConsumed = 0;
+            _bytesRead = 0;
+            _isBufferStolen = false;
         }
-
-        // Check if we need to reset the buffer
-        if (read >= buffer.Length)
-        {
-            Debug.Assert(consumed == read);
-            read = 0;
-            consumed = 0;
-        }
-
-        var filled = ReadSource(buffer.AsSpan(read, buffer.Length - read));
-        AdvanceSource(filled);
-
-        _bytesRead = read += filled;
-        _bytesConsumed = consumed;
-
-    Done:
-        return buffer.AsSpan(consumed, read - consumed);
     }
 
     public void Dispose()
     {
         var buffer = Interlocked.Exchange(ref _buffer, null!);
-        if (buffer != null)
+        if (buffer != null
+            && !_isBufferStolen
+            && buffer.Length is BufferSize)
         {
             ArrayPool<byte>.Shared.Return(buffer);
         }
 
+        _offset = -1;
+        _bytesConsumed = 0;
+        _bytesRead = 0;
+        _isBufferStolen = false;
+
         _source.Dispose();
         GC.SuppressFinalize(this);
     }
-}
-
-public readonly struct U8LineReader<T>(U8Reader<T> reader) :
-    IU8Enumerable<U8LineReader<T>.Enumerator>
-        where T : struct, IDisposable
-{
-    public Enumerator GetEnumerator() => new(reader);
-
-    public struct Enumerator(U8Reader<T> reader) : IU8Enumerator
-    {
-        public U8String Current { get; private set; }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext()
-        {
-            var line = reader.ReadTo((byte)'\n');
-            if (line.HasValue)
-            {
-                Current = line.Value.StripSuffix((byte)'\r');
-                return true;
-            }
-
-            return false;
-        }
-
-        public readonly void Dispose() => reader.Dispose();
-
-        readonly object IEnumerator.Current => Current;
-        readonly void IEnumerator.Reset() => throw new NotSupportedException();
-    }
-
-    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-}
-
-// TODO: Look into CT interactions (and file reader too)
-// TODO: Performs as fast as regular ReadLinesAsync which means
-// there are implementation issues which leave a lot of perf on the table.
-public readonly struct U8AsyncLineReader<T>(
-    U8Reader<T> reader, CancellationToken ct = default) : IAsyncEnumerable<U8String>
-        where T : struct, IDisposable
-{
-    public AsyncEnumerator GetAsyncEnumerator(CancellationToken cancellationToken = default)
-    {
-        cancellationToken = cancellationToken != default
-            ? cancellationToken : ct;
-        return new(reader, cancellationToken);
-    }
-
-    public sealed class AsyncEnumerator(
-        U8Reader<T> reader, CancellationToken ct = default) :
-            IAsyncEnumerator<U8String>
-    {
-        public U8String Current { get; private set; }
-
-        public async ValueTask<bool> MoveNextAsync()
-        {
-            var line = await reader.ReadToAsync((byte)'\n', ct);
-            if (line.HasValue)
-            {
-                Current = line.Value.StripSuffix((byte)'\r');
-                return true;
-            }
-
-            return false;
-        }
-
-        public ValueTask DisposeAsync()
-        {
-            reader.Dispose();
-            return ValueTask.CompletedTask;
-        }
-    }
-
-    IAsyncEnumerator<U8String> IAsyncEnumerable<U8String>.GetAsyncEnumerator(
-        CancellationToken cancellationToken) => GetAsyncEnumerator(cancellationToken);
 }

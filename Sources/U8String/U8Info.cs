@@ -125,7 +125,7 @@ public static class U8Info
     {
         // Do not use ternary here as it produces two jumps instead of one when inlined.
         // Otherwise, this is branchless. It may not be worth trying to optimize this further.
-        // If you do, please update the hours spent tracker: 3h.
+        // If you do, please update the hours spent tracker: 4h.
         var lzcnt = (uint)BitOperations.LeadingZeroCount(~((uint)value << 24));
         if (lzcnt is 0) lzcnt++;
 

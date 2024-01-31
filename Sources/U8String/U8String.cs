@@ -278,6 +278,7 @@ public readonly partial struct U8String :
         return true;
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Validate(ReadOnlySpan<byte> value)
     {

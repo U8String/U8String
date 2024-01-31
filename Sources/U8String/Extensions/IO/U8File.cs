@@ -6,6 +6,14 @@ namespace U8.IO;
 
 public static class U8File
 {
+    public static U8Reader<U8FileSource> OpenRead(string path)
+    {
+        var handle = File.OpenHandle(
+            path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
+
+        return new(new(handle));
+    }
+
     /// <inheritdoc cref="U8String.Read(SafeFileHandle, long)"/>
     public static U8String Read(string path, long offset = 0, int length = -1, bool roundOffsets = false)
     {
@@ -44,16 +52,7 @@ public static class U8File
         return new(new(new(handle)));
     }
 
-    public static U8AsyncLineReader<U8FileSource> ReadLinesAsync(
-        string path, CancellationToken ct = default)
-    {
-        var handle = File.OpenHandle(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
-
-        return new(new(new(handle)), ct);
-    }
-
-    public static async IAsyncEnumerable<U8String> ReadLinesAsync2(
+    public static async IAsyncEnumerable<U8String> ReadLines2(
         string path, [EnumeratorCancellation] CancellationToken ct = default)
     {
         using var handle = File.OpenHandle(

@@ -295,6 +295,7 @@ public readonly partial struct U8String
     /// The constructor will *always* drop the reference if the length is 0.
     /// Consequently, the value *must* remain null if the length is 0.
     /// </remarks>
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String(byte[]? value, int offset, int length)
     {
