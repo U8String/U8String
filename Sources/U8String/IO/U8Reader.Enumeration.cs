@@ -136,6 +136,9 @@ public readonly struct U8SplitReader<T, TSeparator> :
         return new(_reader, _separator, ct);
     }
 
+    // TODO: Performance. Consider partially inlining the reader state considering
+    // rather large default buffer size and assuming most iterations will not be going
+    // through read calls so that the cost can be reduced to *almost* U8Split.Enumerator level.
     public struct Enumerator : IU8Enumerator
     {
         readonly U8Reader<T> _reader;

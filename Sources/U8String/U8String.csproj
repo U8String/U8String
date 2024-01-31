@@ -19,6 +19,7 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <!-- The docs will be written after tests and stabilization. -->
     <NoWarn>CS1591;IDE0046;EPS09</NoWarn>
+    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);U8.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
   <ItemGroup>
@@ -36,6 +37,10 @@
     <None Include="$(MSBuildThisFileDirectory)../../README.md" Pack="true" PackagePath="/" />
     <None Include="$(MSBuildThisFileDirectory)../../THIRD-PARTY-NOTICES.txt" Pack="true" PackagePath="/" />
     <None Include="$(MSBuildThisFileDirectory)../../logo.png" Pack="true" PackagePath="/" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\U8String.Tools\U8String.Tools.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

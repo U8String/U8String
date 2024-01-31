@@ -27,6 +27,8 @@ struct U8StreamSource(Stream Value) : IDisposable
     public void Dispose() => Value.Dispose();
 }
 
+// TODO: remove all unchecked slicing to make it more resilient to concurrent misuse
+// (as in, it is still UB but it should not be AVEing by reading random memory)
 public partial class U8Reader<TSource>(TSource source) : IDisposable
     where TSource : struct, IDisposable
 {
