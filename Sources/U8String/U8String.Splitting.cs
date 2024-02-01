@@ -649,7 +649,7 @@ public readonly partial struct U8String
 
 public static class U8SplitExtensions
 {
-        // Behold, overload resolution oriented programming
+    // Behold, overload resolution oriented programming
     public static ConfiguredU8Split<byte, TOptions> Split<TOptions>(this U8String value, byte separator, TOptions options)
         where TOptions : unmanaged, IU8SplitOptions
     {

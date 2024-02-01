@@ -12,7 +12,7 @@ public class Conversion
     private readonly TimeSpan Time = TimeSpan.FromHours(24);
     private readonly Guid Guid = Guid.NewGuid();
     private readonly string String = "Hello, World!";
-    private readonly U8String U8Str = new("Hello, World!"u8);
+    private readonly U8String U8Str = u8("Hello, World!");
     private readonly int Int = 12345678;
     private readonly long Long = 1234567890123456789;
     private readonly double Double = 1234567890.1234567890;
@@ -20,7 +20,7 @@ public class Conversion
     private readonly IPAddress IPv6 = IPAddress.Parse("1050:0:0:0:5:600:300c:326b");
 
     [Benchmark]
-    public U8String FromDateTime() => Time.ToU8String();
+    public U8String FromDateTime() => Date.ToU8String();
 
     [Benchmark]
     public string FromDateTimeBase() => Date.ToString();

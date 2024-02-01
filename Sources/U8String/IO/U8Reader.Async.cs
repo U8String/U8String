@@ -49,43 +49,89 @@ public partial class U8Reader<TSource>
     {
         Debug.Assert(delimiter is not U8String s || !s.IsEmpty);
 
-        var buffer = _buffer;
-        var read = _bytesRead;
-        var consumed = _bytesConsumed;
-        if (consumed < read)
+        // FillAsync()
+        Memory<byte> unread;
         {
-            // Nothing to fill, the reader must consume
-            // the unread bytes first.
-            goto SkipFirstRead;
+            if (_offset >= 0)
+            {
+                var buffer = _buffer;
+                var read = _bytesRead;
+                var consumed = _bytesConsumed;
+                if (consumed < read)
+                {
+                    // Nothing to fill, the reader must consume
+                    // the unread bytes first.
+                    goto Done;
+                }
+
+                // Check if we need to reset the buffer
+                if (read >= buffer.Length)
+                {
+                    Debug.Assert(consumed == read);
+                    read = 0;
+                    consumed = 0;
+                }
+
+                var filled = await ReadSourceAsync(
+                    buffer.AsMemory(read, buffer.Length - read), ct);
+                AdvanceSource(filled);
+
+                _bytesRead = read += filled;
+                _bytesConsumed = consumed;
+
+            Done:
+                unread = buffer.AsMemory(consumed, read - consumed);
+            }
+            else
+            {
+                unread = default;
+            }
         }
 
-        // Check if we need to reset the buffer
-        if (read >= buffer!.Length)
+        var isEOF = false;
+
+    RetryCheckEOF:
+        var (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
+        if (index >= 0 || isEOF)
         {
-            Debug.Assert(consumed == read);
-            read = 0;
-            consumed = 0;
+            index = index >= 0
+                ? index : unread.Length;
+
+            var result = ShouldStealBuffer(delimiter, index)
+                ? new U8String(_buffer, _bytesConsumed, index)
+                : new U8String(unread[..index].Span, skipValidation: true);
+
+            AdvanceReader(index + length, isEOF);
+
+            U8String.Validate(result);
+            return result;
         }
-
-        var filled = await ReadSourceAsync(
-            buffer.AsMemory(read, buffer.Length - read), ct);
-        AdvanceSource(filled);
-
-        _bytesRead = read += filled;
-        _bytesConsumed = consumed;
-
-    SkipFirstRead:
-        var unread = buffer.AsMemory(consumed, read - consumed);
-        if (unread.Length <= 0)
+        else if (unread.IsEmpty)
         {
             return null;
         }
-
-        var (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
-        if (index >= 0)
+        // Buffer is null when return value of fill is []
+        else if (_bytesRead < _buffer!.Length)
         {
-            AdvanceReader(index + length);
-            return new(unread.Span.SliceUnsafe(0, index));
+            // FillCheckEOFAsync()
+            {
+                var buffer = _buffer;
+                var read = _bytesRead;
+                var consumed = _bytesConsumed;
+
+                Debug.Assert(_offset >= 0);
+                Debug.Assert(consumed < read);
+                Debug.Assert(read < buffer.Length);
+
+                var filled = await ReadSourceAsync(
+                    buffer.AsMemory(read, buffer.Length - read), ct);
+                AdvanceSource(filled);
+                _bytesRead = read += filled;
+
+                isEOF = filled <= 0;
+                unread = buffer.AsMemory(consumed, read - consumed);
+            }
+            goto RetryCheckEOF;
         }
 
         var builder = new InterpolatedU8StringHandler(unread.Length);
@@ -94,44 +140,51 @@ public partial class U8Reader<TSource>
 
         while (true)
         {
-            read = _bytesRead;
-            consumed = _bytesConsumed;
-
-            if (consumed < read)
+            // FillAsync()
             {
-                // Nothing to fill, the reader must consume
-                // the unread bytes first.
-                goto SkipRead;
+                if (_offset >= 0)
+                {
+                    var buffer = _buffer;
+                    var read = _bytesRead;
+                    var consumed = _bytesConsumed;
+                    if (consumed < read)
+                    {
+                        // Nothing to fill, the reader must consume
+                        // the unread bytes first.
+                        goto Done;
+                    }
+
+                    // Check if we need to reset the buffer
+                    if (read >= buffer.Length)
+                    {
+                        Debug.Assert(consumed == read);
+                        read = 0;
+                        consumed = 0;
+                    }
+
+                    var filled = await ReadSourceAsync(buffer.AsMemory(read, buffer.Length - read), ct);
+                    AdvanceSource(filled);
+
+                    _bytesRead = read += filled;
+                    _bytesConsumed = consumed;
+
+                Done:
+                    unread = buffer.AsMemory(consumed, read - consumed);
+                }
+                else
+                {
+                    unread = default;
+                }
             }
 
-            // Check if we need to reset the buffer
-            if (read >= buffer!.Length)
-            {
-                Debug.Assert(consumed == read);
-                read = 0;
-                consumed = 0;
-            }
-
-            filled = await ReadSourceAsync(
-                buffer.AsMemory(read, buffer.Length - read), ct);
-
-            _bytesRead = read += filled;
-            _bytesConsumed = consumed;
-
-        SkipRead:
-            unread = buffer.AsMemory(consumed, read - consumed);
-
-            if (unread.Length <= 0)
-            {
-                break;
-            }
+            if (unread.IsEmpty) break;
 
             (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
 
             if (index >= 0)
             {
                 AdvanceReader(index + length);
-                builder.AppendBytes(unread.Span.SliceUnsafe(0, index));
+                builder.AppendBytes(unread[..index].Span);
                 break;
             }
 

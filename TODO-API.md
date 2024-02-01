@@ -122,6 +122,8 @@
     - [ ] Pass large structs by in or ref / ref readonly (autofixer: mutable splits and enumerations by ref / ref readonly, readonly - by in)
     - [ ] Replace predicate on LINQ projection/reduction with direct Contains/Count/etc. call
 - [ ] Source Generators
+    - [ ] `[Display]` generator which auto-implements `IU8Formattable` (like for records)
+        - [ ] Auto-emit extension methods for records without the attr. into user-defined namespaces (or `U8`?)
     - [x] Compile-time conversion of string literals (proof of concept done)
         - [ ] Add install and uninstall scripts to add/remove to all projects (incl. interceptor toggle) in the solution (similar to OneOf?)
         - [ ] Add error fixer "add `u8(...)` to string literal to fix this error"

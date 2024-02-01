@@ -42,7 +42,7 @@ internal struct InlineBuffer376
 
 internal struct ArrayBuilder : IDisposable
 {
-    InlineBuffer376 _inline;
+    InlineBuffer128 _inline;
     byte[]? _array;
 
     public int BytesWritten { get; private set; }
