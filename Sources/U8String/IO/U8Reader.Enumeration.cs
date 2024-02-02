@@ -45,7 +45,7 @@ public partial class U8Reader<TSource>
 public readonly struct U8LineReader<T>(U8Reader<T> reader) :
     IU8Enumerable<U8LineReader<T>.Enumerator>,
     IAsyncEnumerable<U8String>
-        where T : struct, IU8ReaderSource
+        where T : IU8ReaderSource
 {
     public Enumerator GetEnumerator() => new(reader);
 
@@ -114,7 +114,7 @@ public readonly struct U8LineReader<T>(U8Reader<T> reader) :
 public readonly struct U8SplitReader<T, TSeparator> :
     IU8Enumerable<U8SplitReader<T, TSeparator>.Enumerator>,
     IAsyncEnumerable<U8String>
-        where T : struct, IU8ReaderSource
+        where T : IU8ReaderSource
         where TSeparator : struct
 {
     readonly U8Reader<T> _reader;
