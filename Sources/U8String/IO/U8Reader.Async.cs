@@ -72,10 +72,9 @@ public partial class U8Reader<TSource>
                     consumed = 0;
                 }
 
-                var filled = await ReadSourceAsync(
-                    buffer.AsMemory(read, buffer.Length - read), ct);
-                AdvanceSource(filled);
-
+                var filled = await _source.ReadAsync(
+                    _offset, buffer.AsMemory(read, buffer.Length - read), ct);
+                _offset += filled;
                 _bytesRead = read += filled;
                 _bytesConsumed = consumed;
 
@@ -123,9 +122,9 @@ public partial class U8Reader<TSource>
                 Debug.Assert(consumed < read);
                 Debug.Assert(read < buffer.Length);
 
-                var filled = await ReadSourceAsync(
-                    buffer.AsMemory(read, buffer.Length - read), ct);
-                AdvanceSource(filled);
+                var filled = await _source.ReadAsync(
+                    _offset, buffer.AsMemory(read, buffer.Length - read), ct);
+                _offset += filled;
                 _bytesRead = read += filled;
 
                 isEOF = filled <= 0;
@@ -134,6 +133,8 @@ public partial class U8Reader<TSource>
             goto RetryCheckEOF;
         }
 
+        // TODO: This is really bad for state machine object size.
+        // Replace with U8Builder or similar once available.
         var builder = new InterpolatedU8StringHandler(unread.Length);
         AdvanceReader(unread.Length);
         builder.AppendBytes(unread.Span);
@@ -162,9 +163,10 @@ public partial class U8Reader<TSource>
                         consumed = 0;
                     }
 
-                    var filled = await ReadSourceAsync(buffer.AsMemory(read, buffer.Length - read), ct);
-                    AdvanceSource(filled);
+                    var filled = await _source.ReadAsync(
+                        _offset, buffer.AsMemory(read, buffer.Length - read), ct);
 
+                    _offset += filled;
                     _bytesRead = read += filled;
                     _bytesConsumed = consumed;
 
@@ -194,16 +196,5 @@ public partial class U8Reader<TSource>
 
         U8String.Validate(builder.Written);
         return new(ref builder);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    ValueTask<int> ReadSourceAsync(Memory<byte> buffer, CancellationToken ct)
-    {
-        return _source switch
-        {
-            U8StreamSource stream => stream.Value.ReadAsync(buffer, ct),
-            U8FileSource file => RandomAccess.ReadAsync(file.Value, buffer, _offset, ct),
-            _ => throw new NotSupportedException()
-        };
     }
 }

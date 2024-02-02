@@ -52,19 +52,6 @@ public static class U8File
         return new(new(new(handle)));
     }
 
-    public static async IAsyncEnumerable<U8String> ReadLines2(
-        string path, [EnumeratorCancellation] CancellationToken ct = default)
-    {
-        using var handle = File.OpenHandle(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
-
-        var reader = new U8Reader<U8FileSource>(new(handle));
-        while (await reader.ReadToAsync((byte)'\n', ct) is U8String line)
-        {
-            yield return line.StripSuffix((byte)'\r');
-        }
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool HasBOM(ReadOnlySpan<byte> buffer)
     {

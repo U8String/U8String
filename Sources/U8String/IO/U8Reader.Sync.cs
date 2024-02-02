@@ -233,17 +233,6 @@ public partial class U8Reader<TSource>
         throw new NotImplementedException();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    int ReadSource(Span<byte> buffer)
-    {
-        return _source switch
-        {
-            U8StreamSource stream => stream.Value.Read(buffer),
-            U8FileSource file => RandomAccess.Read(file.Value, buffer, _offset),
-            _ => throw new NotSupportedException()
-        };
-    }
-
     // TODO: How does this interact with e.g. TcpStream and Slowloris attacks?
     // TODO: Support "stealing" the buffer with an adaptive strategy.
     // Likely when the read has fully populated it and it contains
@@ -274,9 +263,9 @@ public partial class U8Reader<TSource>
                 consumed = 0;
             }
 
-            var filled = ReadSource(buffer.AsSpan(read, buffer.Length - read));
-            AdvanceSource(filled);
-
+            var filled = _source.Read(
+                _offset, buffer.AsSpan(read, buffer.Length - read));
+            _offset += filled;
             _bytesRead = read += filled;
             _bytesConsumed = consumed;
 
@@ -297,8 +286,9 @@ public partial class U8Reader<TSource>
         Debug.Assert(consumed < read);
         Debug.Assert(read < buffer.Length);
 
-        var filled = ReadSource(buffer.AsSpan(read, buffer.Length - read));
-        AdvanceSource(filled);
+        var filled = _source.Read(
+            _offset, buffer.AsSpan(read, buffer.Length - read));
+        _offset += filled;
         _bytesRead = read += filled;
 
         isEOF = filled <= 0;

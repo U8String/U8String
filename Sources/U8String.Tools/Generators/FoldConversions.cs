@@ -4,7 +4,6 @@ using System.Text;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using Microsoft.CodeAnalysis.Text;
 
 #pragma warning disable RCS1197 // Optimize StringBuilder.Append/AppendLine call. Why: doesn't work well with generated strings
 namespace U8.Tools.Generators;

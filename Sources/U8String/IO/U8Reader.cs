@@ -1,8 +1,6 @@
 using System.Buffers;
 using System.Diagnostics;
 
-using Microsoft.Win32.SafeHandles;
-
 using U8.Shared;
 
 namespace U8.IO;
@@ -15,22 +13,11 @@ public enum U8ReadResult
     InvalidUtf8 = 2,
 }
 
-public readonly record
-struct U8FileSource(SafeFileHandle Value) : IDisposable
-{
-    public void Dispose() => Value.Dispose();
-}
-
-public readonly record
-struct U8StreamSource(Stream Value) : IDisposable
-{
-    public void Dispose() => Value.Dispose();
-}
-
 // TODO: remove all unchecked slicing to make it more resilient to concurrent misuse
 // (as in, it is still UB but it should not be AVEing by reading random memory)
+// TODO: decide whether to seal the class and if not - which methods to make virtual
 public partial class U8Reader<TSource>(TSource source) : IDisposable
-    where TSource : struct, IDisposable
+    where TSource : IU8ReaderSource
 {
     const int BufferSize = 8192;
 
@@ -41,6 +28,28 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
     int _bytesRead;
     int _bytesConsumed;
     bool _isBufferStolen;
+
+    public ReadOnlySpan<byte> Buffered
+    {
+        get => _buffer.AsSpan(0, _bytesRead);
+    }
+
+    public ReadOnlySpan<byte> Unread
+    {
+        get => _buffer.AsSpan(_bytesConsumed, _bytesRead - _bytesConsumed);
+    }
+
+    internal Span<byte> Free
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _buffer.AsSpan(_bytesRead);
+    }
+
+    internal Memory<byte> FreeMemory
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _buffer.AsMemory(_bytesRead);
+    }
 
     // TODO: Scenarios like .ReadLines().Take(1) are really hurt by
     // this implementation. Is it possible to special case them?
@@ -192,15 +201,6 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
         }
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    void AdvanceSource(int length)
-    {
-        if (_source is U8FileSource)
-        {
-            _offset += length;
-        }
-    }
-
     void AdvanceReader(int length, bool isEOF = false)
     {
         var consumed = _bytesConsumed + length;
@@ -233,6 +233,18 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
             _bytesRead = 0;
             _isBufferStolen = false;
         }
+    }
+
+    public ReadOnlySpan<byte> Drain(int length = -1)
+    {
+        if (length < 0)
+        {
+            length = _bytesRead - _bytesConsumed;
+        }
+
+        var result = _buffer.AsSpan(_bytesConsumed, length);
+        AdvanceReader(length);
+        return result;
     }
 
     public void Dispose()

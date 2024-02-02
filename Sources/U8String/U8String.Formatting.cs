@@ -342,7 +342,7 @@ public /* ref */ struct InterpolatedU8StringHandler
     static void UnsupportedAppend<T>()
     {
         throw new NotSupportedException(
-            $"The type '{typeof(T)}' is not '{typeof(IUtf8SpanFormattable)}', '{typeof(Enum)}' or a '{typeof(byte)}' array.");
+            $"\nCannot append a value of type '{typeof(T)}' which does not implement '{typeof(IUtf8SpanFormattable)}' or is not '{typeof(Enum)}' or '{typeof(byte[])}'.");
     }
 }
 

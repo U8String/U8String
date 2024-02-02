@@ -1642,7 +1642,7 @@ public readonly partial struct U8String
                         : U8Info.IsNonAsciiWhitespace(ref ptr.Add(endSearch), out _))
                     {
                         // Save the last found whitespace code point offset and continue searching
-                        // for more whitspace byte sequences from their end. If we don't do this,
+                        // for more whitespace byte sequences from their end. If we don't do this,
                         // we will end up trimming away continuation bytes at the end of the string.
                         length = endSearch;
                     }
