@@ -19,9 +19,9 @@ public static class U8File
     {
         ThrowHelpers.CheckNull(path);
 
-        using var handle = File.OpenHandle(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var handle = File.OpenHandle(path);
 
+        // TODO: Handle files that are unseekable and/or of -1 length
         if (length is -1)
             length = int.CreateChecked(RandomAccess.GetLength(handle));
 

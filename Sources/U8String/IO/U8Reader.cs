@@ -44,6 +44,8 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
 
     // TODO: Scenarios like .ReadLines().Take(1) are really hurt by
     // this implementation. Is it possible to special case them?
+    // TODO: This is yet another example of needing a Pattern<T>
+    // abstraction for string scanning.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool ShouldStealBuffer<T>(T delimiter, int searchStart)
         where T : struct
@@ -118,6 +120,79 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    bool ShouldStealBuffer(ReadOnlySpan<byte> delimiter, int searchStart)
+    {
+        // One of the following must be true:
+        // - The buffer is already stolen
+        // - EOF was definitely reached
+        // - The search start is at or before 1/4 of the buffer
+        // - The delimiter is at or past 3/4 of the buffer
+        Debug.Assert((uint)searchStart < BufferSize);
+
+        if (_isBufferStolen)
+        {
+            return true;
+        }
+
+        return Core(delimiter, searchStart);
+
+        bool Core(ReadOnlySpan<byte> delimiter, int searchStart)
+        {
+            var buffer = _buffer;
+            var read = _bytesRead;
+            var consumed = _bytesConsumed;
+            if (read >= BufferSize / 2)
+            {
+                // TODO: Edge cases are not compliant with the above
+                // heuristic - fix them and tune as needed.
+                if (read < BufferSize)
+                {
+                    // Assuming we reached EOF
+                    _isBufferStolen = true;
+                    return true;
+                }
+
+                searchStart += consumed;
+                var lastPos = buffer
+                    .AsSpan(searchStart, read - searchStart)
+                    .LastIndexOf(delimiter);
+
+                if (lastPos is >= 0 and >= (BufferSize / 2))
+                {
+                    _isBufferStolen = true;
+                    return true;
+                }
+            }
+            else if (read < buffer!.Length)
+            {
+                // This *might* be EOF but even if it's not,
+                // we want to reallocate the buffer to an exact size
+                // and just steal it unconditionally assuming one of the
+                // following is true:
+                // - We reached EOF for a small file or a short stream
+                // - The size of the current transmission or chunk is
+                // small enough we can just keep the downsized buffer around
+                var length = read - consumed;
+                var newBuffer = new byte[length + 1];
+                buffer.AsSpan(consumed, length).CopyTo(newBuffer);
+
+                Debug.Assert(!_isBufferStolen);
+                Debug.Assert(buffer.Length is BufferSize);
+                _buffer = newBuffer;
+                _bytesRead = length;
+                _bytesConsumed = 0;
+                _isBufferStolen = true;
+
+                ArrayPool<byte>.Shared.Return(buffer);
+
+                return true;
+            }
+
+            return false;
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     void AdvanceSource(int length)
     {
         if (_source is U8FileSource)
@@ -153,7 +228,7 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
             // if we stole it from the reader previously.
             // This also allows to give back a BufferSize array to the pool
             // instead of constantly draining it in some cases.
-            _buffer = new byte[BufferSize];
+            _buffer = GC.AllocateUninitializedArray<byte>(BufferSize);
             _bytesConsumed = 0;
             _bytesRead = 0;
             _isBufferStolen = false;

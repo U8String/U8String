@@ -119,24 +119,34 @@ public partial class U8Reader<TSource>
     [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String? ReadTo(ReadOnlySpan<byte> delimiter)
     {
-        if (delimiter.Length <= 0)
-        {
-            ThrowHelpers.ArgumentException();
-        }
-
         var unread = Fill();
-        if (unread is [])
+        var isEOF = false;
+
+    RetryCheckEOF:
+        var index = unread.IndexOf(delimiter);
+        if (index >= 0 || isEOF)
+        {
+            index = index >= 0
+                ? index : unread.Length;
+
+            var result = ShouldStealBuffer(delimiter, index)
+                ? new U8String(_buffer, _bytesConsumed, index)
+                : new U8String(unread.SliceUnsafe(0, index), skipValidation: true);
+
+            AdvanceReader(index + delimiter.Length, isEOF);
+
+            U8String.Validate(result);
+            return result;
+        }
+        else if (unread is [])
         {
             return null;
         }
-
-        // Try to find the delimiter within the first read and
-        // copy it directly to the result.
-        var index = unread.IndexOf(delimiter);
-        if (index >= 0)
+        // Buffer is null when return value of fill is []
+        else if (_bytesRead < _buffer!.Length)
         {
-            AdvanceReader(index + 1);
-            return new(unread.SliceUnsafe(0, index));
+            unread = FillCheckEOF(out isEOF);
+            goto RetryCheckEOF;
         }
 
         var builder = new InterpolatedU8StringHandler(unread.Length);
@@ -147,7 +157,7 @@ public partial class U8Reader<TSource>
         {
             if ((index = unread.IndexOf(delimiter)) >= 0)
             {
-                AdvanceReader(index + 1);
+                AdvanceReader(index + delimiter.Length);
                 builder.AppendBytes(unread.SliceUnsafe(0, index));
                 break;
             }
@@ -182,19 +192,26 @@ public partial class U8Reader<TSource>
             ThrowHelpers.ArgumentException();
         }
 
-        var unread = Fill();
-        if (unread is [])
-        {
-            return null;
-        }
+        throw new NotImplementedException();
+    }
 
+    public U8String ReadToEnd()
+    {
         // Try to find the delimiter within the first read and
         // copy it directly to the result.
-        var index = unread.IndexOfAny(delimiters);
-        if (index >= 0)
+        var unread = Fill();
+        if (_isBufferStolen || (
+            unread.Length < _buffer!.Length &&
+            unread.Length >= BufferSize / 2))
         {
-            AdvanceReader(index + 1);
-            return new(unread.SliceUnsafe(0, index));
+            _isBufferStolen = true;
+
+            var result = new U8String(_buffer, _bytesConsumed, unread.Length);
+
+            AdvanceReader(unread.Length);
+
+            U8String.Validate(result);
+            return result;
         }
 
         var builder = new InterpolatedU8StringHandler(unread.Length);
@@ -203,24 +220,12 @@ public partial class U8Reader<TSource>
 
         while ((unread = Fill()).Length > 0)
         {
-            if ((index = unread.IndexOfAny(delimiters)) >= 0)
-            {
-                AdvanceReader(index + 1);
-                builder.AppendBytes(unread.SliceUnsafe(0, index));
-                break;
-            }
-
             AdvanceReader(unread.Length);
             builder.AppendBytes(unread);
         }
 
         U8String.Validate(builder.Written);
         return new(ref builder);
-    }
-
-    public U8String? ReadToEnd()
-    {
-        throw new NotImplementedException();
     }
 
     public U8ReadResult TryRead(int length, out U8String value)
