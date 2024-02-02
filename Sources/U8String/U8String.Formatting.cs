@@ -140,6 +140,7 @@ public /* ref */ struct InterpolatedU8StringHandler
         });
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendFormatted(U8String value)
     {
         if (!value.IsEmpty)
@@ -170,6 +171,8 @@ public /* ref */ struct InterpolatedU8StringHandler
     // Explicit no-format overload for more compact codegen
     // and specialization so that *if* TryFormat is inlined into
     // the body, the format-specific branches are optimized away.
+    // TODO: Remove unbound generic and replace enum, byte[] and
+    // IA<byte> formatting with extension methods workaround.
     public void AppendFormatted<T>(T value)
     {
     Retry:
@@ -269,6 +272,15 @@ public /* ref */ struct InterpolatedU8StringHandler
         goto Retry;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void EnsureCapacity(int length)
+    {
+        if (Free.Length < length)
+        {
+            Grow(length);
+        }
+    }
+
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal void Grow()
     {
@@ -332,6 +344,16 @@ public /* ref */ struct InterpolatedU8StringHandler
         BytesWritten = 0;
         (var rented, _rented) = (_rented, null);
 
+        if (rented != null)
+        {
+            ArrayPool<byte>.Shared.Return(rented);
+        }
+    }
+
+    internal void ArrayPoolSafeDispose()
+    {
+        BytesWritten = 0;
+        var rented = Interlocked.Exchange(ref _rented, null);
         if (rented != null)
         {
             ArrayPool<byte>.Shared.Return(rented);

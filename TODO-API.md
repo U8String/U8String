@@ -115,12 +115,14 @@
         - [ ] U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.
 - [ ] Analyzers
     - [ ] Suppress 'use slice operator' warning for select methods like `.SliceRounding(...)`
+    - [ ] Replace `.ElementAt`, `.Deconstruct`, etc. applied to splits with `SplitFirstLast` form
     - [ ] Replace string literal comparison with a UTF-8 one
     - [ ] Replace direct for/foreach over a U8String with U8String.AsSpan()
     - [ ] Consider deallocating NativeU8String allocated in the current scope with `using var ...`
     - [ ] Call .Lines instead of .Split((byte)'\n')
     - [ ] Pass large structs by in or ref / ref readonly (autofixer: mutable splits and enumerations by ref / ref readonly, readonly - by in)
     - [ ] Replace predicate on LINQ projection/reduction with direct Contains/Count/etc. call
+    - [ ] Warn on most common boxing operations (LINQ) -> replace with optimal method calls
 - [ ] Source Generators
     - [ ] `[Display]` generator which auto-implements `IU8Formattable` (like for records)
         - [ ] Auto-emit extension methods for records without the attr. into user-defined namespaces (or `U8`?)
