@@ -1730,7 +1730,7 @@ public readonly partial struct U8String
         var source = this;
 
         return !source.IsEmpty
-            ? U8Marshal.Slice(source, Ascii.TrimEnd(source.UnsafeSpan))
+            ? U8Marshal.Slice(source, Ascii.Trim(source.UnsafeSpan))
             : source;
     }
 
