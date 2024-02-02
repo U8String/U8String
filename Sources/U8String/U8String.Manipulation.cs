@@ -1585,6 +1585,10 @@ public readonly partial struct U8String
     /// <summary>
     /// Removes all leading and trailing whitespace characters from the current string.
     /// </summary>
+    /// <remarks>
+    /// 'Whitespace characters' refers to all runes for which <see cref="Rune.IsWhiteSpace"/>
+    /// returns <see langword="true"/>.
+    /// </remarks>
     /// <returns>
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the start and end of the current string.
@@ -1610,7 +1614,6 @@ public readonly partial struct U8String
 
         return default;
 
-        // The code below looks simple but it's surprisingly migraine-inducing
         static U8String TrimCore(byte[] source, int offset, int length)
         {
             ref var ptr = ref source.AsRef(offset);
@@ -1654,6 +1657,10 @@ public readonly partial struct U8String
     /// <summary>
     /// Removes all leading whitespace characters from the current string.
     /// </summary>
+    /// <remarks>
+    /// 'Whitespace characters' refers to all runes for which <see cref="Rune.IsWhiteSpace"/>
+    /// returns <see langword="true"/>.
+    /// </remarks>
     /// <returns>
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the start of the current string.
@@ -1684,6 +1691,10 @@ public readonly partial struct U8String
     /// <summary>
     /// Removes all trailing whitespace characters from the current string.
     /// </summary>
+    /// <remarks>
+    /// 'Whitespace characters' refers to all runes for which <see cref="Rune.IsWhiteSpace"/>
+    /// returns <see langword="true"/>.
+    /// </remarks>
     /// <returns>
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the end of the current string.
@@ -1720,6 +1731,10 @@ public readonly partial struct U8String
     /// <summary>
     /// Removes all leading and trailing ASCII whitespace characters from the current string.
     /// </summary>
+    /// <remarks>
+    /// 'Whitespace characters' refers to all bytes for which <see cref="U8Info.IsAsciiWhitespace"/>
+    /// returns <see langword="true"/>.
+    /// </remarks>
     /// <returns>
     /// A sub-slice that remains after all ASCII whitespace characters
     /// are removed from the start and end of the current string.
@@ -1737,6 +1752,10 @@ public readonly partial struct U8String
     /// <summary>
     /// Removes all the leading ASCII whitespace characters from the current string.
     /// </summary>
+    /// <remarks>
+    /// 'Whitespace characters' refers to all bytes for which <see cref="U8Info.IsAsciiWhitespace"/>
+    /// returns <see langword="true"/>.
+    /// </remarks>
     /// <returns>
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the start of the current string.
@@ -1754,6 +1773,10 @@ public readonly partial struct U8String
     /// <summary>
     /// Removes all the trailing ASCII whitespace characters from the current string.
     /// </summary>
+    /// <remarks>
+    /// 'Whitespace characters' refers to all bytes for which <see cref="U8Info.IsAsciiWhitespace"/>
+    /// returns <see langword="true"/>.
+    /// </remarks>
     /// <returns>
     /// A sub-slice that remains after all whitespace characters
     /// are removed from the end of the current string.
