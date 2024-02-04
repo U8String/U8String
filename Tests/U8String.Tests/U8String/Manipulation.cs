@@ -267,6 +267,277 @@ public partial class Manipulation
         Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue, 1));
     }
 
+    public static readonly IEnumerable<object[]> StripByteValues =
+    [
+        [u8(""), u8("")],
+        [u8("!"), u8("")],
+        [u8("!!"), u8("")],
+        [u8("!!!"), u8("!")],
+        [u8("Тест"), u8("Тест")],
+        [u8("Тест!"), u8("Тест")],
+        [u8("!Тест"), u8("Тест")],
+        [u8("!Тест!"), u8("Тест")],
+        [u8("!!Тест"), u8("!Тест")],
+        [u8("Тест!!"), u8("Тест!")],
+        [u8("!!Тест!!"), u8("!Тест!")],
+        [u8(" Тест!! ")[1..^1], u8("Тест!")],
+        [u8(" !!Тест ")[1..^1], u8("!Тест")],
+        [u8(" !!Тест!! ")[1..^1], u8("!Тест!")],
+    ];
+
+    [Theory, MemberData(nameof(StripByteValues))]
+    public void StripByte_ReturnsCorrectValue(U8String value, U8String expected)
+    {
+        var actual = value.Strip(Byte);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory, MemberData(nameof(StripByteValues))]
+    public void StripBytePrefix_ReturnsCorrectValue(U8String value, U8String expected)
+    {
+        if (value is [.., Byte])
+            value = value[..^1];
+
+        var actual = value.StripPrefix(Byte);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory, MemberData(nameof(StripByteValues))]
+    public void StripByteSuffix_ReturnsCorrectValue(U8String value, U8String expected)
+    {
+        if (value is [Byte, ..])
+            value = value[1..];
+
+        var actual = value.StripSuffix(Byte);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void StripByte_ThrowsOnNonAscii()
+    {
+        Assert.Throws<ArgumentException>(() => U8String.Empty.Strip(0x80));
+        Assert.Throws<ArgumentException>(() => U8String.Empty.StripPrefix(0x80));
+        Assert.Throws<ArgumentException>(() => U8String.Empty.StripSuffix(0x80));
+    }
+
+    public static IEnumerable<object[]> StripCharValues()
+    {
+        var chars = new[]
+        {
+            OneByteChar,
+            TwoByteChar,
+            ThreeByteChar
+        };
+
+        foreach (var c in chars)
+        {
+            yield return new object[] { u8(""), u8(""), c };
+            yield return new object[] { u8($"{c}"), u8(""), c };
+            yield return new object[] { u8($"{c}{c}"), u8(""), c };
+            yield return new object[] { u8($"{c}{c}{c}"), u8($"{c}"), c };
+            yield return new object[] { u8("Тест"), u8("Тест"), c };
+            yield return new object[] { u8($"Тест{c}"), u8("Тест"), c };
+            yield return new object[] { u8($"{c}Тест"), u8("Тест"), c };
+            yield return new object[] { u8($"{c}Тест{c}"), u8("Тест"), c };
+            yield return new object[] { u8($"{c}{c}Тест"), u8($"{c}Тест"), c };
+            yield return new object[] { u8($"Тест{c}{c}"), u8($"Тест{c}"), c };
+            yield return new object[] { u8($"{c}{c}Тест{c}{c}"), u8($"{c}Тест{c}"), c };
+            yield return new object[] { u8($" Тест{c}{c} ")[1..^1], u8($"Тест{c}"), c };
+            yield return new object[] { u8($" {c}{c}Тест ")[1..^1], u8($"{c}Тест"), c };
+            yield return new object[] { u8($" {c}{c}Тест{c}{c} ")[1..^1], u8($"{c}Тест{c}"), c };
+        }
+    }
+
+    [Theory, MemberData(nameof(StripCharValues))]
+    public void StripChar_ReturnsCorrectValue(U8String value, U8String expected, char c)
+    {
+        var actual = value.Strip(c);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory, MemberData(nameof(StripCharValues))]
+    public void StripCharPrefix_ReturnsCorrectValue(U8String value, U8String expected, char c)
+    {
+        if (value.EndsWith(c))
+            value = value[..^c.Utf8Length()];
+
+        var actual = value.StripPrefix(c);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory, MemberData(nameof(StripCharValues))]
+    public void StripCharSuffix_ReturnsCorrectValue(U8String value, U8String expected, char c)
+    {
+        if (value.StartsWith(c))
+            value = value[c.Utf8Length()..];
+
+        var actual = value.StripSuffix(c);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void StripChar_ThrowsOnSurrogate()
+    {
+        Assert.Throws<ArgumentException>(() => U8String.Empty.Strip(SurrogateChar));
+        Assert.Throws<ArgumentException>(() => U8String.Empty.StripPrefix(SurrogateChar));
+        Assert.Throws<ArgumentException>(() => U8String.Empty.StripSuffix(SurrogateChar));
+    }
+
+    public static IEnumerable<object[]> StripRuneData()
+    {
+        var runes = new[]
+        {
+            OneByteRune,
+            TwoByteRune,
+            ThreeByteRune,
+            FourByteRune
+        };
+
+        foreach (var r in runes)
+        {
+            yield return new object[] { u8(""), u8(""), r };
+            yield return new object[] { u8($"{r}"), u8(""), r };
+            yield return new object[] { u8($"{r}{r}"), u8(""), r };
+            yield return new object[] { u8($"{r}{r}{r}"), u8($"{r}"), r };
+            yield return new object[] { u8("Тест"), u8("Тест"), r };
+            yield return new object[] { u8($"Тест{r}"), u8("Тест"), r };
+            yield return new object[] { u8($"{r}Тест"), u8("Тест"), r };
+            yield return new object[] { u8($"{r}Тест{r}"), u8("Тест"), r };
+            yield return new object[] { u8($"{r}{r}Тест"), u8($"{r}Тест"), r };
+            yield return new object[] { u8($"Тест{r}{r}"), u8($"Тест{r}"), r };
+            yield return new object[] { u8($"{r}{r}Тест{r}{r}"), u8($"{r}Тест{r}"), r };
+            yield return new object[] { u8($" Тест{r}{r} ")[1..^1], u8($"Тест{r}"), r };
+            yield return new object[] { u8($" {r}{r}Тест ")[1..^1], u8($"{r}Тест"), r };
+            yield return new object[] { u8($" {r}{r}Тест{r}{r} ")[1..^1], u8($"{r}Тест{r}"), r };
+        }
+    }
+
+    [Theory, MemberData(nameof(StripRuneData))]
+    public void StripRune_ReturnsCorrectValue(U8String value, U8String expected, Rune r)
+    {
+        var actual = value.Strip(r);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory, MemberData(nameof(StripRuneData))]
+    public void StripRunePrefix_ReturnsCorrectValue(U8String value, U8String expected, Rune r)
+    {
+        if (value.EndsWith(r))
+            value = value[..^r.Utf8SequenceLength];
+
+        var actual = value.StripPrefix(r);
+
+        Assert.Equal(expected, actual);
+    }
+
+    [Theory, MemberData(nameof(StripRuneData))]
+    public void StripRuneSuffix_ReturnsCorrectValue(U8String value, U8String expected, Rune r)
+    {
+        if (value.StartsWith(r))
+            value = value[r.Utf8SequenceLength..];
+
+        var actual = value.StripSuffix(r);
+
+        Assert.Equal(expected, actual);
+    }
+
+    public static IEnumerable<object[]> StripSpanData()
+    {
+        var arrs = new[]
+        {
+            Empty,
+            Latin,
+            Cyrillic,
+            Japanese,
+            Emoji,
+            Mixed
+        };
+
+        foreach (var arr in arrs)
+        {
+            yield return new object[] { u8(""), u8(""), arr };
+            yield return new object[] { u8($"{arr}"), u8(""), arr };
+            yield return new object[] { u8($"{arr}{arr}"), u8(""), arr };
+            yield return new object[] { u8($"{arr}{arr}{arr}"), u8($"{arr}"), arr };
+            yield return new object[] { u8("Тест"), u8("Тест"), arr };
+            yield return new object[] { u8($"Тест{arr}"), u8("Тест"), arr };
+            yield return new object[] { u8($"{arr}Тест"), u8("Тест"), arr };
+            yield return new object[] { u8($"{arr}Тест{arr}"), u8("Тест"), arr };
+            yield return new object[] { u8($"{arr}{arr}Тест"), u8($"{arr}Тест"), arr };
+            yield return new object[] { u8($"Тест{arr}{arr}"), u8($"Тест{arr}"), arr };
+            yield return new object[] { u8($"{arr}{arr}Тест{arr}{arr}"), u8($"{arr}Тест{arr}"), arr };
+            yield return new object[] { u8($" Тест{arr}{arr} ")[1..^1], u8($"Тест{arr}"), arr };
+            yield return new object[] { u8($" {arr}{arr}Тест ")[1..^1], u8($"{arr}Тест"), arr };
+            yield return new object[] { u8($" {arr}{arr}Тест{arr}{arr} ")[1..^1], u8($"{arr}Тест{arr}"), arr };
+        }
+    }
+
+    [Theory, MemberData(nameof(StripSpanData))]
+    public void StripSpan_ReturnsCorrectValue(U8String value, U8String expected, byte[] arr)
+    {
+        var overloads = new[]
+        {
+            value.Strip(u8(arr)),
+            value.Strip(arr.AsSpan())
+        };
+        
+        foreach (var actual in overloads)
+        {
+            Assert.Equal(expected, actual);
+        }
+    }
+
+    [Theory, MemberData(nameof(StripSpanData))]
+    public void StripSpanPrefix_ReturnsCorrectValue(U8String value, U8String expected, byte[] arr)
+    {
+        if (value.EndsWith(arr))
+            value = value[..^arr.Length];
+
+        var overloads = new[]
+        {
+            value.StripPrefix(u8(arr)),
+            value.StripPrefix(arr.AsSpan())
+        };
+        
+        foreach (var actual in overloads)
+        {
+            Assert.Equal(expected, actual);
+        }
+    }
+
+    [Theory, MemberData(nameof(StripSpanData))]
+    public void StripSpanSuffix_ReturnsCorrectValue(U8String value, U8String expected, byte[] arr)
+    {
+        if (value.StartsWith(arr))
+            value = value[arr.Length..];
+
+        var overloads = new[]
+        {
+            value.StripSuffix(u8(arr)),
+            value.StripSuffix(arr.AsSpan())
+        };
+        
+        foreach (var actual in overloads)
+        {
+            Assert.Equal(expected, actual);
+        }
+    }
+
+    [Fact]
+    public void StripSpan_ThrowsOnInvalidUtf8()
+    {
+        Assert.Throws<FormatException>(() => U8String.Empty.Strip(Invalid));
+        Assert.Throws<FormatException>(() => U8String.Empty.StripPrefix(Invalid));
+        Assert.Throws<FormatException>(() => U8String.Empty.StripSuffix(Invalid));
+    }
+
 #pragma warning restore IDE0057
     public static IEnumerable<(U8String expected, U8String source)> TrimData()
     {
@@ -302,14 +573,14 @@ public partial class Manipulation
 
             foreach (var whitespace in whitespaceSlices)
             {
-                yield return (value, [..whitespace, ..value]);
-                yield return (value, [..value, ..whitespace]);
-                yield return (value, [..whitespace, ..value, ..whitespace]);
+                yield return (value, [.. whitespace, .. value]);
+                yield return (value, [.. value, .. whitespace]);
+                yield return (value, [.. whitespace, .. value, .. whitespace]);
 
                 // Test when we trim slices that are themselves view
                 // into a larger string.
                 var innerSliceSource = new U8String((ReadOnlySpan<byte>)
-                    [..value, ..whitespace, ..value, ..whitespace, ..value]);
+                    [.. value, .. whitespace, .. value, .. whitespace, .. value]);
                 var innerSlice = innerSliceSource[value.Length..^value.Length];
                 yield return (value, innerSlice);
             }
@@ -318,9 +589,9 @@ public partial class Manipulation
                 .SelectMany(Extensions.ToUtf8)
                 .ToImmutableArray();
 
-            yield return (value, [..allRuneBytes, ..value]);
-            yield return (value, [..value, ..allRuneBytes]);
-            yield return (value, [..allRuneBytes, ..value, ..allRuneBytes]);
+            yield return (value, [.. allRuneBytes, .. value]);
+            yield return (value, [.. value, .. allRuneBytes]);
+            yield return (value, [.. allRuneBytes, .. value, .. allRuneBytes]);
 
             var shifted = new U8String((ReadOnlySpan<byte>)
             [

@@ -19,9 +19,19 @@ internal static class Extensions
                 ? rune : throw new Exception("Invalid UTF-8");
     }
 
-    internal static T[] Array<T>(this T[] array) => array;
+    internal static int Utf8Length(this char c)
+    {
+        return (ushort)c switch
+        {
+            <= 0x7F => 1,
+            <= 0x7FF => 2,
+            _ => 3
+        };
+    }
 
-    internal static ReadOnlySpan<T> Span<T>(this ReadOnlySpan<T> span) => span;
+    internal static T[] Array<T>(T[] array) => array;
+
+    internal static ReadOnlySpan<T> Span<T>(ReadOnlySpan<T> span) => span;
 
     internal static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> source)
     {

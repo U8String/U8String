@@ -1488,6 +1488,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Strip(ReadOnlySpan<byte> value)
     {
+        // TODO: Author exception type, introduce ValidateArgument/ValidateThrowArgumentException?
         Validate(value);
 
         return StripUnchecked(value);
@@ -1650,6 +1651,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripPrefix(byte prefix)
     {
+        ThrowHelpers.CheckAscii(prefix);
+
         var source = this;
         if (!source.IsEmpty && source.UnsafeRef == prefix)
         {
@@ -1717,7 +1720,7 @@ public readonly partial struct U8String
         {
             return new(
                 source._value,
-                source.Offset,
+                source.Offset + prefix.Length,
                 source.Length - prefix.Length);
         }
 
@@ -1727,6 +1730,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripSuffix(byte suffix)
     {
+        ThrowHelpers.CheckAscii(suffix);
+
         var source = this;
         if (!source.IsEmpty &&
             source.UnsafeRef.Add(source.Length - 1) == suffix)
