@@ -64,6 +64,13 @@ internal static class UnsafeExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ReadOnlySpan<byte> AsSpan(this ref byte value, int length)
+    {
+        Debug.Assert(Unsafe.IsNullRef(ref value) || (uint)length >= 0);
+        return MemoryMarshal.CreateReadOnlySpan(ref value, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T Add<T>(this ref T value, int offset)
         where T : struct
     {

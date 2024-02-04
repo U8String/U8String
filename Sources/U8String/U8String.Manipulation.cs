@@ -1428,6 +1428,208 @@ public readonly partial struct U8String
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Strip(byte value)
+    {
+        ThrowHelpers.CheckAscii(value);
+
+        var (source, offset, length) = this;
+        if (source != null)
+        {
+            ref var ptr = ref source.AsRef(offset);
+
+            if (ptr.Add(length - 1) == value)
+            {
+                length--;
+            }
+
+            if (length > 0 && ptr == value)
+            {
+                offset++;
+                length--;
+            }
+        }
+
+        return new(source, offset, length);
+    }
+
+    public U8String Strip(char value)
+    {
+        ThrowHelpers.CheckSurrogate(value);
+
+        return char.IsAscii(value)
+            ? Strip((byte)value)
+            : StripUnchecked(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
+    }
+
+    public U8String Strip(Rune value)
+    {
+        return value.IsAscii
+            ? Strip((byte)value.Value)
+            : StripUnchecked(value.Value switch
+            {
+                <= 0x7FF => value.AsTwoBytes(),
+                <= 0xFFFF => value.AsThreeBytes(),
+                _ => value.AsFourBytes()
+            });
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Strip(ReadOnlySpan<byte> value)
+    {
+        Validate(value);
+
+        return StripUnchecked(value);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Strip(U8String value)
+    {
+        return !value.IsEmpty ? StripUnchecked(value) : this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8String StripUnchecked(ReadOnlySpan<byte> value)
+    {
+        var (source, offset, length) = this;
+        if (source != null)
+        {
+            ref var ptr = ref source.AsRef(offset);
+
+            if (length >= value.Length)
+            {
+                if (ptr.AsSpan(length).EndsWith(value))
+                {
+                    length -= value.Length;
+                }
+
+                if (length >= value.Length && ptr.AsSpan(length).StartsWith(value))
+                {
+                    offset += value.Length;
+                    length -= value.Length;
+                }
+            }
+        }
+
+        return new(source, offset, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Strip(byte prefix, byte suffix)
+    {
+        ThrowHelpers.CheckAscii(prefix);
+        ThrowHelpers.CheckAscii(suffix);
+
+        var (source, offset, length) = this;
+        if (source != null)
+        {
+            ref var ptr = ref source.AsRef(offset);
+
+            if (ptr.Add(length - 1) == suffix)
+            {
+                length--;
+            }
+
+            if (length > 0 && ptr == prefix)
+            {
+                offset++;
+                length--;
+            }
+        }
+
+        return new(source, offset, length);
+    }
+
+    public U8String Strip(char prefix, char suffix)
+    {
+        ThrowHelpers.CheckSurrogate(prefix);
+        ThrowHelpers.CheckSurrogate(suffix);
+
+        if (char.IsAscii(prefix) && char.IsAscii(suffix))
+        {
+            return Strip((byte)prefix, (byte)suffix);
+        }
+
+        ReadOnlySpan<byte> prefixValue = (ushort)prefix switch
+        {
+            <= 0x7F => [(byte)prefix],
+            <= 0x7FF => prefix.AsTwoBytes(),
+            _ => prefix.AsThreeBytes()
+        };
+
+        ReadOnlySpan<byte> suffixValue = (ushort)suffix switch
+        {
+            <= 0x7F => [(byte)suffix],
+            <= 0x7FF => suffix.AsTwoBytes(),
+            _ => suffix.AsThreeBytes()
+        };
+
+        return StripUnchecked(prefixValue, suffixValue);
+    }
+
+    public U8String Strip(Rune prefix, Rune suffix)
+    {
+        if (prefix.IsAscii && suffix.IsAscii)
+        {
+            return Strip((byte)prefix.Value, (byte)suffix.Value);
+        }
+
+        ReadOnlySpan<byte> prefixValue = prefix.Value switch
+        {
+            <= 0x7F => [(byte)prefix.Value],
+            <= 0x7FF => prefix.AsTwoBytes(),
+            <= 0xFFFF => prefix.AsThreeBytes(),
+            _ => prefix.AsFourBytes()
+        };
+
+        ReadOnlySpan<byte> suffixValue = suffix.Value switch
+        {
+            <= 0x7F => [(byte)suffix.Value],
+            <= 0x7FF => suffix.AsTwoBytes(),
+            <= 0xFFFF => suffix.AsThreeBytes(),
+            _ => suffix.AsFourBytes()
+        };
+
+        return StripUnchecked(prefixValue, suffixValue);
+    }
+
+    public U8String Strip(ReadOnlySpan<byte> prefix, ReadOnlySpan<byte> suffix)
+    {
+        Validate(prefix);
+        Validate(suffix);
+
+        return StripUnchecked(prefix, suffix);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public U8String Strip(U8String prefix, U8String suffix)
+    {
+        return StripUnchecked(prefix, suffix);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal U8String StripUnchecked(ReadOnlySpan<byte> prefix, ReadOnlySpan<byte> suffix)
+    {
+        var (source, offset, length) = this;
+        if (source != null)
+        {
+            ref var ptr = ref source.AsRef(offset);
+
+            if (length >= suffix.Length && ptr.AsSpan(length).EndsWith(suffix))
+            {
+                length -= suffix.Length;
+            }
+
+            if (length >= prefix.Length && ptr.AsSpan(length).StartsWith(prefix))
+            {
+                offset += prefix.Length;
+                length -= prefix.Length;
+            }
+        }
+
+        return new(source, offset, length);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripPrefix(byte prefix)
     {
         var source = this;
@@ -1488,7 +1690,7 @@ public readonly partial struct U8String
         return source;
     }
 
-    U8String StripPrefixUnchecked(ReadOnlySpan<byte> prefix)
+    internal U8String StripPrefixUnchecked(ReadOnlySpan<byte> prefix)
     {
         var source = this;
         if (!source.IsEmpty &&
@@ -1566,7 +1768,7 @@ public readonly partial struct U8String
         return source;
     }
 
-    U8String StripSuffixUnchecked(ReadOnlySpan<byte> suffix)
+    internal U8String StripSuffixUnchecked(ReadOnlySpan<byte> suffix)
     {
         var source = this;
         if (!source.IsEmpty &&

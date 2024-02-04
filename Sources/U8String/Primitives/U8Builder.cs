@@ -4,7 +4,7 @@ using System.Text;
 
 namespace U8.Primitives;
 
-public readonly struct U8Builder
+public struct U8Builder
 {
     // TODO: Turns out ArrayBufferWriter kind of sucks!
     // Replace it with a good custom implementation.
@@ -21,94 +21,105 @@ public readonly struct U8Builder
     // --- disregard the above for now ---
 
     [ThreadStatic]
-    static Box<InterpolatedU8StringHandler>? _cached;
-    readonly Box<InterpolatedU8StringHandler> _local;
+    static StrongBox<InterpolatedU8StringHandler>? _tlv;
 
-    internal ref InterpolatedU8StringHandler Handler => ref _local.Ref;
+    StrongBox<InterpolatedU8StringHandler>? _instance;
 
-    public ReadOnlySpan<byte> Written => _local.Ref.Written;
+    internal readonly ref InterpolatedU8StringHandler Handler => ref _instance!.Value;
+
+    public readonly ReadOnlySpan<byte> Written => Handler.Written;
 
     public U8Builder()
     {
-        _local = Interlocked.Exchange(ref _cached, null) ?? new();
+        _instance = Interlocked.Exchange(ref _tlv, null) ?? new();
     }
 
     public U8Builder(int capacity)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 0);
 
-        var local = Interlocked.Exchange(ref _cached, null) ?? new();
-        local.Ref.EnsureCapacity(capacity);
-        _local = local;
+        _instance = Interlocked.Exchange(ref _tlv, null) ?? new();
+        Handler.EnsureCapacity(capacity);
     }
 
-    public U8Builder Append(bool value)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly U8Builder Append(bool value)
     {
-        _local.Ref.AppendFormatted(value);
-        return this;
-    }
-
-    public U8Builder Append(char value)
-    {
-        _local.Ref.AppendFormatted(value);
-        return this;
-    }
-
-    public U8Builder Append(Rune value)
-    {
-        _local.Ref.AppendFormatted(value);
+        Handler.AppendFormatted(value);
         return this;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8Builder Append(U8String value)
+    public readonly U8Builder Append(char value)
     {
-        _local.Ref.AppendFormatted(value);
+        Handler.AppendFormatted(value);
         return this;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8Builder Append(ReadOnlySpan<byte> value)
+    public readonly U8Builder Append(Rune value)
     {
-        _local.Ref.AppendFormatted(value);
+        Handler.AppendFormatted(value);
         return this;
     }
 
-    public U8Builder Append<T>(T value)
-        where T : IUtf8SpanFormattable
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly U8Builder Append(U8String value)
     {
-        _local.Ref.AppendFormatted(value);
+        Handler.AppendFormatted(value);
         return this;
     }
 
-    public U8Builder Append<T>(T value, ReadOnlySpan<char> format)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly U8Builder Append(ReadOnlySpan<byte> value)
+    {
+        Handler.AppendFormatted(value);
+        return this;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly U8Builder Append<T>(T value)
         where T : IUtf8SpanFormattable
     {
-        _local.Ref.AppendFormatted(value, format);
+        Handler.AppendFormatted(value);
         return this;
     }
 
     // TODO: IFormatProvider overload
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8Builder AppendLiteral([ConstantExpected] string value)
+    public readonly U8Builder Append<T>(T value, ReadOnlySpan<char> format)
+        where T : IUtf8SpanFormattable
     {
-        _local.Ref.AppendLiteral(value);
+        Handler.AppendFormatted(value, format);
         return this;
     }
 
-    public void Dispose()
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public readonly U8Builder AppendLiteral([ConstantExpected] string value)
     {
-        _local.Ref.ArrayPoolSafeDispose();
-        _cached = _local;
+        Handler.AppendLiteral(value);
+        return this;
+    }
+
+    // TODO: AppendLine methods
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal readonly void AppendBytes(ReadOnlySpan<byte> value)
+    {
+        Handler.AppendBytes(value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Dispose()
+    {
+        Handler.ArrayPoolSafeDispose();
+        (_tlv, _instance) = (_instance, null);
+    }
+
     public U8String Consume()
     {
-        var deref = this;
-        var result = new U8String(deref.Written, skipValidation: true);
-        deref.Dispose();
+        var result = new U8String(Written, skipValidation: true);
+        Dispose();
         return result;
     }
 
@@ -126,7 +137,7 @@ public readonly struct U8Builder
             int formattedCount,
             U8Builder builder)
         {
-            _handler = ref builder._local.Ref;
+            _handler = ref builder.Handler;
             _handler.EnsureCapacity(literalLength + (formattedCount * 12));
         }
 
@@ -147,6 +158,7 @@ public readonly struct U8Builder
 
 public static class U8BuilderExtensions
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8Builder Append<T>(this U8Builder builder, T value)
         where T : struct, Enum
     {
@@ -154,6 +166,13 @@ public static class U8BuilderExtensions
         return builder;
     }
 
+    public static U8Builder AppendLine<T>(this U8Builder builder, T value)
+        where T : struct, Enum
+    {
+        throw new NotImplementedException();
+    }
+
+    // TODO: IFormatProvider overload
     public static U8Builder Append(
         this U8Builder builder,
         [InterpolatedStringHandlerArgument(nameof(builder))] U8Builder.InterpolatedHandler _)

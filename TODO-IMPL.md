@@ -21,6 +21,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
     - [ ] Add missing `Split(...).CopyTo(dest, count)` overloads (or `Split(..., count)` shorthand form (throwing?))
 - [ ] Implement validate+copy, validate+scan and validate+copy+scan paths for efficient construction for the variety of use cases (the last one especially spends more CPU and bandwidth than necessary for consuming null-terimated C strings)
 - [ ] Reconsider the use of `U8Pattern` abstraction to generalize and coalesce all the IndexOf(Any) codepaths. Maybe `Patern<Kind>`?
+    - [ ] Interceptor-friendly form with lowering of static lambdas to specialized stubs?
 - [ ] Reconsider the decision regarding not introducing `U8Span` - way too many intermediate cases where heap-allocated `U8String` is not required but `ReadOnlySpan<byte>` requires unnecessary re-validations
 - [ ] Consider adaptive caching of conversions by implementing a bloom-filter-like check for constructors which perform opportunistic lookup in decoded/encoded pool should they possibly contain the same value (though the question regarding thread-safety of bloom filter value calculation remains since it will most likely be 128b or even 256b vector)
 - [ ] Consider reimplementing a small part of PAL and skipping CoreLib IO APIs to reduce the overhead

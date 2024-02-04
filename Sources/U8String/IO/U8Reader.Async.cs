@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text;
 
+using U8.Primitives;
 using U8.Shared;
 
 namespace U8.IO;
@@ -96,6 +97,7 @@ public partial class U8Reader<TSource>
             index = index >= 0
                 ? index : unread.Length;
 
+            // FIXME: See the bug description in the sync version
             var result = ShouldStealBuffer(delimiter, index)
                 ? new U8String(_buffer, _bytesConsumed, index)
                 : new U8String(unread[..index].Span, skipValidation: true);
@@ -133,10 +135,8 @@ public partial class U8Reader<TSource>
             goto RetryCheckEOF;
         }
 
-        // TODO: This is really bad for state machine object size.
-        // Replace with U8Builder or similar once available.
-        var builder = new InterpolatedU8StringHandler(unread.Length);
         AdvanceReader(unread.Length);
+        var builder = new U8Builder(unread.Length);
         builder.AppendBytes(unread.Span);
 
         while (true)
@@ -195,6 +195,6 @@ public partial class U8Reader<TSource>
         }
 
         U8String.Validate(builder.Written);
-        return new(ref builder);
+        return builder.Consume();
     }
 }

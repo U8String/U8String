@@ -2,6 +2,7 @@ using System.Text;
 
 using BenchmarkDotNet.Attributes;
 
+using U8.InteropServices;
 using U8.Primitives;
 
 namespace U8.Benchmarks;
@@ -10,7 +11,7 @@ namespace U8.Benchmarks;
 [MemoryDiagnoser]
 public class Builder
 {
-    [Params(1, 10, 100)]
+    [Params(1, 10, 100, 1000)]
     public int N;
 
     [Benchmark]
@@ -21,6 +22,7 @@ public class Builder
         for (var i = 0; i < count; i++)
         {
             builder.Append(u8("Hello, World!"));
+            builder.Append(1337);
         }
 
         return builder.Consume();
@@ -33,7 +35,8 @@ public class Builder
         var builder = new U8Builder();
         for (var i = 0; i < count; i++)
         {
-            builder.Append("Hello, World!"u8);
+            U8Unchecked.AppendBytes(builder, "Hello, World!"u8);
+            builder.Append(1337);
         }
 
         return builder.Consume();
@@ -47,6 +50,7 @@ public class Builder
         for (var i = 0; i < count; i++)
         {
             handler.AppendFormatted(u8("Hello, World!"));
+            handler.AppendFormatted(1337);
         }
 
         return new(ref handler);
@@ -60,6 +64,7 @@ public class Builder
         for (var i = 0; i < count; i++)
         {
             builder.Append("Hello, World!");
+            builder.Append(1337);
         }
 
         return builder.ToString();

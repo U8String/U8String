@@ -54,6 +54,16 @@ public partial class U8Reader<TSource>
             index = index >= 0
                 ? index : unread.Length;
 
+            // FIXME: This should be a bug in regards to opportunistic
+            // null-termination where a single byte past the slice length
+            // is effectively "unowned" and may be written to by the subsequent
+            // read operation which could lead to terrible consequences when
+            // passed as a C string IFF the buffer was filled exactly up to the
+            // lentgh of the currently returned slice. Solve this by detecting this
+            // edge case and shifting both bytes read and consumed by 1.
+            // Otherwise, if that byte was already written to, then we could continue
+            // relying on existing null-termination checks since the bytes in the
+            // stolen buffer are written to exactly once.
             var result = ShouldStealBuffer(delimiter, index)
                 ? new U8String(_buffer, _bytesConsumed, index)
                 : new U8String(unread.SliceUnsafe(0, index), skipValidation: true);

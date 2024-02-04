@@ -198,7 +198,7 @@ public /* ref */ struct InterpolatedU8StringHandler
         }
         else if (typeof(T) == typeof(ImmutableArray<byte>))
         {
-            AppendFormatted((ImmutableArray<byte>)(object)value!);
+            AppendFormatted(((ImmutableArray<byte>)(object)value!).AsSpan());
             return;
         }
         else if (typeof(T) == typeof(byte[]))
@@ -242,6 +242,7 @@ public /* ref */ struct InterpolatedU8StringHandler
         AppendBytes(literal.SliceUnsafe(0, literal.Length - 1));
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AppendByte(byte value)
     {
     Retry:

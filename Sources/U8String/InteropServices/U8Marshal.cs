@@ -27,69 +27,6 @@ public static class U8Marshal
     public static ReadOnlySpan<byte> AsSpan(U8String str) => str.UnsafeSpan;
 
     /// <summary>
-    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
-    /// if it is a valid UTF-8 sequence.
-    /// </summary>
-    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <remarks>
-    /// The <see cref="U8String"/> will be created by copying the <paramref name="value"/> bytes if the length is greater than 0.
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String CreateUnchecked(ReadOnlySpan<byte> value)
-    {
-        return new(value, skipValidation: true);
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="U8String"/> from <paramref name="value"/> without verifying
-    /// if it is a valid UTF-8 sequence.
-    /// </summary>
-    /// <param name="value">The UTF-8 bytes to create the <see cref="U8String"/> from.</param>
-    /// <remarks>
-    /// <para>
-    /// The <see cref="U8String"/> will be created by taking the underlying reference from the
-    /// <paramref name="value"/> without copying if the length is greater than 0.
-    /// </para>
-    /// </remarks>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String CreateUnchecked(ImmutableArray<byte> value)
-    {
-        var bytes = ImmutableCollectionsMarshal.AsArray(value);
-        if (bytes != null)
-        {
-            return new(bytes, 0, bytes.Length);
-        }
-
-        return default;
-    }
-
-    /// <summary>
-    /// Creates a new <see cref="U8String"/> from null-terminated <paramref name="str"/> without verifying
-    /// if it is a valid UTF-8 sequence. This is an unchecked variant of <see cref="U8String.Create(byte*)"/>.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static unsafe U8String CreateUnchecked(byte* str)
-    {
-        var length = IndexOfNullByte(str);
-        if (length > (nuint)Array.MaxLength - 1)
-        {
-            ThrowHelpers.DestinationTooShort();
-        }
-
-        if (length > 0)
-        {
-            var bytes = new byte[length + 1];
-            MemoryMarshal
-                .CreateSpan(ref Unsafe.AsRef<byte>(str), (int)(uint)length)
-                .CopyToUnsafe(ref bytes.AsRef());
-
-            return new(bytes, 0, (int)(uint)length);
-        }
-
-        return default;
-    }
-
-    /// <summary>
     /// Creates a new <see cref="U8String"/> around the given <paramref name="value"/>
     /// without performing UTF-8 validation or copying the data.
     /// </summary>
@@ -123,7 +60,7 @@ public static class U8Marshal
     /// without performing bounds check or UTF-8 validation.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8SplitPair CreateSplitPair(U8String value, int offset, int separatorLength)
+    public static U8SplitPair CreateSplitPairUnsafe(U8String value, int offset, int separatorLength)
     {
         return new(value, offset, separatorLength);
     }
@@ -246,20 +183,4 @@ public static class U8Marshal
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Slice(U8Source source, U8Range range) => new(source.Value, range);
-
-    /// <summary>
-    /// Unholy reverse method of <see cref="U8String.Slice(int, int)"/> which
-    /// restores internal offsets of the provided <see cref="U8String"/>
-    /// to the maximum possible length of its underlying buffer.
-    /// </summary>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Unslice(U8String value)
-    {
-        if (!value.IsEmpty)
-        {
-            return new(value._value, 0, value._value!.Length);
-        }
-
-        return default;
-    }
 }

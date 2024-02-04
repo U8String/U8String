@@ -406,7 +406,7 @@ public class Construction
 
         var actual = new[]
         {
-            U8Marshal.CreateUnchecked(bytes),
+            U8Unchecked.Create(bytes),
             new U8String(bytes, skipValidation: true)
         };
 
@@ -428,7 +428,7 @@ public class Construction
 
         var actual = new[]
         {
-            U8Marshal.CreateUnchecked(bytes),
+            U8Unchecked.Create(bytes),
             new U8String(bytes, skipValidation: true)
         };
 
@@ -449,7 +449,7 @@ public class Construction
     {
         byte[] bytes = [0x80, 0x80, 0x80, 0x80];
 
-        _ = U8Marshal.CreateUnchecked(bytes);
+        _ = U8Unchecked.Create(bytes);
         _ = new U8String(bytes, skipValidation: true);
     }
 
@@ -611,7 +611,7 @@ public class Construction
         if (bytes is []) return;
         Assert.IsType<ImmutableArray<byte>>(bytes);
 
-        var actual = U8Marshal.CreateUnchecked(bytes);
+        var actual = U8Unchecked.Create(bytes);
 
         Assert.True(actual.Equals(bytes));
         Assert.Equal(bytes, actual);
@@ -625,7 +625,7 @@ public class Construction
     [Theory, MemberData(nameof(EmptyImmutableArrays))]
     public void CreateFromImmutableArrayUnchecked_ProducesCorrectResultWhenEmpty(ImmutableArray<byte> bytes)
     {
-        var actual = U8Marshal.CreateUnchecked(bytes);
+        var actual = U8Unchecked.Create(bytes);
 
         Assert.Equal(0, actual.Offset);
         Assert.Equal(0, actual.Length);
@@ -640,7 +640,7 @@ public class Construction
     {
         ImmutableArray<byte> bytes = [0x80, 0x80, 0x80, 0x80];
 
-        _ = U8Marshal.CreateUnchecked(bytes);
+        _ = U8Unchecked.Create(bytes);
     }
 
     static readonly int[] Numbers =

@@ -6,14 +6,14 @@ using U8.InteropServices;
 namespace U8.Benchmarks;
 
 #pragma warning disable CS1718 // Comparison made to same variable. Why: Benchmark.
-[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+[ShortRunJob]
 public class Equality
 {
-    static ReadOnlySpan<byte> Literal => "Привіт, Всесвіт!"u8;
-    static readonly U8String JitConst = U8Marshal.CreateUnchecked(Literal);
+    static ReadOnlySpan<byte> SpanLiteral => "Привіт, Всесвіт!"u8;
+    static readonly U8String JitConst = 'П' + u8("ривіт, Всесвіт!");
     static readonly byte[] ByteJitConst = JitConst.ToArray();
-    readonly U8String Instance = U8Marshal.CreateUnchecked(Literal);
-    public U8String Source = U8Marshal.CreateUnchecked(Literal);
+    readonly U8String Instance = 'П' + u8("ривіт, Всесвіт!");
+    public U8String Source = 'П' + u8("ривіт, Всесвіт!");
 
     const string LiteralUTF16 = "Привіт, Всесвіт!";
     static readonly string JitConstUTF16 = LiteralUTF16[0] + LiteralUTF16[1..];
@@ -27,7 +27,10 @@ public class Equality
     public bool EqualsUtf16() => SourceUTF16 == InstanceUTF16;
 
     [Benchmark]
-    public bool EqualsLiteral() => Source == Literal;
+    public bool EqualsLiteral() => Source == u8("Привіт, Всесвіт!");
+
+    [Benchmark]
+    public bool EqualsSpanLiteral() => Source == SpanLiteral;
 
     [Benchmark]
     public bool EqualsLiteralUtf16() => SourceUTF16 == LiteralUTF16;

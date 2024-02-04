@@ -76,7 +76,7 @@ public readonly partial struct U8String
             return SplitFirst((byte)separator);
         }
 
-        return SplitFirstRune(
+        return SplitFirstUnchecked(
             separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes());
     }
 
@@ -87,7 +87,7 @@ public readonly partial struct U8String
             return SplitFirst((byte)separator.Value);
         }
 
-        return SplitFirstRune(separator.Value switch
+        return SplitFirstUnchecked(separator.Value switch
         {
             <= 0x7FF => separator.AsTwoBytes(),
             <= 0xFFFF => separator.AsThreeBytes(),
@@ -128,38 +128,32 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitFirst(ReadOnlySpan<byte> separator)
     {
+        // TODO: Replace with regular Validate once validation folding interceptor is in place.
         ValidatePossibleConstant(separator);
 
         var source = this;
         var segment = source._inner;
         var remainder = default(U8Range);
 
-        if (separator.Length > 0)
+        if (!source.IsEmpty)
         {
-            if (!source.IsEmpty)
+            var index = source.UnsafeSpan.IndexOf(separator);
+            if (index >= 0)
             {
-                var index = source.UnsafeSpan.IndexOf(separator);
-                if (index >= 0)
-                {
-                    remainder = new(
-                        segment.Offset + index + separator.Length,
-                        segment.Length - index - separator.Length);
-                    segment = new(segment.Offset, index);
-                }
+                remainder = new(
+                    segment.Offset + index + separator.Length,
+                    segment.Length - index - separator.Length);
+                segment = new(segment.Offset, index);
             }
-        }
-        else
-        {
-            (segment, remainder) = (default, segment);
         }
 
         return new(source._value, segment, remainder);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    U8SplitPair SplitFirstRune(ReadOnlySpan<byte> separator)
+    internal U8SplitPair SplitFirstUnchecked(ReadOnlySpan<byte> separator)
     {
-        Debug.Assert(separator.Length is 2 or 3 or 4);
+        Debug.Assert(!separator.IsEmpty);
 
         var source = this;
         var segment = source._inner;
@@ -320,7 +314,7 @@ public readonly partial struct U8String
             return SplitLast((byte)separator);
         }
 
-        return SplitLastRune(
+        return SplitLastUnchecked(
             separator <= 0x7FF ? separator.AsTwoBytes() : separator.AsThreeBytes());
     }
 
@@ -331,7 +325,7 @@ public readonly partial struct U8String
             return SplitLast((byte)separator.Value);
         }
 
-        return SplitLastRune(separator.Value switch
+        return SplitLastUnchecked(separator.Value switch
         {
             <= 0x7FF => separator.AsTwoBytes(),
             <= 0xFFFF => separator.AsThreeBytes(),
@@ -378,33 +372,24 @@ public readonly partial struct U8String
         var segment = source._inner;
         var remainder = default(U8Range);
 
-        if (separator.Length > 0)
+        if (!source.IsEmpty)
         {
-            if (!source.IsEmpty)
+            var index = source.UnsafeSpan.LastIndexOf(separator);
+            if (index >= 0)
             {
-                var index = source.UnsafeSpan.LastIndexOf(separator);
-                if (index >= 0)
-                {
-                    remainder = new(
-                        segment.Offset + index + separator.Length,
-                        segment.Length - index - separator.Length);
-                    segment = new(segment.Offset, index);
-                }
+                remainder = new(
+                    segment.Offset + index + separator.Length,
+                    segment.Length - index - separator.Length);
+                segment = new(segment.Offset, index);
             }
-        }
-        else
-        {
-            (segment, remainder) = (default, segment);
         }
 
         return new(source._value, segment, remainder);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    U8SplitPair SplitLastRune(ReadOnlySpan<byte> separator)
+    internal U8SplitPair SplitLastUnchecked(ReadOnlySpan<byte> separator)
     {
-        Debug.Assert(separator.Length is 2 or 3 or 4);
-
         var source = this;
         var segment = source._inner;
         var remainder = default(U8Range);
