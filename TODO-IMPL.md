@@ -17,6 +17,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
 - [x] Refactor `char` and `Rune` overloads to use `...TwoBytes`, `...ThreeBytes` and `...FourBytes` specialized handlers over spilling into span and then doing extra SequenceEqual/etc. calls which is expensive
     - [x] ~~`U8(Scalar/Rune)Split`-like internal API shape?~~
     - [ ] Do a similar optimization pass for comparer-based paths
+- [ ] This is stupid but replace all IsAscii-like checks with bespoke `value <= 0x7F` as it seems to significantly impact inlining decisions in some cases (and submit an issue with a simple repro)
 - [ ] Review splitting api to further facilitate getting first 1-5 elements with throwing/non-throwing behavior in a way that is both fast/compiler-friendly and does not involve duplicating even more splitting code (e.g. get first 3 elements with the third collecting the remainder of the split)
     - [ ] Add missing `Split(...).CopyTo(dest, count)` overloads (or `Split(..., count)` shorthand form (throwing?))
 - [ ] Implement validate+copy, validate+scan and validate+copy+scan paths for efficient construction for the variety of use cases (the last one especially spends more CPU and bandwidth than necessary for consuming null-terimated C strings)

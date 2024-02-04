@@ -1452,25 +1452,37 @@ public readonly partial struct U8String
         return new(source, offset, length);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Strip(char value)
     {
         ThrowHelpers.CheckSurrogate(value);
 
-        return char.IsAscii(value)
+        return value <= 0x7F
             ? Strip((byte)value)
-            : StripUnchecked(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
+            : NonAscii(value, this);
+
+        static U8String NonAscii(char value, U8String source)
+        {
+            return source.StripUnchecked(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
+        }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Strip(Rune value)
     {
-        return value.IsAscii
+        return value.Value <= 0x7F
             ? Strip((byte)value.Value)
-            : StripUnchecked(value.Value switch
+            : NonAscii(value, this);
+        
+        static U8String NonAscii(Rune value, U8String source)
+        {
+            return source.StripUnchecked(value.Value switch
             {
                 <= 0x7FF => value.AsTwoBytes(),
                 <= 0xFFFF => value.AsThreeBytes(),
                 _ => value.AsFourBytes()
             });
+        }
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1539,57 +1551,63 @@ public readonly partial struct U8String
         return new(source, offset, length);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Strip(char prefix, char suffix)
     {
         ThrowHelpers.CheckSurrogate(prefix);
         ThrowHelpers.CheckSurrogate(suffix);
 
-        if (char.IsAscii(prefix) && char.IsAscii(suffix))
+        return prefix <= 0x7F && suffix <= 0x7F
+            ? Strip((byte)prefix, (byte)suffix)
+            : NonAscii(prefix, suffix, this);
+
+        static U8String NonAscii(char prefix, char suffix, U8String source)
         {
-            return Strip((byte)prefix, (byte)suffix);
+            ReadOnlySpan<byte> prefixValue = (ushort)prefix switch
+            {
+                <= 0x7F => [(byte)prefix],
+                <= 0x7FF => prefix.AsTwoBytes(),
+                _ => prefix.AsThreeBytes()
+            };
+
+            ReadOnlySpan<byte> suffixValue = (ushort)suffix switch
+            {
+                <= 0x7F => [(byte)suffix],
+                <= 0x7FF => suffix.AsTwoBytes(),
+                _ => suffix.AsThreeBytes()
+            };
+
+            return source.StripUnchecked(prefixValue, suffixValue);
         }
-
-        ReadOnlySpan<byte> prefixValue = (ushort)prefix switch
-        {
-            <= 0x7F => [(byte)prefix],
-            <= 0x7FF => prefix.AsTwoBytes(),
-            _ => prefix.AsThreeBytes()
-        };
-
-        ReadOnlySpan<byte> suffixValue = (ushort)suffix switch
-        {
-            <= 0x7F => [(byte)suffix],
-            <= 0x7FF => suffix.AsTwoBytes(),
-            _ => suffix.AsThreeBytes()
-        };
-
-        return StripUnchecked(prefixValue, suffixValue);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String Strip(Rune prefix, Rune suffix)
     {
-        if (prefix.IsAscii && suffix.IsAscii)
+        return prefix.Value <= 0x7F && suffix.Value <= 0x7F
+            ? Strip((byte)prefix.Value, (byte)suffix.Value)
+            : NonAscii(prefix, suffix, this);
+        
+        static U8String NonAscii(Rune prefix, Rune suffix, U8String source)
         {
-            return Strip((byte)prefix.Value, (byte)suffix.Value);
+            ReadOnlySpan<byte> prefixValue = prefix.Value switch
+            {
+                <= 0x7F => [(byte)prefix.Value],
+                <= 0x7FF => prefix.AsTwoBytes(),
+                <= 0xFFFF => prefix.AsThreeBytes(),
+                _ => prefix.AsFourBytes()
+            };
+
+            ReadOnlySpan<byte> suffixValue = suffix.Value switch
+            {
+                <= 0x7F => [(byte)suffix.Value],
+                <= 0x7FF => suffix.AsTwoBytes(),
+                <= 0xFFFF => suffix.AsThreeBytes(),
+                _ => suffix.AsFourBytes()
+            };
+
+            return source.StripUnchecked(prefixValue, suffixValue);
         }
-
-        ReadOnlySpan<byte> prefixValue = prefix.Value switch
-        {
-            <= 0x7F => [(byte)prefix.Value],
-            <= 0x7FF => prefix.AsTwoBytes(),
-            <= 0xFFFF => prefix.AsThreeBytes(),
-            _ => prefix.AsFourBytes()
-        };
-
-        ReadOnlySpan<byte> suffixValue = suffix.Value switch
-        {
-            <= 0x7F => [(byte)suffix.Value],
-            <= 0x7FF => suffix.AsTwoBytes(),
-            <= 0xFFFF => suffix.AsThreeBytes(),
-            _ => suffix.AsFourBytes()
-        };
-
-        return StripUnchecked(prefixValue, suffixValue);
     }
 
     public U8String Strip(ReadOnlySpan<byte> prefix, ReadOnlySpan<byte> suffix)
