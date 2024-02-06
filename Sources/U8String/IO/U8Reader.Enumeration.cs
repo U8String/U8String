@@ -42,14 +42,25 @@ public partial class U8Reader<TSource>
     }
 }
 
-public readonly struct U8LineReader<T>(U8Reader<T> reader) :
+public readonly struct U8LineReader<T> :
     IU8Enumerable<U8LineReader<T>.Enumerator>,
     IAsyncEnumerable<U8String>
         where T : IU8ReaderSource
 {
-    public Enumerator GetEnumerator() => new(reader);
+    readonly bool _disposeReader;
 
-    public struct Enumerator(U8Reader<T> reader) : IU8Enumerator
+    // TODO: Or .Reader/.Source?
+    public U8Reader<T> Value { get; }
+
+    public U8LineReader(U8Reader<T> reader, bool disposeReader = true)
+    {
+        Value = reader;
+        _disposeReader = disposeReader;
+    }
+
+    public Enumerator GetEnumerator() => new(Value, _disposeReader);
+
+    public struct Enumerator(U8Reader<T> reader, bool disposeReader) : IU8Enumerator
     {
         public U8String Current { get; private set; }
 
@@ -66,7 +77,13 @@ public readonly struct U8LineReader<T>(U8Reader<T> reader) :
             return false;
         }
 
-        public readonly void Dispose() => reader.Dispose();
+        public readonly void Dispose()
+        {
+            if (disposeReader)
+            {
+                reader.Dispose();
+            }
+        }
 
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
@@ -74,14 +91,14 @@ public readonly struct U8LineReader<T>(U8Reader<T> reader) :
 
     public AsyncEnumerator GetAsyncEnumerator(CancellationToken ct = default)
     {
-        return new(reader, ct);
+        return new(Value, _disposeReader, ct);
     }
 
     // TODO: Look into CT interactions (and file reader too)
     // TODO: Performs as fast as regular ReadLinesAsync which means
     // there are implementation issues which leave a lot of perf on the table.
     public sealed class AsyncEnumerator(
-        U8Reader<T> reader, CancellationToken ct = default) :
+        U8Reader<T> reader, bool disposeReader = true, CancellationToken ct = default) :
             IAsyncEnumerator<U8String>
     {
         public U8String Current { get; private set; }
@@ -100,7 +117,11 @@ public readonly struct U8LineReader<T>(U8Reader<T> reader) :
 
         public ValueTask DisposeAsync()
         {
-            reader.Dispose();
+            if (disposeReader)
+            {
+                reader.Dispose();
+            }
+
             return ValueTask.CompletedTask;
         }
     }
@@ -117,23 +138,27 @@ public readonly struct U8SplitReader<T, TSeparator> :
         where T : IU8ReaderSource
         where TSeparator : struct
 {
-    readonly U8Reader<T> _reader;
-    readonly TSeparator _separator;
+    readonly bool _disposeReader;
 
-    internal U8SplitReader(U8Reader<T> reader, TSeparator separator)
+    public U8Reader<T> Value { get; }
+
+    public TSeparator Separator { get; }
+
+    internal U8SplitReader(U8Reader<T> reader, TSeparator separator, bool disposeReader = true)
     {
-        _reader = reader;
-        _separator = separator;
+        Value = reader;
+        Separator = separator;
+        _disposeReader = disposeReader;
     }
 
     public Enumerator GetEnumerator()
     {
-        return new(_reader, _separator);
+        return new(Value, Separator, _disposeReader);
     }
 
     public AsyncEnumerator GetAsyncEnumerator(CancellationToken ct = default)
     {
-        return new(_reader, _separator, ct);
+        return new(Value, Separator, _disposeReader, ct);
     }
 
     // TODO: Performance. Consider partially inlining the reader state considering
@@ -143,13 +168,15 @@ public readonly struct U8SplitReader<T, TSeparator> :
     {
         readonly U8Reader<T> _reader;
         readonly TSeparator _separator;
+        readonly bool _disposeReader;
 
         public U8String Current { get; private set; }
 
-        internal Enumerator(U8Reader<T> reader, TSeparator separator)
+        internal Enumerator(U8Reader<T> reader, TSeparator separator, bool disposeReader)
         {
             _reader = reader;
             _separator = separator;
+            _disposeReader = disposeReader;
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -165,7 +192,13 @@ public readonly struct U8SplitReader<T, TSeparator> :
             return false;
         }
 
-        public readonly void Dispose() => _reader.Dispose();
+        public readonly void Dispose()
+        {
+            if (_disposeReader)
+            {
+                _reader.Dispose();
+            }
+        }
 
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
@@ -175,6 +208,7 @@ public readonly struct U8SplitReader<T, TSeparator> :
     {
         readonly U8Reader<T> _reader;
         readonly TSeparator _separator;
+        readonly bool _disposeReader;
         readonly CancellationToken _ct;
 
         public U8String Current { get; private set; }
@@ -182,10 +216,12 @@ public readonly struct U8SplitReader<T, TSeparator> :
         internal AsyncEnumerator(
             U8Reader<T> reader,
             TSeparator separator,
+            bool disposeReader,
             CancellationToken ct)
         {
             _reader = reader;
             _separator = separator;
+            _disposeReader = disposeReader;
             _ct = ct;
         }
 
@@ -204,7 +240,11 @@ public readonly struct U8SplitReader<T, TSeparator> :
 
         public ValueTask DisposeAsync()
         {
-            _reader.Dispose();
+            if (_disposeReader)
+            {
+                _reader.Dispose();
+            }
+
             return ValueTask.CompletedTask;
         }
     }

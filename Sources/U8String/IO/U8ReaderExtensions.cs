@@ -24,4 +24,22 @@ public static class U8StreamExtensions
 
         return new(new(new(stream)));
     }
+
+    // TODO: naming
+    // - AsUnowned
+    // - DoNotDispose
+    // - WithoutDispos(e/ing/al)
+    // - SkipDispose
+    public static U8LineReader<T> WithoutDisposing/* al? */<T>(this U8LineReader<T> reader)
+        where T : struct, IU8ReaderSource
+    {
+        return new(reader.Value, disposeReader: false);
+    }
+
+    public static U8SplitReader<T, TSeparator> WithoutDisposing<T, TSeparator>(this U8SplitReader<T, TSeparator> reader)
+        where T : struct, IU8ReaderSource
+        where TSeparator : struct
+    {
+        return new(reader.Value, reader.Separator, disposeReader: false);
+    }
 }

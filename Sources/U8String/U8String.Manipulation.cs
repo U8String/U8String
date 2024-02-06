@@ -1688,6 +1688,8 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripPrefix(ReadOnlySpan<byte> prefix)
     {
+        // TODO: Another callside to replace with plain Validate
+        // once FoldValidations opt. pass is implemented in U8String.Tools
         ValidatePossibleConstant(prefix);
 
         return StripPrefixUnchecked(prefix);
@@ -1699,6 +1701,7 @@ public readonly partial struct U8String
         return StripPrefixUnchecked(prefix);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String StripPrefixUnchecked(ReadOnlySpan<byte> prefix)
     {
         var (source, offset, length) = this;
@@ -1773,6 +1776,7 @@ public readonly partial struct U8String
         return new(source, offset, length);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal U8String StripSuffixUnchecked(ReadOnlySpan<byte> suffix)
     {
         var (source, offset, length) = this;

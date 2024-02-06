@@ -91,7 +91,7 @@ public interface IU8Formattable : IUtf8SpanFormattable
         ReadOnlySpan<char> format,
         IFormatProvider? provider)
     {
-        throw new NotImplementedException();
+        throw new NotSupportedException();
     }
 }
 
