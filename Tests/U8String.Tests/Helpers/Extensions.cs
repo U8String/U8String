@@ -37,4 +37,19 @@ internal static class Extensions
     {
         return source.SelectMany(x => x);
     }
+
+    internal static IEnumerable<U> FlatMap<T, U>(this IEnumerable<(T, T)> source, Func<T, T, IEnumerable<U>> selector)
+    {
+        return source.SelectMany(x => selector(x.Item1, x.Item2));
+    }
+
+    internal static IEnumerable<(T X, T Y)> Permute2<T>(this IEnumerable<T> source)
+    {
+        return source.SelectMany(x => source, (x, y) => (x, y));
+    }
+
+    internal static IEnumerable<T[]> WithArgsLimit<T>(this IEnumerable<T[]> source, int arity)
+    {
+        return source.Select(args => args.Take(arity).ToArray());
+    }
 }

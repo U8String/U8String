@@ -267,50 +267,62 @@ public partial class Manipulation
         Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue, 1));
     }
 
-    public static readonly IEnumerable<object[]> StripByteValues =
+    public static object[][] StripData<T>(T left, T right)
+        where T : IUtf8SpanFormattable =>
     [
-        [u8(""), u8("")],
-        [u8("!"), u8("")],
-        [u8("!!"), u8("")],
-        [u8("!!!"), u8("!")],
-        [u8("Тест"), u8("Тест")],
-        [u8("Тест!"), u8("Тест")],
-        [u8("!Тест"), u8("Тест")],
-        [u8("!Тест!"), u8("Тест")],
-        [u8("!!Тест"), u8("!Тест")],
-        [u8("Тест!!"), u8("Тест!")],
-        [u8("!!Тест!!"), u8("!Тест!")],
-        [u8(" Тест!! ")[1..^1], u8("Тест!")],
-        [u8(" !!Тест ")[1..^1], u8("!Тест")],
-        [u8(" !!Тест!! ")[1..^1], u8("!Тест!")],
+        [u8(""), u8(""), left, right],
+        [u8($"{left}"), u8(""), left, right],
+        [u8($"{right}"), u8(""), left, right],
+        [u8($"{left}{right}"), u8(""), left, right],
+        [u8($"{left}{left}{right}"), u8($"{left}"), left, right],
+        [u8($"{left}{right}{right}"), u8($"{right}"), left, right],
+        [u8($"{left}{left}{right}{right}"), u8($"{left}{right}"), left, right],
+        [u8("Тест"), u8("Тест"), left, right],
+        [u8($"Тест{right}"), u8("Тест"), left, right],
+        [u8($"{left}Тест"), u8("Тест"), left, right],
+        [u8($"{left}Тест{right}"), u8("Тест"), left, right],
+        [u8($"{left}{left}Тест"), u8($"{left}Тест"), left, right],
+        [u8($"Тест{right}{right}"), u8($"Тест{right}"), left, right],
+        [u8($"{left}{left}Тест{right}{right}"), u8($"{left}Тест{right}"), left, right],
+        [u8($" Тест{right}{right} ")[1..^1], u8($"Тест{right}"), left, right],
+        [u8($" {left}{left}Тест ")[1..^1], u8($"{left}Тест"), left, right],
+        [u8($" {left}{left}Тест{right}{right} ")[1..^1], u8($"{left}Тест{right}"), left, right]
     ];
 
-    [Theory, MemberData(nameof(StripByteValues))]
-    public void StripByte_ReturnsCorrectValue(U8String value, U8String expected)
+    public static IEnumerable<object[]> StripByteData => new[]
     {
-        var actual = value.Strip(Byte);
+        '{', '}', '@', '\0'
+    }.SelectMany(c => StripData(c, c)).WithArgsLimit(3);
+
+    [Theory, MemberData(nameof(StripByteData))]
+    public void StripByte_ReturnsCorrectValue(U8String value, U8String expected, char c)
+    {
+        var b = (byte)c;
+        var actual = value.Strip(b);
 
         Assert.Equal(expected, actual);
     }
 
-    [Theory, MemberData(nameof(StripByteValues))]
-    public void StripBytePrefix_ReturnsCorrectValue(U8String value, U8String expected)
+    [Theory, MemberData(nameof(StripByteData))]
+    public void StripBytePrefix_ReturnsCorrectValue(U8String value, U8String expected, char c)
     {
-        if (value is [.., Byte])
+        var b = (byte)c;
+        if (value.EndsWith(b))
             value = value[..^1];
 
-        var actual = value.StripPrefix(Byte);
+        var actual = value.StripPrefix(b);
 
         Assert.Equal(expected, actual);
     }
 
-    [Theory, MemberData(nameof(StripByteValues))]
-    public void StripByteSuffix_ReturnsCorrectValue(U8String value, U8String expected)
+    [Theory, MemberData(nameof(StripByteData))]
+    public void StripByteSuffix_ReturnsCorrectValue(U8String value, U8String expected, char c)
     {
-        if (value is [Byte, ..])
+        var b = (byte)c;
+        if (value.StartsWith(b))
             value = value[1..];
 
-        var actual = value.StripSuffix(Byte);
+        var actual = value.StripSuffix(b);
 
         Assert.Equal(expected, actual);
     }
@@ -323,35 +335,12 @@ public partial class Manipulation
         Assert.Throws<ArgumentException>(() => U8String.Empty.StripSuffix(0x80));
     }
 
-    public static IEnumerable<object[]> StripCharValues()
+    public static IEnumerable<object[]> StripCharData => new[]
     {
-        var chars = new[]
-        {
-            OneByteChar,
-            TwoByteChar,
-            ThreeByteChar
-        };
+        OneByteChar, TwoByteChar, ThreeByteChar
+    }.SelectMany(c => StripData(c, c)).WithArgsLimit(3);
 
-        foreach (var c in chars)
-        {
-            yield return new object[] { u8(""), u8(""), c };
-            yield return new object[] { u8($"{c}"), u8(""), c };
-            yield return new object[] { u8($"{c}{c}"), u8(""), c };
-            yield return new object[] { u8($"{c}{c}{c}"), u8($"{c}"), c };
-            yield return new object[] { u8("Тест"), u8("Тест"), c };
-            yield return new object[] { u8($"Тест{c}"), u8("Тест"), c };
-            yield return new object[] { u8($"{c}Тест"), u8("Тест"), c };
-            yield return new object[] { u8($"{c}Тест{c}"), u8("Тест"), c };
-            yield return new object[] { u8($"{c}{c}Тест"), u8($"{c}Тест"), c };
-            yield return new object[] { u8($"Тест{c}{c}"), u8($"Тест{c}"), c };
-            yield return new object[] { u8($"{c}{c}Тест{c}{c}"), u8($"{c}Тест{c}"), c };
-            yield return new object[] { u8($" Тест{c}{c} ")[1..^1], u8($"Тест{c}"), c };
-            yield return new object[] { u8($" {c}{c}Тест ")[1..^1], u8($"{c}Тест"), c };
-            yield return new object[] { u8($" {c}{c}Тест{c}{c} ")[1..^1], u8($"{c}Тест{c}"), c };
-        }
-    }
-
-    [Theory, MemberData(nameof(StripCharValues))]
+    [Theory, MemberData(nameof(StripCharData))]
     public void StripChar_ReturnsCorrectValue(U8String value, U8String expected, char c)
     {
         var actual = value.Strip(c);
@@ -359,7 +348,7 @@ public partial class Manipulation
         Assert.Equal(expected, actual);
     }
 
-    [Theory, MemberData(nameof(StripCharValues))]
+    [Theory, MemberData(nameof(StripCharData))]
     public void StripCharPrefix_ReturnsCorrectValue(U8String value, U8String expected, char c)
     {
         if (value.EndsWith(c))
@@ -370,7 +359,7 @@ public partial class Manipulation
         Assert.Equal(expected, actual);
     }
 
-    [Theory, MemberData(nameof(StripCharValues))]
+    [Theory, MemberData(nameof(StripCharData))]
     public void StripCharSuffix_ReturnsCorrectValue(U8String value, U8String expected, char c)
     {
         if (value.StartsWith(c))
@@ -389,34 +378,10 @@ public partial class Manipulation
         Assert.Throws<ArgumentException>(() => U8String.Empty.StripSuffix(SurrogateChar));
     }
 
-    public static IEnumerable<object[]> StripRuneData()
+    public static IEnumerable<object[]> StripRuneData() => new[]
     {
-        var runes = new[]
-        {
-            OneByteRune,
-            TwoByteRune,
-            ThreeByteRune,
-            FourByteRune
-        };
-
-        foreach (var r in runes)
-        {
-            yield return new object[] { u8(""), u8(""), r };
-            yield return new object[] { u8($"{r}"), u8(""), r };
-            yield return new object[] { u8($"{r}{r}"), u8(""), r };
-            yield return new object[] { u8($"{r}{r}{r}"), u8($"{r}"), r };
-            yield return new object[] { u8("Тест"), u8("Тест"), r };
-            yield return new object[] { u8($"Тест{r}"), u8("Тест"), r };
-            yield return new object[] { u8($"{r}Тест"), u8("Тест"), r };
-            yield return new object[] { u8($"{r}Тест{r}"), u8("Тест"), r };
-            yield return new object[] { u8($"{r}{r}Тест"), u8($"{r}Тест"), r };
-            yield return new object[] { u8($"Тест{r}{r}"), u8($"Тест{r}"), r };
-            yield return new object[] { u8($"{r}{r}Тест{r}{r}"), u8($"{r}Тест{r}"), r };
-            yield return new object[] { u8($" Тест{r}{r} ")[1..^1], u8($"Тест{r}"), r };
-            yield return new object[] { u8($" {r}{r}Тест ")[1..^1], u8($"{r}Тест"), r };
-            yield return new object[] { u8($" {r}{r}Тест{r}{r} ")[1..^1], u8($"{r}Тест{r}"), r };
-        }
-    }
+        OneByteRune, TwoByteRune, ThreeByteRune, FourByteRune
+    }.SelectMany(r => StripData(r, r)).WithArgsLimit(3);
 
     [Theory, MemberData(nameof(StripRuneData))]
     public void StripRune_ReturnsCorrectValue(U8String value, U8String expected, Rune r)
@@ -448,82 +413,56 @@ public partial class Manipulation
         Assert.Equal(expected, actual);
     }
 
-    public static IEnumerable<object[]> StripSpanData()
+    public static IEnumerable<object[]> StripStringData() => new[]
     {
-        var arrs = new[]
-        {
-            Empty,
-            Latin,
-            Cyrillic,
-            Japanese,
-            Emoji,
-            Mixed
-        };
+        u8(Empty), u8(Latin), u8(Cyrillic), u8(Japanese), u8(Emoji), u8(Mixed)
+    }.SelectMany(v => StripData(v, v)).WithArgsLimit(3);
 
-        foreach (var arr in arrs)
-        {
-            yield return new object[] { u8(""), u8(""), arr };
-            yield return new object[] { u8($"{arr}"), u8(""), arr };
-            yield return new object[] { u8($"{arr}{arr}"), u8(""), arr };
-            yield return new object[] { u8($"{arr}{arr}{arr}"), u8($"{arr}"), arr };
-            yield return new object[] { u8("Тест"), u8("Тест"), arr };
-            yield return new object[] { u8($"Тест{arr}"), u8("Тест"), arr };
-            yield return new object[] { u8($"{arr}Тест"), u8("Тест"), arr };
-            yield return new object[] { u8($"{arr}Тест{arr}"), u8("Тест"), arr };
-            yield return new object[] { u8($"{arr}{arr}Тест"), u8($"{arr}Тест"), arr };
-            yield return new object[] { u8($"Тест{arr}{arr}"), u8($"Тест{arr}"), arr };
-            yield return new object[] { u8($"{arr}{arr}Тест{arr}{arr}"), u8($"{arr}Тест{arr}"), arr };
-            yield return new object[] { u8($" Тест{arr}{arr} ")[1..^1], u8($"Тест{arr}"), arr };
-            yield return new object[] { u8($" {arr}{arr}Тест ")[1..^1], u8($"{arr}Тест"), arr };
-            yield return new object[] { u8($" {arr}{arr}Тест{arr}{arr} ")[1..^1], u8($"{arr}Тест{arr}"), arr };
-        }
-    }
-
-    [Theory, MemberData(nameof(StripSpanData))]
-    public void StripSpan_ReturnsCorrectValue(U8String value, U8String expected, byte[] arr)
+    [Theory, MemberData(nameof(StripStringData))]
+    public void StripString_ReturnsCorrectValue(U8String value, U8String expected, U8String toStrip)
     {
         var overloads = new[]
         {
-            value.Strip(u8(arr)),
-            value.Strip(arr.AsSpan())
+            value.Strip(toStrip),
+            value.Strip(toStrip.AsSpan())
         };
-        
+
         foreach (var actual in overloads)
         {
             Assert.Equal(expected, actual);
         }
     }
 
-    [Theory, MemberData(nameof(StripSpanData))]
-    public void StripSpanPrefix_ReturnsCorrectValue(U8String value, U8String expected, byte[] arr)
+    [Theory, MemberData(nameof(StripStringData))]
+    public void StripStringPrefix_ReturnsCorrectValue(U8String value, U8String expected, U8String toStrip)
     {
-        if (value.EndsWith(arr))
-            value = value[..^arr.Length];
+        if (value.EndsWith(toStrip))
+            value = value[..^toStrip.Length];
 
         var overloads = new[]
         {
-            value.StripPrefix(u8(arr)),
-            value.StripPrefix(arr.AsSpan())
+            value.StripPrefix(toStrip),
+            value.StripPrefix(toStrip.AsSpan())
         };
-        
+
         foreach (var actual in overloads)
         {
             Assert.Equal(expected, actual);
         }
     }
 
-    [Theory, MemberData(nameof(StripSpanData))]
-    public void StripSpanSuffix_ReturnsCorrectValue(U8String value, U8String expected, byte[] arr)
+    [Theory, MemberData(nameof(StripStringData))]
+    public void StripStringSuffix_ReturnsCorrectValue(U8String value, U8String expected, U8String toStrip)
     {
-        if (value.StartsWith(arr))
-            value = value[arr.Length..];
+        if (value.StartsWith(toStrip))
+            value = value[toStrip.Length..];
 
         var overloads = new[]
         {
-            value.StripSuffix(u8(arr)),
-            value.StripSuffix(arr.AsSpan())
+            value.StripSuffix(toStrip),
+            value.StripSuffix(toStrip.AsSpan())
         };
-        
+
         foreach (var actual in overloads)
         {
             Assert.Equal(expected, actual);
@@ -531,11 +470,94 @@ public partial class Manipulation
     }
 
     [Fact]
-    public void StripSpan_ThrowsOnInvalidUtf8()
+    public void StripString_ThrowsOnInvalidUtf8()
     {
         Assert.Throws<FormatException>(() => U8String.Empty.Strip(Invalid));
         Assert.Throws<FormatException>(() => U8String.Empty.StripPrefix(Invalid));
         Assert.Throws<FormatException>(() => U8String.Empty.StripSuffix(Invalid));
+    }
+
+    public static IEnumerable<object[]> StripPrefixSuffixByteData() => new[]
+    {
+        '{', '}', '@', '\0'
+    }.Permute2().FlatMap(StripData);
+
+    [Theory, MemberData(nameof(StripPrefixSuffixByteData))]
+    public void StripPrefixSuffixByte_ReturnsCorrectValue(
+        U8String value,
+        U8String expected,
+        char prefix,
+        char suffix)
+    {
+        var actual = value.Strip((byte)prefix, (byte)suffix);
+
+        Assert.Equal(expected, actual);
+    }
+
+    public static IEnumerable<object[]> StripPrefixSuffixCharData() => new[]
+    {
+        OneByteChar, TwoByteChar, ThreeByteChar
+    }.Permute2().FlatMap(StripData);
+
+    [Theory, MemberData(nameof(StripPrefixSuffixCharData))]
+    public void StripPrefixSuffixChar_ReturnsCorrectValue(
+        U8String value,
+        U8String expected,
+        char prefix,
+        char suffix)
+    {
+        var actual = value.Strip(prefix, suffix);
+
+        Assert.Equal(expected, actual);
+    }
+
+    public static IEnumerable<object[]> StripPrefixSuffixRuneData() => new[]
+    {
+        OneByteRune, TwoByteRune, ThreeByteRune, FourByteRune
+    }.Permute2().FlatMap(StripData);
+
+    [Theory, MemberData(nameof(StripPrefixSuffixRuneData))]
+    public void StripPrefixSuffixRune_ReturnsCorrectValue(
+        U8String value,
+        U8String expected,
+        Rune prefix,
+        Rune suffix)
+    {
+        var actual = value.Strip(prefix, suffix);
+
+        Assert.Equal(expected, actual);
+    }
+
+    public static IEnumerable<object[]> StripPrefixSuffixStringData() => new[]
+    {
+        u8(Empty), u8(Latin), u8(Cyrillic), u8(Japanese), u8(Emoji), u8(Mixed)
+    }.Permute2().FlatMap(StripData);
+
+    [Theory, MemberData(nameof(StripPrefixSuffixStringData))]
+    public void StripPrefixSuffixString_ReturnsCorrectValue(
+        U8String value,
+        U8String expected,
+        U8String prefix,
+        U8String suffix)
+    {
+        var overloads = new[]
+        {
+            value.Strip(prefix, suffix),
+            value.Strip(prefix.AsSpan(), suffix.AsSpan())
+        };
+
+        foreach (var actual in overloads)
+        {
+            Assert.Equal(expected, actual);
+        }
+    }
+
+    [Fact]
+    public void StripPrefixSuffixString_ThrowsOnInvalidUtf8()
+    {
+        Assert.Throws<FormatException>(() => U8String.Empty.Strip(Empty, Invalid));
+        Assert.Throws<FormatException>(() => U8String.Empty.Strip(Invalid, Empty));
+        Assert.Throws<FormatException>(() => U8String.Empty.Strip(Invalid, Invalid));
     }
 
 #pragma warning restore IDE0057
