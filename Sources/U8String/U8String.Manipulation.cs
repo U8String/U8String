@@ -1765,15 +1765,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripSuffix(U8String suffix)
     {
-        var (source, offset, length) = this;
-        if (!suffix.IsEmpty // TODO: Is this better codegen than source != null?
-            && suffix.Length <= length
-            && source!.SliceUnsafe(offset, length).EndsWith(suffix.UnsafeSpan))
-        {
-            length -= suffix.Length;
-        }
-
-        return new(source, offset, length);
+        return StripSuffixUnchecked(suffix);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
