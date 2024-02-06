@@ -16,12 +16,14 @@ public enum U8ReadResult
 // TODO: remove all unchecked slicing to make it more resilient to concurrent misuse
 // (as in, it is still UB but it should not be AVEing by reading random memory)
 // TODO: decide whether to seal the class and if not - which methods to make virtual
-public partial class U8Reader<TSource>(TSource source) : IDisposable
-    where TSource : IU8ReaderSource
+public partial class U8Reader<TSource>(
+    TSource source, bool disposeSource = true) : IDisposable
+        where TSource : IU8ReaderSource
 {
     const int BufferSize = 8192;
 
     readonly TSource _source = source;
+    readonly bool _disposeSource = disposeSource;
 
     byte[] _buffer = ArrayPool<byte>.Shared.Rent(BufferSize);
     long _offset; // Sentinel value of -1 indicates EOF
@@ -172,6 +174,18 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
                     return true;
                 }
             }
+            // FIXME: This is wrong, when consuming e.g. WebSocket stream,
+            // this would cause high buffer traffic to-from the pool because
+            // it effectively resizes the buffer to exact read length *and then*
+            // marks it as stolen, which would re-rent a new buffer on the next
+            // read. This should not be happening and we should do one of these:
+            // - Mark as stolen but don't resize to very short length, downsizing
+            // the buffer instead to some reasonable minimum (e.g. 1KB)
+            // - Don't mark as stolen and for short lengths just allocate a string
+            // In addition, we should always look at the difference between the delimiter
+            // offset and the actual read length - we don't do that now which should
+            // allow to make the heuristic much smarter and avoid excessive pooling churn,
+            // wasted allocations or memory due to rooting large buffers in returned strings.
             else if (read < buffer!.Length)
             {
                 // This *might* be EOF but even if it's not,
@@ -262,7 +276,11 @@ public partial class U8Reader<TSource>(TSource source) : IDisposable
         _bytesRead = 0;
         _isBufferStolen = false;
 
-        _source.Dispose();
+        if (_disposeSource)
+        {
+            _source.Dispose();
+        }
+
         GC.SuppressFinalize(this);
     }
 }

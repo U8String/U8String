@@ -7,6 +7,10 @@ namespace U8.IO;
 
 public interface IU8ReaderSource : IDisposable
 {
+    // TODO: See U8WebSocketSource TODO but the general idea is to
+    // check all sources to ensure that the last segment/line is
+    // "drained" by enumerators/Read{*} methods when the source
+    // has successfully done reading and been closed/completed.
     int Read(long readerOffset, Span<byte> buffer);
     ValueTask<int> ReadAsync(
         long readerOffset,
@@ -78,6 +82,10 @@ public readonly struct U8WebSocketSource(WebSocket socket) : IU8ReaderSource
         throw new NotSupportedException();
     }
 
+    // TODO: How to handle buffer closure in an idiomatic way?
+    // The goal is to avoid forcing the user to explicitly "drain" the reader
+    // and enable plain "await foreach" scenarios.
+    // Note: it does appear to work correctly when WS is closed gracefully.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public async ValueTask<int> ReadAsync(long _, Memory<byte> buffer, CancellationToken ct)
     {

@@ -1473,7 +1473,7 @@ public readonly partial struct U8String
         return value.Value <= 0x7F
             ? Strip((byte)value.Value)
             : NonAscii(value, this);
-        
+
         static U8String NonAscii(Rune value, U8String source)
         {
             return source.StripUnchecked(value.Value switch
@@ -1588,7 +1588,7 @@ public readonly partial struct U8String
         return prefix.Value <= 0x7F && suffix.Value <= 0x7F
             ? Strip((byte)prefix.Value, (byte)suffix.Value)
             : NonAscii(prefix, suffix, this);
-        
+
         static U8String NonAscii(Rune prefix, Rune suffix, U8String source)
         {
             ReadOnlySpan<byte> prefixValue = prefix.Value switch
@@ -1653,16 +1653,15 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckAscii(prefix);
 
-        var source = this;
-        if (!source.IsEmpty && source.UnsafeRef == prefix)
+        var (source, offset, length) = this;
+        if (source != null &&
+            source.AsRef(offset) == prefix)
         {
-            return new(
-                source._value,
-                source.Offset + 1,
-                source.Length - 1);
+            offset++;
+            length--;
         }
 
-        return source;
+        return new(source, offset, length);
     }
 
     public U8String StripPrefix(char prefix)
@@ -1697,34 +1696,21 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripPrefix(U8String prefix)
     {
-        var source = this;
-        if (!prefix.IsEmpty &&
-            prefix.Length <= source.Length &&
-            source.UnsafeSpan.StartsWith(prefix))
-        {
-            return new(
-                source._value,
-                source.Offset + prefix.Length,
-                source.Length - prefix.Length);
-        }
-
-        return source;
+        return StripPrefixUnchecked(prefix);
     }
 
     internal U8String StripPrefixUnchecked(ReadOnlySpan<byte> prefix)
     {
-        var source = this;
-        if (!source.IsEmpty &&
-            prefix.Length <= source.Length &&
-            source.UnsafeSpan.StartsWith(prefix))
+        var (source, offset, length) = this;
+        if (source != null
+            && prefix.Length <= length
+            && source.SliceUnsafe(offset, length).StartsWith(prefix))
         {
-            return new(
-                source._value,
-                source.Offset + prefix.Length,
-                source.Length - prefix.Length);
+            offset += prefix.Length;
+            length -= prefix.Length;
         }
 
-        return source;
+        return new(source, offset, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -1732,23 +1718,22 @@ public readonly partial struct U8String
     {
         ThrowHelpers.CheckAscii(suffix);
 
-        var source = this;
-        if (!source.IsEmpty &&
-            source.UnsafeRef.Add(source.Length - 1) == suffix)
+        var (source, offset, length) = this;
+        if (source != null &&
+            source.AsRef(offset + length - 1) == suffix)
         {
-            return new(
-                source._value,
-                source.Offset,
-                source.Length - 1);
+            length--;
         }
 
-        return source;
+        return new(source, offset, length);
     }
 
     public U8String StripSuffix(char suffix)
     {
         ThrowHelpers.CheckSurrogate(suffix);
 
+        // TODO: Apply the same IL size optimizations around inlining
+        // as in Strip(prefix, suffix)
         return char.IsAscii(suffix)
             ? StripSuffix((byte)suffix)
             : StripSuffixUnchecked(suffix <= 0x7FF ? suffix.AsTwoBytes() : suffix.AsThreeBytes());
@@ -1777,34 +1762,28 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripSuffix(U8String suffix)
     {
-        var source = this;
-        if (!suffix.IsEmpty &&
-            suffix.Length <= source.Length &&
-            source.UnsafeSpan.EndsWith(suffix))
+        var (source, offset, length) = this;
+        if (!suffix.IsEmpty // TODO: Is this better codegen than source != null?
+            && suffix.Length <= length
+            && source!.SliceUnsafe(offset, length).EndsWith(suffix.UnsafeSpan))
         {
-            return new(
-                source._value,
-                source.Offset,
-                source.Length - suffix.Length);
+            length -= suffix.Length;
         }
 
-        return source;
+        return new(source, offset, length);
     }
 
     internal U8String StripSuffixUnchecked(ReadOnlySpan<byte> suffix)
     {
-        var source = this;
-        if (!source.IsEmpty &&
-            suffix.Length <= source.Length &&
-            source.UnsafeSpan.EndsWith(suffix))
+        var (source, offset, length) = this;
+        if (source != null
+            && suffix.Length <= length
+            && source.SliceUnsafe(offset, length).EndsWith(suffix))
         {
-            return new(
-                source._value,
-                source.Offset,
-                source.Length - suffix.Length);
+            length -= suffix.Length;
         }
 
-        return source;
+        return new(source, offset, length);
     }
 
     /// <summary>
