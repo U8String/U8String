@@ -82,8 +82,16 @@
     - [x] ToLower/ToUpper (invariant case converter not implemented yet)
     - [x] ToLowerAscii/ToUpperAscii
 - [ ] IO
-    - [ ] U8Reader, U8WebSocketReader, anything else?
-    - [ ] U8File and U8FileReader
+    - [ ] U8Reader
+        - [x] U8StreamSource, U8FileSource
+        - [ ] U8WebSocketSource, U8SocketSource
+        - [x] U8SplitReader, U8LineReader
+        - [ ] U8SegmentReader
+        - [ ] Refactor to consolidate/simplify handling the differences between file, stream and websocket handling
+    - [ ] HttpClient extensions
+        - [x] U8StringContent
+        - [x] GetU8String(Async)
+        - [ ] U8ServerSseItemReader? see https://github.com/dotnet/runtime/issues/98105
 - [ ] Memory-optimized collections
     - [x] `U8SliceArray` or maybe `U8SplitArray`?
     - [ ] `U8SliceDictionary<T>` (?)
@@ -111,8 +119,8 @@
 - [ ] Extensions
     - [ ] System.Net.Http (HttpClient, HttpContent, etc.)
     - [x] System.IO (File, anything else?)
-    - [ ] Streams? Pipelines?
-        - [ ] U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.
+    - [x] Streams? Pipelines?
+        - [x] ~~U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.~~
 - [ ] Analyzers
     - [ ] Suppress 'use slice operator' warning for select methods like `.SliceRounding(...)`
     - [ ] Replace `.ElementAt`, `.Deconstruct`, etc. applied to splits with `SplitFirstLast` form

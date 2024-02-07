@@ -135,9 +135,9 @@ public partial class U8Reader<TSource>
             goto RetryCheckEOF;
         }
 
-        AdvanceReader(unread.Length);
         var builder = new U8Builder(unread.Length);
         builder.AppendBytes(unread.Span);
+        AdvanceReader(unread.Length);
 
         while (true)
         {
@@ -185,14 +185,74 @@ public partial class U8Reader<TSource>
 
             if (index >= 0)
             {
-                AdvanceReader(index + length);
                 builder.AppendBytes(unread[..index].Span);
+                AdvanceReader(index + length);
                 break;
             }
 
-            AdvanceReader(unread.Length);
             builder.AppendBytes(unread.Span);
+            AdvanceReader(unread.Length);
         }
+
+        U8String.Validate(builder.Written);
+        return builder.Consume();
+    }
+
+    public async ValueTask<U8String?> ReadSegmentAsync<T, TSegment>(CancellationToken ct = default)
+        where T : TSource, IU8SegmentedReaderSource<TSegment>
+    {
+        if (!Unread.IsEmpty)
+        {
+            goto ContinueReading;
+        }
+        else if (EOF)
+        {
+            return null;
+        }
+
+        var segmentRead = await ((IU8SegmentedReaderSource<TSegment>)_source)
+            .ReadSegmentAsync(_offset, Free, ct);
+        
+        var readResult = ((IU8SegmentedReaderSource<TSegment>)_source)
+            .GetReadResult(_offset, segmentRead);
+        
+        _offset += readResult.Length;
+        _bytesRead += readResult.Length;
+
+        if (readResult.EndOfSegment)
+        {
+            if (readResult.LastRead) EOF = true;
+
+            var segment = readResult.Length > 0
+                ? new U8String(Unread)
+                : (U8String?)null;
+
+            // It's a mess - I need to refactor the inner structure
+            AdvanceReader(Unread.Length);
+            return segment;
+        }
+
+    ContinueReading:
+        var builder = new U8Builder();
+        builder.AppendBytes(Unread);
+        AdvanceReader(Unread.Length);
+
+        do
+        {
+            segmentRead = await ((IU8SegmentedReaderSource<TSegment>)_source)
+                .ReadSegmentAsync(_offset, Free, ct);
+
+            readResult = ((IU8SegmentedReaderSource<TSegment>)_source)
+                .GetReadResult(_offset, segmentRead);
+
+            _offset += readResult.Length;
+            _bytesRead += readResult.Length;
+
+            builder.AppendBytes(Unread);
+            AdvanceReader(Unread.Length);
+        } while (!readResult.EndOfSegment && !readResult.LastRead && readResult.Length > 0);
+
+        if (readResult.LastRead) EOF = true;
 
         U8String.Validate(builder.Written);
         return builder.Consume();

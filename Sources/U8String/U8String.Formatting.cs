@@ -149,6 +149,15 @@ public /* ref */ struct InterpolatedU8StringHandler
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AppendFormatted(U8String? value)
+    {
+        if (value is { IsEmpty: false } text)
+        {
+            AppendBytes(text.UnsafeSpan);
+        }
+    }
+
     public void AppendFormatted(ReadOnlySpan<byte> value)
     {
         U8String.Validate(value);
@@ -199,6 +208,17 @@ public /* ref */ struct InterpolatedU8StringHandler
         else if (typeof(T) == typeof(ImmutableArray<byte>))
         {
             AppendFormatted(((ImmutableArray<byte>)(object)value!).AsSpan());
+            return;
+        }
+        else if (typeof(T) == typeof(U8String))
+        {
+
+            AppendFormatted((U8String)(object)value!);
+            return;
+        }
+        else if (typeof(T) == typeof(U8String?))
+        {
+            AppendFormatted((U8String?)(object)value!);
             return;
         }
         else if (typeof(T) == typeof(byte[]))

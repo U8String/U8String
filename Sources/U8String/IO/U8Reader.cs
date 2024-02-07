@@ -41,16 +41,22 @@ public partial class U8Reader<TSource>(
         get => _buffer.AsSpan(_bytesConsumed, _bytesRead - _bytesConsumed);
     }
 
-    internal Span<byte> Free
-    {
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _buffer.AsSpan(_bytesRead);
-    }
-
-    internal Memory<byte> FreeMemory
+    internal Memory<byte> Free
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _buffer.AsMemory(_bytesRead);
+    }
+
+    internal bool EOF
+    {
+        get => _offset < 0;
+        set
+        {
+            if (value)
+            {
+                _offset = -1;
+            }
+        }
     }
 
     // TODO: Scenarios like .ReadLines().Take(1) are really hurt by
@@ -256,6 +262,9 @@ public partial class U8Reader<TSource>(
             length = _bytesRead - _bytesConsumed;
         }
 
+        // TODO: This can make it so that the memory observed by the caller
+        // will be modified by the next read, reconsider whether to expose
+        // this at all and replace with something like DrainTo(buffer).
         var result = _buffer.AsSpan(_bytesConsumed, length);
         AdvanceReader(length);
         return result;

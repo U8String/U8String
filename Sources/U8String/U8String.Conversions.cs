@@ -224,6 +224,7 @@ public readonly partial struct U8String
     /// <summary>
     /// Encodes this instance of <see cref="U8String"/> into its UTF-16 <see cref="string"/> representation.
     /// </summary>
+    [DebuggerStepThrough]
     public override string ToString()
     {
         var deref = this;

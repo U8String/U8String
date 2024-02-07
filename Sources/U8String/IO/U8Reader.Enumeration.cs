@@ -1,4 +1,5 @@
 using System.Collections;
+using System.Net.WebSockets;
 using System.Text;
 
 using U8.Abstractions;
@@ -251,6 +252,119 @@ public readonly struct U8SplitReader<T, TSeparator> :
 
     IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IAsyncEnumerator<U8String> IAsyncEnumerable<U8String>.GetAsyncEnumerator(
+        CancellationToken cancellationToken) => GetAsyncEnumerator(cancellationToken);
+}
+
+public readonly struct U8SegmentReader<T, TSegment> : IAsyncEnumerable<U8String>
+    where T : IU8SegmentedReaderSource<TSegment>
+{
+    readonly bool _disposeReader;
+
+    public U8Reader<T> Value { get; }
+
+    public U8SegmentReader(U8Reader<T> reader, bool disposeReader = true)
+    {
+        Value = reader;
+        _disposeReader = disposeReader;
+    }
+
+    public AsyncEnumerator GetAsyncEnumerator(CancellationToken ct = default)
+    {
+        return new(Value, _disposeReader, ct);
+    }
+
+    public sealed class AsyncEnumerator(
+        U8Reader<T> reader,
+        bool disposeReader,
+        CancellationToken ct) : IAsyncEnumerator<U8String>
+    {
+        readonly U8Reader<T> _reader = reader;
+        readonly bool _disposeReader = disposeReader;
+        readonly CancellationToken _ct = ct;
+
+        public U8String Current { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async ValueTask<bool> MoveNextAsync()
+        {
+            var segment = await _reader.ReadSegmentAsync<T, TSegment>(_ct);
+            if (segment.HasValue)
+            {
+                Current = segment.Value;
+                return true;
+            }
+
+            return false;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            if (_disposeReader)
+            {
+                _reader.Dispose();
+            }
+
+            return ValueTask.CompletedTask;
+        }
+    }
+
+    IAsyncEnumerator<U8String> IAsyncEnumerable<U8String>.GetAsyncEnumerator(
+        CancellationToken cancellationToken) => GetAsyncEnumerator(cancellationToken);
+}
+
+public readonly struct U8WebSocketMessageReader : IAsyncEnumerable<U8String>
+{
+    readonly bool _disposeReader;
+
+    public U8Reader<U8WebSocketSource> Value { get; }
+
+    public U8WebSocketMessageReader(U8Reader<U8WebSocketSource> reader, bool disposeReader = true)
+    {
+        Value = reader;
+        _disposeReader = disposeReader;
+    }
+
+    public AsyncEnumerator GetAsyncEnumerator(CancellationToken ct = default)
+    {
+        return new(Value, _disposeReader, ct);
+    }
+
+    public sealed class AsyncEnumerator(
+        U8Reader<U8WebSocketSource> reader,
+        bool disposeReader,
+        CancellationToken ct) : IAsyncEnumerator<U8String>
+    {
+        readonly U8Reader<U8WebSocketSource> _reader = reader;
+        readonly bool _disposeReader = disposeReader;
+        readonly CancellationToken _ct = ct;
+
+        public U8String Current { get; private set; }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public async ValueTask<bool> MoveNextAsync()
+        {
+            var segment = await _reader.ReadSegmentAsync<U8WebSocketSource, ValueWebSocketReceiveResult>(_ct);
+            if (segment.HasValue)
+            {
+                Current = segment.Value;
+                return true;
+            }
+
+            return false;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            if (_disposeReader)
+            {
+                _reader.Dispose();
+            }
+
+            return ValueTask.CompletedTask;
+        }
+    }
+
     IAsyncEnumerator<U8String> IAsyncEnumerable<U8String>.GetAsyncEnumerator(
         CancellationToken cancellationToken) => GetAsyncEnumerator(cancellationToken);
 }

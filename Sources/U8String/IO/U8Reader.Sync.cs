@@ -85,20 +85,20 @@ public partial class U8Reader<TSource>
         }
 
         var builder = new InterpolatedU8StringHandler(unread.Length);
-        AdvanceReader(unread.Length);
         builder.AppendBytes(unread);
+        AdvanceReader(unread.Length);
 
         while ((unread = Fill()).Length > 0)
         {
             if ((index = unread.IndexOf(delimiter)) >= 0)
             {
-                AdvanceReader(index + 1);
                 builder.AppendBytes(unread.SliceUnsafe(0, index));
+                AdvanceReader(index + 1);
                 break;
             }
 
-            AdvanceReader(unread.Length);
             builder.AppendBytes(unread);
+            AdvanceReader(unread.Length);
         }
 
         U8String.Validate(builder.Written);
@@ -160,20 +160,20 @@ public partial class U8Reader<TSource>
         }
 
         var builder = new InterpolatedU8StringHandler(unread.Length);
-        AdvanceReader(unread.Length);
         builder.AppendBytes(unread);
+        AdvanceReader(unread.Length);
 
         while ((unread = Fill()).Length > 0)
         {
             if ((index = unread.IndexOf(delimiter)) >= 0)
             {
-                AdvanceReader(index + delimiter.Length);
                 builder.AppendBytes(unread.SliceUnsafe(0, index));
+                AdvanceReader(index + delimiter.Length);
                 break;
             }
 
-            AdvanceReader(unread.Length);
             builder.AppendBytes(unread);
+            AdvanceReader(unread.Length);
         }
 
         U8String.Validate(builder.Written);
@@ -225,13 +225,13 @@ public partial class U8Reader<TSource>
         }
 
         var builder = new InterpolatedU8StringHandler(unread.Length);
-        AdvanceReader(unread.Length);
         builder.AppendBytes(unread);
+        AdvanceReader(unread.Length);
 
         while ((unread = Fill()).Length > 0)
         {
-            AdvanceReader(unread.Length);
             builder.AppendBytes(unread);
+            AdvanceReader(unread.Length);
         }
 
         U8String.Validate(builder.Written);
