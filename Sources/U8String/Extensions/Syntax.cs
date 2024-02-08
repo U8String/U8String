@@ -48,6 +48,18 @@ public static unsafe class Syntax
     public static U8String u8<T>(T value)
         where T : IUtf8SpanFormattable => U8String.Create(value);
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String u8<T>(T value, string format)
+        where T : IUtf8SpanFormattable => U8String.Create(value, format);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String u8<T>(T value, IFormatProvider? provider)
+        where T : IUtf8SpanFormattable => U8String.Create(value, provider);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String u8<T>(T value, string format, IFormatProvider? provider)
+        where T : IUtf8SpanFormattable => U8String.Create(value, format, provider);
+
     /// <inheritdoc cref="U8String(ref InterpolatedU8StringHandler)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String u8(ref InterpolatedU8StringHandler handler) => new(ref handler);
