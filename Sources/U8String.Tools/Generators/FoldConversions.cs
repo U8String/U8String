@@ -143,6 +143,7 @@ public class FoldConversions : ISourceGenerator
             foreach (var location in literalLocations)
             {
                 var normalizedPath = compilation.NormalizePath(location.Path);
+                if (normalizedPath is null or []) continue;
 
                 source.AppendLine($$"""
                         [System.Runtime.CompilerServices.InterceptsLocation(@"{{normalizedPath}}", line: {{location.Line}}, character: {{location.Character}})]
