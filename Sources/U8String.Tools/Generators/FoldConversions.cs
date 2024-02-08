@@ -5,7 +5,6 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-#pragma warning disable RS1035
 namespace U8.Tools.Generators;
 
 // TODO:
