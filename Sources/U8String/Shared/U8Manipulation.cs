@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -197,6 +198,7 @@ internal static class U8Manipulation
             return Join(separator, values.Cast<T, U8String>());
         }
 
+        provider ??= CultureInfo.InvariantCulture;
         if (values.Length > 1)
         {
             return JoinUnchecked(separator, values, format, provider);
@@ -219,9 +221,11 @@ internal static class U8Manipulation
         {
             return Join(separator, values.Cast<T, U8String>());
         }
-        else if (values.TryGetSpan(out var span))
+
+        provider ??= CultureInfo.InvariantCulture;
+        if (values.TryGetSpan(out var span))
         {
-            return Join<T>(separator, span, format, provider);
+            return Join(separator, span, format, provider);
         }
         else if (values.TryGetNonEnumeratedCount(out var count))
         {
@@ -248,7 +252,9 @@ internal static class U8Manipulation
         {
             return Join(separator, values.Cast<T, U8String>());
         }
-        else if (values.Length > 1)
+
+        provider ??= CultureInfo.InvariantCulture;
+        if (values.Length > 1)
         {
             if (separator.Length > 1)
             {
@@ -279,7 +285,9 @@ internal static class U8Manipulation
         {
             return Join(separator, values.Cast<T, U8String>());
         }
-        else if (values.TryGetSpan(out var span))
+
+        provider ??= CultureInfo.InvariantCulture;
+        if (values.TryGetSpan(out var span))
         {
             return Join(separator, span, format, provider);
         }
@@ -522,8 +530,8 @@ internal static class U8Manipulation
     static U8String JoinUnchecked<T>(
         byte separator,
         ReadOnlySpan<T> values,
-        ReadOnlySpan<char> format = default,
-        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+        ReadOnlySpan<char> format,
+        IFormatProvider provider) where T : IUtf8SpanFormattable
     {
         Debug.Assert(values.Length > 1);
         Debug.Assert(typeof(T) != typeof(U8String));
@@ -547,8 +555,8 @@ internal static class U8Manipulation
     static U8String JoinUnchecked<T>(
         ReadOnlySpan<byte> separator,
         ReadOnlySpan<T> values,
-        ReadOnlySpan<char> format = default,
-        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+        ReadOnlySpan<char> format,
+        IFormatProvider provider) where T : IUtf8SpanFormattable
     {
         Debug.Assert(separator.Length > 1);
         Debug.Assert(values.Length > 1);
@@ -573,8 +581,8 @@ internal static class U8Manipulation
     static U8String JoinUnchecked<T>(
         byte separator,
         IEnumerable<T> values,
-        ReadOnlySpan<char> format = default,
-        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+        ReadOnlySpan<char> format,
+        IFormatProvider provider) where T : IUtf8SpanFormattable
     {
         Debug.Assert(typeof(T) != typeof(U8String));
         Debug.Assert(values is not (T[] or List<T>));
@@ -602,8 +610,8 @@ internal static class U8Manipulation
     static U8String JoinUnchecked<T>(
         ReadOnlySpan<byte> separator,
         IEnumerable<T> values,
-        ReadOnlySpan<char> format = default,
-        IFormatProvider? provider = null) where T : IUtf8SpanFormattable
+        ReadOnlySpan<char> format,
+        IFormatProvider provider) where T : IUtf8SpanFormattable
     {
         Debug.Assert(separator.Length > 1);
         Debug.Assert(typeof(T) != typeof(U8String));

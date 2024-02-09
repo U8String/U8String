@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Text;
 
 using U8.Primitives;
@@ -41,6 +42,7 @@ public /* ref */ struct InterpolatedU8StringHandler
     public InterpolatedU8StringHandler()
     {
         Unsafe.SkipInit(out _inline);
+        _provider = CultureInfo.InvariantCulture;
     }
 
     public InterpolatedU8StringHandler(int length)
@@ -53,6 +55,8 @@ public /* ref */ struct InterpolatedU8StringHandler
         {
             _rented = ArrayPool<byte>.Shared.Rent(length);
         }
+
+        _provider = CultureInfo.InvariantCulture;
     }
 
     public InterpolatedU8StringHandler(
@@ -68,7 +72,7 @@ public /* ref */ struct InterpolatedU8StringHandler
             _rented = ArrayPool<byte>.Shared.Rent(initialLength);
         }
 
-        _provider = formatProvider;
+        _provider = formatProvider ?? CultureInfo.InvariantCulture;
     }
 
     // Reference: https://github.com/dotnet/runtime/issues/93501
@@ -462,7 +466,7 @@ public readonly partial struct U8String
     {
         var length = GetFormattedLength<T>();
         var buffer = new byte[length];
-        var success = value.TryFormat(buffer, out length, default, null);
+        var success = value.TryFormat(buffer, out length, default, CultureInfo.InvariantCulture);
 
         result = new(buffer, 0, length);
         return success;
@@ -470,7 +474,7 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static bool TryFormatPresized<T>(
-        T value, ReadOnlySpan<char> format, IFormatProvider? provider, out U8String result)
+        T value, ReadOnlySpan<char> format, IFormatProvider provider, out U8String result)
             where T : IUtf8SpanFormattable
     {
         var length = GetFormattedLength<T>();
@@ -512,7 +516,7 @@ public readonly partial struct U8String
     {
         int length;
         var buffer = new byte[64];
-        while (!value.TryFormat(buffer, out length, default, null))
+        while (!value.TryFormat(buffer, out length, default, CultureInfo.InvariantCulture))
         {
             buffer = new byte[buffer.Length * 2];
         }
@@ -522,7 +526,7 @@ public readonly partial struct U8String
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     static U8String FormatUnsized<T>(
-        T value, ReadOnlySpan<char> format, IFormatProvider? provider)
+        T value, ReadOnlySpan<char> format, IFormatProvider provider)
             where T : IUtf8SpanFormattable
     {
         // TODO: Maybe it's okay to steal from array pool?

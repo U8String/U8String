@@ -78,7 +78,7 @@ internal struct ArrayBuilder : IDisposable
         BytesWritten++;
     }
 
-    public void Write<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
+    public void Write<T>(T value, ReadOnlySpan<char> format, IFormatProvider provider)
         where T : IUtf8SpanFormattable
     {
     Retry:

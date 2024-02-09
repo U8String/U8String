@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -349,6 +350,8 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
+        provider ??= CultureInfo.InvariantCulture;
+        
         // A few odd cases that may not be likely, but we can handle them for free so why not?
         if (typeof(T) == typeof(char))
         {
@@ -386,6 +389,7 @@ public readonly partial struct U8String
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
         ThrowHelpers.CheckNull(values);
+        provider ??= CultureInfo.InvariantCulture;
 
         if (typeof(T) == typeof(U8String))
         {
@@ -412,7 +416,7 @@ public readonly partial struct U8String
         static U8String ConcatEnumerable(
             IEnumerable<T> values,
             ReadOnlySpan<char> format,
-            IFormatProvider? provider)
+            IFormatProvider provider)
         {
             var builder = new ArrayBuilder();
             foreach (var value in values)

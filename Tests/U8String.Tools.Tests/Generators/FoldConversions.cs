@@ -142,4 +142,84 @@ public partial class FoldConversions
             Assert.True(list[i].IsNullTerminated);
         }
     }
+
+    [Fact]
+    public void InlineLongConstantDeclaration_IsCorrectlyFolded()
+    {
+        var list = new List<U8String>()
+        {
+            u8(long.MaxValue), U8String.Create(long.MaxValue)
+        };
+
+        var first = list[0];
+
+        for (var i = 1; i < list.Count; i++)
+        {
+            Assert.Equal(first, list[i]);
+            Assert.Equal("9223372036854775807"u8, list[i]);
+            Assert.True(first.Equals(list[i]));
+            Assert.True(first.SourceEquals(list[i]));
+            Assert.True(list[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void InlineFloatConstantDeclaration_IsCorrectlyFolded()
+    {
+        var list = new List<U8String>()
+        {
+            u8(float.MaxValue), U8String.Create(float.MaxValue)
+        };
+
+        var first = list[0];
+
+        for (var i = 1; i < list.Count; i++)
+        {
+            Assert.Equal(first, list[i]);
+            Assert.Equal("3.4028235E+38"u8, list[i]);
+            Assert.True(first.Equals(list[i]));
+            Assert.True(first.SourceEquals(list[i]));
+            Assert.True(list[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void InlineDoubleConstantDeclaration_IsCorrectlyFolded()
+    {
+        var list = new List<U8String>()
+        {
+            u8(double.MaxValue), U8String.Create(double.MaxValue)
+        };
+
+        var first = list[0];
+
+        for (var i = 1; i < list.Count; i++)
+        {
+            Assert.Equal(first, list[i]);
+            Assert.Equal("1.7976931348623157E+308"u8, list[i]);
+            Assert.True(first.Equals(list[i]));
+            Assert.True(first.SourceEquals(list[i]));
+            Assert.True(list[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void InlineDecimalConstantDeclaration_IsCorrectlyFolded()
+    {
+        var list = new List<U8String>()
+        {
+            u8(1234567890.123456789M), U8String.Create(1234567890.123456789M)
+        };
+
+        var first = list[0];
+
+        for (var i = 1; i < list.Count; i++)
+        {
+            Assert.Equal(first, list[i]);
+            Assert.Equal("1234567890.123456789"u8, list[i]);
+            Assert.True(first.Equals(list[i]));
+            Assert.True(first.SourceEquals(list[i]));
+            Assert.True(list[i].IsNullTerminated);
+        }
+    }
 }

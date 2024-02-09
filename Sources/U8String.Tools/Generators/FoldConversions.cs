@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
@@ -36,7 +37,7 @@ public class FoldConversions : ISourceGenerator
     public void Execute(GeneratorExecutionContext context)
     {
         var compilation = context.Compilation;
-        var uniqueLiterals = new Dictionary<object, List<ConversionLocation>>();
+        var uniqueLiterals = new Dictionary<object, List<ConversionLocation>>(new LiteralComparer());
 
         foreach (var syntaxTree in compilation.SyntaxTrees)
         {
@@ -213,5 +214,37 @@ public class FoldConversions : ISourceGenerator
 
             _ => false
         };
+    }
+
+    sealed class LiteralComparer : IEqualityComparer<object>
+    {
+        public new bool Equals(object x, object y)
+        {
+            return x switch
+            {
+                byte u8 => y is byte u8y && u8 == u8y,
+                sbyte i8 => y is sbyte i8y && i8 == i8y,
+                ushort u16 => y is ushort u16y && u16 == u16y,
+                short i16 => y is short i16y && i16 == i16y,
+                uint u32 => y is uint u32y && u32 == u32y,
+                int i32 => y is int i32y && i32 == i32y,
+                ulong u64 => y is ulong u64y && u64 == u64y,
+                long i64 => y is long i64y && i64 == i64y,
+
+                float f32 => y is float f32y && (Unsafe.As<float, int>(ref f32) == Unsafe.As<float, int>(ref f32y)),
+                double f64 => y is double f64y && (Unsafe.As<double, long>(ref f64) == Unsafe.As<double, long>(ref f64y)),
+                decimal d128 => y is decimal d128y && d128 == d128y,
+
+                char c => y is char cy && c == cy,
+                string s => y is string sy && s.Equals(sy, StringComparison.Ordinal),
+
+                _ => x.Equals(y)
+            };
+        }
+
+        public int GetHashCode(object obj)
+        {
+            return obj.GetHashCode();
+        }
     }
 }

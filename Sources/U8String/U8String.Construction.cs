@@ -3,6 +3,7 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Globalization;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
@@ -458,6 +459,7 @@ public readonly partial struct U8String
     {
         if (value is not U8String u8str)
         {
+            provider ??= CultureInfo.InvariantCulture;
             if (TryFormatPresized(value, format, provider, out var result))
             {
                 return result;
