@@ -114,8 +114,7 @@ public class FoldValidations : ISourceGenerator
                 }
             }
             """);
-#pragma warning disable RS1035
-        File.WriteAllText("/Users/arseniy/Code/GitHub/U8String/Sources/U8String.Tools/Generators/validation.log", source.ToString());
+
         context.AddSource("U8SkipValidation.g.cs", source.ToString());
     }
 
