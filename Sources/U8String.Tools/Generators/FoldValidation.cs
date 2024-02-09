@@ -32,7 +32,7 @@ public class FoldValidations : ISourceGenerator
     record ValidationLocation(
         string MethodName,
         string ReturnType,
-        // int ArgumentCount,
+        int ArgumentCount,
         string Path,
         int Line,
         int Character);
@@ -86,11 +86,27 @@ public class FoldValidations : ISourceGenerator
             var normalizedPath = compilation.NormalizePath(validation.Path);
             if (normalizedPath is null or []) continue;
 
+            var argsInExpr = validation.ArgumentCount switch
+            {
+                1 => "ReadOnlySpan<byte> value",
+                2 => "ReadOnlySpan<byte> arg1, ReadOnlySpan<byte> arg2",
+                _ => null
+            };
+
+            var argsCallExpr = validation.ArgumentCount switch
+            {
+                1 => "value",
+                2 => "arg1, arg2",
+                _ => null
+            };
+
+            if (argsInExpr is null || argsCallExpr is null) continue;
+
             var guid = Guid.NewGuid().ToString("N");
             source.AppendLine($$"""
                     [MethodImpl(MethodImplOptions.AggressiveInlining)]
                     [System.Runtime.CompilerServices.InterceptsLocation(@"{{normalizedPath}}", line: {{validation.Line}}, character: {{validation.Character}})]
-                    public static {{validation.ReturnType}} _{{guid}}(in this U8String source, ReadOnlySpan<byte> value) => U8Unchecked.{{validation.MethodName}}(source, value);
+                    public static {{validation.ReturnType}} _{{guid}}(in this U8String source, {{argsInExpr}}) => U8Unchecked.{{validation.MethodName}}(source, {{argsCallExpr}});
             """);
         }
 
@@ -111,22 +127,23 @@ public class FoldValidations : ISourceGenerator
             var symbolInfo = model.GetSymbolInfo(invocation);
             if (symbolInfo.Symbol is IMethodSymbol methodSymbol
                 && CallContainsValidation(methodSymbol)
-                && invocation.ArgumentList.Arguments is [var argument])
+                && invocation.ArgumentList.Arguments is { Count: 1 or 2 } args)
             {
-                if (argument.Expression.Kind() is SyntaxKind.Utf8StringLiteralExpression)
+                if (args.All(arg => arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression)))
                 {
                     var lineSpan = invocation.GetLocation().GetLineSpan();
                     if (!lineSpan.IsValid) continue;
 
-                    var name = methodSymbol.Name;
-                    var returnType = methodSymbol.ReturnType.Name;
-                    var path = lineSpan.Path;
                     var position = lineSpan.StartLinePosition;
-                    var line = position.Line + 1;
                     var offset = invocation.Expression.Span.Length - methodSymbol.Name.Length;
-                    var character = position.Character + offset + 1;
 
-                    yield return new(name, returnType, path, line, character);
+                    yield return new(
+                        methodSymbol.Name,
+                        methodSymbol.ReturnType.Name,
+                        args.Count,
+                        lineSpan.Path,
+                        position.Line + 1,
+                        position.Character + offset + 1);
                 }
             }
         }
@@ -145,6 +162,7 @@ public class FoldValidations : ISourceGenerator
         return (containingType, methodName) switch
         {
             ("U8String", "Remove") or
+            ("U8String", "Replace") or
             ("U8String", "Split") or
             ("U8String", "SplitFirst") or
             ("U8String", "SplitLast") or

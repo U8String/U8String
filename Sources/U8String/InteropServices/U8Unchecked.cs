@@ -95,6 +95,12 @@ public static class U8Unchecked
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Replace(U8String source, ReadOnlySpan<byte> oldValue, ReadOnlySpan<byte> newValue)
+    {
+        return U8Manipulation.Replace(source, oldValue, newValue, validate: false);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8RefSplit Split(U8String source, ReadOnlySpan<byte> separator)
     {
         return new U8RefSplit(source, separator);
