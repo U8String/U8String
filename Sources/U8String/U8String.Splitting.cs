@@ -129,7 +129,7 @@ public readonly partial struct U8String
     public U8SplitPair SplitFirst(ReadOnlySpan<byte> separator)
     {
         // TODO: Replace with regular Validate once validation folding interceptor is in place.
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         var source = this;
         var segment = source._inner;
@@ -366,7 +366,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitLast(ReadOnlySpan<byte> separator)
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         var source = this;
         var segment = source._inner;
@@ -579,7 +579,7 @@ public readonly partial struct U8String
 
     public U8RefSplit Split(ReadOnlySpan<byte> separator)
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return new(this, separator);
     }
@@ -616,7 +616,7 @@ public readonly partial struct U8String
     public U8RefSplit<T> Split<T>(ReadOnlySpan<byte> separator, T comparer)
         where T : IU8Comparer
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return new(this, separator, comparer);
     }
@@ -703,7 +703,7 @@ public static class U8SplitExtensions
         this U8String value, ReadOnlySpan<byte> separator, TOptions options)
             where TOptions : unmanaged, IU8SplitOptions
     {
-        U8String.ValidatePossibleConstant(separator);
+        U8String.Validate(separator);
 
         return new(value, separator);
     }
@@ -713,7 +713,7 @@ public static class U8SplitExtensions
             where TOptions : unmanaged, IU8SplitOptions
             where TComparer : IU8ContainsOperator, IU8CountOperator, IU8IndexOfOperator
     {
-        U8String.ValidatePossibleConstant(separator);
+        U8String.Validate(separator);
 
         return new(value, separator, comparer);
     }

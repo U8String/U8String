@@ -289,7 +289,7 @@ public readonly partial struct U8String :
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void ValidatePossibleConstant(ReadOnlySpan<byte> value)
+    internal static void ValidatePossibleConstant_Obsolete(ReadOnlySpan<byte> value)
     {
         if (value.Length <= 0)
         {

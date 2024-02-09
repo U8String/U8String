@@ -130,7 +130,7 @@ public readonly partial struct U8String
     {
         if (right.Length > 0)
         {
-            ValidatePossibleConstant(right);
+            Validate(right);
             if (!left.IsEmpty)
             {
                 return U8Manipulation.ConcatUnchecked(left.UnsafeSpan, right);
@@ -153,7 +153,7 @@ public readonly partial struct U8String
     {
         if (left.Length > 0)
         {
-            ValidatePossibleConstant(left);
+            Validate(left);
             if (!right.IsEmpty)
             {
                 return U8Manipulation.ConcatUnchecked(left, right.UnsafeSpan);
@@ -568,7 +568,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return U8Manipulation.Join(separator, values);
     }
@@ -576,7 +576,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Join(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
         ThrowHelpers.CheckNull(values);
 
         return U8Manipulation.Join(separator, values);
@@ -686,7 +686,7 @@ public readonly partial struct U8String
     public static U8String Join<T>(ReadOnlySpan<byte> separator, T values)
         where T : struct, IEnumerable<U8String>
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return separator.Length switch
         {
@@ -812,7 +812,7 @@ public readonly partial struct U8String
 
     public static U8String Join(ReadOnlySpan<byte> separator, U8Chars chars)
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return JoinSpan<U8Manipulation.CharsSource>(separator, chars.Value);
     }
@@ -854,7 +854,7 @@ public readonly partial struct U8String
 
     public static U8String Join(ReadOnlySpan<byte> separator, U8Runes runes)
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return JoinSpan<U8Manipulation.RunesSource>(separator, runes.Value);
     }
@@ -1020,7 +1020,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return U8Manipulation.Join(separator, values, format, provider);
     }
@@ -1031,7 +1031,7 @@ public readonly partial struct U8String
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        ValidatePossibleConstant(separator);
+        Validate(separator);
 
         return U8Manipulation.Join(separator, values, format, provider);
     }
@@ -1264,7 +1264,7 @@ public readonly partial struct U8String
         }
         else
         {
-            ValidatePossibleConstant(lineEnding);
+            Validate(lineEnding);
             return U8Manipulation.LineEndingsToCustom(this, lineEnding);
         }
     }
@@ -1694,7 +1694,7 @@ public readonly partial struct U8String
     {
         // TODO: Another callside to replace with plain Validate
         // once FoldValidations opt. pass is implemented in U8String.Tools
-        ValidatePossibleConstant(prefix);
+        Validate(prefix);
 
         return StripPrefixUnchecked(prefix);
     }
@@ -1761,7 +1761,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String StripSuffix(ReadOnlySpan<byte> suffix)
     {
-        ValidatePossibleConstant(suffix);
+        Validate(suffix);
 
         return StripSuffixUnchecked(suffix);
     }

@@ -3,6 +3,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8.InteropServices;
 
@@ -85,6 +86,18 @@ public static class U8Unchecked
         }
 
         return default;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Remove(U8String source, ReadOnlySpan<byte> value)
+    {
+        return U8Manipulation.Remove(source, value, validate: false);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8RefSplit Split(U8String source, ReadOnlySpan<byte> separator)
+    {
+        return new U8RefSplit(source, separator);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
