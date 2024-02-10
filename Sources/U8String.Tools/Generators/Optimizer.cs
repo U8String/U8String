@@ -144,15 +144,16 @@ sealed class Optimizer : ISourceGenerator
             source.Append(interceptor.ReturnType ?? "void");
             source.Append(' ');
 
+            // Method name
+            source.Append($"__{Guid.NewGuid():N}");
+
             // Generic arguments
             if (interceptor.GenericArgs is not [])
             {
                 source.Append($"<{string.Join(", ", interceptor.GenericArgs)}>");
             }
 
-            // Method name
-            source.Append($"__{Guid.NewGuid():N}(");
-
+            source.Append('(');
             // Instance type as a first argument (if any)
             if (interceptor.InstanceArg is not null)
             {
