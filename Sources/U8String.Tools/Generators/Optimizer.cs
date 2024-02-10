@@ -58,8 +58,6 @@ sealed class Optimizer : ISourceGenerator
 
             var source = EmitInterceptors(compilation, scope);
 
-#pragma warning disable RS1035
-            File.WriteAllText($"/Users/arseniy/Code/GitHub/U8String/Sources/U8String.Tools/Generators/{scope.Name}.log", source);
             context.AddSource($"U8{scope.Name}.g.cs", source);
         }
     }
