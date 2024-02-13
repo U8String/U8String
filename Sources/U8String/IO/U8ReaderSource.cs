@@ -43,8 +43,6 @@ public readonly struct U8SegmentReadResult(int length, bool endOfSegment, bool l
 // We don't have explicit extension support yet so using this workaround for now.
 public readonly struct U8FileSource(SafeFileHandle handle) : IU8ReaderSource
 {
-    /* readonly bool _isSeekable; <-- TODO: Implement this */
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Read(long readerOffset, Span<byte> buffer)
     {

@@ -56,9 +56,7 @@ sealed class Optimizer : ISourceGenerator
                 continue;
             }
 
-            var source = EmitInterceptors(compilation, scope);
-
-            context.AddSource($"U8{scope.Name}.g.cs", source);
+            context.AddSource($"U8{scope.Name}.g.cs", EmitInterceptors(compilation, scope));
         }
     }
 
@@ -141,7 +139,7 @@ sealed class Optimizer : ISourceGenerator
 
             // Accessibility modifiers
             source.Append("        public static ");
-            source.Append(interceptor.ReturnType ?? "void");
+            source.Append(interceptor.Method.ReturnType.Name);
             source.Append(' ');
 
             // Method name
@@ -161,15 +159,15 @@ sealed class Optimizer : ISourceGenerator
             }
 
             // Arguments (if any)
-            if (interceptor.Args is not [])
+            var arguments = FormatArgs(interceptor.Method);
+            if (arguments is not "")
             {
-                if (interceptor.InstanceArg is not null)
+                if (interceptor.InstanceArg != null)
                 {
                     source.Append(", ");
                 }
 
-                var args = interceptor.Args.Select((arg, i) => $"{arg} arg{i}");
-                source.Append(string.Join(", ", args));
+                source.Append(arguments);
             }
 
             // Method signature end
@@ -188,5 +186,17 @@ sealed class Optimizer : ISourceGenerator
             """);
 
         return source.ToString();
+    }
+
+    static string FormatArgs(IMethodSymbol method)
+    {
+        static string FormatType(IParameterSymbol param) =>
+            param.Type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
+        var args = method
+            .Parameters
+            .Select((param, i) => $"{FormatType(param)} arg{i}");
+
+        return string.Join(", ", args);
     }
 }

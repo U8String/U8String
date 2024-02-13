@@ -1,5 +1,0 @@
-<Project>
-    <ItemGroup>
-        <PackageReference Update="U8String.Tools" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
-    </ItemGroup>
-</Project>

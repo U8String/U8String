@@ -44,7 +44,7 @@ using var http = new HttpClient();
 var example = await http.GetU8StringAsync("http://example.org/");
 
 // Shorthand syntax
-// See U8String.Tools to fold these at compile time
+// See U8String.Optimization to fold these at compile time
 using static U8.Extensions.Syntax;
 
 var literal = u8("Lorem ipsum dolor");

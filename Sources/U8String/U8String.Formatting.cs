@@ -364,6 +364,7 @@ public /* ref */ struct InterpolatedU8StringHandler
     /// <remarks>
     /// The buffer may be reused after calling this method.
     /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
         BytesWritten = 0;

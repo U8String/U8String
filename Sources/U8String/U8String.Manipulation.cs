@@ -1693,7 +1693,7 @@ public readonly partial struct U8String
     public U8String StripPrefix(ReadOnlySpan<byte> prefix)
     {
         // TODO: Another callside to replace with plain Validate
-        // once FoldValidations opt. pass is implemented in U8String.Tools
+        // once FoldValidations opt. pass is implemented in U8String.Optimization
         Validate(prefix);
 
         return StripPrefixUnchecked(prefix);

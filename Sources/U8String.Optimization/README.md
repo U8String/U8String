@@ -1,6 +1,6 @@
-# U8String.Tools
+# U8String.Optimization
 
-This is a supplementary package that provides code analysis and optimizations to improve the experience of using [U8String](https://www.nuget.org/packages/U8String) in your projects.
+This is a supplementary package that provides code optimizations to improve the experience of using [U8String](https://www.nuget.org/packages/U8String) in your projects.
 
 ## Features
 

@@ -16,13 +16,14 @@ internal static class U8Manipulation
         Debug.Assert(U8Info.IsAsciiByte(in right));
 
         var length = left.Length + 1;
-        var value = new byte[length + 1];
+        var nullTerminate = right != 0;
+        var value = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
 
         ref var dst = ref value.AsRef();
         left.CopyToUnsafe(ref dst);
         dst.Add(left.Length) = right;
 
-        return new U8String(value, 0, length);
+        return new U8String(value, length, neverEmpty: true);
     }
 
     internal static U8String ConcatUnchecked(byte left, ReadOnlySpan<byte> right)
@@ -36,7 +37,7 @@ internal static class U8Manipulation
         dst = left;
         right.CopyToUnsafe(ref dst.Add(1));
 
-        return new U8String(value, 0, length);
+        return new U8String(value, length, neverEmpty: true);
     }
 
     internal static U8String ConcatUnchecked(ReadOnlySpan<byte> left, ReadOnlySpan<byte> right)

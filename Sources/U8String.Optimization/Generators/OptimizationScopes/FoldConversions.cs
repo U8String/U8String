@@ -43,52 +43,6 @@ sealed class FoldConversions : IOptimizationScope
 
     public IEnumerable<Interceptor> Interceptors => _literalMap.Values;
 
-    public bool ProcessCallsite(
-        SemanticModel model,
-        IMethodSymbol method,
-        InvocationExpressionSyntax invocation)
-    {
-        if (!IsSupportedMethod(method) ||
-            invocation.ArgumentList.Arguments is not [var argument])
-        {
-            return false;
-        }
-
-        var constant = model.GetConstantValue(argument.Expression);
-        if (constant is not { HasValue: true, Value: object constantValue })
-        {
-            return false;
-        }
-
-        // Already known literal - add a callsite
-        var callsite = new Callsite(method, invocation);
-        if (_literalMap.TryGetValue(constantValue, out var interceptor))
-        {
-            interceptor.Callsites.Add(callsite);
-            return true;
-        }
-
-        if (!TryGetString(constantValue, out var utf16) ||
-            !TryGetBytes(utf16, out var utf8))
-        {
-            return false;
-        }
-
-        var argType = constantValue.GetType().Name;
-        var literalName = AddByteLiteral(utf8, utf16[^1] != 0);
-
-        _literalMap[constantValue] = new(
-            ReturnType: "U8String",
-            InstanceArg: null,
-            Args: [argType],
-            GenericArgs: IsGenericOverload(constantValue) ? [argType] : [],
-            CustomAttrs: [Constants.AggressiveInlining],
-            Callsites: [callsite],
-            Body: $"return U8Marshal.CreateUnsafe(_{literalName}, 0, {utf8.Length});");
-
-        return true;
-    }
-
     static bool IsSupportedMethod(IMethodSymbol method)
     {
         var mehodName = method.Name;
@@ -106,6 +60,51 @@ sealed class FoldConversions : IOptimizationScope
 
             _ => false
         };
+    }
+
+    public bool ProcessCallsite(
+        SemanticModel model,
+        IMethodSymbol method,
+        InvocationExpressionSyntax invocation)
+    {
+        if (!IsSupportedMethod(method) ||
+            invocation.ArgumentList.Arguments is not [var argument])
+        {
+            return false;
+        }
+
+        var constant = model.GetConstantValue(argument.Expression);
+        if (constant is not { HasValue: true, Value: object constantValue })
+        {
+            return false;
+        }
+
+        var callsite = new Callsite(method, invocation);
+        if (_literalMap.TryGetValue(constantValue, out var interceptor))
+        {
+            // Already known literal - append a callsite and return
+            interceptor.Callsites.Add(callsite);
+            return true;
+        }
+
+        if (!TryGetString(constantValue, out var utf16) ||
+            !TryGetBytes(utf16, out var utf8))
+        {
+            return false;
+        }
+
+        var argType = constantValue.GetType().Name;
+        var literalName = AddByteLiteral(utf8, utf16[^1] != 0);
+
+        _literalMap[constantValue] = new(
+            Method: method,
+            InstanceArg: null,
+            GenericArgs: IsGenericOverload(constantValue) ? [argType] : [],
+            CustomAttrs: [Constants.AggressiveInlining],
+            Callsites: [callsite],
+            Body: $"return U8Marshal.CreateUnsafe(_{literalName}, 0, {utf8.Length});");
+
+        return true;
     }
 
     static bool IsGenericOverload(object value)

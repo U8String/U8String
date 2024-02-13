@@ -38,33 +38,6 @@ sealed class FoldValidation : IOptimizationScope
 
     public IEnumerable<Interceptor> Interceptors => _interceptors;
 
-    public bool ProcessCallsite(
-        SemanticModel model,
-        IMethodSymbol method,
-        InvocationExpressionSyntax invocation)
-    {
-        if (!IsSupportedMethod(method))
-        {
-            return false;
-        }
-
-        if (invocation.ArgumentList.Arguments is not { Count: 1 or 2 } args ||
-            !args.All(arg => arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression)))
-        {
-            return false;
-        }
-
-        _interceptors.Add(new(
-            ReturnType: method.ReturnType.Name,
-            InstanceArg: "in this U8String source",
-            Args: [..Enumerable.Repeat("ReadOnlySpan<byte>", args.Count)],
-            GenericArgs: [],
-            CustomAttrs: [Constants.AggressiveInlining],
-            Callsites: [new Callsite(method, invocation)],
-            Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(args.Count))});"));
-        return true;
-    }
-
     static bool IsSupportedMethod(IMethodSymbol method)
     {
         var methodName = method.Name;
@@ -83,5 +56,31 @@ sealed class FoldValidation : IOptimizationScope
 
             _ => false
         };
+    }
+
+    public bool ProcessCallsite(
+        SemanticModel model,
+        IMethodSymbol method,
+        InvocationExpressionSyntax invocation)
+    {
+        if (!IsSupportedMethod(method))
+        {
+            return false;
+        }
+
+        if (invocation.ArgumentList.Arguments is not { Count: 1 or 2 } args ||
+            !args.All(arg => arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression)))
+        {
+            return false;
+        }
+
+        _interceptors.Add(new(
+            Method: method,
+            InstanceArg: "in this U8String source",
+            GenericArgs: [],
+            CustomAttrs: [Constants.AggressiveInlining],
+            Callsites: [new Callsite(method, invocation)],
+            Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(args.Count))});"));
+        return true;
     }
 }
