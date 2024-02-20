@@ -176,8 +176,9 @@ public readonly partial struct U8String
     public override bool Equals(object? obj)
     {
         ReadOnlySpan<byte> other;
-
-        if (obj is U8String u8str)
+        if (obj is null)
+            goto Unsupported;
+        else if (obj is U8String u8str)
         {
             if (!u8str.IsEmpty)
             {
@@ -185,10 +186,10 @@ public readonly partial struct U8String
             }
             else goto Empty;
         }
-        else if (obj is byte[] bytes)
-            other = bytes;
-        else if (obj is ImmutableArray<byte> array)
-            other = array.AsSpan();
+        else if (obj.GetType() == typeof(byte[]))
+            other = Unsafe.As<byte[]>(obj);
+        else if (obj.GetType() == typeof(ImmutableArray<byte>))
+            other = Unsafe.Unbox<ImmutableArray<byte>>(obj).AsSpan();
         else goto Unsupported;
 
         return Equals(other);
@@ -210,12 +211,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String? other)
     {
-        if (other.HasValue)
-        {
-            return Equals(other.Value);
-        }
-
-        return false;
+        return other.HasValue && Equals(other.Value);
     }
 
     /// <summary>

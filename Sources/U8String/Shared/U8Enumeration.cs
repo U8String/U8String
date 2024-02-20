@@ -176,6 +176,7 @@ internal static class U8Enumeration
 
         return Empty();
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static U[] Empty()
         {
             if (typeof(U) == typeof(byte))

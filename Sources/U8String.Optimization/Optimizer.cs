@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
@@ -29,7 +30,12 @@ namespace U8.Tools.Generators;
 [Generator]
 sealed class Optimizer : ISourceGenerator
 {
-    readonly IOptimizationScope[] Optimizations = [new FoldConversions(), new FoldValidation()];
+    readonly IOptimizationScope[] Optimizations =
+    [
+        new FoldConversions(),
+        new FoldValidation(),
+        new SpecializeDispatch()
+    ];
 
     public void Initialize(GeneratorInitializationContext _) { }
 
@@ -146,9 +152,10 @@ sealed class Optimizer : ISourceGenerator
             source.Append($"__{Guid.NewGuid():N}");
 
             // Generic arguments
-            if (interceptor.GenericArgs is not [])
+            var genericArgs = interceptor.Method.TypeParameters;
+            if (genericArgs is not [])
             {
-                source.Append($"<{string.Join(", ", interceptor.GenericArgs)}>");
+                source.Append(FormatGenericArgs(genericArgs));
             }
 
             source.Append('(');
@@ -198,5 +205,13 @@ sealed class Optimizer : ISourceGenerator
             .Select((param, i) => $"{FormatType(param)} arg{i}");
 
         return string.Join(", ", args);
+    }
+
+    static string FormatGenericArgs(ImmutableArray<ITypeParameterSymbol> genericArgs)
+    {
+        static string FormatType(ITypeParameterSymbol arg) =>
+            arg.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat);
+
+        return $"<{string.Join(", ", genericArgs.Select(FormatType))}>";
     }
 }

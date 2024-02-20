@@ -36,10 +36,10 @@ public class Serialization
 
     private static readonly PersonU8 PersonU8Value = new()
     {
-        FirstName = (U8String)"John"u8,
-        LastName = (U8String)"Doe"u8,
-        Title = (U8String)"Software Engineer"u8,
-        ID = (U8String)"123456789"u8
+        FirstName = u8("John"),
+        LastName = u8("Doe"),
+        Title = u8("Software Engineer"),
+        ID = u8("123456789")
     };
 
     private static readonly U8String PersonBytes = U8String

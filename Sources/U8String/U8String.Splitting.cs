@@ -128,7 +128,6 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8SplitPair SplitFirst(ReadOnlySpan<byte> separator)
     {
-        // TODO: Replace with regular Validate once validation folding interceptor is in place.
         Validate(separator);
 
         var source = this;

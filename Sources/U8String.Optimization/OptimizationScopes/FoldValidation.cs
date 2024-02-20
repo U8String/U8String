@@ -26,6 +26,8 @@ sealed class FoldValidation : IOptimizationScope
 {
     readonly List<Interceptor> _interceptors = [];
 
+    ITypeSymbol? ByteSpanType { get; set; }
+
     public string Name => "SkippedValidation";
 
     public IEnumerable<string> Imports =>
@@ -45,6 +47,11 @@ sealed class FoldValidation : IOptimizationScope
 
         return (containingType, methodName) switch
         {
+            // TODO: Handle these in specialize dispatch or fold conversion?
+            // Alternatively, flatten all optimization phases into a flat pass where each
+            // method has individual handling (similar to what is currently scaffolded in SpecializeDispatch)
+            // ("U8String", "Concat") or
+            // ("U8String", "Join") or
             ("U8String", "Remove") or
             ("U8String", "Replace") or
             ("U8String", "Split") or
@@ -68,8 +75,31 @@ sealed class FoldValidation : IOptimizationScope
             return false;
         }
 
-        if (invocation.ArgumentList.Arguments is not { Count: 1 or 2 } args ||
-            !args.All(arg => arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression)))
+        ByteSpanType ??= CreateByteSpanType(model.Compilation);
+
+        var matched = 0;
+        var args = invocation.ArgumentList.Arguments;
+        foreach (var arg in args)
+        {
+            var type = model.GetTypeInfo(arg.Expression).Type;
+            if (type == null)
+            {
+                continue;
+            }
+
+            if (SymbolEqualityComparer.Default.Equals(type, ByteSpanType))
+            {
+                if (arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression))
+                {
+                    matched++;
+                    continue;
+                }
+
+                return false;
+            }
+        }
+
+        if (matched is 0)
         {
             return false;
         }
@@ -77,10 +107,17 @@ sealed class FoldValidation : IOptimizationScope
         _interceptors.Add(new(
             Method: method,
             InstanceArg: "in this U8String source",
-            GenericArgs: [],
-            CustomAttrs: [Constants.AggressiveInlining],
+            CustomAttrs: Constants.AggressiveInlining,
             Callsites: [new Callsite(method, invocation)],
             Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(args.Count))});"));
         return true;
+    }
+
+    static ITypeSymbol? CreateByteSpanType(Compilation compilation)
+    {
+        var byteSpan = compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
+        var byteType = compilation.GetSpecialType(SpecialType.System_Byte);
+
+        return byteSpan?.Construct(byteType);
     }
 }

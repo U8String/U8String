@@ -12,7 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Sources\U8String\U8String.csproj" />
-    <ProjectReference Include="..\Sources\U8String.Tools\U8String.Tools.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <ProjectReference Include="..\Sources\U8String.Optimization\U8String.Optimization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

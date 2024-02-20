@@ -18,8 +18,8 @@ sealed partial class SpecializeDispatch : IOptimizationScope
 
     public IEnumerable<string> Imports =>
     [
-        "System", "System.Text",
-        "U8", "U8.InteropServices"
+        "System", "System.Runtime.CompilerServices",
+        "U8", "U8.InteropServices", "U8.Primitives"
     ];
 
     public IEnumerable<string> Fields => [];
@@ -31,6 +31,24 @@ sealed partial class SpecializeDispatch : IOptimizationScope
         IMethodSymbol method,
         InvocationExpressionSyntax invocation)
     {
-        throw new NotImplementedException();
+        var target = DispatchTarget.Resolve(method);
+        if (target is null)
+        {
+            return false;
+        }
+
+        var body = target.EmitBody(model, invocation);
+        if (body is null)
+        {
+            return false;
+        }
+
+        _interceptors.Add(new Interceptor(
+            Method: target.Method,
+            InstanceArg: target.InstanceArg,
+            CustomAttrs: Constants.AggressiveInlining,
+            Callsites: [new Callsite(method, invocation)],
+            Body: body));
+        return true;
     }
 }

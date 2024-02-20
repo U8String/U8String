@@ -20,10 +20,9 @@ interface IOptimizationScope
 record Interceptor(
     IMethodSymbol Method,
     string? InstanceArg,
-    string[] GenericArgs,
     string[] CustomAttrs,
-    string Body,
-    List<Callsite> Callsites);
+    List<Callsite> Callsites,
+    string Body);
 
 readonly struct Callsite
 {

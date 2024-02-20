@@ -93,44 +93,38 @@ sealed class FoldConversions : IOptimizationScope
             return false;
         }
 
-        var argType = constantValue.GetType().Name;
         var literalName = AddByteLiteral(utf8, utf16[^1] != 0);
 
         _literalMap[constantValue] = new(
             Method: method,
             InstanceArg: null,
-            GenericArgs: IsGenericOverload(constantValue) ? [argType] : [],
-            CustomAttrs: [Constants.AggressiveInlining],
+            CustomAttrs: Constants.AggressiveInlining,
             Callsites: [callsite],
             Body: $"return U8Marshal.CreateUnsafe(_{literalName}, 0, {utf8.Length});");
 
         return true;
     }
 
-    static bool IsGenericOverload(object value)
-    {
-        return value is not (string or bool or byte);
-    }
-
     static bool TryGetString(object? value, [NotNullWhen(true)] out string? result)
     {
+        var invariantCulture = CultureInfo.InvariantCulture;
         var utf16 = value switch
         {
-            byte u8 => u8.ToString(CultureInfo.InvariantCulture),
-            sbyte i8 => i8.ToString(CultureInfo.InvariantCulture),
-            ushort u16 => u16.ToString(CultureInfo.InvariantCulture),
-            short i16 => i16.ToString(CultureInfo.InvariantCulture),
-            uint u32 => u32.ToString(CultureInfo.InvariantCulture),
-            int i32 => i32.ToString(CultureInfo.InvariantCulture),
-            ulong u64 => u64.ToString(CultureInfo.InvariantCulture),
-            long i64 => i64.ToString(CultureInfo.InvariantCulture),
+            byte u8 => u8.ToString(invariantCulture),
+            sbyte i8 => i8.ToString(invariantCulture),
+            ushort u16 => u16.ToString(invariantCulture),
+            short i16 => i16.ToString(invariantCulture),
+            uint u32 => u32.ToString(invariantCulture),
+            int i32 => i32.ToString(invariantCulture),
+            ulong u64 => u64.ToString(invariantCulture),
+            long i64 => i64.ToString(invariantCulture),
 
-            float f32 => f32.ToString(CultureInfo.InvariantCulture),
-            double f64 => f64.ToString(CultureInfo.InvariantCulture),
-            decimal d128 => d128.ToString(CultureInfo.InvariantCulture),
+            float f32 => f32.ToString(invariantCulture),
+            double f64 => f64.ToString(invariantCulture),
+            decimal d128 => d128.ToString(invariantCulture),
 
             Enum e => e.ToString(),
-            char c => c.ToString(CultureInfo.InvariantCulture),
+            char c => c.ToString(invariantCulture),
             string s => s,
             _ => null
         };

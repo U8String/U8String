@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <NoWarn>$(NoWarn);NU5128</NoWarn>
+    <NoWarn>$(NoWarn);NU5128;IDE0046</NoWarn>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <DevelopmentDependency>true</DevelopmentDependency>
@@ -41,7 +41,6 @@
     <None Include="U8String.Optimization.targets" Pack="true" PackagePath="build/" />
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
   </ItemGroup>
-
 
   <ItemGroup>
     <None Include="$(MSBuildThisFileDirectory)/README.md" Pack="true" PackagePath="/" />

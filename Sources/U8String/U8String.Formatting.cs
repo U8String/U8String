@@ -266,7 +266,8 @@ public /* ref */ struct InterpolatedU8StringHandler
         AppendBytes(literal.SliceUnsafe(0, literal.Length - 1));
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    // This may seem surprising but we can't waste precious inlining budget
+    [MethodImpl(MethodImplOptions.NoInlining)]
     internal void AppendByte(byte value)
     {
     Retry:
