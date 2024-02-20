@@ -25,11 +25,14 @@ sealed partial class SpecializeDispatch
             {
                 "SplitFirst" => new SplitFirst(method),
                 "SplitLast" => new SplitLast(method),
+                "Strip" => new Strip(method),
+                "StripPrefix" => new StripPrefix(method),
+                "StripSuffix" => new StripSuffix(method),
                 _ => null
             };
         }
 
-        public sealed class Concat(IMethodSymbol method) : DispatchTarget
+        sealed class Concat(IMethodSymbol method) : DispatchTarget
         {
             public override IMethodSymbol Method => method;
             public override string? InstanceArg => null;
@@ -40,10 +43,10 @@ sealed partial class SpecializeDispatch
             }
         }
 
-        public sealed class Join(IMethodSymbol method) : DispatchTarget
+        sealed class Join(IMethodSymbol method) : DispatchTarget
         {
             public override IMethodSymbol Method => method;
-            public override string? InstanceArg => "in this IEnumerable<U8String>";
+            public override string? InstanceArg => null;
 
             public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
             {
@@ -51,10 +54,10 @@ sealed partial class SpecializeDispatch
             }
         }
 
-        public sealed class Remove(IMethodSymbol method) : DispatchTarget
+        sealed class Remove(IMethodSymbol method) : DispatchTarget
         {
             public override IMethodSymbol Method => method;
-            public override string? InstanceArg => "in this U8String";
+            public override string? InstanceArg => "in this U8String source";
 
             public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
             {
@@ -62,10 +65,10 @@ sealed partial class SpecializeDispatch
             }
         }
 
-        public sealed class Replace(IMethodSymbol method) : DispatchTarget
+        sealed class Replace(IMethodSymbol method) : DispatchTarget
         {
             public override IMethodSymbol Method => method;
-            public override string? InstanceArg => "in this U8String";
+            public override string? InstanceArg => "in this U8String source";
 
             public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
             {
@@ -73,7 +76,7 @@ sealed partial class SpecializeDispatch
             }
         }
 
-        public class SplitFirst(IMethodSymbol method) : DispatchTarget
+        sealed class SplitFirst(IMethodSymbol method) : DispatchTarget
         {
             public override IMethodSymbol Method => method;
             public override string? InstanceArg => "in this U8String source";
@@ -93,11 +96,6 @@ sealed partial class SpecializeDispatch
                     return null;
                 }
 
-                if (constantValue is byte b && b <= 0x7F)
-                {
-                    return "return source.SplitFirst((byte)arg0);";
-                }
-
                 if (constantValue is char c && !char.IsSurrogate(c))
                 {
                     return c <= 0x7F
@@ -109,10 +107,10 @@ sealed partial class SpecializeDispatch
             }
         }
 
-        public class SplitLast(IMethodSymbol method) : DispatchTarget
+        sealed class SplitLast(IMethodSymbol method) : DispatchTarget
         {
             public override IMethodSymbol Method => method;
-            public override string? InstanceArg => "in this U8String";
+            public override string? InstanceArg => "in this U8String source";
 
             public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
             {
@@ -127,16 +125,119 @@ sealed partial class SpecializeDispatch
                     return null;
                 }
 
-                if (constantValue is byte b && b <= 0x7F)
-                {
-                    return "return source.SplitLast((byte)arg0);";
-                }
-
                 if (constantValue is char c && !char.IsSurrogate(c))
                 {
                     return c <= 0x7F
                         ? "return source.SplitLast((byte)arg0);"
                         : $"return U8Unchecked.SplitLast(source, \"{c}\"u8);";
+                }
+
+                return null;
+            }
+        }
+
+        sealed class Strip(IMethodSymbol method) : DispatchTarget
+        {
+            public override IMethodSymbol Method => method;
+            public override string? InstanceArg => "in this U8String source";
+
+            public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
+            {
+                if (invocation.ArgumentList.Arguments is not { Count: 1 or 2 } args)
+                {
+                    return null;
+                }
+
+                if (args is [var singleArg])
+                {
+                    var constant = model.GetConstantValue(singleArg.Expression);
+                    if (constant is not { HasValue: true, Value: object value })
+                    {
+                        return null;
+                    }
+
+                    if (value is char c && !char.IsSurrogate(c))
+                    {
+                        return c <= 0x7F
+                            ? "return source.Strip((byte)arg0);"
+                            : $"return U8Unchecked.Strip(source, \"{c}\"u8);";
+                    }
+                }
+                else
+                {
+                    var prefix = model.GetConstantValue(args[0].Expression);
+                    var suffix = model.GetConstantValue(args[1].Expression);
+                    if (prefix is not { HasValue: true, Value: object prefixValue } ||
+                        suffix is not { HasValue: true, Value: object suffixValue })
+                    {
+                        return null;
+                    }
+
+                    if (prefixValue is char pc && !char.IsSurrogate(pc) &&
+                        suffixValue is char sc && !char.IsSurrogate(sc))
+                    {
+                        return pc <= 0x7F && sc <= 0x7F
+                            ? "return source.Strip((byte)arg0, (byte)arg1);"
+                            : $"return U8Unchecked.Strip(source, \"{pc}\"u8, \"{sc}\"u8);";
+                    }
+                }
+
+                return null;
+            }
+        }
+
+        sealed class StripPrefix(IMethodSymbol method) : DispatchTarget
+        {
+            public override IMethodSymbol Method => method;
+            public override string? InstanceArg => "in this U8String source";
+
+            public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
+            {
+                if (invocation.ArgumentList.Arguments is not [var argument])
+                {
+                    return null;
+                }
+
+                var constant = model.GetConstantValue(argument.Expression);
+                if (constant is not { HasValue: true, Value: object value })
+                {
+                    return null;
+                }
+
+                if (value is char c && !char.IsSurrogate(c))
+                {
+                    return c <= 0x7F
+                        ? "return source.StripPrefix((byte)arg0);"
+                        : $"return U8Unchecked.StripPrefix(source, \"{c}\"u8);";
+                }
+
+                return null;
+            }
+        }
+
+        sealed class StripSuffix(IMethodSymbol method) : DispatchTarget
+        {
+            public override IMethodSymbol Method => method;
+            public override string? InstanceArg => "in this U8String source";
+
+            public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
+            {
+                if (invocation.ArgumentList.Arguments is not [var argument])
+                {
+                    return null;
+                }
+
+                var constant = model.GetConstantValue(argument.Expression);
+                if (constant is not { HasValue: true, Value: object value })
+                {
+                    return null;
+                }
+
+                if (value is char c && !char.IsSurrogate(c))
+                {
+                    return c <= 0x7F
+                        ? "return source.StripSuffix((byte)arg0);"
+                        : $"return U8Unchecked.StripSuffix(source, \"{c}\"u8);";
                 }
 
                 return null;
