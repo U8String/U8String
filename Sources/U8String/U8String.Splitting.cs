@@ -1,5 +1,6 @@
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using U8.Abstractions;
@@ -260,7 +261,8 @@ public readonly partial struct U8String
         return U8SplitPair.NotFound(source);
     }
 
-    U8SplitPair SplitFirstUnchecked<T>(ReadOnlySpan<byte> separator, T comparer)
+    // TODO: SplitFirst/Last optimization treatment; consider \0 + .Empty edge cases
+    internal U8SplitPair SplitFirstUnchecked<T>(ReadOnlySpan<byte> separator, T comparer)
         where T : IU8IndexOfOperator
     {
         Debug.Assert(separator.Length > 0);
@@ -631,6 +633,8 @@ public readonly partial struct U8String
     }
 }
 
+[SuppressMessage("", "IDE0060: Unused paramter 'options'", Justification = "It is used for generic signature inference.")]
+[SuppressMessage("", "RCS1163: Unused paramter 'options'", Justification = "It is used for generic signature inference.")]
 public static class U8SplitExtensions
 {
     // Behold, overload resolution oriented programming

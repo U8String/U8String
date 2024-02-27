@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace U8.Tools.Generators;
 
+// TODO: Expand method implementations within select dispatch targets
 sealed partial class SpecializeDispatch
 {
     abstract class DispatchTarget
@@ -23,6 +24,7 @@ sealed partial class SpecializeDispatch
 
             return method.Name switch
             {
+                // "ReplaceLineEndings" => new ReplaceLineEndings(method),
                 "SplitFirst" => new SplitFirst(method),
                 "SplitLast" => new SplitLast(method),
                 "Strip" => new Strip(method),
@@ -72,6 +74,23 @@ sealed partial class SpecializeDispatch
 
             public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
             {
+                throw new NotImplementedException();
+            }
+        }
+
+        sealed class ReplaceLineEndings(IMethodSymbol method) : DispatchTarget
+        {
+            public override IMethodSymbol Method => method;
+            public override string? InstanceArg => "in this U8String source";
+
+            public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
+            {
+                // Argument-less overloads needs no special handling
+                if (invocation.ArgumentList.Arguments is not [var argument])
+                {
+                    return null;
+                }
+
                 throw new NotImplementedException();
             }
         }

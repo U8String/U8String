@@ -216,7 +216,6 @@ public /* ref */ struct InterpolatedU8StringHandler
         }
         else if (typeof(T) == typeof(U8String))
         {
-
             AppendFormatted((U8String)(object)value!);
             return;
         }
@@ -284,6 +283,22 @@ public /* ref */ struct InterpolatedU8StringHandler
     }
 
     internal void AppendBytes(ReadOnlySpan<byte> bytes)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length >= bytes.Length)
+        {
+            bytes.CopyToUnsafe(ref free.AsRef());
+            BytesWritten += bytes.Length;
+            return;
+        }
+
+        Grow(bytes.Length);
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AppendBytesInlined(ReadOnlySpan<byte> bytes)
     {
     Retry:
         var free = Free;
@@ -490,22 +505,26 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static int GetFormattedLength<T>() where T : IUtf8SpanFormattable
     {
+        // This table priotizes the common case formatted length
+        // given invariant culture and no format string. We pay extra
+        // cost for e.g. long dates to ensure minimal heap footprint for
+        // numerous u8(DateTime.UtcNow) and similar.
         if (typeof(T) == typeof(sbyte)) return 8;
         if (typeof(T) == typeof(char)) return 4;
         if (typeof(T) == typeof(Rune)) return 8;
         if (typeof(T) == typeof(short)) return 8;
         if (typeof(T) == typeof(ushort)) return 8;
-        if (typeof(T) == typeof(int)) return 12;
-        if (typeof(T) == typeof(uint)) return 12;
+        if (typeof(T) == typeof(int)) return 16;
+        if (typeof(T) == typeof(uint)) return 16;
         if (typeof(T) == typeof(long)) return 24;
-        if (typeof(T) == typeof(ulong)) return 20;
+        if (typeof(T) == typeof(ulong)) return 24;
         if (typeof(T) == typeof(nint)) return 24;
-        if (typeof(T) == typeof(nuint)) return 20;
+        if (typeof(T) == typeof(nuint)) return 24;
         if (typeof(T) == typeof(float)) return 16;
         if (typeof(T) == typeof(double)) return 24;
         if (typeof(T) == typeof(decimal)) return 32;
-        if (typeof(T) == typeof(DateTime)) return 32;
-        if (typeof(T) == typeof(DateTimeOffset)) return 40;
+        if (typeof(T) == typeof(DateTime)) return 24;
+        if (typeof(T) == typeof(DateTimeOffset)) return 32;
         if (typeof(T) == typeof(TimeSpan)) return 24;
         if (typeof(T) == typeof(Guid)) return 40;
 
@@ -531,7 +550,6 @@ public readonly partial struct U8String
         T value, ReadOnlySpan<char> format, IFormatProvider provider)
             where T : IUtf8SpanFormattable
     {
-        // TODO: Maybe it's okay to steal from array pool?
         int length;
         var buffer = new byte[64];
         while (!value.TryFormat(buffer, out length, format, provider))

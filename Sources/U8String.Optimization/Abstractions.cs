@@ -3,7 +3,6 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace U8.Tools.Generators;
 
-// TODO: Naming??
 interface IOptimizationScope
 {
     string Name { get; }

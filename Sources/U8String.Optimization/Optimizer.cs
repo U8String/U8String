@@ -43,16 +43,16 @@ sealed class Optimizer : ISourceGenerator
     {
         var compilation = context.Compilation;
 
-        foreach (var syntaxTree in compilation.SyntaxTrees)
+        foreach (var tree in compilation.SyntaxTrees)
         {
-            var semanticModel = compilation
-                .GetSemanticModel(syntaxTree);
+            var model = compilation
+                .GetSemanticModel(tree);
 
-            var syntaxNodes = syntaxTree
+            var nodes = tree
                 .GetRoot()
                 .DescendantNodes();
 
-            ProcessSyntaxNodes(semanticModel, syntaxNodes);
+            ProcessSyntaxNodes(model, nodes);
         }
 
         foreach (var scope in Optimizations)
@@ -70,16 +70,14 @@ sealed class Optimizer : ISourceGenerator
     {
         foreach (var node in nodes)
         {
-            if (!model.TryGetInvocation(node, out var invocation, out var method))
+            if (model.TryGetInvocation(node, out var invocation, out var method))
             {
-                continue;
-            }
-
-            foreach (var optimization in Optimizations)
-            {
-                if (optimization.ProcessCallsite(model, method, invocation))
+                foreach (var optimization in Optimizations)
                 {
-                    break;
+                    if (optimization.ProcessCallsite(model, method, invocation))
+                    {
+                        break;
+                    }
                 }
             }
         }

@@ -351,7 +351,7 @@ public readonly partial struct U8String
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
         provider ??= CultureInfo.InvariantCulture;
-        
+
         // A few odd cases that may not be likely, but we can handle them for free so why not?
         if (typeof(T) == typeof(char))
         {
@@ -1949,7 +1949,7 @@ public readonly partial struct U8String
         var source = this;
 
         return !source.IsEmpty
-            ? U8Marshal.Slice(source, Ascii.Trim(source.UnsafeSpan))
+            ? U8Marshal.SliceUnsafe(source, Ascii.Trim(source.UnsafeSpan))
             : source;
     }
 
@@ -1970,7 +1970,7 @@ public readonly partial struct U8String
         var source = this;
 
         return !source.IsEmpty
-            ? U8Marshal.Slice(source, Ascii.TrimStart(source.UnsafeSpan))
+            ? U8Marshal.SliceUnsafe(source, Ascii.TrimStart(source.UnsafeSpan))
             : source;
     }
 
@@ -1991,7 +1991,7 @@ public readonly partial struct U8String
         var source = this;
 
         return !source.IsEmpty
-            ? U8Marshal.Slice(source, Ascii.TrimEnd(source.UnsafeSpan))
+            ? U8Marshal.SliceUnsafe(source, Ascii.TrimEnd(source.UnsafeSpan))
             : source;
     }
 

@@ -1,6 +1,4 @@
-using System.Collections.Immutable;
 using System.ComponentModel;
-using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
 
 using U8.Primitives;
@@ -9,7 +7,7 @@ using U8.Shared;
 namespace U8.InteropServices;
 
 /// <summary>
-/// Provides unsafe/unchecked methods for creating and manipulating <see cref="U8String"/> instances.
+/// Provides unsafe methods for creating and manipulating <see cref="U8String"/> instances.
 /// </summary>
 [EditorBrowsable(EditorBrowsableState.Advanced)]
 public static class U8Marshal
@@ -151,7 +149,7 @@ public static class U8Marshal
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Slice(U8String value, int offset) =>
+    public static U8String SliceUnsafe(U8String value, int offset) =>
         new(value._value, value.Offset + offset, value.Length - offset);
 
     /// <summary>
@@ -162,7 +160,7 @@ public static class U8Marshal
     /// <param name="offset">The offset into <paramref name="value"/> to start at.</param>
     /// <param name="length">The number of bytes to use from <paramref name="value"/> starting at <paramref name="offset"/>.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Slice(U8String value, int offset, int length) =>
+    public static U8String SliceUnsafe(U8String value, int offset, int length) =>
         new(value._value, value.Offset + offset, length);
 
     /// <summary>
@@ -172,7 +170,7 @@ public static class U8Marshal
     /// <param name="value">The <see cref="U8String"/> to create a substring from.</param>
     /// <param name="range">The range of the new substring.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Slice(U8String value, Range range)
+    public static U8String SliceUnsafe(U8String value, Range range)
     {
         var length = value.Length;
         var start = range.Start.GetOffset(length);
@@ -182,5 +180,5 @@ public static class U8Marshal
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String Slice(U8Source source, U8Range range) => new(source.Value, range);
+    public static U8String SliceUnsafe(U8Source source, U8Range range) => new(source.Value, range);
 }

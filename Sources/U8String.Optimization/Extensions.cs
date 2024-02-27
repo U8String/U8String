@@ -13,6 +13,16 @@ static class Extensions
         return compilation.Options.SourceReferenceResolver?.NormalizePath(path, baseFilePath: null);
     }
 
+    internal static bool IsReadOnlyByteSpan(this ITypeSymbol? type)
+    {
+        return type is INamedTypeSymbol
+        {
+            Name: "ReadOnlySpan",
+            ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true },
+            TypeArguments: [{ SpecialType: SpecialType.System_Byte }]
+        };
+    }
+
     internal static bool TryGetInvocation(
         this SemanticModel semanticModel,
         SyntaxNode node,

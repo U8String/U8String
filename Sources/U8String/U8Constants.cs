@@ -23,24 +23,40 @@ public static class U8Constants
     /// The newline separator string.
     /// </summary>
     /// <returns>"\r\n" on Windows, "\n" on Unix.</returns>
-    public static U8String NewLine => OperatingSystem.IsWindows() ? u8("\r\n") : u8("\n");
+    public static U8String NewLine
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => OperatingSystem.IsWindows() ? u8("\r\n") : u8("\n");
+    }
 
     /// <summary>
     /// The null byte string.
     /// </summary>
     /// <returns>"\0"</returns>
-    public static U8String NullByte => u8("\0");
+    public static U8String NullByte
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => u8("\0");
+    }
 
     /// <summary>
     /// Replacement character for invalid UTF-8 sequences.
     /// </summary>
     /// <returns>'�'</returns>
-    public static U8String ReplacementChar => u8("�");
+    public static U8String ReplacementChar
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => u8("�");
+    }
 
     /// <summary>
     /// ¯\_(ツ)_/¯
     /// </summary>
-    public static U8String AsciiShrug => u8("¯\\_(ツ)_/¯");
+    public static U8String AsciiShrug
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => u8("¯\\_(ツ)_/¯");
+    }
 
     internal readonly static byte[] EmptyBytes = new byte[0];
     internal readonly static char[] EmptyChars = new char[0];

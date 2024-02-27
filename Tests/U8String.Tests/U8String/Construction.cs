@@ -5,7 +5,7 @@ using System.Text;
 
 using Microsoft.Win32.SafeHandles;
 
-using U8.InteropServices;
+using U8.CompilerServices;
 using U8.IO;
 using U8.Primitives;
 

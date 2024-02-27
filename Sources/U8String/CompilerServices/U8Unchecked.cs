@@ -2,10 +2,12 @@ using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
+using U8.Abstractions;
+using U8.InteropServices;
 using U8.Primitives;
 using U8.Shared;
 
-namespace U8.InteropServices;
+namespace U8.CompilerServices;
 
 /// <summary>
 /// Provides a set of methods for working with UTF-8 strings without verifying if they are valid UTF-8 sequences.
@@ -89,6 +91,35 @@ public static class U8Unchecked
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String StripLineEndings(U8String source)
+    {
+        return U8Manipulation.StripLineEndings(source);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String LineEndingsToLF(U8String source)
+    {
+        return U8Manipulation.LineEndingsToLF(source);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String LineEndingsToCRLF(U8String source)
+    {
+        return U8Manipulation.LineEndingsToCRLF(source);
+    }
+
+    public static U8String LineEndingsToCustom(U8String source, byte lineEnding)
+    {
+        return U8Manipulation.LineEndingsToCustom(source, lineEnding);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String LineEndingsToCustom(U8String source, ReadOnlySpan<byte> lineEnding)
+    {
+        return U8Manipulation.LineEndingsToCustom(source, lineEnding);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Remove(U8String source, ReadOnlySpan<byte> value)
     {
         return U8Manipulation.Remove(source, value, validate: false);
@@ -107,15 +138,36 @@ public static class U8Unchecked
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8RefSplit<T> Split<T>(U8String source, ReadOnlySpan<byte> separator, T comparer)
+        where T : IU8Comparer
+    {
+        return new(source, separator, comparer);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8SplitPair SplitFirst(U8String source, ReadOnlySpan<byte> separator)
     {
         return source.SplitFirstUnchecked(separator);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8SplitPair SplitFirst<T>(U8String source, ReadOnlySpan<byte> separator, T comparer)
+        where T : IU8IndexOfOperator
+    {
+        return source.SplitFirstUnchecked(separator, comparer);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8SplitPair SplitLast(U8String source, ReadOnlySpan<byte> separator)
     {
         return source.SplitLastUnchecked(separator);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8SplitPair SplitLast<T>(U8String source, ReadOnlySpan<byte> separator, T comparer)
+        where T : IU8LastIndexOfOperator
+    {
+        return source.SplitLastUnchecked(separator, comparer);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

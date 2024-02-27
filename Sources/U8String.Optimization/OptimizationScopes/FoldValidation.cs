@@ -26,14 +26,12 @@ sealed class FoldValidation : IOptimizationScope
 {
     readonly List<Interceptor> _interceptors = [];
 
-    ITypeSymbol? ByteSpanType { get; set; }
-
     public string Name => "SkippedValidation";
 
     public IEnumerable<string> Imports =>
     [
         "System", "System.Runtime.CompilerServices",
-        "U8", "U8.InteropServices", "U8.Primitives"
+        "U8", "U8.CompilerServices", "U8.Primitives"
     ];
 
     public IEnumerable<string> Fields => [];
@@ -75,19 +73,11 @@ sealed class FoldValidation : IOptimizationScope
             return false;
         }
 
-        ByteSpanType ??= CreateByteSpanType(model.Compilation);
-
         var matched = 0;
         var args = invocation.ArgumentList.Arguments;
         foreach (var arg in args)
         {
-            var type = model.GetTypeInfo(arg.Expression).Type;
-            if (type == null)
-            {
-                continue;
-            }
-
-            if (SymbolEqualityComparer.Default.Equals(type, ByteSpanType))
+            if (model.GetTypeInfo(arg.Expression).Type.IsReadOnlyByteSpan())
             {
                 if (arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression))
                 {
@@ -111,13 +101,5 @@ sealed class FoldValidation : IOptimizationScope
             Callsites: [new Callsite(method, invocation)],
             Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(args.Count))});"));
         return true;
-    }
-
-    static ITypeSymbol? CreateByteSpanType(Compilation compilation)
-    {
-        var byteSpan = compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
-        var byteType = compilation.GetSpecialType(SpecialType.System_Byte);
-
-        return byteSpan?.Construct(byteType);
     }
 }

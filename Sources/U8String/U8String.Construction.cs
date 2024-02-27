@@ -372,54 +372,51 @@ public readonly partial struct U8String
             // This is written in the exact way which prevents the cached
             // literal from spilling to the stack. Codegen *must* be validated
             // whenever this method is changed.
-            if (typeof(T).IsValueType)
+            if (typeof(T) == typeof(byte))
             {
-                if (typeof(T) == typeof(byte))
-                {
-                    return U8Literals.GetByte((byte)(object)value);
-                }
-                else if (typeof(T) == typeof(sbyte))
-                {
-                    if (!U8Literals.Numbers.IsInRange((sbyte)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((sbyte)(object)value);
-                }
-                else if (typeof(T) == typeof(short))
-                {
-                    if (!U8Literals.Numbers.IsInRange((short)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((short)(object)value);
-                }
-                else if (typeof(T) == typeof(ushort))
-                {
-                    if (!U8Literals.Numbers.IsInRange((ushort)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((ushort)(object)value);
-                }
-                else if (typeof(T) == typeof(int))
-                {
-                    if (!U8Literals.Numbers.IsInRange((int)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((int)(object)value);
-                }
-                else if (typeof(T) == typeof(uint))
-                {
-                    if (!U8Literals.Numbers.IsInRange((nint)(uint)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((nint)(uint)(object)value);
-                }
-                else if (typeof(T) == typeof(long))
-                {
-                    if (!U8Literals.Numbers.IsInRange((nint)(long)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((nint)(long)(object)value);
-                }
-                else if (typeof(T) == typeof(ulong))
-                {
-                    if (!U8Literals.Numbers.IsInRange((nint)(ulong)(object)value))
-                        goto FormatNew;
-                    return U8Literals.Numbers.GetValueUnchecked((nint)(ulong)(object)value);
-                }
+                return U8Literals.GetByte((byte)(object)value);
+            }
+            else if (typeof(T) == typeof(sbyte))
+            {
+                if (!U8Literals.Numbers.IsInRange((sbyte)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((sbyte)(object)value);
+            }
+            else if (typeof(T) == typeof(short))
+            {
+                if (!U8Literals.Numbers.IsInRange((short)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((short)(object)value);
+            }
+            else if (typeof(T) == typeof(ushort))
+            {
+                if (!U8Literals.Numbers.IsInRange((ushort)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((ushort)(object)value);
+            }
+            else if (typeof(T) == typeof(int))
+            {
+                if (!U8Literals.Numbers.IsInRange((int)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((int)(object)value);
+            }
+            else if (typeof(T) == typeof(uint))
+            {
+                if (!U8Literals.Numbers.IsInRange((nint)(uint)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((nint)(uint)(object)value);
+            }
+            else if (typeof(T) == typeof(long))
+            {
+                if (!U8Literals.Numbers.IsInRange((nint)(long)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((nint)(long)(object)value);
+            }
+            else if (typeof(T) == typeof(ulong))
+            {
+                if (!U8Literals.Numbers.IsInRange((nint)(ulong)(object)value))
+                    goto FormatNew;
+                return U8Literals.Numbers.GetValueUnchecked((nint)(ulong)(object)value);
             }
 
         FormatNew:

@@ -19,6 +19,8 @@ public static unsafe class U8StringMarshalling
     [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(LightweightCStr))]
     public static class LightweightCStr
     {
+        // TODO: see if there's a way to create this on stack on occasion
+        // the callee writes to the address, messing up the null byte
         static byte Empty = (byte)'\0';
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

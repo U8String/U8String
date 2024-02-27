@@ -19,7 +19,7 @@ sealed partial class SpecializeDispatch : IOptimizationScope
     public IEnumerable<string> Imports =>
     [
         "System", "System.Runtime.CompilerServices",
-        "U8", "U8.InteropServices", "U8.Primitives"
+        "U8", "U8.CompilerServices", "U8.Primitives"
     ];
 
     public IEnumerable<string> Fields => [];

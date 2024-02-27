@@ -53,6 +53,16 @@ internal struct ArrayBuilder : IDisposable
         Unsafe.SkipInit(out _inline);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public ArrayBuilder(int initialCapacity)
+    {
+        Debug.Assert(initialCapacity > 0);
+
+        Unsafe.SkipInit(out _inline);
+        _array = initialCapacity <= InlineBuffer128.Length
+            ? null : ArrayPool<byte>.Shared.Rent(initialCapacity);
+    }
+
     public Span<byte> Written
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -131,6 +141,13 @@ internal struct ArrayBuilder : IDisposable
     {
         Free.AsRef() = value;
         BytesWritten++;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void WriteUnchecked(ReadOnlySpan<byte> span)
+    {
+        span.CopyToUnsafe(ref Free.AsRef());
+        BytesWritten += span.Length;
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
