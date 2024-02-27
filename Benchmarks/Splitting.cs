@@ -20,7 +20,7 @@ public class Splitting
     [GlobalSetup]
     public void Setup()
     {
-        Value = new U8String(ValueUtf16!);
+        Value = u8(ValueUtf16!);
     }
 
     [Benchmark]

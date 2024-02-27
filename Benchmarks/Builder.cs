@@ -2,7 +2,7 @@ using System.Text;
 
 using BenchmarkDotNet.Attributes;
 
-using U8.InteropServices;
+using U8.CompilerServices;
 using U8.Primitives;
 
 namespace U8.Benchmarks;

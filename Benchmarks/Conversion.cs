@@ -13,6 +13,7 @@ public class Conversion
     private readonly Guid Guid = Guid.NewGuid();
     private readonly string String = "Hello, World!";
     private readonly U8String U8Str = u8("Hello, World!");
+    private readonly char Char = 'Ї';
     private readonly int Int = 12345678;
     private readonly long Long = 1234567890123456789;
     private readonly double Double = 1234567890.1234567890;
@@ -48,6 +49,12 @@ public class Conversion
 
     [Benchmark]
     public string FromU8StringBase() => U8Str.ToString();
+
+    [Benchmark]
+    public U8String FromChar() => Char.ToU8String();
+
+    [Benchmark]
+    public string FromCharBase() => Char.ToString();
 
     [Benchmark]
     public U8String FromInt() => Int.ToU8String();
