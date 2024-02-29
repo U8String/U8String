@@ -67,33 +67,27 @@ public readonly partial struct U8String
     public struct Enumerator(U8String value) : IEnumerator<byte>
     {
         readonly byte[]? _value = value._value;
-        readonly int _offset = value.Offset;
-        readonly int _length = value.Length;
-        int _index = -1;
+        readonly int _end = value.End;
+        int _offset = value.Offset;
 
-        public readonly byte Current
-        {
-            [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => _value!.AsRef(_offset + _index);
-        }
+        public byte Current { readonly get; private set; }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            var index = _index + 1;
-            if ((uint)index < (uint)_length)
+            var offset = _offset;
+            if (offset < _end)
             {
-                _index = index;
+                Current = _value!.AsRef(offset);
+                _offset = offset + 1;
                 return true;
             }
 
             return false;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Reset() => _index = -1;
-
         readonly object IEnumerator.Current => Current;
+        readonly void IEnumerator.Reset() => throw new NotSupportedException();
         readonly void IDisposable.Dispose() { }
     }
 }

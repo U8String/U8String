@@ -300,11 +300,20 @@ public /* ref */ struct InterpolatedU8StringHandler
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AppendBytesInlined(ReadOnlySpan<byte> bytes)
     {
+        if (bytes.Length is 0) return;
     Retry:
         var free = Free;
         if (free.Length >= bytes.Length)
         {
-            bytes.CopyToUnsafe(ref free.AsRef());
+            if (bytes.Length is 1)
+            {
+                free[0] = bytes[0];
+            }
+            else
+            {
+                bytes.CopyToUnsafe(ref free.AsRef());
+            }
+
             BytesWritten += bytes.Length;
             return;
         }

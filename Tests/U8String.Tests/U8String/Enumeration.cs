@@ -63,6 +63,15 @@ public class Enumeration
         Assert.Equal(bytes, u8str);
     }
 
+    [Fact]
+    public void ByteEnumerator_ReturnsDefaultCurrentWhenDefault()
+    {
+        var enumerator = default(U8String.Enumerator);
+
+        Assert.Equal(default, enumerator.Current);
+        Assert.False(enumerator.MoveNext());
+    }
+
     [Theory]
     [MemberData(nameof(ValidStrings))]
     public void U8Chars_CountHasCorrectValue(ReferenceText testCase)
