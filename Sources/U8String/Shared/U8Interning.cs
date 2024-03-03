@@ -8,6 +8,7 @@ using U8.Primitives;
 
 namespace U8.Shared;
 
+// TODO: Consider refactoring or removing altogether
 // Contract: only not-empty strings are interned.
 static class U8Interning
 {

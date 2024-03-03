@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace U8.Primitives;
 
@@ -14,6 +15,7 @@ namespace U8.Primitives;
 /// </remarks>
 /// <seealso cref="U8Source"/>
 /// <seealso cref="U8String.Source"/>
+[StructLayout(LayoutKind.Sequential)]
 public readonly struct U8Range : IEquatable<U8Range>
 {
     internal readonly int Offset;

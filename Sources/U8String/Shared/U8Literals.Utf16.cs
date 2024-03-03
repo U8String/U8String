@@ -30,7 +30,7 @@ static partial class U8Literals
             }
 
             var length = Encoding.UTF8.GetByteCount(value);
-            bytes = new byte[length + 1];
+            bytes = GC.AllocateArray<byte>(length + 1, pinned: true);
 
             var result = Utf8.FromUtf16(
                source: value,

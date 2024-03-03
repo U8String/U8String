@@ -70,29 +70,20 @@ public interface IU8CaseConverter
     int ToUpper(ReadOnlySpan<byte> source, Span<byte> destination);
 }
 
-public interface IEnumerable<T, TEnumerator> : IEnumerable<T>
+internal interface IEnumerable<T, TEnumerator> : IEnumerable<T>
     where TEnumerator : struct, IEnumerator<T>
 {
     new TEnumerator GetEnumerator();
 }
 
-public interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
+internal interface IU8Enumerable<TEnumerator> : IEnumerable<U8String, TEnumerator>
     where TEnumerator : struct, IU8Enumerator;
 
-public interface IU8Enumerator : IEnumerator<U8String>;
+internal interface IU8Enumerator : IEnumerator<U8String>;
 
 public interface IU8Formattable : IUtf8SpanFormattable
 {
-    U8String ToU8String(ReadOnlySpan<char> format = default, IFormatProvider? provider = null);
-
-    bool IUtf8SpanFormattable.TryFormat(
-        Span<byte> utf8Destination,
-        out int bytesWritten,
-        ReadOnlySpan<char> format,
-        IFormatProvider? provider)
-    {
-        throw new NotSupportedException();
-    }
+    U8String ToU8String(ReadOnlySpan<char> format, IFormatProvider? provider);
 }
 
 internal interface IU8Split<T> : IEnumerable<U8String>
@@ -109,4 +100,9 @@ internal interface IU8SliceCollection : ICollection<U8String>
     // the .Source of U8Slices is U8String but I'm concerned that it might
     // be confusing.
     U8String Value { get; }
+}
+
+internal interface IU8Buffer
+{
+    ReadOnlySpan<byte> Value { get; }
 }

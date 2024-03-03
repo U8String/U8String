@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.ComponentModel;
 
 namespace U8;
 
@@ -17,13 +18,52 @@ public static class U8Console
         Out.Write(value);
     }
 
+    public static void Write(ReadOnlySpan<byte> value)
+    {
+        U8String.Validate(value);
+        Out.Write(value);
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static void Write(ref InterpolatedU8StringHandler handler)
     {
         Out.Write(handler.Written);
         handler.Dispose();
     }
 
+    public static void Write<T>(T value)
+        where T : IUtf8SpanFormattable
+    {
+        var handler = new InterpolatedU8StringHandler();
+        handler.AppendFormatted(value);
+        Out.Write(handler.Written);
+    }
+
+    public static void WriteLine()
+    {
+        Out.Write(NewLine);
+    }
+
     public static void WriteLine(U8String value)
+    {
+        WriteLineUnchecked(value);
+    }
+
+    public static void WriteLine(ReadOnlySpan<byte> value)
+    {
+        U8String.Validate(value);
+        WriteLineUnchecked(value);
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static void WriteLine(ref InterpolatedU8StringHandler handler)
+    {
+        handler.AppendBytesInlined(NewLine);
+        Out.Write(handler.Written);
+        handler.Dispose();
+    }
+
+    static void WriteLineUnchecked(ReadOnlySpan<byte> value)
     {
         byte[]? rented = null;
         Unsafe.SkipInit(out InlineBuffer128 stack);
@@ -34,7 +74,7 @@ public static class U8Console
         var buffer = length <= InlineBuffer128.Length
             ? stack : (rented = ArrayPool<byte>.Shared.Rent(length)).AsSpan();
 
-        value.AsSpan().CopyToUnsafe(ref buffer.AsRef());
+        value.CopyToUnsafe(ref buffer.AsRef());
         if (OperatingSystem.IsWindows())
         {
             buffer.AsRef(value.Length) = (byte)'\r';
@@ -51,12 +91,5 @@ public static class U8Console
         {
             ArrayPool<byte>.Shared.Return(rented);
         }
-    }
-
-    public static void WriteLine(ref InterpolatedU8StringHandler handler)
-    {
-        handler.AppendBytesInlined(NewLine);
-        Out.Write(handler.Written);
-        handler.Dispose();
     }
 }

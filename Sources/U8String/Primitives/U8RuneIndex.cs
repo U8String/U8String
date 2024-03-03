@@ -1,12 +1,16 @@
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace U8.Primitives;
 
+[StructLayout(LayoutKind.Sequential)]
 public readonly record struct U8RuneIndex : IEquatable<U8RuneIndex>
 {
     public Rune Value { get; }
     public int Offset { get; }
     public int Length { get; }
+
+    long Packed => Unsafe.As<U8RuneIndex, long>(ref Unsafe.AsRef(in this));
 
     public U8RuneIndex(Rune value, int offset)
     {
@@ -49,10 +53,7 @@ public readonly record struct U8RuneIndex : IEquatable<U8RuneIndex>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8RuneIndex other)
     {
-        var (value, offset) = this;
-        var (otherValue, otherOffset) = other;
-
-        return value == otherValue && offset == otherOffset;
+        return Packed == other.Packed;
     }
 
     public static implicit operator Rune(U8RuneIndex index) => index.Value;
@@ -61,6 +62,6 @@ public readonly record struct U8RuneIndex : IEquatable<U8RuneIndex>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public override int GetHashCode()
     {
-        return Unsafe.BitCast<(Rune, int), long>((Value, Offset)).GetHashCode();
+        return Packed.GetHashCode();
     }
 }

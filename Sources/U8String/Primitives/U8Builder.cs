@@ -2,9 +2,11 @@ using System.ComponentModel;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
+using U8.Abstractions;
+
 namespace U8.Primitives;
 
-public struct U8Builder
+public struct U8Builder : IU8Buffer
 {
     // TODO: Turns out ArrayBufferWriter kind of sucks!
     // Replace it with a good custom implementation.
@@ -29,9 +31,12 @@ public struct U8Builder
 
     public readonly ReadOnlySpan<byte> Written => Handler.Written;
 
+    readonly ReadOnlySpan<byte> IU8Buffer.Value => Written;
+
     public U8Builder()
     {
         _instance = Interlocked.Exchange(ref _tlv, null) ?? new();
+        Handler.EnsureInitialized();
     }
 
     public U8Builder(int capacity)
@@ -39,6 +44,7 @@ public struct U8Builder
         ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 0);
 
         _instance = Interlocked.Exchange(ref _tlv, null) ?? new();
+        Handler.EnsureInitialized();
         Handler.EnsureCapacity(capacity);
     }
 

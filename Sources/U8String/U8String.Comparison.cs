@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.IO.Hashing;
 
 using U8.Abstractions;
@@ -221,6 +222,7 @@ public readonly partial struct U8String
     /// <see langword="true"/> if this instance and <paramref name="other"/> are equal byte sequences;
     /// otherwise, <see langword="false"/>.
     /// </returns>
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public bool Equals(U8String other)
     {

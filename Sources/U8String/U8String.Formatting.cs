@@ -1,5 +1,4 @@
 using System.Buffers;
-using System.Collections.Concurrent;
 using System.Collections.Immutable;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -21,7 +20,7 @@ namespace U8;
 public /* ref */ struct InterpolatedU8StringHandler
 {
     InlineBuffer128 _inline;
-    readonly IFormatProvider? _provider;
+    IFormatProvider? _provider;
     byte[]? _rented;
 
     public int BytesWritten { get; private set; }
@@ -201,7 +200,7 @@ public /* ref */ struct InterpolatedU8StringHandler
         else if (typeof(T).IsEnum)
         {
 #nullable disable
-            var formattable = new EnumU8StringFormat<T>(value);
+            var formattable = new U8EnumFormattable<T>(value);
 #nullable restore
             if (formattable.TryFormat(Free, out var written))
             {
@@ -217,6 +216,11 @@ public /* ref */ struct InterpolatedU8StringHandler
         else if (typeof(T) == typeof(U8String))
         {
             AppendFormatted((U8String)(object)value!);
+            return;
+        }
+        else if (typeof(T) == typeof(U8Builder))
+        {
+            AppendBytes(((U8Builder)(object)value!).Written);
             return;
         }
         else if (typeof(T) == typeof(U8String?))
@@ -322,6 +326,11 @@ public /* ref */ struct InterpolatedU8StringHandler
         goto Retry;
     }
 
+    internal void EnsureInitialized()
+    {
+        _provider ??= CultureInfo.InvariantCulture;
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void EnsureCapacity(int length)
     {
@@ -418,72 +427,6 @@ public /* ref */ struct InterpolatedU8StringHandler
             $"\nCannot append a value of type '{typeof(T)}' which does not implement '{typeof(IUtf8SpanFormattable)}' or is not '{typeof(Enum)}' or '{typeof(byte[])}'.");
     }
 }
-
-readonly struct EnumU8StringFormat<T>(T value) // : IUtf8SpanFormattable
-    where T : notnull //, struct, Enum
-{
-    readonly static ConcurrentDictionary<T, byte[]> Cache = [];
-
-    // This counter can be very imprecise but that's acceptable, we only
-    // need to limit the cache size to some reasonable amount, tracking
-    // the exact number of entries is not necessary.
-    static uint Count;
-    const int MaxCapacity = 1024;
-
-    public bool TryFormat(Span<byte> destination, out int bytesWritten)
-    {
-        var bytes = GetBytes(value);
-        var span = bytes.SliceUnsafe(0, bytes.Length - 1);
-        if (destination.Length >= span.Length)
-        {
-            span.CopyToUnsafe(ref destination.AsRef());
-            bytesWritten = span.Length;
-            return true;
-        }
-
-        bytesWritten = 0;
-        return false;
-    }
-
-    public U8String ToU8String()
-    {
-        var bytes = GetBytes(value);
-        return new(bytes, 0, bytes.Length - 1);
-    }
-
-    public static implicit operator EnumU8StringFormat<T>(T value) => new(value);
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static byte[] GetBytes(T value)
-    {
-        if (Cache.TryGetValue(value, out var cached))
-        {
-            return cached;
-        }
-
-        return Add(value);
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    static byte[] Add(T value)
-    {
-        var utf16 = value.ToString();
-        var length = Encoding.UTF8.GetByteCount(utf16!);
-        var bytes = new byte[length + 1];
-
-        Encoding.UTF8.GetBytes(utf16, bytes);
-
-        var count = Count;
-        if (count <= MaxCapacity)
-        {
-            Count = count + 1;
-            Cache[value] = bytes;
-        }
-
-        return bytes;
-    }
-}
-
 public readonly partial struct U8String
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
