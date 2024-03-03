@@ -181,6 +181,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
     }
 
     public static implicit operator U8EnumFormattable<T>(T value) => new(value);
+    public static implicit operator T(U8EnumFormattable<T> value) => value.Value;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static byte[] GetBytes(T value)
