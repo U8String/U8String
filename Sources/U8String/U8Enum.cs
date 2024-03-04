@@ -252,7 +252,7 @@ public static class U8EnumExtensions
             return new(array, array.Length - 1, neverEmpty: true);
         }
 
-        return U8EnumFormattable<T>.FormatUnderlying(value);
+        return U8EnumFormattable<T>.ToU8StringUndefined(value);
     }
 }
 
@@ -307,6 +307,17 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
 
         return FormatNew(Value);
     }
+    
+    internal static U8String ToU8StringUndefined(T value)
+    {
+        if (Cache.TryGetValue(value, out var bytes))
+        {
+            var array = bytes.Array;
+            return new(array, array.Length - 1, neverEmpty: true);
+        }
+
+        return FormatUnderlying(value);
+    }
 
     public static implicit operator U8EnumFormattable<T>(T value) => new(value);
     public static implicit operator T(U8EnumFormattable<T> value) => value.Value;
@@ -319,7 +330,6 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
             throw new ArgumentException($"{typeof(T)} is not an enum type.", nameof(value));
         }
 
-        // TODO: This path is really fucking slow, let's tune it back to previous cached approach
         var utf16 = Enum.GetName(typeof(T), value);
         if (utf16 != null)
         {
@@ -337,25 +347,25 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
         return FormatUnderlying(value);
     }
 
-    internal static U8String FormatUnderlying(T value)
+    static U8String FormatUnderlying(T value)
     {
         Unsafe.SkipInit(out U8String formatted);
         var type = typeof(T).GetEnumUnderlyingType();
         
-        if (type == typeof(byte)) formatted = Unsafe.As<T, byte>(ref value).ToU8String();
-        else if (type == typeof(sbyte)) formatted = Unsafe.As<T, sbyte>(ref value).ToU8String();
-        else if (type == typeof(short)) formatted = Unsafe.As<T, short>(ref value).ToU8String();
-        else if (type == typeof(ushort)) formatted = Unsafe.As<T, ushort>(ref value).ToU8String();
-        else if (type == typeof(int)) formatted = Unsafe.As<T, int>(ref value).ToU8String();
-        else if (type == typeof(uint)) formatted = Unsafe.As<T, uint>(ref value).ToU8String();
-        else if (type == typeof(long)) formatted = Unsafe.As<T, long>(ref value).ToU8String();
-        else if (type == typeof(ulong)) formatted = Unsafe.As<T, ulong>(ref value).ToU8String();
-        else if (type == typeof(nint)) formatted = Unsafe.As<T, nint>(ref value).ToU8String();
-        else if (type == typeof(nuint)) formatted = Unsafe.As<T, nuint>(ref value).ToU8String();
+        if (type == typeof(byte)) formatted = U8String.Create(Unsafe.As<T, byte>(ref value));
+        else if (type == typeof(sbyte)) formatted = U8String.Create(Unsafe.As<T, sbyte>(ref value));
+        else if (type == typeof(short)) formatted = U8String.Create(Unsafe.As<T, short>(ref value));
+        else if (type == typeof(ushort)) formatted = U8String.Create(Unsafe.As<T, ushort>(ref value));
+        else if (type == typeof(int)) formatted = U8String.Create(Unsafe.As<T, int>(ref value));
+        else if (type == typeof(uint)) formatted = U8String.Create(Unsafe.As<T, uint>(ref value));
+        else if (type == typeof(long)) formatted = U8String.Create(Unsafe.As<T, long>(ref value));
+        else if (type == typeof(ulong)) formatted = U8String.Create(Unsafe.As<T, ulong>(ref value));
+        else if (type == typeof(nint)) formatted = U8String.Create(Unsafe.As<T, nint>(ref value));
+        else if (type == typeof(nuint)) formatted = U8String.Create(Unsafe.As<T, nuint>(ref value));
         // Cursed enum types
-        else if (type == typeof(float)) formatted = Unsafe.As<T, float>(ref value).ToU8String();
-        else if (type == typeof(double)) formatted = Unsafe.As<T, double>(ref value).ToU8String();
-        else if (type == typeof(char)) formatted = Unsafe.As<T, char>(ref value).ToU8String();
+        else if (type == typeof(float)) formatted = U8String.Create(Unsafe.As<T, float>(ref value));
+        else if (type == typeof(double)) formatted = U8String.Create(Unsafe.As<T, double>(ref value));
+        else if (type == typeof(char)) formatted = U8String.Create(Unsafe.As<T, char>(ref value));
         else ThrowHelpers.Unreachable();
 
         var itemCount = UndefinedItemCount;
