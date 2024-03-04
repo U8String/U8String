@@ -52,7 +52,6 @@ sealed class FoldConversions : IOptimizationScope
         {
             ("U8String", "Create") => true,
             ("U8String", "CreateLossy") => true,
-            ("U8String", "CreateInterned") => true,
             ("U8String", "FromAscii") => true,
             ("U8String", "FromLiteral") => true,
 

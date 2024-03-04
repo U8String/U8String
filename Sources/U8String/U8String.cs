@@ -178,6 +178,8 @@ public readonly partial struct U8String :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
+            Debug.Assert(_value is null || (uint)(Offset + Length) <= (uint)_value.Length);
+
             ref var reference = ref Unsafe.NullRef<byte>();
             var (value, offset) = (_value, (nint)(uint)Offset);
             if (value != null)
@@ -196,8 +198,13 @@ public readonly partial struct U8String :
     internal ref byte UnsafeRef
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => ref Unsafe.Add(
-            ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset);
+        get
+        {
+            Debug.Assert(_value is null || (uint)(Offset + Length) <= (uint)_value.Length);
+
+            return ref Unsafe.Add(
+                ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset);
+        }
     }
 
     /// <summary>
@@ -206,8 +213,14 @@ public readonly partial struct U8String :
     internal ReadOnlySpan<byte> UnsafeSpan
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => MemoryMarshal.CreateReadOnlySpan(
-            ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset), Length);
+        get
+        {
+            Debug.Assert(_value is null || (uint)(Offset + Length) <= (uint)_value.Length);
+
+            return MemoryMarshal.CreateReadOnlySpan(
+                ref Unsafe.Add(ref MemoryMarshal.GetArrayDataReference(_value!),
+                (nint)(uint)Offset), Length);
+        }
     }
 
     /// <summary>
@@ -216,6 +229,8 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal ref byte UnsafeRefAdd(int index)
     {
+        Debug.Assert(_value is null || (uint)(Offset + Length) <= (uint)_value.Length);
+
         return ref Unsafe.Add(
             ref MemoryMarshal.GetArrayDataReference(_value!), (nint)(uint)Offset + (nint)(uint)index);
     }
@@ -227,12 +242,7 @@ public readonly partial struct U8String :
     public bool IsAscii()
     {
         var deref = this;
-        if (!deref.IsEmpty)
-        {
-            return Ascii.IsValid(deref.UnsafeSpan);
-        }
-
-        return true;
+        return deref.IsEmpty || Ascii.IsValid(deref.UnsafeSpan);
     }
 
     /// <summary>
@@ -283,54 +293,6 @@ public readonly partial struct U8String :
     internal static void Validate(ReadOnlySpan<byte> value)
     {
         if (!IsValid(value))
-        {
-            ThrowHelpers.InvalidUtf8();
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static void ValidatePossibleConstant_Obsolete(ReadOnlySpan<byte> value)
-    {
-        if (value.Length <= 0)
-        {
-            return;
-        }
-        else if (value.Length is 1)
-        {
-            if (value.AsRef() > 0x7F)
-            {
-                ThrowHelpers.InvalidUtf8();
-            }
-
-            return;
-        }
-        else if (value.Length is 2)
-        {
-            var b01 = value.AsRef().Cast<byte, ushort>();
-            if ((b01 & 0x8080) is 0)
-            {
-                return;
-            }
-        }
-        else if (value.Length is 3)
-        {
-            var b01 = value.AsRef().Cast<byte, ushort>();
-            var b2 = value.AsRef(2);
-            if ((b01 & 0x8080) is 0 && b2 < 0x80)
-            {
-                return;
-            }
-        }
-        else if (value.Length is 4)
-        {
-            var b0123 = value.AsRef().Cast<byte, uint>();
-            if ((b0123 & 0x80808080) is 0)
-            {
-                return;
-            }
-        }
-
-        if (!Utf8.IsValid(value))
         {
             ThrowHelpers.InvalidUtf8();
         }

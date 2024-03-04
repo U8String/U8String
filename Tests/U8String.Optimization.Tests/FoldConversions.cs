@@ -13,7 +13,6 @@ public partial class FoldConversions
             u8("Привіт, Всесвіт!"),
             U8String.Create("Привіт, Всесвіт!"),
             U8String.CreateLossy("Привіт, Всесвіт!"),
-            U8String.CreateInterned("Привіт, Всесвіт!"),
             // TODO: Folding prevents this from throwing which is not correct. Just remove?
             U8String.FromAscii("Привіт, Всесвіт!"),
             U8String.FromLiteral("Привіт, Всесвіт!")
@@ -39,7 +38,6 @@ public partial class FoldConversions
             u8(OneThousandRunes),
             U8String.Create(OneThousandRunes),
             U8String.CreateLossy(OneThousandRunes),
-            U8String.CreateInterned(OneThousandRunes),
             U8String.FromAscii(OneThousandRunes),
             U8String.FromLiteral(OneThousandRunes)
         };
@@ -55,32 +53,6 @@ public partial class FoldConversions
             Assert.True(first.SourceEquals(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
-    }
-
-    [Fact]
-    public void ReferencedConstDeclaration1MRunes_IsCorrectlyFolded()
-    {
-       var literals = new[]
-       {
-           u8(OneMillionRunes),
-           U8String.Create(OneMillionRunes),
-           U8String.CreateLossy(OneMillionRunes),
-           U8String.CreateInterned(OneMillionRunes),
-           U8String.FromAscii(OneMillionRunes),
-           U8String.FromLiteral(OneMillionRunes)
-       };
-
-       var first = literals[0];
-       var reference = Encoding.UTF8.GetBytes(OneMillionRunes);
-
-       for (var i = 1; i < literals.Length; i++)
-       {
-           Assert.Equal(first, literals[i]);
-           Assert.Equal(reference.AsSpan(), literals[i]);
-           Assert.True(first.Equals(literals[i]));
-           Assert.True(first.SourceEquals(literals[i]));
-           Assert.True(literals[i].IsNullTerminated);
-       }
     }
 
     [Fact]

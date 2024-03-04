@@ -1,61 +1,72 @@
 using System.Collections.Immutable;
+using System.Net;
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 namespace U8.Benchmarks;
 
 [ShortRunJob]
 [MemoryDiagnoser]
-[DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
+// [DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
 public class Enums
 {
-    readonly DayOfWeek DayOfWeek = DayOfWeek.Saturday;
-    readonly U8String DayOfWeekValue = DayOfWeek.Saturday.ToU8String();
-    readonly string DayOfWeekValueU16 = nameof(DayOfWeek.Saturday);
-    readonly U8String DayOfWeekCapsValue = DayOfWeek.Saturday.ToU8String().ToUpperAscii();
-    readonly string DayOfWeekCapsValueU16 = nameof(DayOfWeek.Saturday).ToUpper();
-    readonly U8String DayOfWeekNotDefined = ((DayOfWeek)1337).ToU8String();
-    readonly string DayOfWeekNotDefinedU16 = ((DayOfWeek)1337).ToString();
+    readonly HttpStatusCode EnumValue = HttpStatusCode.BadRequest;
+    readonly U8String HttpStatusCodeValue = HttpStatusCode.BadRequest.ToU8String();
+    readonly string HttpStatusCodeValueU16 = nameof(HttpStatusCode.BadRequest);
+    readonly U8String HttpStatusCodeCapsValue = HttpStatusCode.BadRequest.ToU8String().ToUpperAscii();
+    readonly string HttpStatusCodeCapsValueU16 = nameof(HttpStatusCode.BadRequest).ToUpper();
+    readonly U8String HttpStatusCodeNotDefined = ((HttpStatusCode)1337).ToU8String();
+    readonly string HttpStatusCodeNotDefinedU16 = ((HttpStatusCode)1337).ToString();
 
     [Benchmark]
-    public ImmutableArray<U8String> GetNames() => U8Enum.GetNames<DayOfWeek>();
+    public ImmutableArray<U8String> GetNames() => U8Enum.GetNames<HttpStatusCode>();
 
     [Benchmark]
-    public string[] GetNamesU16() => Enum.GetNames<DayOfWeek>();
+    public string[] GetNamesU16() => Enum.GetNames<HttpStatusCode>();
 
     [Benchmark]
-    public ImmutableArray<DayOfWeek> GetValues() => U8Enum.GetValues<DayOfWeek>();
+    public ImmutableArray<HttpStatusCode> GetValues() => U8Enum.GetValues<HttpStatusCode>();
 
     [Benchmark]
-    public DayOfWeek[] GetValuesU16() => Enum.GetValues<DayOfWeek>();
+    public HttpStatusCode[] GetValuesU16() => Enum.GetValues<HttpStatusCode>();
 
     [Benchmark]
-    public DayOfWeek Parse() => U8Enum.Parse<DayOfWeek>(DayOfWeekValue);
+    public HttpStatusCode Parse() => U8Enum.Parse<HttpStatusCode>(HttpStatusCodeValue);
 
     [Benchmark]
-    public DayOfWeek ParseU16() => Enum.Parse<DayOfWeek>(DayOfWeekValueU16);
+    public HttpStatusCode ParseU16() => Enum.Parse<HttpStatusCode>(HttpStatusCodeValueU16);
 
     [Benchmark]
-    public DayOfWeek ParseIgnoreCase() => U8Enum.Parse<DayOfWeek>(DayOfWeekCapsValue, ignoreCase: true);
+    public HttpStatusCode ParseIgnoreCase() => U8Enum.Parse<HttpStatusCode>(HttpStatusCodeCapsValue, ignoreCase: true);
 
     [Benchmark]
-    public DayOfWeek ParseIgnoreCaseU16() => Enum.Parse<DayOfWeek>(DayOfWeekCapsValueU16, ignoreCase: true);
+    public HttpStatusCode ParseIgnoreCaseU16() => Enum.Parse<HttpStatusCode>(HttpStatusCodeCapsValueU16, ignoreCase: true);
 
     [Benchmark]
-    public DayOfWeek ParseRare() => U8Enum.Parse<DayOfWeek>(DayOfWeekNotDefined);
+    public HttpStatusCode ParseRare() => U8Enum.Parse<HttpStatusCode>(HttpStatusCodeNotDefined);
 
     [Benchmark]
-    public DayOfWeek ParseRareU16() => Enum.Parse<DayOfWeek>(DayOfWeekNotDefinedU16);
+    public HttpStatusCode ParseRareU16() => Enum.Parse<HttpStatusCode>(HttpStatusCodeNotDefinedU16);
 
     [Benchmark]
-    public U8String Format() => DayOfWeek.ToU8String();
+    public U8String? GetName() => U8Enum.GetName(EnumValue);
 
     [Benchmark]
-    public string FormatU16() => DayOfWeek.ToString();
+    public U8String GetNameConstantContiguous() => DayOfWeek.Saturday.ToU8String();
 
     [Benchmark]
-    public U8String FormatRare() => ((DayOfWeek)1337).ToU8String();
+    public string? GetNameU16() => Enum.GetName(EnumValue);
 
     [Benchmark]
-    public string FormatRareU16() => ((DayOfWeek)1337).ToString();
+    public U8String ToStringDefined() => EnumValue.ToU8String();
+
+    [Benchmark]
+    public string ToStringDefinedU16() => EnumValue.ToString();
+
+    [Benchmark]
+    public U8String ToStringUndefined() => ((HttpStatusCode)1337).ToU8String();
+
+    [Benchmark]
+    public string ToStringUndefinedU16() => ((HttpStatusCode)1337).ToString();
 }

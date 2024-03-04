@@ -1,7 +1,10 @@
 using System.Collections.Concurrent;
 using System.Collections.Frozen;
 using System.Collections.Immutable;
+using System.Diagnostics;
 using System.Globalization;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 using U8.Abstractions;
@@ -9,23 +12,107 @@ using U8.Shared;
 
 namespace U8;
 
-#pragma warning disable RCS1003 // Use braces. Why: terseness
 public static class U8Enum
 {
-    static class Lookup<T> where T : struct, Enum
+    internal static class EnumInfo<T> where T : struct, Enum
     {
-        public static readonly FrozenDictionary<T, U8String> Names =
-            Enum.GetValues<T>().ToFrozenDictionary(key => key, ToU8String);
-        public static readonly FrozenDictionary<U8String, T> Values =
-            Enum.GetValues<T>().ToFrozenDictionary(ToU8String);
-    }
+        internal static readonly T[] Values = Enum.GetValues<T>();
 
-    static class CaseInsensitiveLookup<T> where T : struct, Enum
-    {
-        // TODO: Switch to ordinal ignore case once it is implemented
-        // TODO: This is slightly slower than Enum.Parse(..., ignoreCase: true), is it worth to special case it?
-        public static readonly FrozenDictionary<U8String, T> Values =
-            Enum.GetValues<T>().ToFrozenDictionary(ToU8String, U8Comparison.AsciiIgnoreCase);
+        internal static readonly U8String[] Names = Enum
+            .GetValues<T>()
+            .Select(GetAndCacheNameBytes)
+            .Select(bytes => new U8String(bytes, 0, bytes.Length - 1))
+            .ToArray();
+
+        internal static readonly bool IsContiguousFromZero = CheckContiguousFromZero();
+
+        internal static readonly FrozenDictionary<T, ByteArray> NameLookup =
+            Values.Zip(Names, (v, n) => KeyValuePair.Create(v, new ByteArray(n._value!))).ToFrozenDictionary();
+
+        internal static readonly FrozenDictionary<U8String, T> ValueLookup =
+            Values.Zip(Names, (v, n) => KeyValuePair.Create(n, v)).ToFrozenDictionary();
+
+        internal static readonly FrozenDictionary<U8String, T> CaseInsensitiveValueLookup =
+            ValueLookup.ToFrozenDictionary(U8Comparison.AsciiIgnoreCase);
+
+        static byte[] GetAndCacheNameBytes(T value)
+        {
+            var utf16 = Enum.GetName(value) ?? value.ToString()!;
+            var length = Encoding.UTF8.GetByteCount(utf16);
+            var bytes = GC.AllocateArray<byte>(length + 1, pinned: true);
+            if (bytes.Length is 1)
+            {
+                throw new ArgumentException("Enum has a member with an empty name. This is not supported.");
+            }
+            Encoding.UTF8.GetBytes(utf16, bytes);
+            // Make sure to deduplicate the cached enum name literals, overwrite the existing entry if it exists
+            return U8EnumFormattable<T>.Cache[value] = bytes;
+        }
+
+        static bool CheckContiguousFromZero()
+        {
+            var type = typeof(T).GetEnumUnderlyingType();
+            if (type == typeof(byte)) return CheckUnderlying<byte>();
+            if (type == typeof(sbyte)) return CheckUnderlying<sbyte>();
+            if (type == typeof(short)) return CheckUnderlying<short>();
+            if (type == typeof(ushort)) return CheckUnderlying<ushort>();
+            if (type == typeof(int)) return CheckUnderlying<int>();
+            if (type == typeof(uint)) return CheckUnderlying<uint>();
+            if (type == typeof(long)) return CheckUnderlying<long>();
+            if (type == typeof(ulong)) return CheckUnderlying<ulong>();
+            if (type == typeof(nint)) return CheckUnderlying<nint>();
+            if (type == typeof(nuint)) return CheckUnderlying<nuint>();
+
+            return false;
+
+            static bool CheckUnderlying<U>() where U : struct, IBinaryInteger<U>
+            {
+                var values = Values;
+                var expected = U.Zero;
+                foreach (var value in values)
+                {
+                    var underlying = Unsafe.BitCast<T, U>(value);
+                    if (underlying != expected)
+                    {
+                        return false;
+                    }
+
+                    expected++;
+                }
+
+                return true;
+            }
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal static bool TryGetNameContiguous(T value, out U8String name)
+        {
+            Unsafe.SkipInit(out name);
+            Debug.Assert(IsContiguousFromZero);
+
+            var index = 0;
+            var names = Names;
+            var type = typeof(T).GetEnumUnderlyingType();
+
+            if (type == typeof(byte)) index = Unsafe.As<T, byte>(ref value);
+            if (type == typeof(sbyte)) index = Unsafe.As<T, sbyte>(ref value);
+            if (type == typeof(short)) index = Unsafe.As<T, short>(ref value);
+            if (type == typeof(ushort)) index = Unsafe.As<T, ushort>(ref value);
+            if (type == typeof(int)) index = Unsafe.As<T, int>(ref value);
+            if (type == typeof(uint)) index = (int)Unsafe.As<T, uint>(ref value);
+            if (type == typeof(long)) index = (int)Unsafe.As<T, long>(ref value);
+            if (type == typeof(ulong)) index = (int)Unsafe.As<T, ulong>(ref value);
+            if (type == typeof(nint)) index = (int)Unsafe.As<T, nint>(ref value);
+            if (type == typeof(nuint)) index = (int)Unsafe.As<T, nuint>(ref value);
+
+            if ((uint)index < (uint)names.Length)
+            {
+                name = names.AsRef(index);
+                return true;
+            }
+
+            return false;
+        }
     }
 
     public static U8EnumFormattable<T> AsFormattable<T>(T value) where T : struct, Enum
@@ -33,21 +120,39 @@ public static class U8Enum
         return new(value);
     }
 
+    public static U8String? GetName<T>(T value) where T : struct, Enum
+    {
+        if (EnumInfo<T>.IsContiguousFromZero)
+        {
+            if (EnumInfo<T>.TryGetNameContiguous(value, out var name))
+            {
+                return name;
+            }
+        }
+        else if (EnumInfo<T>.NameLookup.TryGetValue(value, out var bytes))
+        {
+            var array = bytes.Array;
+            return new(array, array.Length - 1, neverEmpty: true);
+        }
+
+        return null;
+    }
+
     public static ImmutableArray<U8String> GetNames<T>() where T : struct, Enum
     {
-        return Lookup<T>.Values.Keys;
+        return ImmutableCollectionsMarshal.AsImmutableArray(EnumInfo<T>.Names);
     }
 
     public static ImmutableArray<T> GetValues<T>() where T : struct, Enum
     {
-        return Lookup<T>.Values.Values;
+        return ImmutableCollectionsMarshal.AsImmutableArray(EnumInfo<T>.Values);
     }
 
     // TODO: EH UX
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static T Parse<T>(U8String value) where T : struct, Enum
     {
-        if (!Lookup<T>.Values.TryGetValue(value, out var result) &&
+        if (!EnumInfo<T>.ValueLookup.TryGetValue(value, out var result) &&
             !TryParseUnderlying(value, out result))
         {
             ThrowHelpers.ArgumentException();
@@ -59,7 +164,9 @@ public static class U8Enum
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static T Parse<T>(U8String value, bool ignoreCase) where T : struct, Enum
     {
-        var lookup = ignoreCase ? CaseInsensitiveLookup<T>.Values : Lookup<T>.Values;
+        var lookup = ignoreCase
+            ? EnumInfo<T>.CaseInsensitiveValueLookup
+            : EnumInfo<T>.ValueLookup;
 
         if (!lookup.TryGetValue(value, out var result) &&
             !TryParseUnderlying(value, out result))
@@ -73,14 +180,14 @@ public static class U8Enum
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool TryParse<T>(U8String value, out T result) where T : struct, Enum
     {
-        return Lookup<T>.Values.TryGetValue(value, out result)
+        return EnumInfo<T>.ValueLookup.TryGetValue(value, out result)
             || TryParseUnderlying(value, out result);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool TryParse<T>(U8String value, bool ignoreCase, out T result) where T : struct, Enum
     {
-        return (ignoreCase ? CaseInsensitiveLookup<T>.Values : Lookup<T>.Values)
+        return (ignoreCase ? EnumInfo<T>.CaseInsensitiveValueLookup : EnumInfo<T>.ValueLookup)
             .TryGetValue(value, out result) || TryParseUnderlying(value, out result);
     }
 
@@ -120,11 +227,6 @@ public static class U8Enum
 
         return false;
     }
-
-    public static U8String ToU8String<T>(this T value) where T : struct, Enum
-    {
-        return new U8EnumFormattable<T>(value).ToU8String();
-    }
 }
 
 public static class U8EnumExtensions
@@ -133,20 +235,42 @@ public static class U8EnumExtensions
     {
         return new(value);
     }
+
+    public static U8String ToU8String<T>(this T value) where T : struct, Enum
+    {
+        // See U8EnumFormattable<T> for the rationale behind this implementation
+        if (U8Enum.EnumInfo<T>.IsContiguousFromZero)
+        {
+            if (U8Enum.EnumInfo<T>.TryGetNameContiguous(value, out var name))
+            {
+                return name;
+            }
+        }
+        else if (U8Enum.EnumInfo<T>.NameLookup.TryGetValue(value, out var bytes))
+        {
+            var array = bytes.Array;
+            return new(array, array.Length - 1, neverEmpty: true);
+        }
+
+        return U8EnumFormattable<T>.FormatUnderlying(value);
+    }
 }
 
+// Unfortunately, this struct will partially duplicate formatting logic from U8Enum
+// because the "bridging generic constraints" feature is still work in progress and
+// we must use unconstrained generic argument due to method overload resulution limitations
+// affecting InterpolatedU8StringHandler which requires its AppendFormatted<T> to be unconstrained.
 public readonly struct U8EnumFormattable<T> : IU8Formattable
     where T : notnull //, struct, Enum
 {
-    readonly static ConcurrentDictionary<T, byte[]> Cache = [];
+    // This cache mixes both defined and undefined enum values.
+    // Defined values are cached unconditionally, while undefined ones are subject to UndefinedItemLimit.
+    internal static readonly ConcurrentDictionary<T, ByteArray> Cache = [];
+
+    static int UndefinedItemCount;
+    const int UndefinedItemLimit = 4096;
 
     public T Value { get; }
-
-    // This counter can be very imprecise but that's acceptable, we only
-    // need to limit the cache size to some reasonable amount, tracking
-    // the exact number of entries is not necessary.
-    static uint Count;
-    const int MaxCapacity = 2048;
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8EnumFormattable(T value)
@@ -161,12 +285,11 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
 
     public bool TryFormat(Span<byte> destination, out int bytesWritten)
     {
-        var bytes = GetBytes(Value);
-        var span = bytes.SliceUnsafe(0, bytes.Length - 1);
-        if (destination.Length >= span.Length)
+        var utf8 = ToU8String();
+        if (destination.Length >= utf8.Length)
         {
-            span.CopyToUnsafe(ref destination.AsRef());
-            bytesWritten = span.Length;
+            utf8.UnsafeSpan.CopyToUnsafe(ref destination.AsRef());
+            bytesWritten = utf8.Length;
             return true;
         }
 
@@ -176,45 +299,75 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
 
     public U8String ToU8String()
     {
-        var bytes = GetBytes(Value);
-        return new(bytes, bytes.Length - 1, neverEmpty: true);
+        if (Cache.TryGetValue(Value, out var bytes))
+        {
+            var array = bytes.Array;
+            return new(array, array.Length - 1, neverEmpty: true);
+        }
+
+        return FormatNew(Value);
     }
 
     public static implicit operator U8EnumFormattable<T>(T value) => new(value);
     public static implicit operator T(U8EnumFormattable<T> value) => value.Value;
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static byte[] GetBytes(T value)
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    static U8String FormatNew(T value)
     {
-        return Cache.TryGetValue(value, out var cached) ? cached : Add(value);
+        if (!typeof(T).IsValueType || !typeof(T).IsEnum)
+        {
+            throw new ArgumentException($"{typeof(T)} is not an enum type.", nameof(value));
+        }
+
+        // TODO: This path is really fucking slow, let's tune it back to previous cached approach
+        var utf16 = Enum.GetName(typeof(T), value);
+        if (utf16 != null)
+        {
+            Debug.Assert(utf16.Length > 0);
+            // Allocate name literal on the regular heap to avoid pinned object heap fragmentation
+            // in case it is overwritten by an initializer inside U8Enum or this method loses the
+            // race to add the name to the cache.
+            var length = Encoding.UTF8.GetByteCount(utf16);
+            var bytes = new byte[length + 1];
+
+            Encoding.UTF8.GetBytes(utf16, bytes);
+            return new(Cache.GetOrAdd(value, bytes), length, neverEmpty: true);
+        }
+
+        return FormatUnderlying(value);
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    static byte[] Add(T value)
+    internal static U8String FormatUnderlying(T value)
     {
-        var utf16 = value.ToString();
-        var length = Encoding.UTF8.GetByteCount(utf16!);
-        var count = Count;
+        Unsafe.SkipInit(out U8String formatted);
+        var type = typeof(T).GetEnumUnderlyingType();
+        
+        if (type == typeof(byte)) formatted = Unsafe.As<T, byte>(ref value).ToU8String();
+        else if (type == typeof(sbyte)) formatted = Unsafe.As<T, sbyte>(ref value).ToU8String();
+        else if (type == typeof(short)) formatted = Unsafe.As<T, short>(ref value).ToU8String();
+        else if (type == typeof(ushort)) formatted = Unsafe.As<T, ushort>(ref value).ToU8String();
+        else if (type == typeof(int)) formatted = Unsafe.As<T, int>(ref value).ToU8String();
+        else if (type == typeof(uint)) formatted = Unsafe.As<T, uint>(ref value).ToU8String();
+        else if (type == typeof(long)) formatted = Unsafe.As<T, long>(ref value).ToU8String();
+        else if (type == typeof(ulong)) formatted = Unsafe.As<T, ulong>(ref value).ToU8String();
+        else if (type == typeof(nint)) formatted = Unsafe.As<T, nint>(ref value).ToU8String();
+        else if (type == typeof(nuint)) formatted = Unsafe.As<T, nuint>(ref value).ToU8String();
+        // Cursed enum types
+        else if (type == typeof(float)) formatted = Unsafe.As<T, float>(ref value).ToU8String();
+        else if (type == typeof(double)) formatted = Unsafe.As<T, double>(ref value).ToU8String();
+        else if (type == typeof(char)) formatted = Unsafe.As<T, char>(ref value).ToU8String();
+        else ThrowHelpers.Unreachable();
 
-        byte[] bytes;
-        if (count <= MaxCapacity)
+        var itemCount = UndefinedItemCount;
+        if (itemCount < UndefinedItemLimit)
         {
-            bytes = GC.AllocateArray<byte>(length + 1, pinned: true);
-            Interlocked.Increment(ref Count);
-        }
-        else
-        {
-            bytes = new byte[length + 1];
+            Interlocked.Increment(ref UndefinedItemCount);
+            // Null-terminate to match the exact form of bytes and bytes.Length - 1
+            var bytes = Cache.GetOrAdd(value, formatted.Clone()._value!).Array;
+            formatted = new(bytes, bytes.Length - 1, neverEmpty: true);
         }
 
-        Encoding.UTF8.GetBytes(utf16, bytes);
-
-        if (count <= MaxCapacity)
-        {
-            Cache[value] = bytes;
-        }
-
-        return bytes;
+        return formatted;
     }
 
     U8String IU8Formattable.ToU8String(ReadOnlySpan<char> _, IFormatProvider? __)
