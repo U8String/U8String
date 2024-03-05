@@ -17,6 +17,7 @@ namespace U8;
 #pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
 // TODO: Review the impact on async methods (with consideration of upcoming async2)
 // and write analyzers to prevent most common copy-by-value mistakes.
+// TODO: Add padding support
 public /* ref */ struct InterpolatedU8StringHandler
 {
     InlineBuffer128 _inline;

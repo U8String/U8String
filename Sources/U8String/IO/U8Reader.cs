@@ -31,6 +31,13 @@ public partial class U8Reader<TSource>(
     int _bytesConsumed;
     bool _isBufferStolen;
 
+    // For the time being, this works around suboptimal stealing
+    // heuristic which turned out to be problematic for long-running
+    // code consuming all kinds of network sources.
+    static bool DisableBufferStealing =>
+        typeof(TSource) == typeof(U8SocketSource) ||
+        typeof(TSource) == typeof(U8WebSocketSource);
+
     public ReadOnlySpan<byte> Buffered
     {
         get => _buffer.AsSpan(0, _bytesRead);
@@ -59,6 +66,45 @@ public partial class U8Reader<TSource>(
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    U8String TryReadBuffered<T>(T delimiter, out bool success)
+        where T : struct
+    {
+        success = false;
+        var result = U8String.Empty;
+
+        var unread = Unread;
+        if (unread.Length > 0)
+        {
+            var (index, length) = U8Searching.IndexOf(unread, delimiter);
+
+            if (index >= 0)
+            {
+                result = ShouldStealBuffer(delimiter, index)
+                    ? new U8String(_buffer, _bytesConsumed, index)
+                    : new U8String(unread[..index], skipValidation: true);
+
+                AdvanceReader(index + length);
+                U8String.Validate(result);
+                success = true;
+            }
+        }
+
+        return result;
+    }
+
+    // NOTE: So turns out this performs way worse than I expected and causes
+    // GC churn due to a lot of stolen buffers surviving to Gen 1 but then
+    // likely dying there. The way to address this is likely one of the following:
+    // - Give up and go back to simpler implementation
+    // - Reduce the buffer size to 4096 or even 2048 bytes
+    // - Tune the heuristic and/or downsize the buffer whenever we steal it to
+    // 1024 bytes or so
+    // Basically, the problem is that this technique is very efficient when collecting
+    // the split segments or lines into an array, or just when reading file lines as
+    // fast as possible but for sustained reading of e.g. network sources, it results in
+    // frequent GC collections and objects being very quickly promoted to Gen 1 or even 2.
+    // ---------------------------------------------------------------------------
     // TODO: Scenarios like .ReadLines().Take(1) are really hurt by
     // this implementation. Is it possible to special case them?
     // TODO: This is yet another example of needing a Pattern<T>
@@ -67,6 +113,11 @@ public partial class U8Reader<TSource>(
     bool ShouldStealBuffer<T>(T delimiter, int searchStart)
         where T : struct
     {
+        if (DisableBufferStealing)
+        {
+            return false;
+        }
+
         // One of the following must be true:
         // - The buffer is already stolen
         // - EOF was definitely reached
@@ -139,6 +190,11 @@ public partial class U8Reader<TSource>(
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     bool ShouldStealBuffer(ReadOnlySpan<byte> delimiter, int searchStart)
     {
+        if (DisableBufferStealing)
+        {
+            return false;
+        }
+
         // One of the following must be true:
         // - The buffer is already stolen
         // - EOF was definitely reached

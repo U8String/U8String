@@ -43,9 +43,21 @@ public partial class U8Reader<TSource>
         };
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    ValueTask<U8String?> ReadToAsyncCore<T>(T delimiter, CancellationToken ct)
+        where T : struct
+    {
+        Debug.Assert(delimiter is not U8String s || !s.IsEmpty);
+
+        var read = TryReadBuffered(delimiter, out var success);
+
+        return success
+            ? new ValueTask<U8String?>(read)
+            : ReadToAsyncCore2(delimiter, ct);
+    }
+
     // TODO: Okay, so it *is* the async depth and yield cost that ruins perfomance.
-    // TODO: !Do not use! This is completely broken until aligned with ReadTo implementation.
-    async ValueTask<U8String?> ReadToAsyncCore<T>(T delimiter, CancellationToken ct)
+    async ValueTask<U8String?> ReadToAsyncCore2<T>(T delimiter, CancellationToken ct)
         where T : struct
     {
         Debug.Assert(delimiter is not U8String s || !s.IsEmpty);
