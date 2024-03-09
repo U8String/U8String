@@ -12,7 +12,7 @@ namespace U8.CompilerServices;
 /// <summary>
 /// Provides a set of methods for working with UTF-8 strings without verifying if they are valid UTF-8 sequences.
 /// </summary>
-[EditorBrowsable(EditorBrowsableState.Advanced)]
+[EditorBrowsable(EditorBrowsableState.Never)]
 public static class U8Unchecked
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -88,6 +88,46 @@ public static class U8Unchecked
         }
 
         return default;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join(byte separator, U8String[] values)
+    {
+        ThrowHelpers.CheckNull(values);
+        return U8Manipulation.Join(separator, (ReadOnlySpan<U8String>)values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join(byte separator, ReadOnlySpan<U8String> values)
+    {
+        return U8Manipulation.Join(separator, values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join(byte separator, IEnumerable<U8String> values)
+    {
+        ThrowHelpers.CheckNull(values);
+        return U8Manipulation.Join(separator, values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join(ReadOnlySpan<byte> separator, U8String[] values)
+    {
+        ThrowHelpers.CheckNull(values);
+        return U8Manipulation.Join(separator, (ReadOnlySpan<U8String>)values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join(ReadOnlySpan<byte> separator, ReadOnlySpan<U8String> values)
+    {
+        return U8Manipulation.Join(separator, values);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String Join(ReadOnlySpan<byte> separator, IEnumerable<U8String> values)
+    {
+        ThrowHelpers.CheckNull(values);
+        return U8Manipulation.Join(separator, values);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

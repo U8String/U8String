@@ -18,6 +18,7 @@
 
   <PropertyGroup>
     <NoWarn>$(NoWarn);NU5128;IDE0046</NoWarn>
+    <IsRoslynComponent>true</IsRoslynComponent>
     <IncludeBuildOutput>false</IncludeBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <DevelopmentDependency>true</DevelopmentDependency>

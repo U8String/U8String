@@ -1,8 +1,7 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace U8.Tools.Generators.OptimizationScopes;
+namespace U8.Optimization.OptimizationScopes;
 
 // Method types to fold validation for:
 // U8String:
@@ -73,23 +72,13 @@ sealed class FoldValidation : IOptimizationScope
             return false;
         }
 
-        var matched = 0;
-        var args = invocation.ArgumentList.Arguments;
-        foreach (var arg in args)
-        {
-            if (model.GetTypeInfo(arg.Expression).Type.IsReadOnlyByteSpan())
-            {
-                if (arg.Expression.IsKind(SyntaxKind.Utf8StringLiteralExpression))
-                {
-                    matched++;
-                    continue;
-                }
 
-                return false;
-            }
-        }
+        var (validated, unknown) = invocation
+            .ArgumentList
+            .Arguments
+            .CountUtf8Arguments(model);
 
-        if (matched is 0)
+        if (validated is 0 || unknown > 0)
         {
             return false;
         }
@@ -99,7 +88,7 @@ sealed class FoldValidation : IOptimizationScope
             InstanceArg: "in this U8String source",
             CustomAttrs: Constants.AggressiveInlining,
             Callsites: [new Callsite(method, invocation)],
-            Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(args.Count))});"));
+            Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(invocation.ArgumentList.Arguments.Count))});"));
         return true;
     }
 }

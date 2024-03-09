@@ -1,7 +1,7 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace U8.Tools.Generators;
+namespace U8.Optimization;
 
 interface IOptimizationScope
 {

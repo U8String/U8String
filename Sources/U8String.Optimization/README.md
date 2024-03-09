@@ -14,7 +14,6 @@ Supported patterns:
 // U8.Extensions.Syntax.u8
 var fromLiteral = u8("Привіт, Всесвіт!");
 var fromInteger = u8(42);
-var fromFloat = u8(Math.PI);
 var fromChar = u8('あ');
 
 // U8String.Create
@@ -35,6 +34,9 @@ var fromU8Span = u8("Привіт, Всесвіт!"u8);
 // This is a limitation of C# interceptors and cannot be worked around.
 var fromCast = (U8String)"Привіт, Всесвіт!";
 var fromCtor = new U8String("Привіт, Всесвіт!");
+
+// Why? Because of Roslyn running within .NET Framework when being executed by VS.
+var fromFloat = u8(float.MaxValue); 
 ```
 
 Each of the above supported patterns is lowered to roughly the following generated code:

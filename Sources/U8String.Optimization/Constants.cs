@@ -1,4 +1,4 @@
-namespace U8.Tools.Generators;
+namespace U8.Optimization;
 
 static class Constants
 {

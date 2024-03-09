@@ -1,4 +1,4 @@
-namespace U8.Tools.Tests.Generators;
+namespace U8.Optimization.Tests;
 
 public partial class FoldConversions
 {

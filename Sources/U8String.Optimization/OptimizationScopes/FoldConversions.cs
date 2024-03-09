@@ -1,12 +1,11 @@
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace U8.Tools.Generators.OptimizationScopes;
+namespace U8.Optimization.OptimizationScopes;
 
 // TODO:
 // U8Builder:
@@ -118,8 +117,6 @@ sealed class FoldConversions : IOptimizationScope
             ulong u64 => u64.ToString(invariantCulture),
             long i64 => i64.ToString(invariantCulture),
 
-            float f32 => f32.ToString(invariantCulture),
-            double f64 => f64.ToString(invariantCulture),
             decimal d128 => d128.ToString(invariantCulture),
 
             Enum e => e.ToString(),
@@ -177,13 +174,9 @@ sealed class FoldConversions : IOptimizationScope
     {
         public new bool Equals(object x, object y)
         {
-            return x switch
-            {
-                float f32 => y is float f32y && (Unsafe.As<float, int>(ref f32) == Unsafe.As<float, int>(ref f32y)),
-                double f64 => y is double f64y && (Unsafe.As<double, long>(ref f64) == Unsafe.As<double, long>(ref f64y)),
-                string s => y is string sy && s.Equals(sy, StringComparison.Ordinal),
-                _ => x.Equals(y)
-            };
+            return x is string s
+                ? y is string sy && s.Equals(sy, StringComparison.Ordinal)
+                : x.Equals(y);
         }
 
         public int GetHashCode(object obj)

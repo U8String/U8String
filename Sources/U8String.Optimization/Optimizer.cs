@@ -3,9 +3,9 @@ using System.Text;
 
 using Microsoft.CodeAnalysis;
 
-using U8.Tools.Generators.OptimizationScopes;
+using U8.Optimization.OptimizationScopes;
 
-namespace U8.Tools.Generators;
+namespace U8.Optimization;
 
 // TODO: At some point, this will need some form of AST to allow
 // optimization stages feed into each other before emitting the final

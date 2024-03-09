@@ -223,7 +223,7 @@ public partial class U8Reader<TSource>
         }
 
         var segmentRead = await ((IU8SegmentedReaderSource<TSegment>)_source)
-            .ReadSegmentAsync(_offset, Free, ct);
+            .ReadSegment(_offset, Free, ct);
         
         var readResult = ((IU8SegmentedReaderSource<TSegment>)_source)
             .GetReadResult(_offset, segmentRead);
@@ -252,7 +252,7 @@ public partial class U8Reader<TSource>
         do
         {
             segmentRead = await ((IU8SegmentedReaderSource<TSegment>)_source)
-                .ReadSegmentAsync(_offset, Free, ct);
+                .ReadSegment(_offset, Free, ct);
 
             readResult = ((IU8SegmentedReaderSource<TSegment>)_source)
                 .GetReadResult(_offset, segmentRead);

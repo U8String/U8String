@@ -5,8 +5,6 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Unicode;
 
-using U8.Shared;
-
 namespace U8;
 
 // Simplify conditional and slice expressions; use braces. Why: style + ensuring right branch ordering.
@@ -35,6 +33,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public ReadOnlyMemory<byte> AsMemory()
     {
+        // Surely nothing can go wrong here, right?
         return Unsafe.As<U8String, ReadOnlyMemory<byte>>(ref Unsafe.AsRef(in this));
     }
 

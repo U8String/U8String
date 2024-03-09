@@ -1,6 +1,6 @@
 using System.Text;
 
-namespace U8.Tools.Tests.Generators;
+namespace U8.Optimization.Tests;
 
 // TODO: Implement rest of the coverage.
 public partial class FoldConversions
@@ -136,46 +136,6 @@ public partial class FoldConversions
     }
 
     [Fact]
-    public void InlineFloatConstantDeclaration_IsCorrectlyFolded()
-    {
-        var literals = new[]
-        {
-            u8(float.MaxValue), U8String.Create(float.MaxValue)
-        };
-
-        var first = literals[0];
-
-        for (var i = 1; i < literals.Length; i++)
-        {
-            Assert.Equal(first, literals[i]);
-            Assert.Equal("3.4028235E+38"u8, literals[i]);
-            Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
-            Assert.True(literals[i].IsNullTerminated);
-        }
-    }
-
-    [Fact]
-    public void InlineDoubleConstantDeclaration_IsCorrectlyFolded()
-    {
-        var literals = new[]
-        {
-            u8(double.MaxValue), U8String.Create(double.MaxValue)
-        };
-
-        var first = literals[0];
-
-        for (var i = 1; i < literals.Length; i++)
-        {
-            Assert.Equal(first, literals[i]);
-            Assert.Equal("1.7976931348623157E+308"u8, literals[i]);
-            Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
-            Assert.True(literals[i].IsNullTerminated);
-        }
-    }
-
-    [Fact]
     public void InlineDecimalConstantDeclaration_IsCorrectlyFolded()
     {
         var literals = new[]
@@ -189,6 +149,26 @@ public partial class FoldConversions
         {
             Assert.Equal(first, literals[i]);
             Assert.Equal("1234567890.123456789"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void InlineDecimalMaxValueConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            u8(decimal.MaxValue), U8String.Create(decimal.MaxValue)
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("79228162514264337593543950335"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
             Assert.True(first.SourceEquals(literals[i]));
             Assert.True(literals[i].IsNullTerminated);

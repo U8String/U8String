@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "U8String.Optimization": {
+      "commandName": "DebugRoslynComponent",
+      "targetProject": "..\\..\\Benchmarks\\U8String.Benchmarks.csproj"
+    }
+  }
+}

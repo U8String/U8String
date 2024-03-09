@@ -1,7 +1,8 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
-namespace U8.Tools.Generators;
+namespace U8.Optimization;
 
 // TODO: Expand method implementations within select dispatch targets
 sealed partial class SpecializeDispatch
@@ -25,6 +26,7 @@ sealed partial class SpecializeDispatch
             return method.Name switch
             {
                 // "ReplaceLineEndings" => new ReplaceLineEndings(method),
+                "Join" => new Join(method),
                 "SplitFirst" => new SplitFirst(method),
                 "SplitLast" => new SplitLast(method),
                 "Strip" => new Strip(method),
@@ -52,7 +54,61 @@ sealed partial class SpecializeDispatch
 
             public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
             {
-                throw new NotImplementedException();
+                var args = invocation.ArgumentList.Arguments;
+                // Only simple forms are supported for now.
+                // TODO: support IUtf8SpanFormattable and known struct enumeration overloads
+                if (args is not [var separator, var values])
+                {
+                    return null;
+                }
+
+                string? separatorText = null, valuesText = null;
+
+                // Resolve separator argument text
+                var separatorExpr = separator.Expression;
+                var constant = model.GetConstantValue(separatorExpr);
+                if (constant is { HasValue: true, Value: object value })
+                {
+                    separatorText = value switch
+                    {
+                        byte b when b <= 0x7F => $"{b}",
+                        char c when !char.IsSurrogate(c) =>
+                            c <= 0x7F ? $"(byte)'{c}'" : $"\"{c}\"u8",
+                        _ => null
+                    };
+                }
+                else if (
+                    model.GetTypeInfo(separatorExpr).ConvertedType.IsReadOnlyByteSpan() && (
+                    separatorExpr.IsKind(SyntaxKind.Utf8StringLiteralExpression) ||
+                    model.GetOperation(separatorExpr)?.Type.IsU8String() is true))
+                {
+                    separatorText = "arg0";
+                }
+
+                // Bail out early if separator is not eligible
+                if (separatorText is null)
+                {
+                    return null;
+                }
+
+                var valuesType = model.GetTypeInfo(values.Expression);
+                var valuesTypeSymbol = valuesType.Type ?? valuesType.ConvertedType;
+                if (valuesTypeSymbol.IsArrayOf(Extensions.IsU8String) || (
+                    valuesTypeSymbol is INamedTypeSymbol
+                    {
+                        Name: "ReadOnlySpan" or "IEnumerable",
+                        TypeArguments: [var typeArg]
+                    } && typeArg.IsU8String()))
+                {
+                    valuesText = "arg1";
+                }
+
+                if (valuesText is null)
+                {
+                    return null;
+                }
+
+                return $"return U8Unchecked.Join({separatorText}, {valuesText});";
             }
         }
 
@@ -118,7 +174,7 @@ sealed partial class SpecializeDispatch
                 if (constantValue is char c && !char.IsSurrogate(c))
                 {
                     return c <= 0x7F
-                        ? "return source.SplitFirst((byte)arg0);"
+                        ? $"return source.SplitFirst((byte)'{c}');"
                         : $"return U8Unchecked.SplitFirst(source, \"{c}\"u8);";
                 }
 
@@ -147,7 +203,7 @@ sealed partial class SpecializeDispatch
                 if (constantValue is char c && !char.IsSurrogate(c))
                 {
                     return c <= 0x7F
-                        ? "return source.SplitLast((byte)arg0);"
+                        ? $"return source.SplitLast((byte)'{c}');"
                         : $"return U8Unchecked.SplitLast(source, \"{c}\"u8);";
                 }
 

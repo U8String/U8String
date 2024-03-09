@@ -29,7 +29,7 @@ public interface IU8SegmentedReaderSource<TSegment> : IU8ReaderSource
 
     U8SegmentReadResult GetReadResult(long readerOffset, TSegment segment);
     // TODO: This is not segment but rather a read result
-    ValueTask<TSegment> ReadSegmentAsync(long readerOffset, Memory<byte> buffer, CancellationToken ct);
+    ValueTask<TSegment> ReadSegment(long readerOffset, Memory<byte> buffer, CancellationToken ct);
 }
 
 // TODO: Tentative API
@@ -146,7 +146,7 @@ public readonly struct U8WebSocketSource(WebSocket socket) : IU8SegmentedReaderS
         };
     }
 
-    public ValueTask<ValueWebSocketReceiveResult> ReadSegmentAsync(long _, Memory<byte> buffer, CancellationToken ct)
+    public ValueTask<ValueWebSocketReceiveResult> ReadSegment(long _, Memory<byte> buffer, CancellationToken ct)
     {
         return socket.ReceiveAsync(buffer, ct);
     }
