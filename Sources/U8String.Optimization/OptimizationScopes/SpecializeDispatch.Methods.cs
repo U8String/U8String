@@ -91,10 +91,9 @@ sealed partial class SpecializeDispatch
                     return null;
                 }
 
-                var valuesType = model.GetTypeInfo(values.Expression);
-                var valuesTypeSymbol = valuesType.Type ?? valuesType.ConvertedType;
-                if (valuesTypeSymbol.IsArrayOf(Extensions.IsU8String) || (
-                    valuesTypeSymbol is INamedTypeSymbol
+                var valuesType = model.GetTypeInfo(values.Expression).ConvertedType;
+                if (valuesType.IsArrayOf(Extensions.IsU8String) || (
+                    valuesType is INamedTypeSymbol
                     {
                         Name: "ReadOnlySpan" or "IEnumerable",
                         TypeArguments: [var typeArg]
