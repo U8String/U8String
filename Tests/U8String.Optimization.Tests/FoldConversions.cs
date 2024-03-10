@@ -72,6 +72,14 @@ public partial class FoldConversions
                 """u8)
         };
 
+        // Windows may have inconsistent line endings depending on project settings,
+        // we don't particularly care for those and users are expected to call .ReplaceLineEndings(lineEnding)
+        // if they need to normalize the text for a specific platform or protocol.
+        if (OperatingSystem.IsWindows())
+        {
+            literals = literals[..2];
+        }
+
         var first = literals[0];
 
         for (var i = 1; i < literals.Length; i++)
