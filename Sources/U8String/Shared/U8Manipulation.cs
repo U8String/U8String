@@ -45,13 +45,13 @@ internal static class U8Manipulation
         Debug.Assert(!left.IsEmpty || !right.IsEmpty);
 
         var length = left.Length + right.Length;
-        var value = new byte[length + 1];
+        var value = new byte[(nint)(uint)(length + 1)];
 
         ref var dst = ref value.AsRef();
         left.CopyToUnsafe(ref dst);
         right.CopyToUnsafe(ref dst.Add(left.Length));
 
-        return new U8String(value, 0, length);
+        return new U8String(value, length, neverEmpty: true);
     }
 
     internal static U8String Join(byte separator, ReadOnlySpan<U8String> values)

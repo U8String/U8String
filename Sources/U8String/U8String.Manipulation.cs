@@ -224,15 +224,12 @@ public readonly partial struct U8String
                 var destination = value.AsSpan();
                 foreach (var source in values)
                 {
-                    if (!source.IsEmpty)
-                    {
-                        // !Do not skip bounds check! because we cannot guarantee that
-                        // the contents of the 'values' have not changed since the
-                        // length was calculated. This matches the behavior of the
-                        // string.Concat(params string[]) overload.
-                        source.UnsafeSpan.CopyTo(destination);
-                        destination = destination.SliceUnsafe(source.Length);
-                    }
+                    // !Do not skip bounds check! because we cannot guarantee that
+                    // the contents of the 'values' have not changed since the
+                    // length was calculated. This matches the behavior of the
+                    // string.Concat(params string[]) overload.
+                    source.AsSpan().CopyTo(destination);
+                    destination = destination.SliceUnsafe(source.Length);
                 }
 
                 return new U8String(value, 0, length);
