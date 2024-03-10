@@ -1393,6 +1393,7 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String SliceRounding(int start, int length)
     {
+        // FIXME: incorrect trailing rune rounding
         var source = this;
         var offset = start > 0 ? Math.Min(start, source.Length) : 0;
         var newlength = Math.Min(length, source.Length - offset);

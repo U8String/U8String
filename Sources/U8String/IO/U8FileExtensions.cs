@@ -2,6 +2,7 @@ using Microsoft.Win32.SafeHandles;
 
 namespace U8.IO;
 
+// TODO: Move the implementation to U8File
 public static class U8FileExtensions
 {
     /// <inheritdoc cref="U8String.Read(SafeFileHandle, long)"/>

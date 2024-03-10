@@ -234,6 +234,7 @@ public readonly partial struct U8String
     /// up to the first null byte if the null byte offset is greater than 0.
     /// </remarks>
     [EditorBrowsable(EditorBrowsableState.Advanced)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe U8String(byte* str)
     {
         // TODO: This pretty much traverses the source three times:
@@ -243,24 +244,7 @@ public readonly partial struct U8String
         // Ideally, at least the first two steps need to be combined,
         // to get more work done per CPU cycle as this otherwise will be
         // quite a bit slower than creating from sources of known length.
-        var length = U8Marshal.IndexOfNullByte(str);
-        if (length > (nuint)Array.MaxLength - 1)
-        {
-            ThrowHelpers.DestinationTooShort();
-        }
-
-        if (length > 0)
-        {
-            var source = MemoryMarshal.CreateSpan(
-                ref Unsafe.AsRef<byte>(str), (int)(uint)length);
-            Validate(source);
-            var bytes = new byte[(nint)(length + 1)];
-
-            source.CopyToUnsafe(ref bytes.AsRef());
-
-            _value = bytes;
-            _inner = new U8Range(0, (int)(uint)length);
-        }
+        this = new(MemoryMarshal.CreateReadOnlySpanFromNullTerminated(str));
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

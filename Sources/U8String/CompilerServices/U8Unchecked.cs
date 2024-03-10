@@ -71,23 +71,7 @@ public static class U8Unchecked
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static unsafe U8String Create(byte* str)
     {
-        var length = U8Marshal.IndexOfNullByte(str);
-        if (length > (nuint)Array.MaxLength - 1)
-        {
-            ThrowHelpers.DestinationTooShort();
-        }
-
-        if (length > 0)
-        {
-            var bytes = new byte[length + 1];
-            MemoryMarshal
-                .CreateSpan(ref Unsafe.AsRef<byte>(str), (int)(uint)length)
-                .CopyToUnsafe(ref bytes.AsRef());
-
-            return new(bytes, 0, (int)(uint)length);
-        }
-
-        return default;
+        return new(MemoryMarshal.CreateReadOnlySpanFromNullTerminated(str), skipValidation: true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
