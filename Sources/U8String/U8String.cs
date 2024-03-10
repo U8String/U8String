@@ -14,7 +14,6 @@ using U8.Primitives;
 using U8.Serialization;
 using U8.Shared;
 
-#pragma warning disable IDE1006 // Naming Styles. Why: Exposing internal fields for perf.
 namespace U8;
 
 /// <summary>
@@ -276,16 +275,7 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValid(ReadOnlySpan<byte> value)
     {
-        if (value.Length > 1)
-        {
-            return Utf8.IsValid(value);
-        }
-        else if (value.Length > 0)
-        {
-            return U8Info.IsAsciiByte(in value.AsRef());
-        }
-
-        return true;
+        return value.Length <= 0 || Utf8.IsValid(value);
     }
 
     [DebuggerStepThrough]

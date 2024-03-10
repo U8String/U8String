@@ -92,7 +92,7 @@ sealed class FoldConversions : IOptimizationScope
         {
             if (expression.IsKind(SyntaxKind.Utf8StringLiteralExpression)
                 && model.GetOperation(expression) is IUtf8StringOperation operation
-                && operation.Value is not null or [])
+                && operation.Value is not (null or []))
             {
                 constantValue = new Utf8LiteralExpression(operation.Value);
             }
