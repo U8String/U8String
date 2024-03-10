@@ -10,7 +10,7 @@
 
   <PropertyGroup>
     <PublishAot>true</PublishAot>
-    <IlcInstructionSet>x86-x64-v2</IlcInstructionSet>
+    <IlcInstructionSet>native</IlcInstructionSet>
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);U8.Generated</InterceptorsPreviewNamespaces>
