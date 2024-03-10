@@ -56,6 +56,35 @@ public partial class FoldConversions
     }
 
     [Fact]
+    public void Utf8LiteralExpression_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            u8("Привіт,\nВсесвіт!"u8),
+            U8String.Create("Привіт,\nВсесвіт!"u8),
+            u8("""
+                Привіт,
+                Всесвіт!
+                """u8),
+            U8String.Create("""
+                Привіт,
+                Всесвіт!
+                """u8)
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Привіт,\nВсесвіт!"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
     public void InlineBoolConstantDeclaration_IsCorrectlyFolded()
     {
         var literals = new[]
@@ -173,5 +202,19 @@ public partial class FoldConversions
             Assert.True(first.SourceEquals(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
+    }
+
+    // This implmenetation detail might change in the future should FoldConversion be improved
+    // to store literal values and associated interceptors separately to further deduplicate
+    // identical text, but for now, this is the expected behavior.
+    [Fact]
+    public void IdenticalUtf16Utf8Literals_BuildSuccessfullyAndHaveDifferentSource()
+    {
+        var fromUtf8 = u8("Hello, World!"u8);
+        var fromUtf16 = u8("Hello, World!");
+
+        Assert.Equal(fromUtf8, fromUtf16);
+        Assert.False(fromUtf8.SourceEquals(fromUtf16));
+        Assert.NotEqual(fromUtf8.Source, fromUtf16.Source);
     }
 }

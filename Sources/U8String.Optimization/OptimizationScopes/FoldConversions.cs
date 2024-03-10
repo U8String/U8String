@@ -3,7 +3,9 @@ using System.Globalization;
 using System.Text;
 
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace U8.Optimization.OptimizationScopes;
 
@@ -18,6 +20,19 @@ namespace U8.Optimization.OptimizationScopes;
 
 sealed class FoldConversions : IOptimizationScope
 {
+    sealed record Utf8LiteralExpression(string Value)
+    {
+        public bool Equals(Utf8LiteralExpression? obj)
+        {
+            return obj != null && Value.Equals(obj.Value, StringComparison.Ordinal);
+        }
+
+        public override int GetHashCode()
+        {
+            return StringComparer.Ordinal.GetHashCode(Value);
+        }
+    }
+
     static readonly UTF8Encoding UTF8 = new(
         encoderShouldEmitUTF8Identifier: false,
         throwOnInvalidBytes: true);
@@ -71,10 +86,17 @@ sealed class FoldConversions : IOptimizationScope
             return false;
         }
 
-        var constant = model.GetConstantValue(argument.Expression);
+        var expression = argument.Expression;
+        var constant = model.GetConstantValue(expression);
         if (constant is not { HasValue: true, Value: object constantValue })
         {
-            return false;
+            if (expression.IsKind(SyntaxKind.Utf8StringLiteralExpression)
+                && model.GetOperation(expression) is IUtf8StringOperation operation
+                && operation.Value is not null or [])
+            {
+                constantValue = new Utf8LiteralExpression(operation.Value);
+            }
+            else return false;
         }
 
         var callsite = new Callsite(method, invocation);
@@ -122,6 +144,7 @@ sealed class FoldConversions : IOptimizationScope
             Enum e => e.ToString(),
             char c => c.ToString(invariantCulture),
             string s => s,
+            Utf8LiteralExpression u8 => u8.Value,
             _ => null
         };
 
@@ -181,7 +204,7 @@ sealed class FoldConversions : IOptimizationScope
 
         public int GetHashCode(object obj)
         {
-            return obj.GetHashCode();
+            return obj is string s ? StringComparer.Ordinal.GetHashCode(s) : obj.GetHashCode();
         }
     }
 }

@@ -13,6 +13,7 @@ Supported patterns:
 ```csharp
 // U8.Extensions.Syntax.u8
 var fromLiteral = u8("Привіт, Всесвіт!");
+var fromUtf8Literal = u8("Привіт, Всесвіт!"u8);
 var fromInteger = u8(42);
 var fromChar = u8('あ');
 
@@ -27,15 +28,15 @@ var fromLiteral2 = U8String.FromLiteral("Привіт, Всесвіт!");
 
 Unsupported patterns:
 ```csharp
-// Do not repeat yourself when declaring a literal.
-// Just write `u8` once at the start of u8("...") instead :)
-var fromU8Span = u8("Привіт, Всесвіт!"u8);
-// Calls to cast operator and constructor are not supported either.
+// Calls to cast operators and constructors are not supported.
 // This is a limitation of C# interceptors and cannot be worked around.
 var fromCast = (U8String)"Привіт, Всесвіт!";
 var fromCtor = new U8String("Привіт, Всесвіт!");
 
-// Why? Because of Roslyn running within .NET Framework when being executed by VS.
+// .NET Core 3.0 made float/double formatting IEEE compliant. However,
+// Visual Studio runs Roslyn and its source generators within .NET Framework 4.8
+// process, leading to inconsistent and hard to diagnose behavior. As a result,
+// float/double literals are currently not supported but may be added in the future.
 var fromFloat = u8(float.MaxValue); 
 ```
 
