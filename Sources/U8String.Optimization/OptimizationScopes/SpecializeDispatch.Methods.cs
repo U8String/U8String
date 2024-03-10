@@ -27,11 +27,17 @@ sealed partial class SpecializeDispatch
             {
                 // "ReplaceLineEndings" => new ReplaceLineEndings(method),
                 "Join" => new Join(method),
+
                 "SplitFirst" => new SplitFirst(method),
                 "SplitLast" => new SplitLast(method),
+
+                "StartsWith" => new StartsWith(method),
+                "EndsWith" => new EndsWith(method),
+
                 "Strip" => new Strip(method),
                 "StripPrefix" => new StripPrefix(method),
                 "StripSuffix" => new StripSuffix(method),
+
                 _ => null
             };
         }
@@ -204,6 +210,65 @@ sealed partial class SpecializeDispatch
                     return c <= 0x7F
                         ? $"return source.SplitLast((byte)'{c}');"
                         : $"return U8Unchecked.SplitLast(source, \"{c}\"u8);";
+                }
+
+                return null;
+            }
+        }
+
+        sealed class StartsWith(IMethodSymbol method) : DispatchTarget
+        {
+            public override IMethodSymbol Method => method;
+            public override string? InstanceArg => "in this U8String source";
+
+            public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
+            {
+                // TODO: Support comparer variants
+                if (invocation.ArgumentList.Arguments is not [var argument])
+                {
+                    return null;
+                }
+
+                var constant = model.GetConstantValue(argument.Expression);
+                if (constant is not { HasValue: true, Value: object constantValue })
+                {
+                    return null;
+                }
+
+                if (constantValue is char c && !char.IsSurrogate(c))
+                {
+                    return c <= 0x7F
+                        ? $"return source.StartsWith((byte)'{c}');"
+                        : $"return source.StartsWith(\"{c}\"u8);";
+                }
+
+                return null;
+            }
+        }
+
+        sealed class EndsWith(IMethodSymbol method) : DispatchTarget
+        {
+            public override IMethodSymbol Method => method;
+            public override string? InstanceArg => "in this U8String source";
+
+            public override string? EmitBody(SemanticModel model, InvocationExpressionSyntax invocation)
+            {
+                if (invocation.ArgumentList.Arguments is not [var argument])
+                {
+                    return null;
+                }
+
+                var constant = model.GetConstantValue(argument.Expression); 
+                if (constant is not { HasValue: true, Value: object constantValue })
+                {
+                    return null;
+                }
+
+                if (constantValue is char c && !char.IsSurrogate(c))
+                {
+                    return c <= 0x7F
+                        ? $"return source.EndsWith((byte)'{c}');"
+                        : $"return source.EndsWith(\"{c}\"u8);";
                 }
 
                 return null;
