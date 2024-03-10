@@ -1,5 +1,6 @@
 record Message(U8String Command, U8String? Nickname, U8String? Channel, U8String? Body)
 {
+    // The parsing logic below does not allocate, besides the Message object itself.
     public static Message? Parse(U8String line)
     {
         // Remove line terminator if any

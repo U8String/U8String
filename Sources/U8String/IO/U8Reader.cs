@@ -34,9 +34,12 @@ public partial class U8Reader<TSource>(
     // For the time being, this works around suboptimal stealing
     // heuristic which turned out to be problematic for long-running
     // code consuming all kinds of network sources.
-    static bool DisableBufferStealing =>
-        typeof(TSource) == typeof(U8SocketSource) ||
-        typeof(TSource) == typeof(U8WebSocketSource);
+    static bool DisableBufferStealing
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => typeof(TSource) == typeof(U8SocketSource)
+            || typeof(TSource) == typeof(U8WebSocketSource);
+    }
 
     public ReadOnlySpan<byte> Buffered
     {
