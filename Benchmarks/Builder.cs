@@ -46,7 +46,7 @@ public class Builder
     public U8String SimpleInterpolatedHandler()
     {
         var count = N;
-        var handler = new InterpolatedU8StringHandler();
+        var handler = new InlineU8Builder();
         for (var i = 0; i < count; i++)
         {
             handler.AppendFormatted(u8("Hello, World!"));
