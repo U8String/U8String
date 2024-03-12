@@ -60,7 +60,7 @@ public static unsafe class Syntax
     public static U8String u8<T>(T value, string format, IFormatProvider? provider)
         where T : IUtf8SpanFormattable => U8String.Create(value, format, provider);
 
-    /// <inheritdoc cref="U8String(ref InterpolatedU8StringHandler)"/>
+    /// <inheritdoc cref="U8String(ref InlineU8Builder)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String u8(ref InterpolatedU8StringHandler handler) => new(ref handler);
+    public static U8String u8(ref InlineU8Builder handler) => new(ref handler);
 }

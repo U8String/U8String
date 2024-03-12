@@ -37,8 +37,7 @@ public partial class U8Reader<TSource>(
     static bool DisableBufferStealing
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => typeof(TSource) == typeof(U8SocketSource)
-            || typeof(TSource) == typeof(U8WebSocketSource);
+        get => typeof(TSource) != typeof(U8FileSource);
     }
 
     public ReadOnlySpan<byte> Buffered

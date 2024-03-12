@@ -23,11 +23,11 @@ public struct U8Builder : IU8Buffer
     // --- disregard the above for now ---
 
     [ThreadStatic]
-    static StrongBox<InterpolatedU8StringHandler>? _tlv;
+    static StrongBox<InlineU8Builder>? _tlv;
 
-    StrongBox<InterpolatedU8StringHandler>? _instance;
+    StrongBox<InlineU8Builder>? _instance;
 
-    internal readonly ref InterpolatedU8StringHandler Handler => ref _instance!.Value;
+    internal readonly ref InlineU8Builder Handler => ref _instance!.Value;
 
     public readonly ReadOnlySpan<byte> Written => Handler.Written;
 
@@ -135,7 +135,7 @@ public struct U8Builder : IU8Buffer
     [EditorBrowsable(EditorBrowsableState.Never)]
     public readonly ref struct InterpolatedHandler
     {
-        readonly ref InterpolatedU8StringHandler _handler;
+        readonly ref InlineU8Builder _handler;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public InterpolatedHandler(

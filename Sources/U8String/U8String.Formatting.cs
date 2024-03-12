@@ -13,12 +13,11 @@ namespace U8;
 
 [InterpolatedStringHandler]
 [EditorBrowsable(EditorBrowsableState.Advanced)]
-#pragma warning disable RCS1003 // Add braces to multi-line expression. Why: more compact and readable here.
 #pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
 // TODO: Review the impact on async methods (with consideration of upcoming async2)
 // and write analyzers to prevent most common copy-by-value mistakes.
 // TODO: Add padding support
-public /* ref */ struct InterpolatedU8StringHandler
+public /* ref */ struct InlineU8Builder
 {
     InlineBuffer128 _inline;
     IFormatProvider? _provider;
@@ -39,13 +38,13 @@ public /* ref */ struct InterpolatedU8StringHandler
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public InterpolatedU8StringHandler()
+    public InlineU8Builder()
     {
         Unsafe.SkipInit(out _inline);
         _provider = CultureInfo.InvariantCulture;
     }
 
-    public InterpolatedU8StringHandler(int length)
+    public InlineU8Builder(int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
 
@@ -59,7 +58,7 @@ public /* ref */ struct InterpolatedU8StringHandler
         _provider = CultureInfo.InvariantCulture;
     }
 
-    public InterpolatedU8StringHandler(
+    public InlineU8Builder(
         int literalLength,
         int formattedCount,
         IFormatProvider? formatProvider = null)

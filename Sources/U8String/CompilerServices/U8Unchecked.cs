@@ -16,7 +16,7 @@ namespace U8.CompilerServices;
 public static class U8Unchecked
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static void AppendBytes(ref InterpolatedU8StringHandler handler, ReadOnlySpan<byte> value)
+    public static void AppendBytes(ref InlineU8Builder handler, ReadOnlySpan<byte> value)
     {
         handler.AppendBytes(value);
     }

@@ -84,7 +84,7 @@ public partial class U8Reader<TSource>
             goto RetryCheckEOF;
         }
 
-        var builder = new InterpolatedU8StringHandler(unread.Length);
+        var builder = new InlineU8Builder(unread.Length);
         builder.AppendBytes(unread);
         AdvanceReader(unread.Length);
 
@@ -159,7 +159,7 @@ public partial class U8Reader<TSource>
             goto RetryCheckEOF;
         }
 
-        var builder = new InterpolatedU8StringHandler(unread.Length);
+        var builder = new InlineU8Builder(unread.Length);
         builder.AppendBytes(unread);
         AdvanceReader(unread.Length);
 
@@ -224,7 +224,7 @@ public partial class U8Reader<TSource>
             return result;
         }
 
-        var builder = new InterpolatedU8StringHandler(unread.Length);
+        var builder = new InlineU8Builder(unread.Length);
         builder.AppendBytes(unread);
         AdvanceReader(unread.Length);
 

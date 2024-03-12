@@ -9,18 +9,18 @@ It is a ground-up reimplementation of the `string` type with UTF-8 semantics, an
 - Zero-allocation slicing
 - Highly optimized and SIMD-accelerated where applicable
 - `byte`, `char` and `Rune` overload variants for maximum flexibility
-- Performant UTF-8 formatting inspired by [CoreLib](https://github.com/dotnet/runtime/blob/release/8.0/src/libraries/System.Private.CoreLib/src/System/Text/Unicode/Utf8.cs#L366) and [Yoshifumi Kawai](https://github.com/Cysharp/Utf8StringInterpolation) implementations
-- Rich enumeration and splitting API: `.Runes`, `.Lines`, `.Chars`, `SplitFirst/Last(...)`, `.Split(...)` and more
-- Interpolation support
+- Performant UTF-8 interpolation inspired by [CoreLib](https://github.com/dotnet/runtime/blob/release/8.0/src/libraries/System.Private.CoreLib/src/System/Text/Unicode/Utf8.cs#L366) and [Yoshifumi Kawai](https://github.com/Cysharp/Utf8StringInterpolation) implementations
+- Rich enumeration and splitting API: `.Runes`, `.Lines`, `.Chars`, `SplitFirst/Last(...)`, `.Split(...)`, etc.
 - Invariant culture formatting by default
 - Source-generated optimizations to enable inline `U8String` literals and reduce overhead
 - Implicit null-termination - newly created strings are null-terminated whenever possible allowing them to be passed to native APIs without re-allocation
+- Significant code complexity reduction when working with UTF-8 streams of data through `U8Reader` and supporting extensions
 - Easy integration with .NET type system thanks to `IUtf8SpanFormattable` and `IUtf8SpanParsable<T>` added in .NET 8
 
 ## Target Scenarios
-- Zero-copy/zero-allocation parsing
-- Interop with native libraries that use UTF-8
-- Directly consuming UTF-8 byte sequences (e.g. from network streams with `U8Reader`)
+- High-performance parsing and processing of UTF-8 text
+- Interop with native libraries that use ASCII/UTF-8 strings
+- Networking and serialization of UTF-8 data
 - Canonical representation of text primitives for serialization and storage which use UTF-8 (e.g. DB drivers)
 - Storing large amounts of ASCII-like text on the heap which is twice as compact as UTF-16
 
@@ -127,8 +127,13 @@ var date = DateTime.Now.ToU8String(CultureInfo.CurrentCulture);
 
 // Printing to stdout
 U8Console.WriteLine("Hello, World!"u8);
+
 // Interpolated and allocation-free
 U8Console.WriteLine($"{parsed} is the best day!");
+
+// Can also output to streams (allocation-free as well)
+using var file = File.OpenWrite("file.txt");
+file.WriteLine($"CPU count: {Environment.ProcessorCount}");
 
 // U8Reader (like StreamReader + Rust's BufRead but more user-friendly)
 var stream = await http.GetStreamAsync("http://example.org/");

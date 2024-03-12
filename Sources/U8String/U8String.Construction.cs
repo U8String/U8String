@@ -183,11 +183,11 @@ public readonly partial struct U8String
     /// The <see cref="U8String"/> will be created by writing the contents of the interpolated handler
     /// constructed by Roslyn into a newly allocated buffer.
     /// <para/>
-    /// This method has consuming semantics and calls <see cref="InterpolatedU8StringHandler.Dispose"/>
+    /// This method has consuming semantics and calls <see cref="InlineU8Builder.Dispose"/>
     /// on the provided <paramref name="handler"/> after the <see cref="U8String"/> is created.
     /// </remarks>
     [MethodImpl(MethodImplOptions.NoInlining)]
-    public U8String(ref InterpolatedU8StringHandler handler)
+    public U8String(ref InlineU8Builder handler)
     {
         this = new U8String(handler.Written, skipValidation: true);
         handler.Dispose();
@@ -202,13 +202,13 @@ public readonly partial struct U8String
     /// The <see cref="U8String"/> will be created by writing the contents of the interpolated handler
     /// constructed by Roslyn into a newly allocated buffer.
     /// <para/>
-    /// This method has consuming semantics and calls <see cref="InterpolatedU8StringHandler.Dispose"/>
+    /// This method has consuming semantics and calls <see cref="InlineU8Builder.Dispose"/>
     /// on the provided <paramref name="handler"/> after the <see cref="U8String"/> is created.
     /// </remarks>
 #pragma warning disable IDE0060, RCS1163 // Unused parameter. Why: it is passed to the handler ctor.
     [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String(IFormatProvider provider,
-        [InterpolatedStringHandlerArgument(nameof(provider))] ref InterpolatedU8StringHandler handler)
+        [InterpolatedStringHandlerArgument(nameof(provider))] ref InlineU8Builder handler)
     {
         this = new U8String(handler.Written, skipValidation: true);
         handler.Dispose();
@@ -452,15 +452,15 @@ public readonly partial struct U8String
         return u8str;
     }
 
-    /// <inheritdoc cref="U8String(ref InterpolatedU8StringHandler)"/>
-    public static U8String Create(ref InterpolatedU8StringHandler handler)
+    /// <inheritdoc cref="U8String(ref InlineU8Builder)"/>
+    public static U8String Create(ref InlineU8Builder handler)
     {
         return new(ref handler);
     }
 
-    /// <inheritdoc cref="U8String(IFormatProvider, ref InterpolatedU8StringHandler)"/>
+    /// <inheritdoc cref="U8String(IFormatProvider, ref InlineU8Builder)"/>
     public static U8String Create(IFormatProvider provider,
-        [InterpolatedStringHandlerArgument(nameof(provider))] ref InterpolatedU8StringHandler handler)
+        [InterpolatedStringHandlerArgument(nameof(provider))] ref InlineU8Builder handler)
     {
         return new(provider, ref handler);
     }

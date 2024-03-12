@@ -1,6 +1,8 @@
 using System.Buffers;
 using System.ComponentModel;
 
+using U8.IO;
+
 namespace U8;
 
 public static class U8Console
@@ -25,18 +27,15 @@ public static class U8Console
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static void Write(ref InterpolatedU8StringHandler handler)
+    public static void Write(ref InlineU8Builder handler)
     {
-        Out.Write(handler.Written);
-        handler.Dispose();
+        Out.Write(ref handler);
     }
 
     public static void Write<T>(T value)
         where T : IUtf8SpanFormattable
     {
-        var handler = new InterpolatedU8StringHandler();
-        handler.AppendFormatted(value);
-        Out.Write(handler.Written);
+        Out.Write(value);
     }
 
     public static void WriteLine()
@@ -46,50 +45,17 @@ public static class U8Console
 
     public static void WriteLine(U8String value)
     {
-        WriteLineUnchecked(value);
+        Out.WriteLine(value);
     }
 
     public static void WriteLine(ReadOnlySpan<byte> value)
     {
-        U8String.Validate(value);
-        WriteLineUnchecked(value);
+        Out.WriteLine(value);
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public static void WriteLine(ref InterpolatedU8StringHandler handler)
+    public static void WriteLine(ref InlineU8Builder handler)
     {
-        handler.AppendBytesInlined(NewLine);
-        Out.Write(handler.Written);
-        handler.Dispose();
-    }
-
-    static void WriteLineUnchecked(ReadOnlySpan<byte> value)
-    {
-        byte[]? rented = null;
-        Unsafe.SkipInit(out InlineBuffer128 stack);
-
-        var newline = NewLine;
-        var length = value.Length + newline.Length;
-
-        var buffer = length <= InlineBuffer128.Length
-            ? stack : (rented = ArrayPool<byte>.Shared.Rent(length)).AsSpan();
-
-        value.CopyToUnsafe(ref buffer.AsRef());
-        if (OperatingSystem.IsWindows())
-        {
-            buffer.AsRef(value.Length) = (byte)'\r';
-            buffer.AsRef(value.Length + 1) = (byte)'\n';
-        }
-        else
-        {
-            buffer.AsRef(value.Length) = (byte)'\n';
-        }
-
-        Out.Write(buffer.SliceUnsafe(0, length));
-
-        if (rented != null)
-        {
-            ArrayPool<byte>.Shared.Return(rented);
-        }
+        Out.WriteLine(ref handler);
     }
 }
