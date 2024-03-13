@@ -13,20 +13,6 @@ namespace U8.Optimization;
 // interception conflicts which are bound to happen given how that
 // the entirety of U8String is metric tons of overloads upon overloads.
 
-// Stages:
-// - FoldValidation | FoldConversion
-// - Unroll(Comparison/Conversion/Copy)
-// - SpecializeDispatch
-// - DetectImports
-// - EmitDependencies
-// - EmitInterceptors
-
-// State:
-// - EmitDependencies
-// - InterceptedLocations
-//   - TrackedArguments
-// - ConvertedLiterals
-
 [Generator]
 sealed class Optimizer : ISourceGenerator
 {

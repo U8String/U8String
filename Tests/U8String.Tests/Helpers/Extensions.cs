@@ -31,6 +31,36 @@ internal static class Extensions
 
     internal static T[] Array<T>(T[] array) => array;
 
+    internal static T ParsableParse<T>(string s) where T : IParsable<T>
+    {
+        return T.Parse(s, null);
+    }
+
+    internal static bool ParsableTryParse<T>(string? s, out T? result) where T : IParsable<T>
+    {
+        return T.TryParse(s, null, out result);
+    }
+
+    internal static T SpanParsableParse<T>(ReadOnlySpan<char> s) where T : ISpanParsable<T>
+    {
+        return T.Parse(s, null);
+    }
+
+    internal static bool SpanParsableTryParse<T>(ReadOnlySpan<char> s, out T? result) where T : ISpanParsable<T>
+    {
+        return T.TryParse(s, null, out result);
+    }
+
+    internal static T Utf8SpanParsableParse<T>(ReadOnlySpan<byte> utf8Text) where T : IUtf8SpanParsable<T>
+    {
+        return T.Parse(utf8Text, null);
+    }
+
+    internal static bool Utf8SpanParsableTryParse<T>(ReadOnlySpan<byte> utf8Text, out T? result) where T : IUtf8SpanParsable<T>
+    {
+        return T.TryParse(utf8Text, null, out result);
+    }
+
     internal static ReadOnlySpan<T> Span<T>(ReadOnlySpan<T> span) => span;
 
     internal static IEnumerable<T> Flatten<T>(this IEnumerable<IEnumerable<T>> source)

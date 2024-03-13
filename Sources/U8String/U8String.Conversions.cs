@@ -7,8 +7,6 @@ using System.Text.Unicode;
 
 namespace U8;
 
-// Simplify conditional and slice expressions; use braces. Why: style + ensuring right branch ordering.
-#pragma warning disable RCS1003, RCS1206, IDE0057
 public readonly partial struct U8String
 {
     /// <summary>

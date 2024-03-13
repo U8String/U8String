@@ -108,7 +108,10 @@ public class Construction
             new U8String(bytes),
             U8String.Create(bytes),
             U8String.TryCreate(bytes, out var s)
-                ? s : ThrowHelpers.Unreachable<U8String>()
+                ? s : ThrowHelpers.Unreachable<U8String>(),
+            Extensions.Utf8SpanParsableParse<U8String>(bytes),
+            Extensions.Utf8SpanParsableTryParse<U8String>(bytes, out var s2)
+                ? s2 : ThrowHelpers.Unreachable<U8String>()
         };
 
         foreach (var str in actual)
@@ -135,7 +138,10 @@ public class Construction
             new U8String(bytes),
             U8String.Create(bytes),
             U8String.TryCreate(bytes, out var s)
-                ? s : ThrowHelpers.Unreachable<U8String>()
+                ? s : ThrowHelpers.Unreachable<U8String>(),
+            Extensions.Utf8SpanParsableParse<U8String>(bytes),
+            Extensions.Utf8SpanParsableTryParse<U8String>(bytes, out var s2)
+                ? s2 : ThrowHelpers.Unreachable<U8String>()
         };
 
         foreach (var str in actual)
@@ -159,7 +165,9 @@ public class Construction
         Assert.Throws<FormatException>(() => new U8String(bytes.AsSpan()));
         Assert.Throws<FormatException>(() => U8String.Create(bytes.AsSpan()));
         Assert.Throws<FormatException>(() => (U8String)(ReadOnlySpan<byte>)bytes);
+        Assert.Throws<FormatException>(() => Extensions.Utf8SpanParsableParse<U8String>(bytes.AsSpan()));
         Assert.False(U8String.TryCreate(bytes.AsSpan(), out _));
+        Assert.False(Extensions.Utf8SpanParsableTryParse<U8String>(bytes.AsSpan(), out _));
     }
 
     [Theory, MemberData(nameof(ValidStrings))]
@@ -248,7 +256,10 @@ public class Construction
             new U8String(text.Utf16),
             U8String.Create(text.Utf16),
             U8String.TryCreate(text.Utf16, out var s)
-                ? s : ThrowHelpers.Unreachable<U8String>()
+                ? s : ThrowHelpers.Unreachable<U8String>(),
+            Extensions.ParsableParse<U8String>(text.Utf16),
+            Extensions.ParsableTryParse<U8String>(text.Utf16, out var s2)
+                ? s2 : ThrowHelpers.Unreachable<U8String>()
         };
 
         foreach (var str in actual)
@@ -275,7 +286,10 @@ public class Construction
             new U8String(empty),
             U8String.Create(empty),
             U8String.TryCreate(empty, out var s)
-                ? s : ThrowHelpers.Unreachable<U8String>()
+                ? s : ThrowHelpers.Unreachable<U8String>(),
+            Extensions.ParsableParse<U8String>(empty),
+            Extensions.ParsableTryParse<U8String>(empty, out var s2)
+                ? s2 : ThrowHelpers.Unreachable<U8String>()
         };
 
         foreach (var str in actual)
@@ -295,30 +309,33 @@ public class Construction
     {
         const string? value = null;
 
+        Assert.Throws<ArgumentNullException>(() => (U8String)value!);
         Assert.Throws<ArgumentNullException>(() => new U8String(value!));
         Assert.Throws<ArgumentNullException>(() => U8String.Create(value!));
         Assert.Throws<ArgumentNullException>(() => value!.ToU8String());
+        Assert.Throws<ArgumentNullException>(() => Extensions.ParsableParse<U8String>(value!));
         Assert.False(U8String.TryCreate(value, out _));
+        Assert.False(Extensions.ParsableTryParse<U8String>(value, out _));
     }
 
-    [Fact]
-    public void CtorString_ThrowsOnTornSurrogatePair()
+    public static TheoryData<string> TornSurrogates = new(
+    [
+        "🔥"[..^1],
+        "🔥🔥"[..^1],
+        "🔥🔥🔥"[..^1]
+    ]);
+
+    [Theory, MemberData(nameof(TornSurrogates))]
+    public void CtorString_ThrowsOnTornSurrogatePair(string value)
     {
-        Assert.Throws<FormatException>(() => new U8String("🔥"[..^1]));
-        Assert.Throws<FormatException>(() => new U8String("🔥🔥"[..^1]));
-        Assert.Throws<FormatException>(() => new U8String("🔥🔥🔥"[..^1]));
+        Assert.Throws<FormatException>(() => (U8String)value);
+        Assert.Throws<FormatException>(() => new U8String(value));
+        Assert.Throws<FormatException>(() => U8String.Create(value));
+        Assert.Throws<FormatException>(() => value.ToU8String());
+        Assert.Throws<FormatException>(() => Extensions.ParsableParse<U8String>(value));
 
-        Assert.Throws<FormatException>(() => U8String.Create("🔥"[..^1]));
-        Assert.Throws<FormatException>(() => U8String.Create("🔥🔥"[..^1]));
-        Assert.Throws<FormatException>(() => U8String.Create("🔥🔥🔥"[..^1]));
-
-        Assert.Throws<FormatException>(() => "🔥"[..^1].ToU8String());
-        Assert.Throws<FormatException>(() => "🔥🔥"[..^1].ToU8String());
-        Assert.Throws<FormatException>(() => "🔥🔥🔥"[..^1].ToU8String());
-
-        Assert.False(U8String.TryCreate("🔥"[..^1], out _));
-        Assert.False(U8String.TryCreate("🔥🔥"[..^1], out _));
-        Assert.False(U8String.TryCreate("🔥🔥🔥"[..^1], out _));
+        Assert.False(U8String.TryCreate(value, out _));
+        Assert.False(Extensions.ParsableTryParse<U8String>(value, out _));
     }
 
     [Theory, MemberData(nameof(ValidStrings))]
@@ -336,7 +353,10 @@ public class Construction
             new U8String(chars),
             U8String.Create(chars),
             U8String.TryCreate(chars, out var s)
-                ? s : ThrowHelpers.Unreachable<U8String>()
+                ? s : ThrowHelpers.Unreachable<U8String>(),
+            Extensions.SpanParsableParse<U8String>(chars),
+            Extensions.SpanParsableTryParse<U8String>(chars, out var s2)
+                ? s2 : ThrowHelpers.Unreachable<U8String>()
         };
 
         foreach (var str in actual)
@@ -363,7 +383,10 @@ public class Construction
             new U8String(chars),
             U8String.Create(chars),
             U8String.TryCreate(chars, out var s)
-                ? s : ThrowHelpers.Unreachable<U8String>()
+                ? s : ThrowHelpers.Unreachable<U8String>(),
+            Extensions.SpanParsableParse<U8String>(chars),
+            Extensions.SpanParsableTryParse<U8String>(chars, out var s2)
+                ? s2 : ThrowHelpers.Unreachable<U8String>()
         };
 
         foreach (var str in actual)
@@ -378,24 +401,18 @@ public class Construction
         }
     }
 
-    [Fact]
-    public void CtorCharSpan_ThrowsOnTornSurrogatePair()
+
+    [Theory, MemberData(nameof(TornSurrogates))]
+    public void CtorCharSpan_ThrowsOnTornSurrogatePair(string value)
     {
-        Assert.Throws<FormatException>(() => new U8String("🔥".AsSpan(..^1)));
-        Assert.Throws<FormatException>(() => new U8String("🔥🔥".AsSpan(..^1)));
-        Assert.Throws<FormatException>(() => new U8String("🔥🔥🔥".AsSpan(..^1)));
+        Assert.Throws<FormatException>(() => (U8String)value.AsSpan());
+        Assert.Throws<FormatException>(() => new U8String(value.AsSpan()));
+        Assert.Throws<FormatException>(() => U8String.Create(value.AsSpan()));
+        Assert.Throws<FormatException>(() => value.AsSpan().ToU8String());
+        Assert.Throws<FormatException>(() => Extensions.SpanParsableParse<U8String>(value.AsSpan()));
 
-        Assert.Throws<FormatException>(() => U8String.Create("🔥".AsSpan(..^1)));
-        Assert.Throws<FormatException>(() => U8String.Create("🔥🔥".AsSpan(..^1)));
-        Assert.Throws<FormatException>(() => U8String.Create("🔥🔥🔥".AsSpan(..^1)));
-
-        Assert.Throws<FormatException>(() => "🔥".AsSpan(..^1).ToU8String());
-        Assert.Throws<FormatException>(() => "🔥🔥".AsSpan(..^1).ToU8String());
-        Assert.Throws<FormatException>(() => "🔥🔥🔥".AsSpan(..^1).ToU8String());
-
-        Assert.False(U8String.TryCreate("🔥".AsSpan(..^1), out _));
-        Assert.False(U8String.TryCreate("🔥🔥".AsSpan(..^1), out _));
-        Assert.False(U8String.TryCreate("🔥🔥🔥".AsSpan(..^1), out _));
+        Assert.False(U8String.TryCreate(value.AsSpan(), out _));
+        Assert.False(Extensions.SpanParsableTryParse<U8String>(value.AsSpan(), out _));
     }
 
     [Theory, MemberData(nameof(ValidStrings))]
@@ -458,7 +475,7 @@ public class Construction
     {
         if (text.Utf8 is []) return;
 
-        var bytes = (byte[])[..text.Utf8, 0];
+        var bytes = (byte[])[.. text.Utf8, 0];
         if (bytes is [0, ..])
             bytes = bytes[1..];
 
