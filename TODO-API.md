@@ -122,6 +122,9 @@
     - [x] Streams? Pipelines?
         - [x] ~~U8Stream wrapper? ReadLine? Which can be applied to FileStream? The main idea is that current stream is really heavy-handed and does a lot of transcoding. There is a need for stream that would encapsulate graceful handling of advancing only to char boundaries, reading lines and streaming validation (with user-defined error handling or maybe returned OperationResult). The drawback is this adds yet another place with really large test surface area and footgun potential.~~
 - [ ] Analyzers
+    - [ ] Do not compare U8String with string using `.Equals(object?)`
+    - [ ] `U8Reader` enumerable sources must be enumerated exactly once (not more, not less)
+        - [ ] Do not use `.Any()` on `U8Line/Split/SegmentReader`
     - [ ] Suppress 'use slice operator' warning for select methods like `.SliceRounding(...)`
     - [ ] Replace `.ElementAt`, `.Deconstruct`, etc. applied to splits with `SplitFirstLast` form
     - [ ] Replace string literal comparison with a UTF-8 one
