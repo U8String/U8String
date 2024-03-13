@@ -867,7 +867,7 @@ public class Construction
         var first = U8String.FromLiteral("Hello, World!");
         var second = U8String.FromLiteral("Hello, World!");
 
-        Assert.True(first.Equals(expected));
+        Assert.True(first.Equals("Hello, World!"u8));
         Assert.True(first.IsNullTerminated);
         Assert.Equal("Hello, World!"u8, first);
         Assert.Equal(0, first.Offset);
@@ -950,8 +950,8 @@ public class Construction
     [Fact]
     public static void FromAsciiUtf16_ThrowsOnNonAscii()
     {
-        Assert.Throws<ArgumentException>(() => U8String.FromAscii(Constants.Mixed));
-        Assert.Throws<ArgumentException>(() => U8String.FromAscii(Constants.Mixed.AsSpan()));
+        Assert.Throws<FormatException>(() => U8String.FromAscii(Constants.Mixed));
+        Assert.Throws<FormatException>(() => U8String.FromAscii(Constants.Mixed.AsSpan()));
     }
 
     [Theory, MemberData(nameof(ValidStrings))]
