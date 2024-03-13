@@ -11,7 +11,7 @@ public static class U8File
         var handle = File.OpenHandle(
             path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
 
-        return new(new(handle));
+        return new(new(handle), disposeSource: true);
     }
 
     /// <inheritdoc cref="U8String.Read(SafeFileHandle, long)"/>
@@ -49,7 +49,7 @@ public static class U8File
     {
         var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read);
 
-        return new(new(new(handle)));
+        return new(new(new(handle), disposeSource: true), disposeReader: true);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

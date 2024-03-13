@@ -24,6 +24,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(bytes),
             (U8String)bytes,
             bytes.ToU8String(),
             new U8String(bytes),
@@ -52,6 +53,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(bytes),
             (U8String)bytes,
             bytes.ToU8String(),
             new U8String(bytes),
@@ -77,9 +79,11 @@ public class Construction
     {
         var bytes = (byte[]?)null;
 
+        Assert.Throws<ArgumentNullException>(() => u8(bytes!));
+        Assert.Throws<ArgumentNullException>(() => (U8String)bytes!);
+        Assert.Throws<ArgumentNullException>(() => bytes!.ToU8String());
         Assert.Throws<ArgumentNullException>(() => new U8String(bytes!));
         Assert.Throws<ArgumentNullException>(() => U8String.Create(bytes!));
-        Assert.Throws<ArgumentNullException>(() => bytes!.ToU8String());
         Assert.False(U8String.TryCreate(bytes, out _));
     }
 
@@ -88,10 +92,11 @@ public class Construction
     {
         byte[] bytes = [0x80, 0x80, 0x80, 0x80];
 
+        Assert.Throws<FormatException>(() => u8(bytes));
+        Assert.Throws<FormatException>(() => (U8String)bytes);
         Assert.Throws<FormatException>(() => bytes.ToU8String());
         Assert.Throws<FormatException>(() => new U8String(bytes));
         Assert.Throws<FormatException>(() => U8String.Create(bytes));
-        Assert.Throws<FormatException>(() => (U8String)bytes);
         Assert.False(U8String.TryCreate(bytes, out _));
     }
 
@@ -103,6 +108,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(bytes),
             (U8String)bytes,
             bytes.ToU8String(),
             new U8String(bytes),
@@ -133,6 +139,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(bytes),
             (U8String)bytes,
             bytes.ToU8String(),
             new U8String(bytes),
@@ -161,6 +168,7 @@ public class Construction
     {
         byte[] bytes = [0x80, 0x80, 0x80, 0x80];
 
+        Assert.Throws<FormatException>(() => u8(bytes.AsSpan()));
         Assert.Throws<FormatException>(() => bytes.AsSpan().ToU8String());
         Assert.Throws<FormatException>(() => new U8String(bytes.AsSpan()));
         Assert.Throws<FormatException>(() => U8String.Create(bytes.AsSpan()));
@@ -179,6 +187,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(bytes),
             (U8String)bytes,
             bytes.AsU8String(),
             new U8String(bytes),
@@ -211,6 +220,7 @@ public class Construction
     {
         var actual = new[]
         {
+            u8(bytes),
             (U8String)bytes,
             bytes.AsU8String(),
             new U8String(bytes),
@@ -235,6 +245,7 @@ public class Construction
     {
         ImmutableArray<byte> bytes = [0x80, 0x80, 0x80, 0x80];
 
+        Assert.Throws<FormatException>(() => u8(bytes));
         Assert.Throws<FormatException>(() => (U8String)bytes);
         Assert.Throws<FormatException>(() => bytes.AsU8String());
         Assert.Throws<FormatException>(() => new U8String(bytes));
@@ -251,6 +262,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(text.Utf16),
             (U8String)text.Utf16,
             text.Utf16.ToU8String(),
             new U8String(text.Utf16),
@@ -281,6 +293,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(empty),
             (U8String)empty,
             empty.ToU8String(),
             new U8String(empty),
@@ -309,6 +322,7 @@ public class Construction
     {
         const string? value = null;
 
+        Assert.Throws<ArgumentNullException>(() => u8(value!));
         Assert.Throws<ArgumentNullException>(() => (U8String)value!);
         Assert.Throws<ArgumentNullException>(() => new U8String(value!));
         Assert.Throws<ArgumentNullException>(() => U8String.Create(value!));
@@ -328,6 +342,7 @@ public class Construction
     [Theory, MemberData(nameof(TornSurrogates))]
     public void CtorString_ThrowsOnTornSurrogatePair(string value)
     {
+        Assert.Throws<FormatException>(() => u8(value));
         Assert.Throws<FormatException>(() => (U8String)value);
         Assert.Throws<FormatException>(() => new U8String(value));
         Assert.Throws<FormatException>(() => U8String.Create(value));
@@ -348,6 +363,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(chars),
             (U8String)chars,
             chars.ToU8String(),
             new U8String(chars),
@@ -378,6 +394,7 @@ public class Construction
 
         var actual = new[]
         {
+            u8(chars),
             (U8String)chars,
             chars.ToU8String(),
             new U8String(chars),
@@ -405,6 +422,7 @@ public class Construction
     [Theory, MemberData(nameof(TornSurrogates))]
     public void CtorCharSpan_ThrowsOnTornSurrogatePair(string value)
     {
+        Assert.Throws<FormatException>(() => u8(value.AsSpan()));
         Assert.Throws<FormatException>(() => (U8String)value.AsSpan());
         Assert.Throws<FormatException>(() => new U8String(value.AsSpan()));
         Assert.Throws<FormatException>(() => U8String.Create(value.AsSpan()));
@@ -840,6 +858,100 @@ public class Construction
         const string? value = null;
 
         Assert.Throws<ArgumentNullException>(() => U8String.CreateLossy(value!));
+    }
+
+    [Fact]
+    public void FromLiteral_ProducesCorrectResult()
+    {
+        var expected = "Hello, World!";
+        var first = U8String.FromLiteral("Hello, World!");
+        var second = U8String.FromLiteral("Hello, World!");
+
+        Assert.True(first.Equals(expected));
+        Assert.True(first.IsNullTerminated);
+        Assert.Equal("Hello, World!"u8, first);
+        Assert.Equal(0, first.Offset);
+        Assert.Equal(expected.Length, first.Length);
+
+        // FromLiteral should always return the same instance
+        Assert.Equal(first, second);
+        Assert.Equal(first.Source, second.Source);
+        Assert.True(first.SourceEquals(second));
+    }
+
+    [Fact]
+    public void FromLiteral_ReturnsDefaultOnEmptyString()
+    {
+        var actual = U8String.FromLiteral("");
+
+        Assert.Equal(default, actual);
+        Assert.Equal(0, actual.Offset);
+    }
+
+    [Fact]
+    public void FromLiteral_ThrowsOnNullReference()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.FromLiteral(null!));
+    }
+
+    [Fact]
+    public void FromLiteral_ThrowsOnNonLiteral()
+    {
+        var nonLiteral = string.Concat("Hello, ", "World!");
+#pragma warning disable CA1857 // Non-literal strings should not be passed to FromLiteral
+        Assert.Throws<ArgumentException>(() => U8String.FromLiteral(nonLiteral));
+#pragma warning restore CA1857
+    }
+
+    [Fact]
+    public static void FromAsciiUtf16_ProducesCorrectResult()
+    {
+        var expected = Constants.AsciiBytes;
+        var overloads = new[]
+        {
+            U8String.FromAscii(Constants.Ascii),
+            U8String.FromAscii(Constants.Ascii.AsSpan())
+        };
+
+        foreach (var str in overloads)
+        {
+            Assert.Equal(expected, str);
+            Assert.Equal(0, str.Offset);
+            Assert.Equal(expected.Length, str.Length);
+            Assert.True(str.Equals(expected));
+            Assert.True(str.IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public static void FromAsciiUtf16_ProducesCorrectResultOnEmpty()
+    {
+        var overloads = new[]
+        {
+            U8String.FromAscii(""),
+            U8String.FromAscii([])
+        };
+
+        foreach (var str in overloads)
+        {
+            Assert.Null(str._value);
+            Assert.True(str.IsEmpty);
+            Assert.Equal(0, str.Offset);
+            Assert.Equal(0, str.Length);
+        }
+    }
+
+    [Fact]
+    public static void FromAsciiUtf16_ThrowsOnNullReference()
+    {
+        Assert.Throws<ArgumentNullException>(() => U8String.FromAscii(null!));
+    }
+
+    [Fact]
+    public static void FromAsciiUtf16_ThrowsOnNonAscii()
+    {
+        Assert.Throws<ArgumentException>(() => U8String.FromAscii(Constants.Mixed));
+        Assert.Throws<ArgumentException>(() => U8String.FromAscii(Constants.Mixed.AsSpan()));
     }
 
     [Theory, MemberData(nameof(ValidStrings))]

@@ -1,5 +1,7 @@
+using System.Diagnostics;
 using System.Net.Sockets;
 using System.Net.WebSockets;
+using System.Runtime.InteropServices;
 
 using Microsoft.Win32.SafeHandles;
 
@@ -93,6 +95,47 @@ public readonly struct U8SocketSource(
     }
 
     public void Dispose() => socket.Dispose();
+}
+
+// TODO: Reconsider design once ReadToAny(byte, byte) is implemented
+// TODO: Also consider special-casing implementation because the source
+// memory is seekable and readable so we can skip bufferring the data.
+public unsafe readonly struct U8MemorySource : IU8ReaderSource
+{
+    readonly byte* _ptr;
+    readonly nint _length;
+
+    public U8MemorySource(byte* ptr, nint length)
+    {
+        ArgumentNullException.ThrowIfNull(ptr);
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+        _ptr = ptr;
+        _length = length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int Read(long readerOffset, Span<byte> buffer)
+    {
+        Debug.Assert(readerOffset >= 0);
+
+        var available = int.CreateSaturating(_length - readerOffset);
+        var readLength = Math.Min(available, buffer.Length);
+
+        new ReadOnlySpan<byte>(_ptr + readerOffset, readLength)
+            .CopyToUnsafe(ref buffer.AsRef());
+        return readLength;
+    }
+
+    public ValueTask<int> ReadAsync(long readerOffset, Memory<byte> buffer, CancellationToken ct)
+    {
+        throw new NotSupportedException($"{nameof(U8MemorySource)} does not support asynchronous reads.");
+    }
+
+    public void Dispose()
+    {
+        NativeMemory.Free(_ptr);
+    }
 }
 
 // TODO: WebSocket is a buffered source. This causes double-buffering that U8Reader tries hard

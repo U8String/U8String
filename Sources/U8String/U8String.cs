@@ -64,6 +64,22 @@ public readonly partial struct U8String :
         get => default;
     }
 
+    /// <summary>
+    /// The maximum safe length of source bytes that can be used
+    /// to create a new <see cref="U8String"/>.
+    /// </summary>
+    /// <remarks>
+    /// This value is one less than maximum possible length of a <see cref="U8String"/>.
+    /// <para/>
+    /// Attempting to create a <see cref="U8String"/> with a source length greater than this
+    /// may result in <see cref="OutOfMemoryException"/>, <see cref="ArgumentException"/>, or other exceptions.
+    /// </remarks> 
+    public static int MaxSafeLength
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => Array.MaxLength - 1;
+    }
+
     internal readonly byte[]? _value;
     internal readonly U8Range _inner;
 

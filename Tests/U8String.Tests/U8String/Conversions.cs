@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Runtime.InteropServices;
 
 using U8;
 using U8.Tests;
@@ -240,6 +241,18 @@ public class Conversions
         var actual = u8(bytes)[3..^3].ToArray();
 
         Assert.Equal(expected, actual);
+    }
+
+    [Fact]
+    public void ToArray_LargeStringProducesCorrectValue()
+    {
+        var bytes = new byte[Array.MaxLength];
+        bytes.AsSpan().Fill((byte)'A');
+
+        var expected = ImmutableCollectionsMarshal.AsImmutableArray(bytes);
+        var actual = u8(expected).ToArray();
+
+        Assert.Equal(expected.AsSpan(), actual);
     }
 
     [Fact]

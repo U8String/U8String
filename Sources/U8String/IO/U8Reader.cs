@@ -17,7 +17,7 @@ public enum U8ReadResult
 // (as in, it is still UB but it should not be AVEing by reading random memory)
 // TODO: decide whether to seal the class and if not - which methods to make virtual
 public partial class U8Reader<TSource>(
-    TSource source, bool disposeSource = true) : IDisposable
+    TSource source, bool disposeSource) : IDisposable
         where TSource : IU8ReaderSource
 {
     const int BufferSize = 8192;

@@ -36,8 +36,7 @@ U8Console.WriteLine("Connected! To exit, press Ctrl+C."u8);
 try
 {
     await foreach (var line in sock
-        .AsU8Reader()
-        .Lines
+        .ReadU8Lines(disposeSource: false)
         .WithCancellation(cts.Token))
     {
         var msg = Message.Parse(line);

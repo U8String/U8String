@@ -6,6 +6,8 @@ using U8.Abstractions;
 
 namespace U8.IO;
 
+// TODO: Write an analyzer to prevent resource leakage caused by
+// creating and then discarding un-enumerated readers below.
 public partial class U8Reader<TSource>
 {
     // TODO: Both of these have consuming semantics, which is not ideal.
@@ -14,7 +16,7 @@ public partial class U8Reader<TSource>
     // whether it was previously used for other read operations or not.
     // Ideally #2, this should never be a footgun with PLINQ either.
     // TODO: Consider a design where cancellation is non-disposing/non-consuming
-    public U8LineReader<TSource> Lines => new(this);
+    public U8LineReader<TSource> Lines => new(this, disposeReader: true);
 
     /* public U8CharReader<TSource> Chars => new(this); */
 
@@ -22,24 +24,24 @@ public partial class U8Reader<TSource>
 
     public U8SplitReader<TSource, byte> Split(byte separator)
     {
-        return new(this, separator);
+        return new(this, separator, disposeReader: true);
     }
 
     public U8SplitReader<TSource, char> Split(char separator)
     {
         ThrowHelpers.CheckSurrogate(separator);
 
-        return new(this, separator);
+        return new(this, separator, disposeReader: true);
     }
 
     public U8SplitReader<TSource, Rune> Split(Rune separator)
     {
-        return new(this, separator);
+        return new(this, separator, disposeReader: true);
     }
 
     public U8SplitReader<TSource, U8String> Split(U8String separator)
     {
-        return new(this, separator);
+        return new(this, separator, disposeReader: true);
     }
 }
 
@@ -53,7 +55,7 @@ public readonly struct U8LineReader<T> :
     // TODO: Or .Reader/.Source?
     public U8Reader<T> Value { get; }
 
-    public U8LineReader(U8Reader<T> reader, bool disposeReader = true)
+    public U8LineReader(U8Reader<T> reader, bool disposeReader)
     {
         Value = reader;
         _disposeReader = disposeReader;
@@ -99,7 +101,7 @@ public readonly struct U8LineReader<T> :
     // TODO: Performs as fast as regular ReadLinesAsync which means
     // there are implementation issues which leave a lot of perf on the table.
     public sealed class AsyncEnumerator(
-        U8Reader<T> reader, bool disposeReader = true, CancellationToken ct = default) :
+        U8Reader<T> reader, bool disposeReader, CancellationToken ct = default) :
             IAsyncEnumerator<U8String>
     {
         public U8String Current { get; private set; }
@@ -145,7 +147,7 @@ public readonly struct U8SplitReader<T, TSeparator> :
 
     public TSeparator Separator { get; }
 
-    internal U8SplitReader(U8Reader<T> reader, TSeparator separator, bool disposeReader = true)
+    internal U8SplitReader(U8Reader<T> reader, TSeparator separator, bool disposeReader)
     {
         Value = reader;
         Separator = separator;
@@ -263,7 +265,7 @@ public readonly struct U8SegmentReader<T, TSegment> : IAsyncEnumerable<U8String>
 
     public U8Reader<T> Value { get; }
 
-    public U8SegmentReader(U8Reader<T> reader, bool disposeReader = true)
+    public U8SegmentReader(U8Reader<T> reader, bool disposeReader)
     {
         Value = reader;
         _disposeReader = disposeReader;
@@ -319,7 +321,7 @@ public readonly struct U8WebSocketMessageReader : IAsyncEnumerable<U8String>
 
     public U8Reader<U8WebSocketSource> Value { get; }
 
-    public U8WebSocketMessageReader(U8Reader<U8WebSocketSource> reader, bool disposeReader = true)
+    public U8WebSocketMessageReader(U8Reader<U8WebSocketSource> reader, bool disposeReader)
     {
         Value = reader;
         _disposeReader = disposeReader;
