@@ -3,6 +3,8 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using System.Text.Unicode;
 
+using U8.Serialization;
+
 namespace U8.Tests.U8StringTests;
 
 public partial class Serialization
@@ -36,7 +38,7 @@ public partial class Serialization
             new(Constants.CyrilicBytes),
             new(Constants.KanaBytes));
 
-        var utf8Json = U8String.Serialize(expected, SerializerContext.Configured.MultipleProps);
+        var utf8Json = expected.ToU8Json(SerializerContext.Configured.MultipleProps);
         var utf16Json = JsonSerializer.Serialize(expected, SerializerContext.Configured.MultipleProps);
 
         var actualFromUtf8 = JsonSerializer.Deserialize(utf8Json, SerializerContext.Configured.MultipleProps)!;
@@ -62,7 +64,7 @@ public partial class Serialization
             new(Constants.CyrilicBytes),
             new(Constants.KanaBytes));
 
-        var utf8Json = U8String.Serialize(expected, SerializerContext.Configured.MultiplePropsStruct);
+        var utf8Json = expected.ToU8Json(SerializerContext.Configured.MultiplePropsStruct);
         var utf16Json = JsonSerializer.Serialize(expected, SerializerContext.Configured.MultiplePropsStruct);
 
         var actualFromUtf8 = JsonSerializer.Deserialize(utf8Json, SerializerContext.Configured.MultiplePropsStruct);
@@ -84,7 +86,7 @@ public partial class Serialization
     {
         var expected = new NullableProps(null, default(U8String));
 
-        var utf8Json = U8String.Serialize(expected, SerializerContext.Configured.NullableProps);
+        var utf8Json = expected.ToU8Json(SerializerContext.Configured.NullableProps);
         var utf16Json = JsonSerializer.Serialize(expected, SerializerContext.Configured.NullableProps);
 
         var serializedUtf8 = JsonSerializer.Deserialize(utf8Json, SerializerContext.Configured.NullableProps)!;
@@ -105,7 +107,7 @@ public partial class Serialization
     {
         var expected = new NullablePropsStruct(null, default(U8String));
 
-        var utf8Json = U8String.Serialize(expected, SerializerContext.Configured.NullablePropsStruct);
+        var utf8Json = expected.ToU8Json(SerializerContext.Configured.NullablePropsStruct);
         var utf16Json = JsonSerializer.Serialize(expected, SerializerContext.Configured.NullablePropsStruct);
 
         var serializedUtf8 = JsonSerializer.Deserialize(utf8Json, SerializerContext.Configured.NullablePropsStruct);

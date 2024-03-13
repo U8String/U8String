@@ -3,6 +3,8 @@ using System.Text.Json.Serialization;
 
 using BenchmarkDotNet.Attributes;
 
+using U8.Serialization;
+
 namespace U8.Benchmarks;
 
 [ShortRunJob]
@@ -60,8 +62,7 @@ public class Serialization
         }
     };
 
-    private static readonly U8String PersonBytes = U8String
-        .Serialize(PersonValue, JsonContext.Default.Person);
+    private static readonly U8String PersonBytes = PersonValue.ToU8Json(JsonContext.Default.Person);
 
     [Benchmark(Baseline = true)]
     public Person? DeserializePerson() =>
@@ -80,12 +81,10 @@ public class Serialization
         JsonSerializer.Serialize(PersonU8Value, JsonContext.Default.PersonU8);
 
     [Benchmark]
-    public U8String SerializePersonToUtf8() =>
-        U8String.Serialize(PersonValue, JsonContext.Default.Person);
+    public U8String SerializePersonToUtf8() => PersonValue.ToU8Json(JsonContext.Default.Person);
 
     [Benchmark]
-    public U8String SerializePersonU8ToUtf8() =>
-        U8String.Serialize(PersonU8Value, JsonContext.Default.PersonU8);
+    public U8String SerializePersonU8ToUtf8() => PersonU8Value.ToU8Json(JsonContext.Default.PersonU8);
 }
 
 [JsonSerializable(typeof(Serialization.Person))]

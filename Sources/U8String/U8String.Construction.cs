@@ -590,12 +590,6 @@ public readonly partial struct U8String
         return handle.ReadToU8StringAsync(offset, ct);
     }
 
-    public static U8String Serialize<T>(T value, JsonTypeInfo<T> info)
-    {
-        var bytes = JsonSerializer.SerializeToUtf8Bytes(value, info);
-        return new(bytes, 0, bytes.Length);
-    }
-
     public static bool TryCreate(byte[]? value, out U8String result)
     {
         if (value != null)
