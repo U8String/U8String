@@ -30,7 +30,7 @@ await sock.ConnectAsync(addr, 6667, cts.Token);
 await sock.SendAsync(u8("PASS SCHMOOPIIE\r\n"), cts.Token);
 await sock.SendAsync(u8("NICK justinfan54970\r\n"), cts.Token);
 await sock.SendAsync(u8("USER justinfan54970 8 * :justinfan54970\r\n"), cts.Token);
-await sock.SendAsync(u8($"JOIN #{chan}\r\n"), cts.Token);
+await sock.SendAsync($"JOIN #{chan}\r\n", ct: cts.Token);
 U8Console.WriteLine("Connected! To exit, press Ctrl+C."u8);
 
 try
@@ -50,7 +50,7 @@ try
 }
 catch (OperationCanceledException) { }
 
-await sock.SendAsync(u8($"PART #{chan}\r\n"));
+await sock.SendAsync($"PART #{chan}\r\n");
 await sock.DisconnectAsync(false);
 
 U8Console.WriteLine("Goodbye!"u8);
