@@ -24,7 +24,10 @@ public static partial class U8WriteExtensions
 
         public async ValueTask WriteDisposeAsync(PooledU8Builder builder, CancellationToken ct)
         {
-            await stream.WriteAsync(builder, ct).ConfigureAwait(false);
+            await stream
+                .WriteAsync(builder.WrittenMemory, ct)
+                .ConfigureAwait(false);
+
             builder.Dispose();
         }
     }
