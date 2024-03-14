@@ -5,6 +5,8 @@ using System.Runtime.InteropServices.Marshalling;
 
 namespace U8.InteropServices;
 
+// TODO: Consider switching to stateful structs
+// TODO: Double-check that the flow of get pinnable ref -> ConvertToUnmanaged is correct
 [EditorBrowsable(EditorBrowsableState.Advanced)]
 [CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8StringMarshalling))]
 [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(FullCStr))]

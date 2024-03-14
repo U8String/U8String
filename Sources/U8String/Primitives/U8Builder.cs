@@ -100,13 +100,6 @@ public struct U8Builder : IU8Buffer
         return this;
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public readonly U8Builder AppendLiteral([ConstantExpected] string value)
-    {
-        Handler.AppendLiteral(value);
-        return this;
-    }
-
     // TODO: AppendLine methods
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

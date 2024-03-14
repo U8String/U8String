@@ -8,6 +8,7 @@ namespace U8.IO;
 
 // TODO: Write an analyzer to prevent resource leakage caused by
 // creating and then discarding un-enumerated readers below.
+// TODO: Consider making Line and Split readers direct enumerators instead?
 public partial class U8Reader<TSource>
 {
     // TODO: Both of these have consuming semantics, which is not ideal.

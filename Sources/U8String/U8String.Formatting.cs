@@ -13,9 +13,7 @@ namespace U8;
 
 [InterpolatedStringHandler]
 [EditorBrowsable(EditorBrowsableState.Advanced)]
-#pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
-// TODO: Review the impact on async methods (with consideration of upcoming async2)
-// and write analyzers to prevent most common copy-by-value mistakes.
+#pragma warning disable IDE0038 // Use pattern matching. Why: non-boxing interface resolution on structs.
 // TODO: Add padding support
 public /* ref */ struct InlineU8Builder
 {
@@ -47,7 +45,6 @@ public /* ref */ struct InlineU8Builder
     public InlineU8Builder(int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
-
         Unsafe.SkipInit(out _inline);
 
         if (length > InlineBuffer128.Length)
@@ -180,15 +177,25 @@ public /* ref */ struct InlineU8Builder
         AppendLiteral(value);
     }
 
-    // Explicit no-format overload for more compact codegen
-    // and specialization so that *if* TryFormat is inlined into
-    // the body, the format-specific branches are optimized away.
-    // TODO: Remove unbound generic and replace enum, byte[] and
-    // IA<byte> formatting with extension methods workaround.
     public void AppendFormatted<T>(T value)
     {
     Retry:
-        if (value is IUtf8SpanFormattable)
+        if (typeof(T) == typeof(U8String))
+        {
+            AppendFormatted((U8String)(object)value!);
+            return;
+        }
+        else if (typeof(T) == typeof(U8Builder))
+        {
+            AppendBytes(((U8Builder)(object)value!).Written);
+            return;
+        }
+        else if (typeof(T) == typeof(U8String?))
+        {
+            AppendFormatted((U8String?)(object)value!);
+            return;
+        }
+        else if (value is IUtf8SpanFormattable)
         {
             if (((IUtf8SpanFormattable)value)
                 .TryFormat(Free, out var written, default, _provider))
@@ -211,21 +218,6 @@ public /* ref */ struct InlineU8Builder
         else if (typeof(T) == typeof(ImmutableArray<byte>))
         {
             AppendFormatted(((ImmutableArray<byte>)(object)value!).AsSpan());
-            return;
-        }
-        else if (typeof(T) == typeof(U8String))
-        {
-            AppendFormatted((U8String)(object)value!);
-            return;
-        }
-        else if (typeof(T) == typeof(U8Builder))
-        {
-            AppendBytes(((U8Builder)(object)value!).Written);
-            return;
-        }
-        else if (typeof(T) == typeof(U8String?))
-        {
-            AppendFormatted((U8String?)(object)value!);
             return;
         }
         else if (typeof(T) == typeof(byte[]))
@@ -305,7 +297,7 @@ public /* ref */ struct InlineU8Builder
     internal void AppendBytesInlined(ReadOnlySpan<byte> bytes)
     {
         if (bytes.Length is 0) return;
-    Retry:
+        Retry:
         var free = Free;
         if (free.Length >= bytes.Length)
         {
@@ -324,6 +316,15 @@ public /* ref */ struct InlineU8Builder
 
         Grow(bytes.Length);
         goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AppendBytesUnchecked(ReadOnlySpan<byte> bytes)
+    {
+        Debug.Assert(Free.Length >= bytes.Length);
+
+        bytes.CopyToUnsafe(ref Free.AsRef());
+        BytesWritten += bytes.Length;
     }
 
     internal void EnsureInitialized()
@@ -427,6 +428,373 @@ public /* ref */ struct InlineU8Builder
             $"\nCannot append a value of type '{typeof(T)}' which does not implement '{typeof(IUtf8SpanFormattable)}' or is not '{typeof(Enum)}' or '{typeof(byte[])}'.");
     }
 }
+
+[InterpolatedStringHandler]
+[EditorBrowsable(EditorBrowsableState.Never)]
+#pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
+public struct PooledU8Builder
+{
+    readonly IFormatProvider? _provider;
+    byte[] _array;
+
+    public int BytesWritten { get; private set; }
+
+    public readonly ReadOnlySpan<byte> Written
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _array.SliceUnsafe(0, BytesWritten);
+    }
+
+    internal readonly ReadOnlyMemory<byte> WrittenMemory
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _array.AsMemory(0, BytesWritten);
+    }
+
+    readonly Span<byte> Free
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _array.SliceUnsafe(BytesWritten);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public PooledU8Builder()
+    {
+        _array = ArrayPool<byte>.Shared.Rent(1024);
+        _provider = CultureInfo.InvariantCulture;
+    }
+
+    public PooledU8Builder(int length)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegative(length);
+
+        _array = ArrayPool<byte>.Shared.Rent(length);
+        _provider = CultureInfo.InvariantCulture;
+    }
+
+    public PooledU8Builder(
+        int literalLength,
+        int formattedCount,
+        IFormatProvider? formatProvider = null)
+    {
+        _array = ArrayPool<byte>.Shared.Rent(literalLength + (formattedCount * 12));
+        _provider = formatProvider ?? CultureInfo.InvariantCulture;
+    }
+
+    // Reference: https://github.com/dotnet/runtime/issues/93501
+    // Refactor once inlined TryGetBytes gains UTF8EncodingSealed.ReadUtf8 call
+    // which JIT/AOT can optimize away for string literals, eliding the transcoding.
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AppendLiteral([ConstantExpected] string s)
+    {
+        if (s.Length > 0)
+        {
+            if (s.Length is 1 && char.IsAscii(s[0]))
+            {
+                AppendByte((byte)s[0]);
+                return;
+            }
+
+            AppendConstantString(s);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void AppendLiteral(ReadOnlySpan<char> s)
+    {
+    Retry:
+        if (Encoding.UTF8.TryGetBytes(s, Free, out var written))
+        {
+            BytesWritten += written;
+            return;
+        }
+
+        // We can't use the length * 2 or * 3 hint here because
+        // it will fail interpolation for 1-1.5GiB strings which
+        // is otherwise a legal operation.
+        Grow();
+        goto Retry;
+    }
+
+    public void AppendFormatted(bool value)
+    {
+        AppendBytes(value ? "True"u8 : "False"u8);
+    }
+
+    public void AppendFormatted(char value)
+    {
+        ThrowHelpers.CheckSurrogate(value);
+
+        if (char.IsAscii(value))
+        {
+            AppendByte((byte)value);
+            return;
+        }
+
+        AppendBytes(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
+    }
+
+    public void AppendFormatted(Rune value)
+    {
+        if (value.IsAscii)
+        {
+            AppendByte((byte)value.Value);
+            return;
+        }
+
+        AppendBytes(value.Value switch
+        {
+            <= 0x7FF => value.AsTwoBytes(),
+            <= 0xFFFF => value.AsThreeBytes(),
+            _ => value.AsFourBytes()
+        });
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AppendFormatted(U8String value)
+    {
+        if (!value.IsEmpty)
+        {
+            AppendBytes(value.UnsafeSpan);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AppendFormatted(U8String? value)
+    {
+        if (value is { IsEmpty: false } text)
+        {
+            AppendBytes(text.UnsafeSpan);
+        }
+    }
+
+    public void AppendFormatted(ReadOnlySpan<byte> value)
+    {
+        U8String.Validate(value);
+        AppendBytes(value);
+    }
+
+    public void AppendFormatted(string? value)
+    {
+        if (value is not null)
+        {
+            AppendLiteral(value.AsSpan());
+        }
+    }
+
+    public void AppendFormatted(ReadOnlySpan<char> value)
+    {
+        AppendLiteral(value);
+    }
+
+    public void AppendFormatted<T>(T value)
+    {
+    Retry:
+        if (typeof(T) == typeof(U8String))
+        {
+            AppendFormatted((U8String)(object)value!);
+            return;
+        }
+        else if (typeof(T) == typeof(U8Builder))
+        {
+            AppendBytes(((U8Builder)(object)value!).Written);
+            return;
+        }
+        else if (typeof(T) == typeof(U8String?))
+        {
+            AppendFormatted((U8String?)(object)value!);
+            return;
+        }
+        else if (value is IUtf8SpanFormattable)
+        {
+            if (((IUtf8SpanFormattable)value)
+                .TryFormat(Free, out var written, default, _provider))
+            {
+                BytesWritten += written;
+                return;
+            }
+        }
+        else if (typeof(T).IsEnum)
+        {
+#nullable disable
+            var formattable = new U8EnumFormattable<T>(value);
+#nullable restore
+            if (formattable.TryFormat(Free, out var written))
+            {
+                BytesWritten += written;
+                return;
+            }
+        }
+        else if (typeof(T) == typeof(ImmutableArray<byte>))
+        {
+            AppendFormatted(((ImmutableArray<byte>)(object)value!).AsSpan());
+            return;
+        }
+        else if (typeof(T) == typeof(byte[]))
+        {
+            AppendFormatted(Unsafe.As<byte[]?>(value).AsSpan());
+            return;
+        }
+        else if (typeof(T) == typeof(string))
+        {
+            AppendFormatted(Unsafe.As<string?>(value));
+            return;
+        }
+        else
+        {
+            UnsupportedAppend<T>();
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    public void AppendFormatted<T>(T value, ReadOnlySpan<char> format)
+        where T : IUtf8SpanFormattable
+    {
+    Retry:
+        if (value.TryFormat(Free, out var written, format, _provider))
+        {
+            BytesWritten += written;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void AppendConstantString([ConstantExpected] string s)
+    {
+        var literal = U8Literals.Utf16.GetLiteral(s);
+        AppendBytes(literal.SliceUnsafe(0, literal.Length - 1));
+    }
+
+    // This may seem surprising but we can't waste precious inlining budget
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void AppendByte(byte value)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length > 0)
+        {
+            free[0] = value;
+            BytesWritten++;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    internal void AppendBytes(ReadOnlySpan<byte> bytes)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length >= bytes.Length)
+        {
+            bytes.CopyToUnsafe(ref free.AsRef());
+            BytesWritten += bytes.Length;
+            return;
+        }
+
+        Grow(bytes.Length);
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AppendBytesInlined(ReadOnlySpan<byte> bytes)
+    {
+        if (bytes.Length is 0) return;
+        Retry:
+        var free = Free;
+        if (free.Length >= bytes.Length)
+        {
+            if (bytes.Length is 1)
+            {
+                free[0] = bytes[0];
+            }
+            else
+            {
+                bytes.CopyToUnsafe(ref free.AsRef());
+            }
+
+            BytesWritten += bytes.Length;
+            return;
+        }
+
+        Grow(bytes.Length);
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal void AppendBytesUnchecked(ReadOnlySpan<byte> bytes)
+    {
+        Debug.Assert(Free.Length >= bytes.Length);
+
+        bytes.CopyToUnsafe(ref Free.AsRef());
+        BytesWritten += bytes.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void Grow()
+    {
+        var arrayPool = ArrayPool<byte>.Shared;
+        var rented = _array;
+        var newArr = arrayPool.Rent(_array.Length * 2);
+
+        rented
+            .SliceUnsafe(0, BytesWritten)
+            .CopyToUnsafe(ref newArr.AsRef());
+
+        _array = newArr;
+        arrayPool.Return(rented, clearArray: true);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void Grow(int hint)
+    {
+        var arrayPool = ArrayPool<byte>.Shared;
+        var rented = _array;
+        var bytesWritten = BytesWritten;
+        var length = Math.Max(rented.Length * 2, bytesWritten + hint);
+        var newArr = arrayPool.Rent(length);
+
+        rented
+            .SliceUnsafe(0, bytesWritten)
+            .CopyToUnsafe(ref newArr.AsRef());
+
+        _array = newArr;
+        arrayPool.Return(rented, clearArray: true);
+    }
+
+    /// <summary>
+    /// Resets the buffer and returns pooled array if applicable.
+    /// </summary>
+    /// <remarks>
+    /// The buffer may be reused after calling this method.
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Dispose()
+    {
+        BytesWritten = 0;
+        (var rented, _array) = (_array, null!);
+
+        if (rented != null)
+        {
+            ArrayPool<byte>.Shared.Return(rented);
+        }
+    }
+
+    [DoesNotReturn, StackTraceHidden]
+    static void UnsupportedAppend<T>()
+    {
+        throw new NotSupportedException(
+            $"\nCannot append a value of type '{typeof(T)}' which does not implement '{typeof(IUtf8SpanFormattable)}' or is not '{typeof(Enum)}' or '{typeof(byte[])}'.");
+    }
+}
+
 public readonly partial struct U8String
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
