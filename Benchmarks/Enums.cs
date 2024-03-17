@@ -44,7 +44,7 @@ public class Enums
     public HttpStatusCode ParseIgnoreCaseU16() => Enum.Parse<HttpStatusCode>(HttpStatusCodeCapsValueU16, ignoreCase: true);
 
     [Benchmark]
-    public HttpStatusCode ParseRare() => U8Enum.Parse<HttpStatusCode>(HttpStatusCodeNotDefined);
+    public HttpStatusCode ParseRare() => U8Enum.Parse<HttpStatusCode>(HttpStatusCodeNotDefined, U8EnumParseOptions.AllowNumericValues);
 
     [Benchmark]
     public HttpStatusCode ParseRareU16() => Enum.Parse<HttpStatusCode>(HttpStatusCodeNotDefinedU16);

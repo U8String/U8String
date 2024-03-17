@@ -152,8 +152,7 @@ public static class U8Enum
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static T Parse<T>(U8String value) where T : struct, Enum
     {
-        if (!EnumInfo<T>.ValueLookup.TryGetValue(value, out var result) &&
-            !TryParseUnderlying(value, out result))
+        if (!EnumInfo<T>.ValueLookup.TryGetValue(value, out var result))
         {
             ThrowHelpers.ArgumentException();
         }
@@ -168,8 +167,24 @@ public static class U8Enum
             ? EnumInfo<T>.CaseInsensitiveValueLookup
             : EnumInfo<T>.ValueLookup;
 
-        if (!lookup.TryGetValue(value, out var result) &&
-            !TryParseUnderlying(value, out result))
+        if (!lookup.TryGetValue(value, out var result))
+        {
+            ThrowHelpers.ArgumentException();
+        }
+
+        return result;
+    }
+
+    public static T Parse<T>(U8String value, U8EnumParseOptions options) where T : struct, Enum
+    {
+        var lookup = options.HasFlag(U8EnumParseOptions.IgnoreCase)
+            ? EnumInfo<T>.CaseInsensitiveValueLookup
+            : EnumInfo<T>.ValueLookup;
+
+        var numeric = options.HasFlag(U8EnumParseOptions.AllowNumericValues);
+
+        if (!lookup.TryGetValue(value, out var result) && (
+            !numeric || !TryParseUnderlying(value, out result)))
         {
             ThrowHelpers.ArgumentException();
         }
@@ -180,15 +195,25 @@ public static class U8Enum
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool TryParse<T>(U8String value, out T result) where T : struct, Enum
     {
-        return EnumInfo<T>.ValueLookup.TryGetValue(value, out result)
-            || TryParseUnderlying(value, out result);
+        return EnumInfo<T>.ValueLookup.TryGetValue(value, out result);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     public static bool TryParse<T>(U8String value, bool ignoreCase, out T result) where T : struct, Enum
     {
         return (ignoreCase ? EnumInfo<T>.CaseInsensitiveValueLookup : EnumInfo<T>.ValueLookup)
-            .TryGetValue(value, out result) || TryParseUnderlying(value, out result);
+            .TryGetValue(value, out result);
+    }
+
+    public static bool TryParse<T>(U8String value, U8EnumParseOptions options, out T result) where T : struct, Enum
+    {
+        var lookup = options.HasFlag(U8EnumParseOptions.IgnoreCase)
+            ? EnumInfo<T>.CaseInsensitiveValueLookup
+            : EnumInfo<T>.ValueLookup;
+
+        var numeric = options.HasFlag(U8EnumParseOptions.AllowNumericValues);
+
+        return lookup.TryGetValue(value, out result) || (numeric && TryParseUnderlying(value, out result));
     }
 
     static bool TryParseUnderlying<T>(U8String value, out T result) where T : struct, Enum
@@ -227,6 +252,14 @@ public static class U8Enum
 
         return false;
     }
+}
+
+[Flags]
+public enum U8EnumParseOptions
+{
+    None = 0,
+    IgnoreCase = 1,
+    AllowNumericValues = 2,
 }
 
 public static class U8EnumExtensions
@@ -307,7 +340,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
 
         return FormatNew(Value);
     }
-    
+
     internal static U8String ToU8StringUndefined(T value)
     {
         if (Cache.TryGetValue(value, out var bytes))
@@ -351,7 +384,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
     {
         Unsafe.SkipInit(out U8String formatted);
         var type = typeof(T).GetEnumUnderlyingType();
-        
+
         if (type == typeof(byte)) formatted = U8String.Create(Unsafe.As<T, byte>(ref value));
         else if (type == typeof(sbyte)) formatted = U8String.Create(Unsafe.As<T, sbyte>(ref value));
         else if (type == typeof(short)) formatted = U8String.Create(Unsafe.As<T, short>(ref value));
