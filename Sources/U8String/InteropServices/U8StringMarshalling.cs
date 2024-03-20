@@ -9,7 +9,7 @@ namespace U8.InteropServices;
 // TODO: Double-check that the flow of get pinnable ref -> ConvertToUnmanaged is correct
 [EditorBrowsable(EditorBrowsableState.Advanced)]
 [CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8StringMarshalling))]
-[CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(FullCStr))]
+[CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Default))]
 public static unsafe class U8StringMarshalling
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -18,18 +18,19 @@ public static unsafe class U8StringMarshalling
         return new U8String(unmanaged);
     }
 
-    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(LightweightCStr))]
-    public static class LightweightCStr
+    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(LikelyNullTerminated))]
+    public static class LikelyNullTerminated
     {
         // TODO: see if there's a way to create this on stack on occasion
         // the callee writes to the address, messing up the null byte
         static byte Empty = (byte)'\0';
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte* ConvertToUnmanaged(U8String managed)
         {
-            return (byte*)Unsafe.AsPointer(
-                ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty);
+            throw new NotSupportedException($"""
+                It is expected for the generated marshalling code to call {nameof(GetPinnableReference)} instead.");
+                If you are seeing this exception, please file an issue at https://github.com/U8String/U8String/issues/new
+                """);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -48,27 +49,16 @@ public static unsafe class U8StringMarshalling
 
             static ref byte NullTerminate(U8String managed)
             {
-                ref var ptr = ref Unsafe.NullRef<byte>();
+                ref var ptr = ref new byte[(nint)(uint)(managed.Length + 1)].AsRef();
 
-                if (!managed.IsEmpty)
-                {
-                    var length = managed.Length;
-                    ptr = ref new byte[(nint)(uint)(length + 1)].AsRef();
-
-                    managed.UnsafeSpan.CopyToUnsafe(ref ptr);
-                }
-                else
-                {
-                    ptr = ref Empty;
-                }
-
+                managed.UnsafeSpan.CopyToUnsafe(ref ptr);
                 return ref ptr;
             }
         }
     }
 
-    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(FullCStr))]
-    public ref struct FullCStr
+    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Default))]
+    public ref struct Default
     {
         static byte Empty = (byte)'\0';
 
@@ -100,7 +90,7 @@ public static unsafe class U8StringMarshalling
                 NullTerminate(
                     ref managed.UnsafeRef,
                     ref buffer.AsRef(),
-                    managed.Length + 1);
+                    managed.Length);
             }
         }
 
@@ -108,12 +98,12 @@ public static unsafe class U8StringMarshalling
         {
             if (length > BufferSize)
             {
-                dst = ref Unsafe.AsRef<byte>((byte*)NativeMemory.Alloc((uint)length));
+                dst = ref Unsafe.AsRef<byte>((byte*)NativeMemory.Alloc((uint)length + 1));
                 _allocated = true;
             }
 
             MemoryMarshal.CreateSpan(ref src, length).CopyToUnsafe(ref dst);
-            dst.Add(length - 1) = 0;
+            dst.Add(length) = 0;
 
             _ptr = ref dst;
         }
@@ -121,6 +111,8 @@ public static unsafe class U8StringMarshalling
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly ref readonly byte GetPinnableReference() => ref _ptr;
 
+        // SAFETY: _ptr is always pinned and returned pointer is expected not to
+        // outlive the duration of the p/invoke call it is passed to.
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public readonly byte* ToUnmanaged() => (byte*)Unsafe.AsPointer(ref _ptr);
 
@@ -129,27 +121,28 @@ public static unsafe class U8StringMarshalling
         {
             if (_allocated)
             {
+                // SAFETY: _allocated _ptr originates from NativeMemory.Alloc
                 NativeMemory.Free(Unsafe.AsPointer(ref _ptr));
             }
         }
     }
 
-    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(AssumeNullTerminated))]
-    public static class AssumeNullTerminated
+    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Raw))]
+    public static class Raw
     {
-        static byte Empty = (byte)'\0';
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static byte* ConvertToUnmanaged(U8String managed)
         {
-            return (byte*)Unsafe.AsPointer(
-                ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty);
+            throw new NotSupportedException($"""
+                It is expected for the generated marshalling code to call {nameof(GetPinnableReference)} instead.");
+                If you are seeing this exception, please file an issue at https://github.com/U8String/U8String/issues/new
+                """);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly byte GetPinnableReference(U8String managed)
         {
-            return ref !managed.IsEmpty ? ref managed.UnsafeRef : ref Empty;
+            return ref managed.GetPinnableReference();
         }
     }
 
@@ -157,6 +150,6 @@ public static unsafe class U8StringMarshalling
     {
         throw new NotSupportedException(
             "Use one of the member types for explicitly specified marshalling: " +
-            $"{nameof(FullCStr)}, {nameof(LightweightCStr)} or {nameof(AssumeNullTerminated)}.");
+            $"{nameof(Default)}, {nameof(LikelyNullTerminated)} or {nameof(Raw)}.");
     }
 }

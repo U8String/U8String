@@ -53,7 +53,7 @@ public static partial class U8WriteExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default)
     {
-        return WriteAsync(new WebSocketWriteable(websocket, type, flags), handler, ct);
+        return WriteBuilderAsync(new WebSocketWriteable(websocket, type, flags), handler, ct);
     }
 
     public static ValueTask SendAsync<T>(
@@ -63,7 +63,7 @@ public static partial class U8WriteExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default) where T : IUtf8SpanFormattable
     {
-        return WriteAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
+        return WriteUtf8FormattableAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
     }
 
     public static ValueTask SendLineAsync(
@@ -82,7 +82,7 @@ public static partial class U8WriteExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default)
     {
-        return WriteLineAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
+        return WriteLineMemoryAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
     }
 
     public static ValueTask SendLineAsync(
@@ -93,7 +93,7 @@ public static partial class U8WriteExtensions
         CancellationToken ct = default)
     {
         U8String.Validate(value.Span);
-        return WriteLineAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
+        return WriteLineMemoryAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
@@ -104,7 +104,7 @@ public static partial class U8WriteExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default)
     {
-        return WriteLineAsync(new WebSocketWriteable(websocket, type, flags), handler, ct);
+        return WriteLineBuilderAsync(new WebSocketWriteable(websocket, type, flags), handler, ct);
     }
 
     public static ValueTask SendLineAsync<T>(
@@ -114,7 +114,7 @@ public static partial class U8WriteExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default) where T : IUtf8SpanFormattable
     {
-        return WriteLineAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
+        return WriteLineUtf8FormattableAsync(new WebSocketWriteable(websocket, type, flags), value, ct);
     }
 }
 
@@ -127,7 +127,7 @@ public static partial class U8WriteEnumExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default) where T : struct, Enum
     {
-        return WriteAsync(new U8WriteExtensions.WebSocketWriteable(websocket, type, flags), value, ct);
+        return WriteEnumAsync(new U8WriteExtensions.WebSocketWriteable(websocket, type, flags), value, ct);
     }
 
     public static ValueTask SendLineAsync<T>(
@@ -137,6 +137,6 @@ public static partial class U8WriteEnumExtensions
         WebSocketMessageFlags flags = WebSocketMessageFlags.EndOfMessage,
         CancellationToken ct = default) where T : struct, Enum
     {
-        return WriteLineAsync(new U8WriteExtensions.WebSocketWriteable(websocket, type, flags), value, ct);
+        return WriteLineEnumAsync(new U8WriteExtensions.WebSocketWriteable(websocket, type, flags), value, ct);
     }
 }

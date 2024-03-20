@@ -15,6 +15,7 @@ namespace U8;
 [EditorBrowsable(EditorBrowsableState.Advanced)]
 #pragma warning disable IDE0038 // Use pattern matching. Why: non-boxing interface resolution on structs.
 // TODO: Add padding support
+// TODO: Deduplicate core impl.
 public /* ref */ struct InlineU8Builder
 {
     InlineBuffer128 _inline;
@@ -82,10 +83,17 @@ public /* ref */ struct InlineU8Builder
             if (s.Length is 1 && char.IsAscii(s[0]))
             {
                 AppendByte((byte)s[0]);
-                return;
             }
-
-            AppendConstantString(s);
+            else if (s.Length is 2
+                && char.IsAscii(s[0])
+                && char.IsAscii(s[1]))
+            {
+                AppendTwoBytes((ushort)(s[0] | ((uint)s[1] << 8)));
+            }
+            else
+            {
+                AppendConstantString(s);
+            }
         }
     }
 
@@ -271,6 +279,22 @@ public /* ref */ struct InlineU8Builder
         {
             free[0] = value;
             BytesWritten++;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void AppendTwoBytes(ushort b01)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length > 1)
+        {
+            free.AsRef().Cast<byte, ushort>() = b01;
+            BytesWritten += 2;
             return;
         }
 
@@ -477,7 +501,7 @@ public struct PooledU8Builder
         int formattedCount,
         IFormatProvider? formatProvider = null)
     {
-        _array = ArrayPool<byte>.Shared.Rent(literalLength + (formattedCount * 12));
+        _array = ArrayPool<byte>.Shared.Rent(literalLength + (formattedCount * 96));
         _provider = formatProvider ?? CultureInfo.InvariantCulture;
     }
 
@@ -492,10 +516,17 @@ public struct PooledU8Builder
             if (s.Length is 1 && char.IsAscii(s[0]))
             {
                 AppendByte((byte)s[0]);
-                return;
             }
-
-            AppendConstantString(s);
+            else if (s.Length is 2
+                && char.IsAscii(s[0])
+                && char.IsAscii(s[1]))
+            {
+                AppendTwoBytes((ushort)(s[0] | ((uint)s[1] << 8)));
+            }
+            else
+            {
+                AppendConstantString(s);
+            }
         }
     }
 
@@ -688,6 +719,22 @@ public struct PooledU8Builder
         goto Retry;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal void AppendTwoBytes(ushort b01)
+    {
+    Retry:
+        var free = Free;
+        if (free.Length > 1)
+        {
+            free.AsRef().Cast<byte, ushort>() = b01;
+            BytesWritten += 2;
+            return;
+        }
+
+        Grow();
+        goto Retry;
+    }
+
     internal void AppendBytes(ReadOnlySpan<byte> bytes)
     {
     Retry:
@@ -749,7 +796,7 @@ public struct PooledU8Builder
             .CopyToUnsafe(ref newArr.AsRef());
 
         _array = newArr;
-        arrayPool.Return(rented, clearArray: true);
+        arrayPool.Return(rented);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -766,7 +813,7 @@ public struct PooledU8Builder
             .CopyToUnsafe(ref newArr.AsRef());
 
         _array = newArr;
-        arrayPool.Return(rented, clearArray: true);
+        arrayPool.Return(rented);
     }
 
     /// <summary>

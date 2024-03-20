@@ -171,7 +171,7 @@ internal struct ArrayBuilder : IDisposable
 
         if (rented != null)
         {
-            arrayPool.Return(rented, clearArray: true);
+            arrayPool.Return(rented);
         }
     }
 
@@ -180,7 +180,7 @@ internal struct ArrayBuilder : IDisposable
         var array = _array;
         if (array != null)
         {
-            ArrayPool<byte>.Shared.Return(array, clearArray: true);
+            ArrayPool<byte>.Shared.Return(array);
         }
     }
 }

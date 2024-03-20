@@ -29,13 +29,13 @@ public static partial class U8WriteExtensions
         get => OperatingSystem.IsWindows() ? "\r\n"u8 : "\n"u8;
     }
 
-    static void Write<T>(T destination, ref InlineU8Builder builder)
+    static void WriteBuilder<T>(T destination, ref InlineU8Builder builder)
         where T : IWriteable
     {
         destination.WriteDispose(ref builder);
     }
 
-    static void Write<T, U>(T destination, U value)
+    static void WriteUtf8Formattable<T, U>(T destination, U value)
         where T : IWriteable
         where U : IUtf8SpanFormattable
     {
@@ -44,13 +44,13 @@ public static partial class U8WriteExtensions
         destination.WriteDispose(ref builder);
     }
 
-    static ValueTask WriteAsync<T>(T destination, PooledU8Builder builder, CancellationToken ct)
+    static ValueTask WriteBuilderAsync<T>(T destination, PooledU8Builder builder, CancellationToken ct)
         where T : IWriteable
     {
         return destination.WriteDisposeAsync(builder, ct);
     }
 
-    static ValueTask WriteAsync<T, U>(T destination, U value, CancellationToken ct)
+    static ValueTask WriteUtf8FormattableAsync<T, U>(T destination, U value, CancellationToken ct)
         where T : IWriteable
         where U : IUtf8SpanFormattable
     {
@@ -60,7 +60,7 @@ public static partial class U8WriteExtensions
         return destination.WriteDisposeAsync(builder, ct);
     }
 
-    static void WriteLine<T>(T destination, ReadOnlySpan<byte> value)
+    static void WriteLineSpan<T>(T destination, ReadOnlySpan<byte> value)
         where T : IWriteable
     {
         var builder = new InlineU8Builder(value.Length + NewLine.Length);
@@ -69,14 +69,14 @@ public static partial class U8WriteExtensions
         destination.WriteDispose(ref builder);
     }
 
-    static void WriteLine<T>(T destination, ref InlineU8Builder builder)
+    static void WriteLineBuilder<T>(T destination, ref InlineU8Builder builder)
         where T : IWriteable
     {
         builder.AppendBytesInlined(NewLine);
         destination.WriteDispose(ref builder);
     }
 
-    static void WriteLine<T, U>(T destination, U value)
+    static void WriteLineUtf8Formattable<T, U>(T destination, U value)
         where T : IWriteable
         where U : IUtf8SpanFormattable
     {
@@ -86,7 +86,7 @@ public static partial class U8WriteExtensions
         destination.WriteDispose(ref builder);
     }
 
-    static ValueTask WriteLineAsync<T>(T destination, ReadOnlyMemory<byte> value, CancellationToken ct)
+    static ValueTask WriteLineMemoryAsync<T>(T destination, ReadOnlyMemory<byte> value, CancellationToken ct)
         where T : IWriteable
     {
         var builder = new PooledU8Builder(value.Length + NewLine.Length);
@@ -95,14 +95,14 @@ public static partial class U8WriteExtensions
         return destination.WriteDisposeAsync(builder, ct);
     }
 
-    static ValueTask WriteLineAsync<T>(T destination, PooledU8Builder builder, CancellationToken ct)
+    static ValueTask WriteLineBuilderAsync<T>(T destination, PooledU8Builder builder, CancellationToken ct)
         where T : IWriteable
     {
         builder.AppendBytesInlined(NewLine);
         return destination.WriteDisposeAsync(builder, ct);
     }
 
-    static ValueTask WriteLineAsync<T, U>(T destination, U value, CancellationToken ct)
+    static ValueTask WriteLineUtf8FormattableAsync<T, U>(T destination, U value, CancellationToken ct)
         where T : IWriteable
         where U : IUtf8SpanFormattable
     {
@@ -115,21 +115,21 @@ public static partial class U8WriteExtensions
 
 public static partial class U8WriteEnumExtensions
 {
-    static void Write<T, U>(T destination, U value)
+    static void WriteEnum<T, U>(T destination, U value)
         where T : U8WriteExtensions.IWriteable
         where U : struct, Enum
     {
         destination.Write(value.ToU8String());
     }
 
-    static ValueTask WriteAsync<T, U>(T destination, U value, CancellationToken ct)
+    static ValueTask WriteEnumAsync<T, U>(T destination, U value, CancellationToken ct)
         where T : U8WriteExtensions.IWriteable
         where U : struct, Enum
     {
         return destination.WriteAsync(value.ToU8String(), ct);
     }
 
-    static void WriteLine<T, U>(T destination, U value)
+    static void WriteLineEnum<T, U>(T destination, U value)
         where T : U8WriteExtensions.IWriteable
         where U : struct, Enum
     {
@@ -142,7 +142,7 @@ public static partial class U8WriteEnumExtensions
         destination.WriteDispose(ref builder);
     }
 
-    static ValueTask WriteLineAsync<T, U>(T destination, U value, CancellationToken ct)
+    static ValueTask WriteLineEnumAsync<T, U>(T destination, U value, CancellationToken ct)
         where T : U8WriteExtensions.IWriteable
         where U : struct, Enum
     {
