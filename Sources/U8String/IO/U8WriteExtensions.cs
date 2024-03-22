@@ -29,6 +29,7 @@ public static partial class U8WriteExtensions
         get => OperatingSystem.IsWindows() ? "\r\n"u8 : "\n"u8;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static void WriteBuilder<T>(T destination, ref InlineU8Builder builder)
         where T : IWriteable
     {
@@ -44,6 +45,7 @@ public static partial class U8WriteExtensions
         destination.WriteDispose(ref builder);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static ValueTask WriteBuilderAsync<T>(T destination, PooledU8Builder builder, CancellationToken ct)
         where T : IWriteable
     {
@@ -115,6 +117,7 @@ public static partial class U8WriteExtensions
 
 public static partial class U8WriteEnumExtensions
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static void WriteEnum<T, U>(T destination, U value)
         where T : U8WriteExtensions.IWriteable
         where U : struct, Enum
@@ -122,6 +125,7 @@ public static partial class U8WriteEnumExtensions
         destination.Write(value.ToU8String());
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static ValueTask WriteEnumAsync<T, U>(T destination, U value, CancellationToken ct)
         where T : U8WriteExtensions.IWriteable
         where U : struct, Enum

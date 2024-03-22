@@ -45,15 +45,11 @@ try
         {
             await sock.SendAsync(u8("PONG :tmi.twitch.tv\r\n"));
         }
-        else PrintMessage(msg);
+        else U8Console.WriteLine($"{msg.Nickname}: {msg.Body}");
     }
 }
 catch (OperationCanceledException) { }
 
 await sock.SendAsync($"PART #{chan}\r\n");
 await sock.DisconnectAsync(false);
-
 U8Console.WriteLine("Goodbye!"u8);
-
-static void PrintMessage(Message msg) =>
-    U8Console.WriteLine($"{msg.Nickname}: {msg.Body}");

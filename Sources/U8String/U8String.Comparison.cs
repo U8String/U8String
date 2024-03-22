@@ -1,9 +1,9 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
-using System.IO.Hashing;
 
 using U8.Abstractions;
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8;
 

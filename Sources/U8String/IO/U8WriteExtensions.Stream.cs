@@ -6,17 +6,20 @@ public static partial class U8WriteExtensions
 {
     internal readonly struct StreamWriteable(Stream stream) : IWriteable
     {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Write(ReadOnlySpan<byte> value)
         {
             stream.Write(value);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void WriteDispose(ref InlineU8Builder builder)
         {
             stream.Write(builder.Written);
             builder.Dispose();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ValueTask WriteAsync(ReadOnlyMemory<byte> value, CancellationToken ct)
         {
             return stream.WriteAsync(value, ct);
@@ -33,11 +36,13 @@ public static partial class U8WriteExtensions
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write(this Stream stream, ref InlineU8Builder handler)
     {
         WriteBuilder(new StreamWriteable(stream), ref handler);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write<T>(this Stream stream, T value)
         where T : IUtf8SpanFormattable
     {
@@ -45,12 +50,14 @@ public static partial class U8WriteExtensions
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask WriteAsync(
         this Stream stream, PooledU8Builder handler, CancellationToken ct = default)
     {
         return WriteBuilderAsync(new StreamWriteable(stream), handler, ct);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask WriteAsync<T>(
         this Stream stream, T value, CancellationToken ct = default)
             where T : IUtf8SpanFormattable
@@ -123,12 +130,14 @@ public static partial class U8WriteExtensions
 
 public static partial class U8WriteEnumExtensions
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Write<T>(this Stream stream, T value)
         where T : struct, Enum
     {
         WriteEnum(new U8WriteExtensions.StreamWriteable(stream), value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask WriteAsync<T>(
         this Stream stream, T value, CancellationToken ct = default)
             where T : struct, Enum

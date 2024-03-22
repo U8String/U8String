@@ -15,6 +15,7 @@ public static partial class U8WriteExtensions
             throw new NotSupportedException("WebSocket does not support synchronous I/O.");
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public ValueTask WriteAsync(ReadOnlyMemory<byte> value, CancellationToken ct)
         {
             return websocket.SendAsync(value, type, flags, ct);
@@ -35,6 +36,7 @@ public static partial class U8WriteExtensions
         }
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync(
         this WebSocket websocket,
         U8String value,
@@ -46,6 +48,7 @@ public static partial class U8WriteExtensions
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync(
         this WebSocket websocket,
         PooledU8Builder handler,
@@ -56,6 +59,7 @@ public static partial class U8WriteExtensions
         return WriteBuilderAsync(new WebSocketWriteable(websocket, type, flags), handler, ct);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync<T>(
         this WebSocket websocket,
         T value,
@@ -120,6 +124,7 @@ public static partial class U8WriteExtensions
 
 public static partial class U8WriteEnumExtensions
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync<T>(
         this WebSocket websocket,
         T value,

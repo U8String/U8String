@@ -55,11 +55,13 @@ public static partial class U8WriteExtensions
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Send(this Socket socket, ref InlineU8Builder handler, SocketFlags flags = SocketFlags.None)
     {
         WriteBuilder(new SocketWriteable(socket, flags), ref handler);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Send<T>(this Socket socket, T value, SocketFlags flags = SocketFlags.None)
         where T : IUtf8SpanFormattable
     {
@@ -67,12 +69,14 @@ public static partial class U8WriteExtensions
     }
 
     [EditorBrowsable(EditorBrowsableState.Never)]
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync(
         this Socket socket, PooledU8Builder handler, SocketFlags flags = SocketFlags.None, CancellationToken ct = default)
     {
         return WriteBuilderAsync(new SocketWriteable(socket, flags), handler, ct);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync<T>(
         this Socket socket, T value, SocketFlags flags = SocketFlags.None, CancellationToken ct = default)
             where T : IUtf8SpanFormattable
@@ -144,12 +148,14 @@ public static partial class U8WriteExtensions
 
 public static partial class U8WriteEnumExtensions
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void Send<T>(this Socket socket, T value, SocketFlags flags = SocketFlags.None)
         where T : struct, Enum
     {
         WriteEnum(new U8WriteExtensions.SocketWriteable(socket, flags), value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static ValueTask SendAsync<T>(
         this Socket socket, T value, SocketFlags flags = SocketFlags.None, CancellationToken ct = default)
             where T : struct, Enum
