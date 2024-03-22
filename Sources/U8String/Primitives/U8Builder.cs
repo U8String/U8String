@@ -35,7 +35,7 @@ public struct U8Builder : IU8Buffer
 
     public U8Builder()
     {
-        _instance = Interlocked.Exchange(ref _tlv, null) ?? new();
+        (_instance, _tlv) = (_tlv ?? new(), null);
         Handler.EnsureInitialized();
     }
 
@@ -43,7 +43,7 @@ public struct U8Builder : IU8Buffer
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(capacity, 0);
 
-        _instance = Interlocked.Exchange(ref _tlv, null) ?? new();
+        (_instance, _tlv) = (_tlv ?? new(), null);
         Handler.EnsureInitialized();
         Handler.EnsureCapacity(capacity);
     }

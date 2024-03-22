@@ -9,7 +9,7 @@ namespace U8.Benchmarks;
 
 [ShortRunJob]
 [MemoryDiagnoser]
-public class Builder
+public class Builders
 {
     [Params(1, 10, 100, 1000)]
     public int N;
@@ -54,6 +54,22 @@ public class Builder
         }
 
         return new(ref handler);
+    }
+
+    [Benchmark]
+    public U8String SimplePooledHandler()
+    {
+        var count = N;
+        var handler = new PooledU8Builder();
+        for (var i = 0; i < count; i++)
+        {
+            handler.AppendFormatted(u8("Hello, World!"));
+            handler.AppendFormatted(1337);
+        }
+
+        var result = new U8String(handler.Written, skipValidation: true);
+        handler.Dispose();
+        return result;
     }
 
     [Benchmark]
