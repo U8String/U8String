@@ -7,6 +7,7 @@
 - [ ] Contribute optimized versions of span enumerators
 - [ ] Contribute optimized string case conversions and comparisons - turns out current implementation is really wasteful in most cases: performs
 - [ ] Contribute various `ArrayBufferWriter<T>` optimizations - it is kind of underwhelming
+- [ ] Contributed `DefaultInterpolatedStringHandler` optimizations, maybe interpolated handler API for Console.Write and .WriteLine?
 - [ ] Contribute optimized `File.InternalReadAllLinesAsync` and adjacent methods?
 scanning multiple times, has un-elided bounds checks, does not do vectorization, etc.
     - [ ] Invariant

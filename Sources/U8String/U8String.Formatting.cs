@@ -45,6 +45,7 @@ public /* ref */ struct InlineU8Builder
         _provider = CultureInfo.InvariantCulture;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public InlineU8Builder(int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -58,6 +59,7 @@ public /* ref */ struct InlineU8Builder
         _provider = CultureInfo.InvariantCulture;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public InlineU8Builder(
         int literalLength,
         int formattedCount,
@@ -488,6 +490,7 @@ public struct PooledU8Builder
         _provider = CultureInfo.InvariantCulture;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public PooledU8Builder(int length)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(length);
@@ -496,6 +499,7 @@ public struct PooledU8Builder
         _provider = CultureInfo.InvariantCulture;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public PooledU8Builder(
         int literalLength,
         int formattedCount,
