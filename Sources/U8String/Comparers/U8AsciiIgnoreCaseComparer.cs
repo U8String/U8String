@@ -470,11 +470,13 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
         return true;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int GetHashCode(U8String value) => GetHashCode(value.AsSpan());
 
+    [SkipLocalsInit]
     public int GetHashCode(ReadOnlySpan<byte> value)
     {
-        var buffer = new InlineBuffer128().AsSpan();
+        var buffer = (stackalloc byte[256]);
         if (value.Length <= buffer.Length)
         {
             U8AsciiCaseConverter.ToUpperCore(
@@ -503,6 +505,7 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
 
             hasher.Append(buffer.SliceUnsafe(0, (int)remainder));
 
+            src = ref src.Add(remainder);
             length -= remainder;
         } while (length > 0);
 

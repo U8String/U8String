@@ -18,7 +18,9 @@ namespace U8;
 // TODO: Deduplicate core impl.
 public /* ref */ struct InlineU8Builder
 {
-    InlineBuffer128 _inline;
+    const int InitialRentLength = 512;
+
+    InlineBuffer64 _inline;
     IFormatProvider? _provider;
     byte[]? _rented;
 
@@ -48,7 +50,7 @@ public /* ref */ struct InlineU8Builder
         ArgumentOutOfRangeException.ThrowIfNegative(length);
         Unsafe.SkipInit(out _inline);
 
-        if (length > InlineBuffer128.Length)
+        if (length > InlineBuffer64.Length)
         {
             _rented = ArrayPool<byte>.Shared.Rent(length);
         }
@@ -64,7 +66,7 @@ public /* ref */ struct InlineU8Builder
         Unsafe.SkipInit(out _inline);
 
         var initialLength = literalLength + (formattedCount * 12);
-        if (initialLength > InlineBuffer128.Length)
+        if (initialLength > InlineBuffer64.Length)
         {
             _rented = ArrayPool<byte>.Shared.Rent(initialLength);
         }
@@ -368,15 +370,13 @@ public /* ref */ struct InlineU8Builder
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal void Grow()
     {
-        const int initialRentLength = 1024;
-
         var arrayPool = ArrayPool<byte>.Shared;
         var rented = _rented;
         var written = (rented ?? _inline.AsSpan())
             .SliceUnsafe(0, BytesWritten);
 
         var newLength = rented is null
-            ? initialRentLength
+            ? InitialRentLength
             : rented.Length * 2;
 
         var newArr = arrayPool.Rent(newLength);
@@ -393,15 +393,13 @@ public /* ref */ struct InlineU8Builder
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal void Grow(int hint)
     {
-        const int initialRentLength = 1024;
-
         var arrayPool = ArrayPool<byte>.Shared;
         var rented = _rented;
         var written = (rented ?? _inline.AsSpan())
             .SliceUnsafe(0, BytesWritten);
 
         var newLength = rented is null
-            ? initialRentLength
+            ? InitialRentLength
             : rented.Length * 2;
 
         newLength = Math.Max(newLength, written.Length + hint);
@@ -458,6 +456,8 @@ public /* ref */ struct InlineU8Builder
 #pragma warning disable IDE0038, RCS1220 // Use pattern matching. Why: non-boxing interface resolution on structs.
 public struct PooledU8Builder
 {
+    const int InitialRentLength = 512;
+
     readonly IFormatProvider? _provider;
     byte[] _array;
 
@@ -484,7 +484,7 @@ public struct PooledU8Builder
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public PooledU8Builder()
     {
-        _array = ArrayPool<byte>.Shared.Rent(1024);
+        _array = ArrayPool<byte>.Shared.Rent(InitialRentLength);
         _provider = CultureInfo.InvariantCulture;
     }
 

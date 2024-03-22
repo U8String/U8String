@@ -6,6 +6,20 @@ using System.Runtime.InteropServices;
 namespace U8;
 
 [InlineArray(Length)]
+internal struct InlineBuffer64
+{
+    public const int Length = 64;
+
+    byte _element0;
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal Span<byte> AsSpan()
+    {
+        return MemoryMarshal.CreateSpan(ref _element0, Length);
+    }
+}
+
+[InlineArray(Length)]
 internal struct InlineBuffer128
 {
     public const int Length = 128;
@@ -40,6 +54,7 @@ internal struct InlineBuffer376
     }
 }
 
+// TODO: Remove or increase inline buffer size
 internal struct ArrayBuilder : IDisposable
 {
     InlineBuffer128 _inline;
