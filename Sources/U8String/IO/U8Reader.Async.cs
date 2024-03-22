@@ -103,6 +103,7 @@ public partial class U8Reader<TSource>
         var isEOF = false;
 
     RetryCheckEOF:
+        U8String result;
         var (index, length) = U8Searching.IndexOf(unread.Span, delimiter);
         if (index >= 0 || isEOF)
         {
@@ -110,7 +111,7 @@ public partial class U8Reader<TSource>
                 ? index : unread.Length;
 
             // FIXME: See the bug description in the sync version
-            var result = ShouldStealBuffer(delimiter, index)
+            result = ShouldStealBuffer(delimiter, index)
                 ? new U8String(_buffer, _bytesConsumed, index)
                 : new U8String(unread[..index].Span, skipValidation: true);
 
@@ -147,7 +148,7 @@ public partial class U8Reader<TSource>
             goto RetryCheckEOF;
         }
 
-        var builder = new U8Builder(unread.Length);
+        var builder = new PooledU8Builder(unread.Length);
         builder.AppendBytes(unread.Span);
         AdvanceReader(unread.Length);
 
@@ -206,8 +207,9 @@ public partial class U8Reader<TSource>
             AdvanceReader(unread.Length);
         }
 
-        U8String.Validate(builder.Written);
-        return builder.Consume();
+        result = new U8String(builder.Written);
+        builder.Dispose();
+        return result;
     }
 
     public async ValueTask<U8String?> ReadSegmentAsync<T, TSegment>(CancellationToken ct = default)
@@ -245,7 +247,7 @@ public partial class U8Reader<TSource>
         }
 
     ContinueReading:
-        var builder = new U8Builder();
+        var builder = new PooledU8Builder();
         builder.AppendBytes(Unread);
         AdvanceReader(Unread.Length);
 
@@ -266,7 +268,8 @@ public partial class U8Reader<TSource>
 
         if (readResult.LastRead) EOF = true;
 
-        U8String.Validate(builder.Written);
-        return builder.Consume();
+        var result = new U8String(builder.Written);
+        builder.Dispose();
+        return result;
     }
 }
