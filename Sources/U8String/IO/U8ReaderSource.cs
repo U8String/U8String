@@ -169,7 +169,7 @@ public readonly struct U8WebSocketSource(WebSocket socket) : IU8SegmentedReaderS
     // The goal is to avoid forcing the user to explicitly "drain" the reader
     // and enable plain "await foreach" scenarios.
     // Note: it does appear to work correctly when WS is closed gracefully.
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
     public async ValueTask<int> ReadAsync(long _, Memory<byte> buffer, CancellationToken ct)
     {
         // TODO: Detect the condition where we filled up the buffer up to

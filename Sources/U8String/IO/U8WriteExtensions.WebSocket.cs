@@ -26,6 +26,7 @@ public static partial class U8WriteExtensions
             throw new NotSupportedException("WebSocket does not support synchronous I/O.");
         }
 
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder))]
         public async ValueTask WriteDisposeAsync(PooledU8Builder builder, CancellationToken ct)
         {
             await websocket

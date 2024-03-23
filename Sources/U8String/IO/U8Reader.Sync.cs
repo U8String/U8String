@@ -28,17 +28,6 @@ public partial class U8Reader<TSource>
         return line;
     }
 
-    public async ValueTask<U8String?> ReadLineAsync(CancellationToken ct = default)
-    {
-        var line = await ReadToAsync((byte)'\n', ct);
-        if (line.HasValue)
-        {
-            line = line.Value.StripSuffix((byte)'\r');
-        }
-
-        return line;
-    }
-
     [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String? ReadTo(byte delimiter)
     {

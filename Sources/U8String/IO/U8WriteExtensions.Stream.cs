@@ -25,6 +25,7 @@ public static partial class U8WriteExtensions
             return stream.WriteAsync(value, ct);
         }
 
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder))]
         public async ValueTask WriteDisposeAsync(PooledU8Builder builder, CancellationToken ct)
         {
             await stream

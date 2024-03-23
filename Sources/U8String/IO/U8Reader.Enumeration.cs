@@ -107,6 +107,7 @@ public readonly struct U8LineReader<T> :
     {
         public U8String Current { get; private set; }
 
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
             var line = await reader.ReadToAsync((byte)'\n', ct);
@@ -229,7 +230,7 @@ public readonly struct U8SplitReader<T, TSeparator> :
             _ct = ct;
         }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
             var segment = await _reader.ReadToAsync(_separator, _ct);
@@ -288,7 +289,7 @@ public readonly struct U8SegmentReader<T, TSegment> : IAsyncEnumerable<U8String>
 
         public U8String Current { get; private set; }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
             var segment = await _reader.ReadSegmentAsync<T, TSegment>(_ct);
@@ -344,7 +345,7 @@ public readonly struct U8WebSocketMessageReader : IAsyncEnumerable<U8String>
 
         public U8String Current { get; private set; }
 
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
             var segment = await _reader.ReadSegmentAsync<U8WebSocketSource, ValueWebSocketReceiveResult>(_ct);

@@ -1,13 +1,25 @@
 using System.Diagnostics;
 using System.Text;
 
-using U8.Primitives;
 using U8.Shared;
 
 namespace U8.IO;
 
 public partial class U8Reader<TSource>
 {
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
+    public async ValueTask<U8String?> ReadLineAsync(CancellationToken ct = default)
+    {
+        var line = await ReadToAsync((byte)'\n', ct);
+        if (line.HasValue)
+        {
+            line = line.Value.StripSuffix((byte)'\r');
+        }
+
+        return line;
+    }
+
+
     public ValueTask<U8String?> ReadToAsync(byte delimiter, CancellationToken ct = default)
     {
         return ReadToAsyncCore(delimiter, ct);
@@ -57,6 +69,7 @@ public partial class U8Reader<TSource>
     }
 
     // TODO: Okay, so it *is* the async depth and yield cost that ruins perfomance.
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
     async ValueTask<U8String?> ReadToAsyncCore2<T>(T delimiter, CancellationToken ct)
         where T : struct
     {
@@ -211,6 +224,7 @@ public partial class U8Reader<TSource>
         return fromBuilder;
     }
 
+    [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
     public async ValueTask<U8String?> ReadSegmentAsync<T, TSegment>(CancellationToken ct = default)
         where T : TSource, IU8SegmentedReaderSource<TSegment>
     {
@@ -225,10 +239,10 @@ public partial class U8Reader<TSource>
 
         var segmentRead = await ((IU8SegmentedReaderSource<TSegment>)_source)
             .ReadSegment(_offset, Free, ct);
-        
+
         var readResult = ((IU8SegmentedReaderSource<TSegment>)_source)
             .GetReadResult(_offset, segmentRead);
-        
+
         _offset += readResult.Length;
         _bytesRead += readResult.Length;
 

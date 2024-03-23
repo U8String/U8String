@@ -16,6 +16,7 @@ public static partial class U8WriteExtensions
             } while (value.Length > 0);
         }
 
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder))]
         public async ValueTask WriteAsync(ReadOnlyMemory<byte> value, CancellationToken ct)
         {
             do
@@ -39,6 +40,7 @@ public static partial class U8WriteExtensions
             builder.Dispose();
         }
 
+        [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder))]
         public async ValueTask WriteDisposeAsync(PooledU8Builder builder, CancellationToken ct)
         {
             var value = builder.WrittenMemory;
