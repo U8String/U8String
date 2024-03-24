@@ -1393,40 +1393,36 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public U8String SliceRounding(int start, int length)
     {
-        // FIXME: incorrect trailing rune rounding
-        var source = this;
-        var offset = start > 0 ? Math.Min(start, source.Length) : 0;
-        var newlength = Math.Min(length, source.Length - offset);
-        offset += source.Offset;
+        var (source, sourceOffset, sourceLength) = this;
 
-        if (newlength > 0)
+        var newStart = start > 0 ? Math.Min(start, sourceLength) : 0;
+        var newLength = length > 0 ? Math.Min(length, sourceLength - newStart) : 0;
+
+        if (newLength > 0)
         {
-            ref var ptr = ref source._value!.AsRef(offset);
-            if (start > 0)
+            ref var ptr = ref source!.AsRef(sourceOffset);
+            if (newStart > 0)
             {
-                var searchStart = 0;
-                while (searchStart < newlength
-                    && U8Info.IsContinuationByte(in ptr.Add(searchStart)))
+                while (newLength > 0
+                    && U8Info.IsContinuationByte(in ptr.Add(newStart)))
                 {
-                    searchStart++;
+                    newStart++;
+                    newLength--;
                 }
-                offset += searchStart;
-                newlength -= searchStart;
             }
 
-            // Huh, doesn't this trim away valid code points?
-            // Also check if it looks at the valid ptr after the start was adjusted
-            if (length < (source.Length - start))
+            if (newLength < sourceLength - newStart)
             {
-                while (newlength > 0
-                    && U8Info.IsContinuationByte(in ptr.Add(newlength)))
+                ptr = ref ptr.Add(newStart);
+                while (newLength > 0
+                    && U8Info.IsContinuationByte(in ptr.Add(newLength)))
                 {
-                    newlength--;
+                    newLength--;
                 }
             }
         }
 
-        return new(source._value, offset, newlength);
+        return new(source, sourceOffset + newStart, newLength);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -267,6 +267,72 @@ public partial class Manipulation
         Assert.Throws<ArgumentOutOfRangeException>(() => value.Slice(int.MinValue, 1));
     }
 
+    [Fact]
+    public void SliceRounding_TwoByteCharactersSliceAtOffsetRoundsCorrectly()
+    {
+        var values = new[]
+        {
+            u8(Constants.CyrilicBytes),
+            u8(Constants.CyrilicBytes)[2..^2]
+        };
+
+        foreach (var value in values)
+        {
+            for (var i = 1; i < value.Length - 1; i += 2)
+            {
+                var expected = value.Slice(i + 1);
+                var actual = value.SliceRounding(i);
+
+                Assert.Equal(expected, actual);
+            }
+        }
+    }
+
+    [Fact]
+    public void SliceRounding_TwoByteCharactersSliceLengthRoundsCorrectly()
+    {
+        var values = new[]
+        {
+            u8(Constants.CyrilicBytes),
+            u8(Constants.CyrilicBytes)[2..^2]
+        };
+
+        foreach (var value in values)
+        {
+            for (var l = value.Length - 1; l > 0; l -= 2)
+            {
+                var expected = value.Slice(0, l - 1);
+                var actual = value.SliceRounding(0, l);
+
+                Assert.Equal(expected, actual);
+            }
+        }
+    }
+
+    [Fact]
+    public void SliceRounding_TwoBytesCharactersSliceAtOffsetAndLengthRoundsCorrectly()
+    {
+        var values = new[]
+        {
+            u8(Constants.CyrilicBytes),
+            u8(Constants.CyrilicBytes)[2..^2]
+        };
+
+        foreach (var value in values)
+        {
+            for (var i = 1; i < value.Length - 1; i += 2)
+            {
+                for (var l = value.Length - i; l > 0; l -= 2)
+                {
+                    var expected = value.Slice(i + 1, l - 1);
+                    var actual = value.SliceRounding(i, l);
+
+                    Assert.Equal(expected, actual);
+                }
+            }
+        }
+    }
+
     public static object[][] StripData<T>(T left, T right)
         where T : IUtf8SpanFormattable =>
     [
