@@ -58,4 +58,10 @@ public static class U8Console
     {
         Out.WriteLine(ref handler);
     }
+
+    public static void WriteLine<T>(T value)
+        where T : IUtf8SpanFormattable
+    {
+        Out.WriteLine(value);
+    }
 }

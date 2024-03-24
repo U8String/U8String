@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text;
 
 namespace U8.Extensions;
 
@@ -42,6 +43,12 @@ public static unsafe class Syntax
     /// <inheritdoc cref="U8String.Create(byte)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String u8(byte value) => U8String.Create(value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String u8(char value) => U8String.Create(value);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static U8String u8(Rune value) => U8String.Create(value);
 
     /// <inheritdoc cref="U8String.Create{T}(T)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

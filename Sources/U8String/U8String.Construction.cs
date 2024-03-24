@@ -334,15 +334,74 @@ public readonly partial struct U8String
     public static unsafe U8String Create(byte* ptr) => new(ptr);
 
     /// <summary>
-    /// Converts the <see cref="bool"/> value to its equivalent UTF-8 string representation (either
-    /// "True" or "False").
+    /// Converts the <see cref="bool"/> value to its equivalent UTF-8 string representation (either "True" or "False").
     /// </summary>
-    public static U8String Create(bool value) => U8Literals.GetBoolean(value);
+    public static U8String Create(bool value) => value ? u8("True") : u8("False");
 
     /// <summary>
     /// Converts the <see cref="byte"/> value to its equivalent UTF-8 string representation.
     /// </summary>
     public static U8String Create(byte value) => U8Literals.GetByte(value);
+
+    public static U8String Create(char value)
+    {
+        if (value <= 0x7F)
+        {
+            Debug.Assert(U8Literals.Runes.IsInRange(value));
+            return U8Literals.Runes.GetValueUnchecked(value);
+        }
+
+        var codepoint = (ReadOnlySpan<byte>)(
+            value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
+        var bytes = new byte[codepoint.Length + 1];
+
+        ref var dst = ref bytes.AsRef();
+        if (codepoint.Length is 2)
+        {
+            dst.Cast<byte, ushort>() = codepoint.AsRef().Cast<byte, ushort>();
+        }
+        else
+        {
+            dst.Cast<byte, ushort>() = codepoint.AsRef().Cast<byte, ushort>();
+            dst.Add(2) = codepoint.AsRef(2);
+        }
+
+        return new(bytes, codepoint.Length, neverEmpty: true);
+    }
+
+    public static U8String Create(Rune value)
+    {
+        if (value.Value <= 0x7F)
+        {
+            Debug.Assert(U8Literals.Runes.IsInRange(value.Value));
+            return U8Literals.Runes.GetValueUnchecked(value.Value);
+        }
+        
+        var codepoint = (ReadOnlySpan<byte>)(value.Value switch
+        {
+            <= 0x7FF => value.AsTwoBytes(),
+            <= 0xFFFF => value.AsThreeBytes(),
+            _ => value.AsFourBytes()
+        });
+        var bytes = new byte[codepoint.Length + 1];
+
+        ref var dst = ref bytes.AsRef();
+        if (codepoint.Length is 2)
+        {
+            dst.Cast<byte, ushort>() = codepoint.AsRef().Cast<byte, ushort>();
+        }
+        else if (codepoint.Length is 3)
+        {
+            dst.Cast<byte, ushort>() = codepoint.AsRef().Cast<byte, ushort>();
+            dst.Add(2) = codepoint.AsRef(2);
+        }
+        else
+        {
+            dst.Cast<byte, uint>() = codepoint.AsRef().Cast<byte, uint>();
+        }
+
+        return new(bytes, codepoint.Length, neverEmpty: true);
+    }
 
     /// <inheritdoc cref="U8StringExtensions.ToU8String{T}(T)"/>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -401,6 +460,14 @@ public readonly partial struct U8String
                 if (!U8Literals.Numbers.IsInRange((nint)(ulong)(object)value))
                     goto FormatNew;
                 return U8Literals.Numbers.GetValueUnchecked((nint)(ulong)(object)value);
+            }
+            else if (typeof(T) == typeof(char))
+            {
+                return Create((char)(object)value);
+            }
+            else if (typeof(T) == typeof(Rune))
+            {
+                return Create((Rune)(object)value);
             }
 
         FormatNew:
