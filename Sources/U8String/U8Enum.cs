@@ -18,13 +18,15 @@ public static class U8Enum
     {
         internal static readonly T[] Values = Enum.GetValues<T>();
 
-        internal static readonly U8String[] Names = Enum
-            .GetValues<T>()
+        internal static readonly U8String[] Names = Values
+            .Zip(Enum.GetNames<T>())
             .Select(GetAndCacheNameBytes)
             .Select(bytes => new U8String(bytes, 0, bytes.Length - 1))
             .ToArray();
 
         internal static readonly bool IsContiguousFromZero = CheckContiguousFromZero();
+
+        internal static readonly bool IsFlags = typeof(T).IsDefined(typeof(FlagsAttribute), inherit: false);
 
         internal static readonly FrozenDictionary<T, ByteArray> NameLookup =
             Values.Zip(Names, (v, n) => KeyValuePair.Create(v, new ByteArray(n._value!))).ToFrozenDictionary();
@@ -35,16 +37,16 @@ public static class U8Enum
         internal static readonly FrozenDictionary<U8String, T> CaseInsensitiveValueLookup =
             ValueLookup.ToFrozenDictionary(U8Comparison.AsciiIgnoreCase);
 
-        static byte[] GetAndCacheNameBytes(T value)
+        static byte[] GetAndCacheNameBytes((T, string) pair)
         {
-            var utf16 = Enum.GetName(value) ?? value.ToString()!;
-            var length = Encoding.UTF8.GetByteCount(utf16);
+            var (value, name) = pair;
+            var length = Encoding.UTF8.GetByteCount(name);
             var bytes = GC.AllocateArray<byte>(length + 1, pinned: true);
             if (bytes.Length is 1)
             {
                 throw new ArgumentException("Enum has a member with an empty name. This is not supported.");
             }
-            Encoding.UTF8.GetBytes(utf16, bytes);
+            Encoding.UTF8.GetBytes(name, bytes);
             // Make sure to deduplicate the cached enum name literals, overwrite the existing entry if it exists
             return U8EnumFormattable<T>.Cache[value] = bytes;
         }
@@ -289,6 +291,12 @@ public static class U8EnumExtensions
     }
 }
 
+// FIXME: Does not handle flags enum formatting
+// TODO: Investigate if this can be constrained, unconstrained AppendFormatted<T> removed from
+// interpolated handlers and then an overload accpeting U8EnumFormattable<T> added to address
+// enum formatting?
+// ------------------------------------------------------------------------------------------------
+// TODO: Remove below if previous TODO is resolved
 // Unfortunately, this struct will partially duplicate formatting logic from U8Enum
 // because the "bridging generic constraints" feature is still work in progress and
 // we must use unconstrained generic argument due to method overload resulution limitations

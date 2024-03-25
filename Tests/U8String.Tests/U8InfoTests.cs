@@ -3,6 +3,30 @@ namespace U8.Tests;
 public class U8InfoTests
 {
     [Fact]
+    public void IsAscii_TrueForAsciiBytes()
+    {
+        var bytes = Constants.AsciiBytes.AsSpan();
+        foreach (var b in bytes)
+        {
+            Assert.True(U8Info.IsAscii(new ReadOnlySpan<byte>(in b)));
+        }
+
+        Assert.True(U8Info.IsAscii(bytes));
+    }
+
+    [Fact]
+    public void IsAscii_FalseForNonAsciiBytes()
+    {
+        var bytes = Constants.NonAsciiBytes.AsSpan();
+        foreach (var b in bytes)
+        {
+            Assert.False(U8Info.IsAscii(new ReadOnlySpan<byte>(in b)));
+        }
+
+        Assert.False(U8Info.IsAscii(bytes));
+    }
+
+    [Fact]
     public void IsAsciiByte_TrueForAsciiBytes()
     {
         foreach (var b in Constants.AsciiBytes)
@@ -39,7 +63,7 @@ public class U8InfoTests
     }
 
     [Fact]
-    public void IsWhitespaceByte_TrueForWhitespaceBytes()
+    public void IsAsciiWhitespace_TrueForWhitespaceBytes()
     {
         foreach (var b in Constants.AsciiWhitespaceBytes)
         {
@@ -60,11 +84,38 @@ public class U8InfoTests
     }
 
     [Fact]
+    public void IsBoundaryByte_TrueForBoundaryBytes()
+    {
+        foreach (var b in Constants.BoundaryBytes)
+        {
+            Assert.True(U8Info.IsBoundaryByte(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
+    public void IsBoundaryByte_FalseForContinuationBytes()
+    {
+        foreach (var b in Constants.ContinuationBytes)
+        {
+            Assert.False(U8Info.IsBoundaryByte(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
     public void IsContinuationByte_TrueForContinuationBytes()
     {
         foreach (var b in Constants.ContinuationBytes)
         {
             Assert.True(U8Info.IsContinuationByte(b), $"0x{b:X2}");
+        }
+    }
+
+    [Fact]
+    public void IsContinuationByte_FalseForBoundaryBytes()
+    {
+        foreach (var b in Constants.BoundaryBytes)
+        {
+            Assert.False(U8Info.IsContinuationByte(b), $"0x{b:X2}");
         }
     }
 
@@ -98,16 +149,7 @@ public class U8InfoTests
     }
 
     [Fact]
-    public void IsContinuationByte_FalseForNonContinuationBytes()
-    {
-        foreach (var b in Constants.NonContinuationBytes)
-        {
-            Assert.False(U8Info.IsContinuationByte(b), $"0x{b:X2}");
-        }
-    }
-
-    [Fact]
-    public void CharLength_IsOneForAsciiBytes()
+    public void RuneLength_IsOneForAsciiBytes()
     {
         foreach (var b in Constants.AsciiBytes)
         {
@@ -116,7 +158,7 @@ public class U8InfoTests
     }
 
     [Fact]
-    public void CharLength_IsTwoForCyrilicBytes()
+    public void RuneLength_IsTwoForCyrilicBytes()
     {
         foreach (var b in Constants.CyrilicCharBytes
             .Select(letter => letter[0]))
@@ -126,7 +168,7 @@ public class U8InfoTests
     }
 
     [Fact]
-    public void CharLength_IsThreeForKanaBytes()
+    public void RuneLength_IsThreeForKanaBytes()
     {
         foreach (var b in Constants.KanaCharBytes
             .Select(letter => letter[0]))
@@ -136,7 +178,7 @@ public class U8InfoTests
     }
 
     [Fact]
-    public void CharLength_IsFourForEmojiBytes()
+    public void RuneLength_IsFourForEmojiBytes()
     {
         foreach (var b in Constants.NonSurrogateEmojiChars
             .Select(letter => letter[0]))

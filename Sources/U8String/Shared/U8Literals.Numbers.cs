@@ -7,9 +7,9 @@ static partial class U8Literals
 {
     internal static class Numbers
     {
-        internal const int Length = 256;
+        const int Length = 256;
 
-        internal static readonly U8String[] Values =
+        static readonly U8String[] Values =
         [
             u8('0'), u8('1'), u8('2'), u8('3'), u8('4'), u8('5'), u8('6'), u8('7'),
             u8('8'), u8('9'), u8("10"), u8("11"), u8("12"), u8("13"), u8("14"), u8("15"),

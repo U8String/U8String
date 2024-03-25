@@ -76,7 +76,7 @@ public static class Constants
     public static readonly byte[] ContinuationBytes =
         Enumerable.Range(0b1000_0000, 64).Select(i => (byte)i).ToArray();
 
-    public static readonly byte[] NonContinuationBytes =
+    public static readonly byte[] BoundaryBytes =
         Enumerable.Range(0b0000_0000, 128).Select(i => (byte)i).Concat(
         Enumerable.Range(0b1100_0000, 64).Select(i => (byte)i)).ToArray();
 
