@@ -1,7 +1,6 @@
 ﻿// This file contains modified code that originally appeared in https://ayende.com/blog/197412-B/high-performance-net-building-a-redis-clone-naively
 // Permission was granted by the author to license this code under the MIT license.
-//
-// On Unix-like systems, you can run benchmark this example using the following commands:
+// On Unix-like systems, you can benchmark this example using the following commands:
 // - DOTNET_gcServer=1 dotnet run -c Release
 // - memtier_benchmark –s localhost -t 8 -c 16 --test-time=30 --distinct-client-seed -d 256 --pipeline=30
 
