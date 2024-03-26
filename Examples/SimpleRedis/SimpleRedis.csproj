@@ -16,6 +16,11 @@
     <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);U8.Generated</InterceptorsPreviewNamespaces>
   </PropertyGroup>
 
+  <PropertyGroup>
+    <ServerGarbageCollection>true</ServerGarbageCollection>
+    <GarbageCollectionAdaptationMode>1</GarbageCollectionAdaptationMode>
+  </PropertyGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\Sources\U8String\U8String.csproj" />
     <ProjectReference Include="..\..\Sources\U8String.Optimization\U8String.Optimization.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
