@@ -47,7 +47,7 @@ sealed partial class SpecializeDispatch : IOptimizationScope
             Method: target.Method,
             InstanceArg: target.InstanceArg,
             CustomAttrs: Constants.AggressiveInlining,
-            Callsites: [new Callsite(method, invocation)],
+            Callsites: [Callsite.FromRegularInvocation(method, invocation)],
             Body: body));
         return true;
     }

@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Operations;
 
 namespace U8.Optimization;
 
@@ -29,7 +30,31 @@ readonly struct Callsite
     public readonly int Line;
     public readonly int Character;
 
-    public Callsite(
+    public static Callsite FromExtensionInvocation(IInvocationOperation invocation)
+    {
+        return new Callsite(invocation);
+    }
+
+    public static Callsite FromRegularInvocation(
+        IMethodSymbol method,
+        InvocationExpressionSyntax invocation)
+    {
+        return new Callsite(method, invocation);
+    }
+
+    Callsite(IInvocationOperation invocation)
+    {
+        var memberAccessorExpression = (MemberAccessExpressionSyntax)((InvocationExpressionSyntax)invocation.Syntax).Expression;
+        var invocationNameSpan = memberAccessorExpression.Name.Span;
+        var lineSpan = invocation.Syntax.SyntaxTree.GetLineSpan(invocationNameSpan);
+        var filePath = invocation.Syntax.SyntaxTree.FilePath;
+
+        Path = filePath;
+        Line = lineSpan.StartLinePosition.Line + 1;
+        Character = lineSpan.StartLinePosition.Character + 1;
+    }
+
+    Callsite(
         IMethodSymbol method,
         InvocationExpressionSyntax invocation)
     {

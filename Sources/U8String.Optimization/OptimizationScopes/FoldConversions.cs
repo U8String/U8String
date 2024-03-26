@@ -33,6 +33,41 @@ sealed class FoldConversions : IOptimizationScope
         }
     }
 
+    readonly record struct LiteralDeclaration(string TypeName, object Value, bool IsExtensionMethod)
+    {
+        public bool Equals(LiteralDeclaration obj)
+        {
+            if (obj.TypeName is null || obj.Value is null)
+            {
+                return false;
+            }
+
+            if (IsExtensionMethod != obj.IsExtensionMethod || !TypeName.Equals(obj.TypeName, StringComparison.OrdinalIgnoreCase))
+            {
+                return false;
+            }
+
+            return Value is string xs && obj.Value is string ys
+                ? xs.Equals(ys, StringComparison.Ordinal) : Value.Equals(obj.Value);
+        }
+
+        public override int GetHashCode()
+        {
+            if (TypeName is null || Value is null)
+            {
+                return 0;
+            }
+
+            var hashcode = 1430287;
+            var valueHashCode = Value is string s ? StringComparer.Ordinal.GetHashCode(s) : Value.GetHashCode();
+
+            hashcode = hashcode * 7302013 ^ StringComparer.OrdinalIgnoreCase.GetHashCode(TypeName);
+            hashcode = hashcode * 7302013 ^ valueHashCode;
+            hashcode = hashcode * 7302013 ^ IsExtensionMethod.GetHashCode();
+            return hashcode;
+        }
+    }
+
     static readonly UTF8Encoding UTF8 = new(
         encoderShouldEmitUTF8Identifier: false,
         throwOnInvalidBytes: true);
@@ -43,7 +78,7 @@ sealed class FoldConversions : IOptimizationScope
         .ToArray();
 
     readonly List<string> _literalValues = [];
-    readonly Dictionary<object, Interceptor> _literalMap = new(new LiteralComparer());
+    readonly Dictionary<LiteralDeclaration, Interceptor> _literalMap = [];
 
     public string Name => "Literals";
 
@@ -68,7 +103,8 @@ sealed class FoldConversions : IOptimizationScope
             ("U8String", "CreateLossy") => true,
             ("U8String", "FromAscii") => true,
             ("U8String", "FromLiteral") => true,
-
+            ("U8StringExtensions", "ToU8String") => true,
+            ("U8EnumExtensions", "ToU8String") => true,
             ("Syntax", "u8") => true,
 
             _ => false
@@ -80,13 +116,34 @@ sealed class FoldConversions : IOptimizationScope
         IMethodSymbol method,
         InvocationExpressionSyntax invocation)
     {
-        if (!IsSupportedMethod(method) ||
-            invocation.ArgumentList.Arguments is not [var argument])
+        if (!IsSupportedMethod(method))
         {
             return false;
         }
 
-        var expression = argument.Expression;
+        bool isExtensionMethod;
+        ExpressionSyntax? expression;
+
+        // Handle u8(...), U8String.Create(...), etc.
+        var invocationOperation = (IInvocationOperation)model.GetOperation(invocation)!;
+        if (invocation.ArgumentList.Arguments is [var argument])
+        {
+            isExtensionMethod = false;
+            expression = argument.Expression;
+        }
+        // Handle instance.ToU8String()
+        else if (invocationOperation.Arguments is [var instanceArgument]
+            && instanceArgument.Value is IOperation instanceOperation
+            && instanceOperation.Syntax is ExpressionSyntax literalExpression)
+        {
+            isExtensionMethod = true;
+            expression = literalExpression;
+        }
+        else
+        {
+            return false;
+        }
+
         var constant = model.GetConstantValue(expression);
         if (constant is not { HasValue: true, Value: object constantValue })
         {
@@ -99,8 +156,27 @@ sealed class FoldConversions : IOptimizationScope
             else return false;
         }
 
-        var callsite = new Callsite(method, invocation);
-        if (_literalMap.TryGetValue(constantValue, out var interceptor))
+        var type = model.GetTypeInfo(expression).Type;
+        if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum } symbol)
+        {
+            // Resolve enum member name from the constant value.
+            // If it's not resolved, it will stay numeric, matching runtime behavior.
+            foreach (var member in symbol.GetMembers())
+            {
+                if (member is IFieldSymbol field && (field.ConstantValue?.Equals(constantValue) ?? false))
+                {
+                    constantValue = member.Name;
+                    break;
+                }
+            }
+        }
+
+        var callsite = isExtensionMethod
+            ? Callsite.FromExtensionInvocation(invocationOperation)
+            : Callsite.FromRegularInvocation(method, invocation);
+        var literal = new LiteralDeclaration(type!.ToDisplayString(), constantValue, isExtensionMethod);
+
+        if (_literalMap.TryGetValue(literal, out var interceptor))
         {
             // Already known literal - append a callsite and return
             interceptor.Callsites.Add(callsite);
@@ -113,11 +189,12 @@ sealed class FoldConversions : IOptimizationScope
             return false;
         }
 
+        var instanceArg = isExtensionMethod ? $"this {method.ReceiverType} source" : null;
         var literalName = AddByteLiteral(utf8, utf16[^1] != 0);
 
-        _literalMap[constantValue] = new(
+        _literalMap[literal] = new(
             Method: method,
-            InstanceArg: null,
+            InstanceArg: instanceArg,
             CustomAttrs: Constants.AggressiveInlining,
             Callsites: [callsite],
             Body: $"return U8Marshal.CreateUnsafe(_{literalName}, 0, {utf8.Length});");
@@ -178,6 +255,8 @@ sealed class FoldConversions : IOptimizationScope
     // with readonly static array pre-initialization by NativeAOT.
     string AddByteLiteral(byte[] utf8, bool nullTerminate)
     {
+        // !!! DO NOT USE collection literals in the form of `= [1,2,3,0]` !!!
+        // !!! This WILL burn through all the user's memory.               !!!
         var literalName = Guid.NewGuid().ToString("N");
         var literalLength = nullTerminate ? utf8.Length + 1 : utf8.Length;
         var byteLiteral = new StringBuilder((utf8.Length * 4) + 32)
@@ -196,20 +275,5 @@ sealed class FoldConversions : IOptimizationScope
 
         _literalValues.Add(byteLiteral.ToString());
         return literalName;
-    }
-
-    sealed class LiteralComparer : IEqualityComparer<object>
-    {
-        public new bool Equals(object x, object y)
-        {
-            return x is string s
-                ? y is string sy && s.Equals(sy, StringComparison.Ordinal)
-                : x.Equals(y);
-        }
-
-        public int GetHashCode(object obj)
-        {
-            return obj is string s ? StringComparer.Ordinal.GetHashCode(s) : obj.GetHashCode();
-        }
     }
 }

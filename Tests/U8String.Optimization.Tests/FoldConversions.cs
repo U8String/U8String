@@ -1,3 +1,4 @@
+using System.Net;
 using System.Text;
 
 namespace U8.Optimization.Tests;
@@ -31,6 +32,27 @@ public partial class FoldConversions
     }
 
     [Fact]
+    public void ExtensionMethodLiteralDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            "Привіт, Всесвіт!".ToU8String(),
+            "Привіт, Всесвіт!".ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Привіт, Всесвіт!"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
     public void ReferencedConstDeclaration1KRunes_IsCorrectlyFolded()
     {
         var literals = new[]
@@ -40,6 +62,28 @@ public partial class FoldConversions
             U8String.CreateLossy(OneThousandRunes),
             U8String.FromAscii(OneThousandRunes),
             U8String.FromLiteral(OneThousandRunes)
+        };
+
+        var first = literals[0];
+        var reference = Encoding.UTF8.GetBytes(OneThousandRunes);
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal(reference.AsSpan(), literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ExtensionMethodReferencedConstDeclaration1KRunes_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            OneThousandRunes.ToU8String(),
+            OneThousandRunes.ToU8String()
         };
 
         var first = literals[0];
@@ -93,11 +137,45 @@ public partial class FoldConversions
     }
 
     [Fact]
+    public void ExtensionMethodUtf8LiteralExpression_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            "Привіт,\nВсесвіт!"u8.ToU8String(),
+            "Привіт,\nВсесвіт!"u8.ToU8String(),
+            """
+                Привіт,
+                Всесвіт!
+                """u8.ToU8String()
+        };
+
+        // Windows may have inconsistent line endings depending on project settings,
+        // we don't particularly care for those and users are expected to call .ReplaceLineEndings(lineEnding)
+        // if they need to normalize the text for a specific platform or protocol.
+        if (OperatingSystem.IsWindows())
+        {
+            literals = literals[..1];
+        }
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Привіт,\nВсесвіт!"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
     public void InlineBoolConstantDeclaration_IsCorrectlyFolded()
     {
         var literals = new[]
         {
-            u8(true), U8String.Create(true)
+            u8(true),
+            U8String.Create(true)
         };
 
         var first = literals[0];
@@ -117,7 +195,9 @@ public partial class FoldConversions
     {
         var literals = new[]
         {
-            u8(byte.MaxValue), U8String.Create(byte.MaxValue)
+            u8((byte)255),
+            u8(byte.MaxValue),
+            U8String.Create(byte.MaxValue)
         };
 
         var first = literals[0];
@@ -133,11 +213,97 @@ public partial class FoldConversions
     }
 
     [Fact]
+    public void ExtensionMethodInlineByteConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            ((byte)255).ToU8String(),
+            byte.MaxValue.ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("255"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void InlineCharConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            u8('Ї'),
+            U8String.Create('Ї')
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Ї"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ExtensionMethodInlineCharConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            'Ї'.ToU8String(),
+            'Ї'.ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Ї"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
     public void InlineIntConstantDeclaration_IsCorrectlyFolded()
     {
         var literals = new[]
         {
-            u8(int.MaxValue), U8String.Create(int.MaxValue)
+            u8(int.MaxValue),
+            U8String.Create(int.MaxValue)
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("2147483647"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ExtensionMethodInlineIntConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            2147483647.ToU8String(),
+            int.MaxValue.ToU8String(),
+            int.MaxValue.ToU8String()
         };
 
         var first = literals[0];
@@ -157,7 +323,31 @@ public partial class FoldConversions
     {
         var literals = new[]
         {
-            u8(long.MaxValue), U8String.Create(long.MaxValue)
+            u8(long.MaxValue),
+            u8(9223372036854775807),
+            U8String.Create(long.MaxValue)
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("9223372036854775807"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ExtensionMethodInlineLongConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            9223372036854775807.ToU8String(),
+            long.MaxValue.ToU8String(),
+            long.MaxValue.ToU8String()
         };
 
         var first = literals[0];
@@ -177,7 +367,30 @@ public partial class FoldConversions
     {
         var literals = new[]
         {
-            u8(1234567890.123456789M), U8String.Create(1234567890.123456789M)
+            u8(1234567890.123456789M),
+            u8(1234567890.123456789M),
+            U8String.Create(1234567890.123456789M)
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("1234567890.123456789"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ExtensionMethodInlineDecimalConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            1234567890.123456789M.ToU8String(),
+            1234567890.123456789M.ToU8String(),
         };
 
         var first = literals[0];
@@ -197,7 +410,9 @@ public partial class FoldConversions
     {
         var literals = new[]
         {
-            u8(decimal.MaxValue), U8String.Create(decimal.MaxValue)
+            u8(decimal.MaxValue),
+            u8(decimal.MaxValue),
+            U8String.Create(decimal.MaxValue)
         };
 
         var first = literals[0];
@@ -206,6 +421,73 @@ public partial class FoldConversions
         {
             Assert.Equal(first, literals[i]);
             Assert.Equal("79228162514264337593543950335"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ExtensionMethodInlineDecimalMaxValueConstantDeclaration_IsCorrectlyFolded()
+    {
+        var literals = new[]
+        {
+            decimal.MaxValue.ToU8String(),
+            decimal.MaxValue.ToU8String(),
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("79228162514264337593543950335"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void NonContiguousDuplicateEnumDeclaration_IsCorrectlyFolded()
+    {
+        const HttpStatusCode reference = HttpStatusCode.Ambiguous;
+
+        var literals = new[]
+        {
+            reference.ToU8String(),
+            HttpStatusCode.MultipleChoices.ToU8String(), // :^)
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Ambiguous"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ContiguousUniqueEnumDeclaration_IsCorrectlyFolded()
+    {
+        const DayOfWeek reference = DayOfWeek.Friday;
+
+        var literals = new[]
+        {
+            reference.ToU8String(),
+            DayOfWeek.Friday.ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("Friday"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
             Assert.True(first.SourceEquals(literals[i]));
             Assert.True(literals[i].IsNullTerminated);

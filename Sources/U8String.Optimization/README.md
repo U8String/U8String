@@ -21,6 +21,10 @@ var fromChar = u8('あ');
 const string literal = "Привіт, Всесвіт!";
 var createFromConst = U8String.Create(literal);
 
+// ToU8String()
+var fromExtension = "Привіт, Всесвіт!".ToU8String();
+var bestDay = DayOfWeek.Friday.ToU8String();
+
 // Also supports
 var fromAscii = U8String.FromAscii("Hello, World!");
 var fromLiteral2 = U8String.FromLiteral("Привіт, Всесвіт!");

@@ -72,7 +72,6 @@ sealed class FoldValidation : IOptimizationScope
             return false;
         }
 
-
         var (validated, unknown) = invocation
             .ArgumentList
             .Arguments
@@ -87,7 +86,7 @@ sealed class FoldValidation : IOptimizationScope
             Method: method,
             InstanceArg: "in this U8String source",
             CustomAttrs: Constants.AggressiveInlining,
-            Callsites: [new Callsite(method, invocation)],
+            Callsites: [Callsite.FromRegularInvocation(method, invocation)],
             Body: $"return U8Unchecked.{method.Name}(source, {string.Join(", ", Extensions.ArgRange(invocation.ArgumentList.Arguments.Count))});"));
         return true;
     }
