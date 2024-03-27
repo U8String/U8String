@@ -13,32 +13,39 @@ namespace U8;
 public static class U8SplitOptions
 {
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly struct TrimOptions : IU8SplitOptions;
+    public readonly struct TrimOptions : IU8SplitOptions
+    {
+        public static bool Trim => true;
+        public static bool RemoveEmpty => false;
+    }
+
     public static TrimOptions Trim => default;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly struct RemoveEmptyOptions : IU8SplitOptions;
+    public readonly struct RemoveEmptyOptions : IU8SplitOptions
+    {
+        public static bool Trim => false;
+        public static bool RemoveEmpty => true;
+    }
+
     public static RemoveEmptyOptions RemoveEmpty => default;
 
     [EditorBrowsable(EditorBrowsableState.Never)]
-    public readonly struct TrimRemoveEmptyOptions : IU8SplitOptions;
+    public readonly struct TrimRemoveEmptyOptions : IU8SplitOptions
+    {
+        public static bool Trim => true;
+        public static bool RemoveEmpty => true;
+    }
+
     public static TrimRemoveEmptyOptions TrimRemoveEmpty => default;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ShouldTrim<T>() where T : IU8SplitOptions
-    {
-        return typeof(T) == typeof(TrimOptions) || typeof(T) == typeof(TrimRemoveEmptyOptions);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static bool ShouldRemoveEmpty<T>() where T : IU8SplitOptions
-    {
-        return typeof(T) == typeof(RemoveEmptyOptions) || typeof(T) == typeof(TrimRemoveEmptyOptions);
-    }
 }
 
 [EditorBrowsable(EditorBrowsableState.Never)]
-public interface IU8SplitOptions;
+public interface IU8SplitOptions
+{
+    static abstract bool Trim { get; }
+    static abstract bool RemoveEmpty { get; }
+}
 
 public readonly partial struct U8String
 {

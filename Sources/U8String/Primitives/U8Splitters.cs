@@ -619,7 +619,7 @@ public readonly struct ConfiguredU8Split<TSeparator, TOptions> :
                 var (index, length) = U8Searching.IndexOf(value, _separator);
                 if (index >= 0)
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, new(remaining.Offset, index)) : new(remaining.Offset, index);
                     _remaining = new(
                         remaining.Offset + index + length,
@@ -627,12 +627,12 @@ public readonly struct ConfiguredU8Split<TSeparator, TOptions> :
                 }
                 else
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, remaining) : remaining;
                     _remaining = default;
                 }
 
-                if (U8SplitOptions.ShouldRemoveEmpty<TOptions>() && _current.Length is 0)
+                if (TOptions.RemoveEmpty && _current.Length is 0)
                 {
                     goto Next;
                 }
@@ -740,7 +740,7 @@ public readonly struct ConfiguredU8Split<TSeparator, TOptions, TComparer> :
                 var (index, length) = U8Searching.IndexOf(value, _separator, _comparer);
                 if (index >= 0)
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, new(remaining.Offset, index))
                         : new(remaining.Offset, index);
                     _remaining = new(
@@ -749,12 +749,12 @@ public readonly struct ConfiguredU8Split<TSeparator, TOptions, TComparer> :
                 }
                 else
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, remaining) : remaining;
                     _remaining = default;
                 }
 
-                if (U8SplitOptions.ShouldRemoveEmpty<TOptions>() && _current.Length is 0)
+                if (TOptions.RemoveEmpty && _current.Length is 0)
                 {
                     goto Next;
                 }
@@ -1447,7 +1447,7 @@ public readonly ref struct ConfiguredU8RefSplit<TOptions>
                 var index = U8Searching.IndexOf(value, separator);
                 if (index >= 0)
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, new(remaining.Offset, index))
                         : new(remaining.Offset, index);
                     _remaining = new(
@@ -1456,12 +1456,12 @@ public readonly ref struct ConfiguredU8RefSplit<TOptions>
                 }
                 else
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, remaining) : remaining;
                     _remaining = default;
                 }
 
-                if (U8SplitOptions.ShouldRemoveEmpty<TOptions>() && _current.Length is 0)
+                if (TOptions.RemoveEmpty && _current.Length is 0)
                 {
                     goto Next;
                 }
@@ -1648,7 +1648,7 @@ public readonly ref struct ConfiguredU8RefSplit<TOptions, TComparer>
                 var (index, length) = U8Searching.IndexOf(value, _separator, _comparer);
                 if (index >= 0)
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, new(remaining.Offset, index)) : new(remaining.Offset, index);
                     _remaining = new(
                         remaining.Offset + index + length,
@@ -1656,12 +1656,12 @@ public readonly ref struct ConfiguredU8RefSplit<TOptions, TComparer>
                 }
                 else
                 {
-                    _current = U8SplitOptions.ShouldTrim<TOptions>()
+                    _current = TOptions.Trim
                         ? TrimEntry(_value!, remaining) : remaining;
                     _remaining = default;
                 }
 
-                if (U8SplitOptions.ShouldRemoveEmpty<TOptions>() && _current.Length is 0)
+                if (TOptions.RemoveEmpty && _current.Length is 0)
                 {
                     goto Next;
                 }
