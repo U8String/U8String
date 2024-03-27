@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using U8.Abstractions;
+using U8.Shared;
 
 namespace U8.Primitives;
 
@@ -140,18 +141,51 @@ public struct U8Builder : IU8Buffer
             _handler.EnsureCapacity(literalLength + (formattedCount * 12));
         }
 
-        public void AppendLiteral([ConstantExpected] string s) => _handler.AppendLiteral(s);
-        public void AppendLiteral(ReadOnlySpan<char> s) => _handler.AppendLiteral(s);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendLiteral([ConstantExpected] string s) => U8Interpolation.AppendLiteral(ref _handler, s);
 
-        public void AppendFormatted(bool value) => _handler.AppendFormatted(value);
-        public void AppendFormatted(char value) => _handler.AppendFormatted(value);
-        public void AppendFormatted(Rune value) => _handler.AppendFormatted(value);
-        public void AppendFormatted(U8String value) => _handler.AppendFormatted(value);
-        public void AppendFormatted(ReadOnlySpan<byte> value) => _handler.AppendFormatted(value);
-        public void AppendFormatted(string? value) => _handler.AppendFormatted(value);
-        public void AppendFormatted<T>(T value) => _handler.AppendFormatted(value);
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        public void AppendLiteral(ReadOnlySpan<char> s) => U8Interpolation.AppendLiteral(ref _handler, s);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(bool value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(char value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(Rune value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(U8String value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(U8String? value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(ReadOnlySpan<byte> value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(string? value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted(ReadOnlySpan<char> value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void AppendFormatted<T>(T value) => U8Interpolation.AppendFormatted(ref _handler, value);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AppendFormatted<T>(T value, ReadOnlySpan<char> format)
-            where T : IUtf8SpanFormattable => _handler.AppendFormatted(value, format);
+            where T : IUtf8SpanFormattable => U8Interpolation.AppendFormatted(ref _handler, value, format);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void AppendBytes(ReadOnlySpan<byte> bytes) => U8Interpolation.AppendBytes(ref _handler, bytes);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void AppendBytesInlined(ReadOnlySpan<byte> bytes) => U8Interpolation.AppendBytesInlined(ref _handler, bytes);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        internal void AppendBytesUnchecked(ReadOnlySpan<byte> bytes) => U8Interpolation.AppendBytesUnchecked(ref _handler, bytes);
     }
 }
 

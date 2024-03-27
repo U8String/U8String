@@ -18,6 +18,25 @@ interface IInterpolatedHandler
     void Grow(int hint);
 }
 
+// This interface exists in order to ensure interpolated handlers do not have
+// inconsistent handling of all the 293464301 AppendFormatted overloads.
+interface IInterpolatedHandlerImplementation : IInterpolatedHandler, IDisposable
+{
+    void AppendLiteral([ConstantExpected] string s);
+    void AppendLiteral(ReadOnlySpan<char> s);
+    void AppendFormatted(bool value);
+    void AppendFormatted(char value);
+    void AppendFormatted(Rune value);
+    void AppendFormatted(U8String value);
+    void AppendFormatted(U8String? value);
+    void AppendFormatted(ReadOnlySpan<byte> value);
+    void AppendFormatted(string? value);
+    void AppendFormatted(ReadOnlySpan<char> value);
+    void AppendFormatted<T>(T value);
+    void AppendFormatted<T>(T value, ReadOnlySpan<char> format)
+        where T : IUtf8SpanFormattable;
+}
+
 static class U8Interpolation
 {
     // Reference: https://github.com/dotnet/runtime/issues/93501
