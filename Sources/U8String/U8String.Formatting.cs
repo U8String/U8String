@@ -121,6 +121,10 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
         where T : IUtf8SpanFormattable => U8Interpolation.AppendFormatted(ref this, value, format);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AppendFormatted<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
+        where T : IUtf8SpanFormattable => U8Interpolation.AppendFormatted(ref this, value, format, provider);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AppendBytes(ReadOnlySpan<byte> bytes) => U8Interpolation.AppendBytes(ref this, bytes);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -195,11 +199,8 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
     }
 
     /// <summary>
-    /// Resets the buffer and returns pooled array if applicable.
+    /// Resets the builder and returns the pooled buffer if applicable.
     /// </summary>
-    /// <remarks>
-    /// The buffer may be reused after calling this method.
-    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {
@@ -327,6 +328,10 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
         where T : IUtf8SpanFormattable => U8Interpolation.AppendFormatted(ref this, value, format);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void AppendFormatted<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
+        where T : IUtf8SpanFormattable => U8Interpolation.AppendFormatted(ref this, value, format, provider);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AppendBytes(ReadOnlySpan<byte> bytes) => U8Interpolation.AppendBytes(ref this, bytes);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -369,11 +374,8 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
     }
 
     /// <summary>
-    /// Resets the buffer and returns pooled array if applicable.
+    /// Returns the pooled buffer.
     /// </summary>
-    /// <remarks>
-    /// The buffer may be reused after calling this method.
-    /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void Dispose()
     {

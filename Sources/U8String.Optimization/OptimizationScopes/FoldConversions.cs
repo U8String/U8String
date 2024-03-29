@@ -249,14 +249,8 @@ sealed class FoldConversions : IOptimizationScope
         }
     }
 
-    // TODO: This form appears to be highly problematic for Roslyn and causes it to
-    // consume unreasonable amounts of memory taken by ArrayElementExpressions (or a similar name).
-    // Investigate if there are other, more compact forms of declaration that are compatible
-    // with readonly static array pre-initialization by NativeAOT.
     string AddByteLiteral(byte[] utf8, bool nullTerminate)
     {
-        // !!! DO NOT USE collection literals in the form of `= [1,2,3,0]` !!!
-        // !!! This WILL burn through all the user's memory.               !!!
         var literalName = Guid.NewGuid().ToString("N");
         var literalLength = nullTerminate ? utf8.Length + 1 : utf8.Length;
         var byteLiteral = new StringBuilder((utf8.Length * 4) + 32)

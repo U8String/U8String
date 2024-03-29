@@ -16,18 +16,17 @@ namespace U8.Optimization;
 [Generator]
 sealed class Optimizer : ISourceGenerator
 {
-    readonly IOptimizationScope[] Optimizations =
-    [
-        new FoldConversions(),
-        new FoldValidation(),
-        new SpecializeDispatch()
-    ];
-
     public void Initialize(GeneratorInitializationContext _) { }
 
     public void Execute(GeneratorExecutionContext context)
     {
         var compilation = context.Compilation;
+        var optimizations = new IOptimizationScope[]
+        {
+            new FoldConversions(),
+            new FoldValidation(),
+            new SpecializeDispatch()
+        };
 
         foreach (var tree in compilation.SyntaxTrees)
         {
@@ -38,10 +37,22 @@ sealed class Optimizer : ISourceGenerator
                 .GetRoot()
                 .DescendantNodes();
 
-            ProcessSyntaxNodes(model, nodes);
+            foreach (var node in nodes)
+            {
+                if (model.TryGetInvocation(node, out var invocation, out var method))
+                {
+                    foreach (var optimization in optimizations)
+                    {
+                        if (optimization.ProcessCallsite(model, method, invocation))
+                        {
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
-        foreach (var scope in Optimizations)
+        foreach (var scope in optimizations)
         {
             if (!scope.Interceptors.Any())
             {
@@ -49,23 +60,6 @@ sealed class Optimizer : ISourceGenerator
             }
 
             context.AddSource($"U8{scope.Name}.g.cs", EmitInterceptors(compilation, scope));
-        }
-    }
-
-    void ProcessSyntaxNodes(SemanticModel model, IEnumerable<SyntaxNode> nodes)
-    {
-        foreach (var node in nodes)
-        {
-            if (model.TryGetInvocation(node, out var invocation, out var method))
-            {
-                foreach (var optimization in Optimizations)
-                {
-                    if (optimization.ProcessCallsite(model, method, invocation))
-                    {
-                        break;
-                    }
-                }
-            }
         }
     }
 

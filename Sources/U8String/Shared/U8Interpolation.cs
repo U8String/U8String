@@ -35,6 +35,8 @@ interface IInterpolatedHandlerImplementation : IInterpolatedHandler, IDisposable
     void AppendFormatted<T>(T value);
     void AppendFormatted<T>(T value, ReadOnlySpan<char> format)
         where T : IUtf8SpanFormattable;
+    void AppendFormatted<T>(T value, ReadOnlySpan<char> format, IFormatProvider? provider)
+        where T : IUtf8SpanFormattable;
 }
 
 static class U8Interpolation
@@ -99,7 +101,7 @@ static class U8Interpolation
             AppendByte(ref handler, (byte)value);
             return;
         }
-        
+
         AppendBytes(ref handler, value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
@@ -232,6 +234,22 @@ static class U8Interpolation
     {
     Retry:
         if (value.TryFormat(handler.Free, out var written, format, handler.Provider))
+        {
+            handler.BytesWritten += written;
+            return;
+        }
+
+        handler.Grow();
+        goto Retry;
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    internal static void AppendFormatted<T, U>(ref T handler, U value, ReadOnlySpan<char> format, IFormatProvider? provider)
+        where T : IInterpolatedHandler
+        where U : IUtf8SpanFormattable
+    {
+    Retry:
+        if (value.TryFormat(handler.Free, out var written, format, provider))
         {
             handler.BytesWritten += written;
             return;

@@ -40,29 +40,24 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
 
         if (length >= (nuint)Vector256<byte>.Count)
         {
-            var mask = Vector256.Create((byte)0x20);
-            var upperStart = Vector256.Create((byte)'A');
-            var upperEnd = Vector256.Create((byte)'Z');
+            var mask = Vector256.Create((sbyte)0x20);
+            var overflow = Vector256.Create<sbyte>(128 - 'A');
+            var bound = Vector256.Create<sbyte>(-127 + ('Z' - 'A'));
 
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
-                var lvec = Vector256.LoadUnsafe(ref lptr, offset);
-                var rvec = Vector256.LoadUnsafe(ref rptr, offset);
+                var lvec = Vector256.LoadUnsafe(ref lptr, offset).AsSByte();
+                var rvec = Vector256.LoadUnsafe(ref rptr, offset).AsSByte();
 
-                var lcmask = mask
-                    & lvec.Gte(upperStart)
-                    & lvec.Lte(upperEnd);
-
-                var rcmask = mask
-                    & rvec.Gte(upperStart)
-                    & rvec.Lte(upperEnd);
+                var lcmask = (lvec + overflow).Lt(bound) & mask;
+                var rcmask = (rvec + overflow).Lt(bound) & mask;
 
                 // Compare normalized left and right vectors and negate the result
                 // in order to find the first index of not match.
 
                 var neqmask = ~((lvec | lcmask).Eq(rvec | rcmask));
-                if (neqmask != Vector256<byte>.Zero)
+                if (neqmask != Vector256<sbyte>.Zero)
                 {
                     return (int)(uint)(neqmask.IndexOfMatch() + offset);
                 }
@@ -395,23 +390,18 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
 
         if (length >= (nuint)Vector256<byte>.Count)
         {
-            var mask = Vector256.Create((byte)0x20);
-            var upperStart = Vector256.Create((byte)'A');
-            var upperEnd = Vector256.Create((byte)'Z');
+            var mask = Vector256.Create((sbyte)0x20);
+            var overflow = Vector256.Create<sbyte>(128 - 'A');
+            var bound = Vector256.Create<sbyte>(-127 + ('Z' - 'A'));
 
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
-                var lvec = Vector256.LoadUnsafe(ref left, offset);
-                var rvec = Vector256.LoadUnsafe(ref right, offset);
+                var lvec = Vector256.LoadUnsafe(ref left, offset).AsSByte();
+                var rvec = Vector256.LoadUnsafe(ref right, offset).AsSByte();
 
-                var lcmask = mask
-                    & lvec.Gte(upperStart)
-                    & lvec.Lte(upperEnd);
-
-                var rcmask = mask
-                    & rvec.Gte(upperStart)
-                    & rvec.Lte(upperEnd);
+                var lcmask = (lvec + overflow).Lt(bound) & mask;
+                var rcmask = (rvec + overflow).Lt(bound) & mask;
 
                 // Compare left and right with ASCII letters normalized to lowercase
                 if ((lvec | lcmask) != (rvec | rcmask))

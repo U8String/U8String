@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
 using U8.Abstractions;
+using U8.IO;
 using U8.Shared;
 
 namespace U8.Primitives;
@@ -202,17 +203,29 @@ public static class U8BuilderExtensions
     public static U8Builder AppendLine<T>(this U8Builder builder, T value)
         where T : struct, Enum
     {
-        throw new NotImplementedException();
+        builder.Handler.AppendFormatted(value);
+        builder.Handler.AppendBytes(U8WriteExtensions.NewLine);
+        return builder;
     }
 
     // TODO: IFormatProvider overload
+    [EditorBrowsable(EditorBrowsableState.Never)]
     public static U8Builder Append(
         this U8Builder builder,
-        [InterpolatedStringHandlerArgument(nameof(builder))] U8Builder.InterpolatedHandler _)
+        [InterpolatedStringHandlerArgument(nameof(builder))] U8Builder.InterpolatedHandler handler)
     {
         // Roslyn unrolls string interpolation calls into handler ctor with specified args
         // and subsequent AppendLiteral and AppendFormat calls, so the actual appending to
         // builder has already happened by the time we get here.
+        return builder;
+    }
+
+    [EditorBrowsable(EditorBrowsableState.Never)]
+    public static U8Builder AppendLine(
+        this U8Builder builder,
+        [InterpolatedStringHandlerArgument(nameof(builder))] U8Builder.InterpolatedHandler handler)
+    {
+        builder.Handler.AppendBytes(U8WriteExtensions.NewLine);
         return builder;
     }
 }

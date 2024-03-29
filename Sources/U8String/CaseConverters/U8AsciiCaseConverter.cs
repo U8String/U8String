@@ -31,31 +31,33 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector128<byte> ToLower(Vector128<byte> ascii)
+    internal static Vector256<byte> ToLower(Vector256<byte> utf8)
     {
-        var lower = Vector128.Create((byte)'A');
-        var upper = Vector128.Create((byte)'Z');
-        var mask = Vector128.Create((byte)0x20);
+        var mask = Vector256.Create((sbyte)0x20);
+        var overflow = Vector256.Create<sbyte>(128 - 'A');
+        var bound = Vector256.Create<sbyte>(-127 + ('Z' - 'A'));
 
-        var changeCase = mask
-            & ascii.Gte(lower)
-            & ascii.Lte(upper);
-
-        return ascii | changeCase;
+        return utf8 | ((utf8.AsSByte() + overflow).Lt(bound) & mask).AsByte();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector64<byte> ToLower(Vector64<byte> ascii)
+    internal static Vector128<byte> ToLower(Vector128<byte> utf8)
     {
-        var lower = Vector64.Create((byte)'A');
-        var upper = Vector64.Create((byte)'Z');
-        var mask = Vector64.Create((byte)0x20);
+        var mask = Vector128.Create((sbyte)0x20);
+        var overflow = Vector128.Create<sbyte>(128 - 'A');
+        var bound = Vector128.Create<sbyte>(-127 + ('Z' - 'A'));
 
-        var changeCase = mask
-            & Vector64.GreaterThanOrEqual(ascii, lower)
-            & Vector64.LessThanOrEqual(ascii, upper);
+        return utf8 | ((utf8.AsSByte() + overflow).Lt(bound) & mask).AsByte();
+    }
 
-        return ascii | changeCase;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector64<byte> ToLower(Vector64<byte> utf8)
+    {
+        var mask = Vector64.Create((sbyte)0x20);
+        var overflow = Vector64.Create<sbyte>(128 - 'A');
+        var bound = Vector64.Create<sbyte>(-127 + ('Z' - 'A'));
+
+        return utf8 | (Vector64.LessThan(utf8.AsSByte() + overflow, bound) & mask).AsByte();
     }
 
     internal static void ToLowerCore(ref byte src, ref byte dst, nuint length)
@@ -68,22 +70,17 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         nuint offset = 0;
         if (length >= (nuint)Vector256<byte>.Count)
         {
-            var lower = Vector256.Create((byte)'A');
-            var upper = Vector256.Create((byte)'Z');
-            var mask = Vector256.Create((byte)0x20);
+            var mask = Vector256.Create((sbyte)0x20);
+            var overflow = Vector256.Create<sbyte>(128 - 'A');
+            var bound = Vector256.Create<sbyte>(-127 + ('Z' - 'A'));
 
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
-                // We cannot use extension helper because the compiler refuses
-                // to hoist constant loads out of the loop on ARM64
-                var utf8 = Vector256.LoadUnsafe(ref src, offset);
+                var utf8 = Vector256.LoadUnsafe(ref src, offset).AsSByte();
+                var changeCase = (utf8 + overflow).Lt(bound) & mask;
 
-                var changeCase = mask
-                    & utf8.Gte(lower)
-                    & utf8.Lte(upper);
-
-                (utf8 | changeCase).StoreUnsafe(ref dst, offset);
+                (utf8 | changeCase).AsByte().StoreUnsafe(ref dst, offset);
 
                 offset += (nuint)Vector256<byte>.Count;
             } while (offset <= lastvec);
@@ -92,9 +89,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var utf8 = Vector128.LoadUnsafe(ref src, offset);
-
             ToLower(utf8).StoreUnsafe(ref dst, offset);
-
             offset += (nuint)Vector128<byte>.Count;
         }
 
@@ -102,9 +97,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             length >= offset + (nuint)Vector64<byte>.Count)
         {
             var utf8 = Vector64.LoadUnsafe(ref src, offset);
-
             ToLower(utf8).StoreUnsafe(ref dst, offset);
-
             offset += (nuint)Vector64<byte>.Count;
         }
 
@@ -134,31 +127,33 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static Vector128<byte> ToUpper(Vector128<byte> ascii)
+    internal static Vector256<byte> ToUpper(Vector256<byte> utf)
     {
-        var lower = Vector128.Create((byte)'a');
-        var upper = Vector128.Create((byte)'z');
-        var mask = Vector128.Create((byte)0x20);
+        var mask = Vector256.Create((sbyte)0x20);
+        var overflow = Vector256.Create<sbyte>(128 - 'a');
+        var bound = Vector256.Create<sbyte>(-127 + ('z' - 'a'));
 
-        var changeCase = mask
-            & ascii.Gte(lower)
-            & ascii.Lte(upper);
+        return utf ^ ((utf.AsSByte() + overflow).Lt(bound) & mask).AsByte();
+    }
 
-        return ascii ^ changeCase;
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static Vector128<byte> ToUpper(Vector128<byte> utf)
+    {
+        var mask = Vector128.Create((sbyte)0x20);
+        var overflow = Vector128.Create<sbyte>(128 - 'a');
+        var bound = Vector128.Create<sbyte>(-127 + ('z' - 'a'));
+
+        return utf ^ ((utf.AsSByte() + overflow).Lt(bound) & mask).AsByte();
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static Vector64<byte> ToUpper(Vector64<byte> ascii)
     {
-        var lower = Vector64.Create((byte)'a');
-        var upper = Vector64.Create((byte)'z');
-        var mask = Vector64.Create((byte)0x20);
+        var mask = Vector64.Create((sbyte)0x20);
+        var overflow = Vector64.Create<sbyte>(128 - 'a');
+        var bound = Vector64.Create<sbyte>(-127 + ('z' - 'a'));
 
-        var changeCase = mask
-            & Vector64.GreaterThanOrEqual(ascii, lower)
-            & Vector64.LessThanOrEqual(ascii, upper);
-
-        return ascii ^ changeCase;
+        return ascii ^ (Vector64.LessThan(ascii.AsSByte() + overflow, bound) & mask).AsByte();
     }
 
     internal static void ToUpperCore(ref byte src, ref byte dst, nuint length)
@@ -172,20 +167,17 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         if (length >= (nuint)Vector256<byte>.Count)
         {
             // As usual, .NET unrolls this into 128x2 when 256 is not available
-            var lower = Vector256.Create((byte)'a');
-            var upper = Vector256.Create((byte)'z');
-            var mask = Vector256.Create((byte)0x20);
+            var mask = Vector256.Create((sbyte)0x20);
+            var overflow = Vector256.Create<sbyte>(128 - 'a');
+            var bound = Vector256.Create<sbyte>(-127 + ('z' - 'a'));
 
             var lastvec = length - (nuint)Vector256<byte>.Count;
             do
             {
-                var utf8 = Vector256.LoadUnsafe(ref src, offset);
+                var utf8 = Vector256.LoadUnsafe(ref src, offset).AsSByte();
+                var changeCase = (utf8 + overflow).Lt(bound) & mask;
 
-                var changeCase = mask
-                    & utf8.Gte(lower)
-                    & utf8.Lte(upper);
-
-                (utf8 ^ changeCase).StoreUnsafe(ref dst, offset);
+                (utf8 ^ changeCase).AsByte().StoreUnsafe(ref dst, offset);
 
                 offset += (nuint)Vector256<byte>.Count;
             } while (offset <= lastvec);
@@ -194,9 +186,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         if (length >= offset + (nuint)Vector128<byte>.Count)
         {
             var utf8 = Vector128.LoadUnsafe(ref src, offset);
-
             ToUpper(utf8).StoreUnsafe(ref dst, offset);
-
             offset += (nuint)Vector128<byte>.Count;
         }
 
@@ -204,9 +194,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             length >= offset + (nuint)Vector64<byte>.Count)
         {
             var utf8 = Vector64.LoadUnsafe(ref src, offset);
-
             ToUpper(utf8).StoreUnsafe(ref dst, offset);
-
             offset += (nuint)Vector64<byte>.Count;
         }
 
