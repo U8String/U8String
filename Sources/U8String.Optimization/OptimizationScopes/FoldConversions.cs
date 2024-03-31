@@ -127,7 +127,8 @@ sealed class FoldConversions : IOptimizationScope
 
         // Handle u8(...), U8String.Create(...), etc.
         var invocationOperation = (IInvocationOperation)model.GetOperation(invocation)!;
-        if (invocation.ArgumentList.Arguments is [var argument])
+        if (invocation.ArgumentList.Arguments is [var argument]
+            && method.Name is not "ToU8String") // Is there a cleaner way?
         {
             isExtensionMethod = false;
             expression = argument.Expression;
