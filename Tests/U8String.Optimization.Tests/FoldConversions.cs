@@ -578,4 +578,27 @@ public partial class FoldConversions
         Assert.False(fromUtf8.SourceEqual(fromUtf16));
         Assert.NotEqual(fromUtf8.Source, fromUtf16.Source);
     }
+
+    [Fact]
+    public void ToU8String_DoesNotBreakTheBuildAndIsNotTriggeredOnNonConstantValuesWithConstantArguments()
+    {
+        var date = DateTime.Now;
+        var literals = new[]
+        {
+            DateTime.Now.ToU8String("yyyy-MM-dd"),
+            DateTime.Now.ToU8String("yyyy-MM-dd"),
+            date.ToU8String("yyyy-MM-dd"),
+        };
+
+        var expected = date.ToString("yyyy-MM-dd").ToU8String();
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(expected, literals[i]);
+            Assert.True(expected.Equals(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+            Assert.False(first.SourceEqual(literals[i]));
+        }
+    }
 }
