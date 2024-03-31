@@ -354,7 +354,7 @@ public readonly struct U8AsciiIgnoreCaseComparer : IU8Comparer
         if (x.Length == y.Length)
         {
             if (x.Length != 0 && (
-                x.Offset != y.Offset || !x.SourceEquals(y)))
+                x.Offset != y.Offset || !x.SourceEqual(y)))
             {
                 return EqualsCore(
                     ref x.UnsafeRef, ref y.UnsafeRef, (uint)x.Length);

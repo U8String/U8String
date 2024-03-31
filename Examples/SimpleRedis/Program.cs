@@ -1,4 +1,5 @@
-﻿// This file contains modified code that originally appeared in https://ayende.com/blog/197412-B/high-performance-net-building-a-redis-clone-naively
+﻿// This file contains modified code that originally appeared in
+// https://ayende.com/blog/197412-B/high-performance-net-building-a-redis-clone-naively
 // Permission was granted by the author to license this code under the MIT license.
 // On Unix-like systems, you can benchmark this example using the following commands:
 // - DOTNET_gcServer=1 dotnet run -c Release

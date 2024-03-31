@@ -126,7 +126,7 @@ public partial class Manipulation
         var result = left + right;
 
         Assert.True(result.Equals(right));
-        Assert.True(result.SourceEquals(right));
+        Assert.True(result.SourceEqual(right));
     }
 
     [Fact]
@@ -138,7 +138,7 @@ public partial class Manipulation
         var result = left + right;
 
         Assert.True(result.Equals(left));
-        Assert.True(result.SourceEquals(left));
+        Assert.True(result.SourceEqual(left));
     }
 
     [Theory, MemberData(nameof(Strings))]
@@ -167,7 +167,7 @@ public partial class Manipulation
         var result = left + right;
 
         Assert.True(result.Equals(right));
-        Assert.True(result.SourceEquals(right));
+        Assert.True(result.SourceEqual(right));
     }
 
     [Fact]
@@ -179,7 +179,7 @@ public partial class Manipulation
         var result = left + right;
 
         Assert.True(result.Equals(left));
-        Assert.True(result.SourceEquals(left));
+        Assert.True(result.SourceEqual(left));
     }
 
     [Fact]
@@ -217,7 +217,7 @@ public partial class Manipulation
         var result = left + right;
 
         Assert.True(result.Equals(right));
-        Assert.True(result.SourceEquals(right));
+        Assert.True(result.SourceEqual(right));
     }
 
     [Fact]
@@ -229,7 +229,7 @@ public partial class Manipulation
         var result = left + right;
 
         Assert.True(result.Equals(left));
-        Assert.True(result.SourceEquals(left));
+        Assert.True(result.SourceEqual(left));
     }
 
     [Fact]
@@ -264,7 +264,7 @@ public partial class Manipulation
         var actual = U8String.Concat(strings);
 
         Assert.True(actual.Equals(value));
-        Assert.True(actual.SourceEquals(value));
+        Assert.True(actual.SourceEqual(value));
     }
 
     [Fact]
@@ -293,7 +293,7 @@ public partial class Manipulation
         var actual = U8String.Concat([value]);
 
         Assert.True(actual.Equals(value));
-        Assert.True(actual.SourceEquals(value));
+        Assert.True(actual.SourceEqual(value));
     }
 
     [Theory, MemberData(nameof(Strings))]
@@ -319,7 +319,7 @@ public partial class Manipulation
         var actual = U8String.Concat(strings);
 
         Assert.True(actual.Equals(value));
-        Assert.True(actual.SourceEquals(value));
+        Assert.True(actual.SourceEqual(value));
     }
 
     [Fact]
@@ -374,7 +374,7 @@ public partial class Manipulation
         foreach (var actual in overloads)
         {
             Assert.True(actual.Equals(value));
-            Assert.True(actual.SourceEquals(value));
+            Assert.True(actual.SourceEqual(value));
         }
     }
 
@@ -430,7 +430,7 @@ public partial class Manipulation
         foreach (var actual in overloads)
         {
             Assert.True(actual.Equals(value));
-            Assert.True(actual.SourceEquals(value));
+            Assert.True(actual.SourceEqual(value));
         }
     }
 
@@ -486,7 +486,7 @@ public partial class Manipulation
         foreach (var actual in overloads)
         {
             Assert.True(actual.Equals(value));
-            Assert.True(actual.SourceEquals(value));
+            Assert.True(actual.SourceEqual(value));
         }
     }
 

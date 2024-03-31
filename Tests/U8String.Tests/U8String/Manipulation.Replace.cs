@@ -20,7 +20,7 @@ public partial class Manipulation
         foreach (var replaced in Variants())
         {
             Assert.Equal(source, replaced);
-            Assert.True(replaced.SourceEquals(source));
+            Assert.True(replaced.SourceEqual(source));
             Assert.True(replaced.IsNullTerminated);
         }
     }

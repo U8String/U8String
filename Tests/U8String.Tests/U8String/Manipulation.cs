@@ -51,7 +51,7 @@ public partial class Manipulation
             var nullTerminated = value.NullTerminate();
 
             Assert.True(nullTerminated.IsNullTerminated);
-            Assert.False(nullTerminated.SourceEquals(value));
+            Assert.False(nullTerminated.SourceEqual(value));
 
             Assert.Equal(value, nullTerminated[..^1]);
             Assert.Equal(value.Length, nullTerminated.Length - 1);
@@ -69,7 +69,7 @@ public partial class Manipulation
         var nullTerminatedAfter = nullTerminatedBefore.NullTerminate();
 
         Assert.True(nullTerminatedAfter.IsNullTerminated);
-        Assert.True(nullTerminatedBefore.SourceEquals(nullTerminatedAfter));
+        Assert.True(nullTerminatedBefore.SourceEqual(nullTerminatedAfter));
 
         Assert.Equal(nullTerminatedBefore, nullTerminatedAfter);
         Assert.Equal(nullTerminatedBefore.Offset, nullTerminatedAfter.Offset);
@@ -87,7 +87,7 @@ public partial class Manipulation
         var nullTerminated = value.NullTerminate();
 
         Assert.True(nullTerminated.IsNullTerminated);
-        Assert.True(nullTerminated.SourceEquals(value));
+        Assert.True(nullTerminated.SourceEqual(value));
 
         Assert.Equal(value, nullTerminated[..^1]);
         Assert.Equal(value.Offset, nullTerminated.Offset);

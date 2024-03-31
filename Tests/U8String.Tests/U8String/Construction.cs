@@ -606,8 +606,8 @@ public class Construction
             Assert.True(str.Equals(expected));
             Assert.True(str.IsNullTerminated);
             // Ensure it is always a cached literal
-            Assert.True(str.SourceEquals(value.ToU8String()));
-            Assert.True(str.SourceEquals(U8String.Create(value)));
+            Assert.True(str.SourceEqual(value.ToU8String()));
+            Assert.True(str.SourceEqual(U8String.Create(value)));
         }
     }
 
@@ -633,8 +633,8 @@ public class Construction
                 Assert.True(str.Equals(expected), msg);
                 Assert.True(str.IsNullTerminated);
                 // Ensure it is always a cached literal
-                Assert.True(str.SourceEquals(b.ToU8String()));
-                Assert.True(str.SourceEquals(U8String.Create(b)));
+                Assert.True(str.SourceEqual(b.ToU8String()));
+                Assert.True(str.SourceEqual(U8String.Create(b)));
             }
         }
     }
@@ -876,7 +876,7 @@ public class Construction
         // FromLiteral should always return the same instance
         Assert.Equal(first, second);
         Assert.Equal(first.Source, second.Source);
-        Assert.True(first.SourceEquals(second));
+        Assert.True(first.SourceEqual(second));
     }
 
     [Fact]

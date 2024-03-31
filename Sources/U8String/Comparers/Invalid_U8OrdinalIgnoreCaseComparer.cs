@@ -125,7 +125,7 @@ internal readonly struct U8OrdinalIgnoreCaseComparer : IU8Comparer
         if (x.Length == y.Length)
         {
             if (x.Length is 0 || (
-                x.Offset == y.Offset && x.SourceEquals(y)))
+                x.Offset == y.Offset && x.SourceEqual(y)))
             {
                 return true;
             }

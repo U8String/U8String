@@ -26,8 +26,6 @@ public static class U8Enum
 
         internal static readonly bool IsContiguousFromZero = CheckContiguousFromZero();
 
-        internal static readonly bool IsFlags = typeof(T).IsDefined(typeof(FlagsAttribute), inherit: false);
-
         internal static readonly FrozenDictionary<T, ByteArray> NameLookup =
             Values.Zip(Names, (v, n) => KeyValuePair.Create(v, new ByteArray(n._value!))).ToFrozenDictionary();
 
@@ -291,15 +289,9 @@ public static class U8EnumExtensions
     }
 }
 
-// FIXME: Does not handle flags enum formatting
-// TODO: Investigate if this can be constrained, unconstrained AppendFormatted<T> removed from
-// interpolated handlers and then an overload accpeting U8EnumFormattable<T> added to address
-// enum formatting?
-// ------------------------------------------------------------------------------------------------
-// TODO: Remove below if previous TODO is resolved
 // Unfortunately, this struct will partially duplicate formatting logic from U8Enum
 // because the "bridging generic constraints" feature is still work in progress and
-// we must use unconstrained generic argument due to method overload resulution limitations
+// we must use unconstrained generic argument due to method overload resulution characteristics
 // affecting InterpolatedU8StringHandler which requires its AppendFormatted<T> to be unconstrained.
 public readonly struct U8EnumFormattable<T> : IU8Formattable
     where T : notnull //, struct, Enum
@@ -307,6 +299,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
     // This cache mixes both defined and undefined enum values.
     // Defined values are cached unconditionally, while undefined ones are subject to UndefinedItemLimit.
     internal static readonly ConcurrentDictionary<T, ByteArray> Cache = [];
+    internal static readonly bool IsFlags = typeof(T).IsDefined(typeof(FlagsAttribute), inherit: false);
 
     static int UndefinedItemCount;
     const int UndefinedItemLimit = 4096;
@@ -346,7 +339,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
             return new(array, array.Length - 1, neverEmpty: true);
         }
 
-        return FormatNew(Value);
+        return !IsFlags ? FormatNew(Value) : FormatFlags(Value);
     }
 
     internal static U8String ToU8StringUndefined(T value)
@@ -357,7 +350,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
             return new(array, array.Length - 1, neverEmpty: true);
         }
 
-        return FormatUnderlying(value);
+        return !IsFlags ? FormatUnderlying(value) : FormatFlags(value);
     }
 
     public static implicit operator U8EnumFormattable<T>(T value) => new(value);
@@ -366,6 +359,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
     [MethodImpl(MethodImplOptions.NoInlining)]
     static U8String FormatNew(T value)
     {
+        Debug.Assert(!IsFlags);
         if (!typeof(T).IsValueType || !typeof(T).IsEnum)
         {
             throw new ArgumentException($"{typeof(T)} is not an enum type.", nameof(value));
@@ -390,6 +384,7 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
 
     static U8String FormatUnderlying(T value)
     {
+        Debug.Assert(!IsFlags);
         Unsafe.SkipInit(out U8String formatted);
         var type = typeof(T).GetEnumUnderlyingType();
 
@@ -419,6 +414,32 @@ public readonly struct U8EnumFormattable<T> : IU8Formattable
         }
 
         return formatted;
+    }
+
+    // This implementation looks like a lazy shortcut, but it isn't.
+    // There seems to be no way to retrieve the enum names/values from Enum class
+    // without either generic constraints bridging (in some future C# version)
+    // or without producing code that is problematic for AOT compilation.
+    // See comment at the top of this type for more details.
+    static U8String FormatFlags(T value)
+    {
+        Debug.Assert(IsFlags);
+
+        var utf16 = value.ToString() ?? ThrowHelpers.Unreachable<string>();
+        Debug.Assert(utf16.Length > 0);
+        var length = Encoding.UTF8.GetByteCount(utf16);
+        var bytes = new byte[length + 1];
+
+        Encoding.UTF8.GetBytes(utf16, bytes);
+
+        var itemCount = UndefinedItemCount;
+        if (itemCount < UndefinedItemLimit)
+        {
+            Interlocked.Increment(ref UndefinedItemCount);
+            bytes = Cache.GetOrAdd(value, bytes).Array;
+        }
+
+        return new(bytes, length, neverEmpty: true);
     }
 
     U8String IU8Formattable.ToU8String(ReadOnlySpan<char> _, IFormatProvider? __)

@@ -230,7 +230,7 @@ public readonly partial struct U8String
         if (deref.Length == other.Length)
         {
             if (deref.Length > 0 && (
-                deref.Offset != other.Offset || !deref.SourceEquals(other)))
+                deref.Offset != other.Offset || !deref.SourceEqual(other)))
             {
                 return deref.UnsafeSpan.SequenceEqual(other.UnsafeSpan);
             }
@@ -308,7 +308,7 @@ public readonly partial struct U8String
     /// are slices of the same <see cref="U8Source"/>, between which the same <see cref="U8Range"/> can be used.
     /// </remarks>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool SourceEquals(U8String other)
+    public bool SourceEqual(U8String other)
     {
         return ReferenceEquals(_value, other._value);
     }
@@ -317,7 +317,7 @@ public readonly partial struct U8String
     /// Determines whether this <see cref="U8String"/> has the same <see cref="U8Source"/> as <paramref name="value"/>.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public bool SourceEquals(U8Source value)
+    public bool SourceEqual(U8Source value)
     {
         return ReferenceEquals(_value, value.Value);
     }

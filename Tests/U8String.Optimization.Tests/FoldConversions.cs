@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 
 namespace U8.Optimization.Tests;
 
@@ -26,7 +27,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Привіт, Всесвіт!"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -47,7 +48,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Привіт, Всесвіт!"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -72,7 +73,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal(reference.AsSpan(), literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -94,7 +95,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal(reference.AsSpan(), literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -131,7 +132,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Привіт,\nВсесвіт!"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -164,7 +165,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Привіт,\nВсесвіт!"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -185,7 +186,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("True"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -207,7 +208,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("255"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -228,7 +229,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("255"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -249,7 +250,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Ї"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -270,7 +271,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Ї"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -291,7 +292,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("2147483647"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -313,7 +314,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("2147483647"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -335,7 +336,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("9223372036854775807"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -357,7 +358,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("9223372036854775807"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -379,7 +380,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("1234567890.123456789"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -400,7 +401,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("1234567890.123456789"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -422,7 +423,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("79228162514264337593543950335"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -443,7 +444,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("79228162514264337593543950335"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -466,7 +467,7 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Ambiguous"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -489,7 +490,77 @@ public partial class FoldConversions
             Assert.Equal(first, literals[i]);
             Assert.Equal("Friday"u8, literals[i]);
             Assert.True(first.Equals(literals[i]));
-            Assert.True(first.SourceEquals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void UndefinedEnumDeclaration_IsCorrectlyFolded()
+    {
+        const HttpStatusCode reference = (HttpStatusCode)int.MaxValue;
+
+        var literals = new[]
+        {
+            reference.ToU8String(),
+            ((HttpStatusCode)int.MaxValue).ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("2147483647"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void FlagsEnumDeclaration_IsCorrectlyFolded()
+    {
+        const RegexOptions reference = RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture;
+
+        var literals = new[]
+        {
+            reference.ToU8String(),
+            (RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture).ToU8String(),
+            (RegexOptions.None | RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture).ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("ExplicitCapture, Compiled, CultureInvariant"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
+            Assert.True(literals[i].IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void UndefinedFlagsEnumDeclaration_IsCorrectlyFolded()
+    {
+        const RegexOptions reference = (RegexOptions)int.MaxValue;
+
+        var literals = new[]
+        {
+            reference.ToU8String(),
+            ((RegexOptions)int.MaxValue).ToU8String()
+        };
+
+        var first = literals[0];
+
+        for (var i = 1; i < literals.Length; i++)
+        {
+            Assert.Equal(first, literals[i]);
+            Assert.Equal("2147483647"u8, literals[i]);
+            Assert.True(first.Equals(literals[i]));
+            Assert.True(first.SourceEqual(literals[i]));
             Assert.True(literals[i].IsNullTerminated);
         }
     }
@@ -504,7 +575,7 @@ public partial class FoldConversions
         var fromUtf16 = u8("Hello, World!");
 
         Assert.Equal(fromUtf8, fromUtf16);
-        Assert.False(fromUtf8.SourceEquals(fromUtf16));
+        Assert.False(fromUtf8.SourceEqual(fromUtf16));
         Assert.NotEqual(fromUtf8.Source, fromUtf16.Source);
     }
 }

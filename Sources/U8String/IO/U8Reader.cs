@@ -7,10 +7,10 @@ namespace U8.IO;
 
 public enum U8ReadResult
 {
-    Success = -1,
+    InvalidOffset = -2,
+    InvalidUtf8 = -1,
     EndOfStream = 0,
-    InvalidOffset = 1,
-    InvalidUtf8 = 2,
+    Success = 1,
 }
 
 // TODO: remove all unchecked slicing to make it more resilient to concurrent misuse

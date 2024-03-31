@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text;
@@ -159,14 +160,35 @@ sealed class FoldConversions : IOptimizationScope
         var type = model.GetTypeInfo(expression).Type;
         if (type is INamedTypeSymbol { TypeKind: TypeKind.Enum } symbol)
         {
-            // Resolve enum member name from the constant value.
-            // If it's not resolved, it will stay numeric, matching runtime behavior.
-            foreach (var member in symbol.GetMembers())
-            {
-                if (member is IFieldSymbol field && (field.ConstantValue?.Equals(constantValue) ?? false))
+            var isFlags = symbol
+                .GetAttributes()
+                .Any(attr => attr.AttributeClass is
                 {
-                    constantValue = member.Name;
-                    break;
+                    Name: "FlagsAttribute",
+                    ContainingNamespace: { Name: "System", ContainingNamespace.IsGlobalNamespace: true }
+                });
+
+            if (isFlags)
+            {
+                // The types which can be Convert.ToInt32'd
+                if (constantValue is not (byte or ushort or int))
+                {
+                    return false;
+                }
+
+                constantValue = FormatEnumFlags(symbol, constantValue);
+            }
+            else
+            {
+                // Resolve enum member name from the constant value.
+                // If it's not resolved, it will stay numeric, matching runtime behavior.
+                foreach (var member in symbol.GetMembers())
+                {
+                    if (member is IFieldSymbol field && (field.ConstantValue?.Equals(constantValue) ?? false))
+                    {
+                        constantValue = member.Name;
+                        break;
+                    }
                 }
             }
         }
@@ -200,6 +222,30 @@ sealed class FoldConversions : IOptimizationScope
             Body: $"return U8Marshal.CreateUnsafe(_{literalName}, 0, {utf8.Length});");
 
         return true;
+    }
+
+    static object FormatEnumFlags(INamedTypeSymbol symbol, object value)
+    {
+        Debug.Assert(value is byte or ushort or int);
+
+        var flags = new StringBuilder();
+        var underlying = Convert.ToInt32(value);
+
+        foreach (var member in symbol.GetMembers())
+        {
+            if (member is IFieldSymbol field && field.HasConstantValue)
+            {
+                var memberValue = Convert.ToInt32(field.ConstantValue!);
+                if (memberValue is 0) continue;
+                if ((underlying & memberValue) == memberValue)
+                {
+                    flags.Append(flags.Length == 0 ? field.Name : $", {field.Name}");
+                    underlying &= ~memberValue;
+                }
+            }
+        }
+
+        return underlying is 0 ? flags.ToString() : value;
     }
 
     static bool TryGetString(object? value, [NotNullWhen(true)] out string? result)
