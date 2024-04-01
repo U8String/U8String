@@ -110,18 +110,20 @@ public struct U8Builder : IU8Buffer
         Handler.AppendBytes(value);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public void Dispose()
-    {
-        Handler.ArrayPoolSafeDispose();
-        (_tlv, _instance) = (_instance, null);
-    }
-
     public U8String Consume()
     {
         var result = new U8String(Written, skipValidation: true);
         Dispose();
         return result;
+    }
+
+    public readonly void Reset() => Handler.Reset();
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Dispose()
+    {
+        Handler.ArrayPoolSafeDispose();
+        (_tlv, _instance) = (_instance, null);
     }
 
     // Really wish there was a nuget with Box<T> and Ref<T> with

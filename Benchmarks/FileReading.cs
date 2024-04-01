@@ -3,18 +3,19 @@ using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 
 using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Jobs;
 
 using U8.InteropServices;
 using U8.IO;
 
 namespace U8.Benchmarks;
 
-[ShortRunJob]
+[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
 [MemoryDiagnoser]
 // [DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
 public class FileReading
 {
-    [Params("/Users/arseniy/Code/GitHub/U8String/TODO-IMPL.md", "SampleData.txt")]
+    [Params("Constitution.txt", "Numbers.txt", "Vectorization.txt")]
     public string Name = "";
 
     [Benchmark(Baseline = true)]
@@ -49,31 +50,37 @@ public class FileReading
         foreach (var _ in ILChertFile.ReadLines(Name)) ;
     }
 
-    // [Benchmark]
-    // public async Task<U8String> ReadU8StringAsync()
-    // {
-    //     using var handle = File.OpenHandle(
-    //         Name, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
-    //     return await U8String.ReadAsync(handle);
-    // }
+    [Benchmark]
+    public async Task EnumerateWordsAsyncU8()
+    {
+        await foreach (var _ in U8File.OpenRead(Name).Split(' ')) ;
+    }
 
-    // [Benchmark]
-    // public async Task EnumerateLinesAsync()
-    // {
-    //     await foreach (var _ in File.ReadLinesAsync(Name)) ;
-    // }
+    [Benchmark]
+    public async Task<U8String> ReadU8StringAsync()
+    {
+        using var handle = File.OpenHandle(
+            Name, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
+        return await U8String.ReadAsync(handle);
+    }
 
-    // [Benchmark]
-    // public async Task EnumerateLinesU8Async()
-    // {
-    //     await foreach (var _ in U8File.ReadLinesAsync(Name)) ;
-    // }
+    [Benchmark]
+    public async Task EnumerateLinesAsync()
+    {
+        await foreach (var _ in File.ReadLinesAsync(Name)) ;
+    }
 
-    // [Benchmark]
-    // public async Task ILChertEnumerateLinesAsync()
-    // {
-    //     await foreach (var _ in ILChertFile.ReadLinesAsync(Name)) ;
-    // }
+    [Benchmark]
+    public async Task EnumerateLinesU8Async()
+    {
+        await foreach (var _ in U8File.ReadLines(Name)) ;
+    }
+
+    [Benchmark]
+    public async Task ILChertEnumerateLinesAsync()
+    {
+        await foreach (var _ in ILChertFile.ReadLinesAsync(Name)) ;
+    }
 }
 
 // Courtesy of https://github.com/Ilchert

@@ -1999,57 +1999,52 @@ public readonly partial struct U8String
     public U8String ToLower<T>(T converter)
         where T : IU8CaseConverter
     {
-        // 1. Estimate the start offset of the conversion (first char requiring case change)
-        // 2. Estimate the length of the conversion (the length of the resulting segment after case change)
-        // 3. Allocate the resulting buffer and copy the pre-offset segment
-        // 4. Perform the conversion which writes to the remainder segment of the buffer
-        // 5. Return the resulting buffer as a new string
-
         var deref = this;
         if (!deref.IsEmpty)
         {
-            var trusted = U8CaseConversion.IsTrustedImplementation(converter);
             var source = deref.UnsafeSpan;
-
-            var (replaceStart, resultLength) = converter.LowercaseHint(source);
-
-            int convertedLength;
-            if ((uint)replaceStart < (uint)source.Length)
+            var replaceStart = converter.FindToLowerStart(source);
+            if (replaceStart >= 0)
             {
-                var lowercase = new byte[resultLength + 1];
-                var destination = lowercase.AsSpan();
-
-                if (trusted)
-                {
-                    source
-                        .SliceUnsafe(0, replaceStart)
-                        .CopyTo(destination.SliceUnsafe(0, source.Length));
-                    source = source.SliceUnsafe(replaceStart);
-                    destination = destination.SliceUnsafe(replaceStart, source.Length);
-
-                    convertedLength = converter.ToLower(source, destination) + replaceStart;
-                }
-                else
-                {
-                    source[..replaceStart]
-                        .CopyTo(destination.SliceUnsafe(0, source.Length));
-                    source = source.Slice(replaceStart);
-                    destination = destination.Slice(replaceStart, source.Length);
-
-                    convertedLength = converter.ToLower(source, destination) + replaceStart;
-
-                    if (convertedLength > resultLength)
-                    {
-                        // TODO: EH UX
-                        ThrowHelpers.ArgumentOutOfRange();
-                    }
-                }
-
-                return new U8String(lowercase, 0, convertedLength);
+                return converter.IsFixedLength
+                    ? ToLowerFixed(source, replaceStart, converter)
+                    : ToLowerVariable(source, replaceStart, converter);
             }
         }
 
         return deref;
+
+        static U8String ToLowerFixed(ReadOnlySpan<byte> source, int start, T converter)
+        {
+            Debug.Assert(start >= 0);
+            Debug.Assert(start < source.Length);
+            Debug.Assert(converter.IsFixedLength);
+
+            var nullTerminate = source[^1] != 0;
+            var result = new byte[source.Length + (nullTerminate ? 1 : 0)];
+            var destination = result.AsSpan(start);
+
+            source.Slice(0, start).CopyToUnsafe(ref result.AsRef());
+            converter.ToLower(source.SliceUnsafe(start), destination);
+
+            return new(result, source.Length, neverEmpty: true);
+        }
+
+        static U8String ToLowerVariable(ReadOnlySpan<byte> source, int start, T converter)
+        {
+            Debug.Assert(start >= 0);
+            Debug.Assert(start < source.Length);
+            Debug.Assert(!converter.IsFixedLength);
+
+            var destination = new InlineU8Builder(source.Length);
+
+            destination.AppendBytes(source.Slice(0, start));
+            converter.ToLower(source.SliceUnsafe(start), ref destination);
+
+            var result = new U8String(destination.Written, skipValidation: true);
+            destination.Dispose();
+            return result;
+        }
     }
 
     /// <summary>
@@ -2066,48 +2061,49 @@ public readonly partial struct U8String
         var deref = this;
         if (!deref.IsEmpty)
         {
-            var trusted = U8CaseConversion.IsTrustedImplementation(converter);
             var source = deref.UnsafeSpan;
-
-            var (replaceStart, resultLength) = converter.UppercaseHint(source);
-
-            int convertedLength;
-            if ((uint)replaceStart < (uint)source.Length)
+            var replaceStart = converter.FindToUpperStart(source);
+            if (replaceStart >= 0)
             {
-                var uppercase = new byte[resultLength + 1];
-                var destination = uppercase.AsSpan();
-
-                if (trusted)
-                {
-                    source
-                        .SliceUnsafe(0, replaceStart)
-                        .CopyTo(destination.SliceUnsafe(0, source.Length));
-                    source = source.SliceUnsafe(replaceStart);
-                    destination = destination.SliceUnsafe(replaceStart, source.Length);
-
-                    convertedLength = converter.ToUpper(source, destination) + replaceStart;
-                }
-                else
-                {
-                    source[..replaceStart]
-                        .CopyTo(destination.SliceUnsafe(0, source.Length));
-                    source = source.Slice(replaceStart);
-                    destination = destination.Slice(replaceStart, source.Length);
-
-                    convertedLength = converter.ToUpper(source, destination) + replaceStart;
-
-                    if (convertedLength > resultLength)
-                    {
-                        // TODO: EH UX
-                        ThrowHelpers.ArgumentOutOfRange();
-                    }
-                }
-
-                return new U8String(uppercase, 0, convertedLength);
+                return converter.IsFixedLength
+                    ? ToUpperFixed(source, replaceStart, converter)
+                    : ToUpperVariable(source, replaceStart, converter);
             }
         }
 
         return deref;
+
+        static U8String ToUpperFixed(ReadOnlySpan<byte> source, int start, T converter)
+        {
+            Debug.Assert(start >= 0);
+            Debug.Assert(start < source.Length);
+            Debug.Assert(converter.IsFixedLength);
+
+            var nullTerminate = source[^1] != 0;
+            var result = new byte[source.Length + (nullTerminate ? 1 : 0)];
+            var destination = result.AsSpan(start);
+
+            source.Slice(0, start).CopyToUnsafe(ref result.AsRef());
+            converter.ToUpper(source.SliceUnsafe(start), destination);
+
+            return new(result, source.Length, neverEmpty: true);
+        }
+
+        static U8String ToUpperVariable(ReadOnlySpan<byte> source, int start, T converter)
+        {
+            Debug.Assert(start >= 0);
+            Debug.Assert(start < source.Length);
+            Debug.Assert(!converter.IsFixedLength);
+
+            var destination = new InlineU8Builder(source.Length);
+
+            destination.AppendBytes(source.Slice(0, start));
+            converter.ToUpper(source.SliceUnsafe(start), ref destination);
+
+            var result = new U8String(destination.Written, skipValidation: true);
+            destination.Dispose();
+            return result;
+        }
     }
 
     /// <summary>

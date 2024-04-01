@@ -954,6 +954,9 @@ internal static class U8Searching
             : comparer.LastIndexOf(source, value);
     }
 
+    // TODO: Make this return index of segment and offset of segment - right now
+    // public methods calling into this don't do that and there is no convenient way
+    // to work around that should the user need it.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static int IndexOfSegment<T>(
         ReadOnlySpan<byte> haystack,

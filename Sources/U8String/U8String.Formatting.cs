@@ -20,7 +20,7 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
 
     public IFormatProvider Provider { get; private set; }
 
-    public int BytesWritten { get; private set; }
+    public int BytesWritten { get; internal set; }
 
     public ReadOnlySpan<byte> Written
     {
@@ -28,12 +28,11 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(0, BytesWritten);
     }
 
-    Span<byte> Free
+    internal Span<byte> Free
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => (_rented ?? _inline.AsSpan()).SliceUnsafe(BytesWritten);
     }
-
 
     int IInterpolatedHandler.BytesWritten
     {
@@ -197,6 +196,16 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
             arrayPool.Return(rented);
         }
     }
+
+    /// <summary>
+    /// Resets the builder.
+    /// </summary>
+    /// <remarks>
+    /// This method does not return the pooled buffer.
+    /// It is necessary to call <see cref="Dispose"/> after the builder is no longer needed.
+    /// </remarks> 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Reset() => BytesWritten = 0;
 
     /// <summary>
     /// Resets the builder and returns the pooled buffer if applicable.
@@ -372,6 +381,16 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
         _array = newArr;
         arrayPool.Return(rented);
     }
+
+    /// <summary>
+    /// Resets the builder.
+    /// </summary>
+    /// <remarks>
+    /// This method does not return the pooled buffer.
+    /// It is necessary to call <see cref="Dispose"/> after the builder is no longer needed.
+    /// </remarks> 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Reset() => BytesWritten = 0;
 
     /// <summary>
     /// Returns the pooled buffer.

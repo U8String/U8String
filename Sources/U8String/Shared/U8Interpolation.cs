@@ -16,6 +16,7 @@ interface IInterpolatedHandler
 
     void Grow();
     void Grow(int hint);
+    void Reset();
 }
 
 // This interface exists in order to ensure interpolated handlers do not have
@@ -105,7 +106,7 @@ static class U8Interpolation
         AppendBytes(ref handler, value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes());
     }
 
-    internal static void AppedFormatted<T>(ref T handler, Rune value)
+    internal static void AppendFormatted<T>(ref T handler, Rune value)
         where T : struct, IInterpolatedHandler
     {
         if (value.IsAscii)
@@ -283,6 +284,7 @@ static class U8Interpolation
         goto Retry;
     }
 
+    // TODO: Add GetBuffer(size)
     [MethodImpl(MethodImplOptions.NoInlining)]
     internal static void AppendTwoBytes<T>(ref T handler, ushort b01)
         where T : struct, IInterpolatedHandler

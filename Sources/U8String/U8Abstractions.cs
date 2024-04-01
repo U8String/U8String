@@ -61,13 +61,16 @@ public interface IU8EqualityComparer : IEqualityComparer<U8String>
 // TODO: Member naming?
 public interface IU8CaseConverter
 {
-    // {Lower/Upper}Length indicates the *total* length of the source if it were to be converted.
-    // ReplaceStart indicates the start of the first character that would be replaced, if any.
-    // If ReplaceStart is -1, then no characters would be replaced.
-    (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source);
-    (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source);
+    bool IsFixedLength { get; }
+
+    int FindToLowerStart(ReadOnlySpan<byte> source);
+    int FindToUpperStart(ReadOnlySpan<byte> source);
+
     int ToLower(ReadOnlySpan<byte> source, Span<byte> destination);
     int ToUpper(ReadOnlySpan<byte> source, Span<byte> destination);
+
+    void ToLower(ReadOnlySpan<byte> source, ref InlineU8Builder destination);
+    void ToUpper(ReadOnlySpan<byte> source, ref InlineU8Builder destination);
 }
 
 internal interface IEnumerable<T, TEnumerator> : IEnumerable<T>

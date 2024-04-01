@@ -8,14 +8,16 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 {
     public static U8AsciiCaseConverter Instance => default;
 
-    public (int ReplaceStart, int LowercaseLength) LowercaseHint(ReadOnlySpan<byte> source)
+    public bool IsFixedLength
     {
-        return (source.IndexOfAnyInRange((byte)'A', (byte)'Z'), source.Length);
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => true;
     }
 
-    public (int ReplaceStart, int UppercaseLength) UppercaseHint(ReadOnlySpan<byte> source)
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int FindToLowerStart(ReadOnlySpan<byte> source)
     {
-        return (source.IndexOfAnyInRange((byte)'a', (byte)'z'), source.Length);
+        return source.IndexOfAnyInRange((byte)'A', (byte)'Z');
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -28,6 +30,15 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
         ToLowerCore(ref source.AsRef(), ref destination.AsRef(), (uint)source.Length);
         return source.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ToLower(ReadOnlySpan<byte> source, ref InlineU8Builder destination)
+    {
+        destination.EnsureCapacity(source.Length);
+
+        ToLowerCore(ref source.AsRef(), ref destination.Free.AsRef(), (uint)source.Length);
+        destination.BytesWritten += source.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -115,6 +126,12 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public int FindToUpperStart(ReadOnlySpan<byte> source)
+    {
+        return source.IndexOfAnyInRange((byte)'a', (byte)'z');
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int ToUpper(ReadOnlySpan<byte> source, Span<byte> destination)
     {
         if (destination.Length < source.Length)
@@ -124,6 +141,15 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
 
         ToUpperCore(ref source.AsRef(), ref destination.AsRef(), (uint)source.Length);
         return source.Length;
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void ToUpper(ReadOnlySpan<byte> source, ref InlineU8Builder destination)
+    {
+        destination.EnsureCapacity(source.Length);
+
+        ToUpperCore(ref source.AsRef(), ref destination.Free.AsRef(), (uint)source.Length);
+        destination.BytesWritten += source.Length;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

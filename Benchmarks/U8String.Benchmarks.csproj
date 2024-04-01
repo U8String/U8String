@@ -24,7 +24,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="SampleData.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Constitution.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Numbers.txt" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Vectorization.txt" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
