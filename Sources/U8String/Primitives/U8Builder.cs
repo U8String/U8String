@@ -110,6 +110,13 @@ public struct U8Builder : IU8Buffer
         Handler.AppendBytes(value);
     }
 
+    /// <summary>
+    /// Consumes the written bytes by returning them as a new <see cref="U8String"/> and resets the builder.
+    /// </summary> 
+    /// <remarks>
+    /// The builder can be reused after calling this method. Disposing the builder after calling this method
+    /// is not necessary. 
+    /// </remarks> 
     public U8String Consume()
     {
         var result = new U8String(Written, skipValidation: true);

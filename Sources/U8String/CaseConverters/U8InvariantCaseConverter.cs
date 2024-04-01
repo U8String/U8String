@@ -3,6 +3,7 @@ using System.Text;
 
 using U8.Abstractions;
 using U8.Extensions;
+using U8.Primitives;
 
 namespace U8.CaseConversion;
 
@@ -62,14 +63,51 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ToLowerCore(ReadOnlySpan<byte> source, ref InlineU8Builder destination)
         {
+            var maxLength = (int)Math.Min(
+                (uint)source.Length * 3, Array.MaxLength - destination.BytesWritten);
+            destination.EnsureCapacity(maxLength);
+            var buffer = destination.Free;
+
+            ref var ptr = ref buffer.AsRef();
+            var written = 0;
+            var remaining = buffer.Length;
+
             // This has absolutely terrible performance but it's better than nothing.
             foreach (var rune in source.EnumerateRunes())
             {
-                // TODO: Pre-size the buffer to source.Length * 3 or Array.MaxLength, whichever is smaller;
-                // and then do bounds checked appends but with skipped growth checks and source selection.
-                // Switch on rune length too and perform unrolled copy.
-                destination.AppendFormatted(Rune.ToLowerInvariant(rune));
+                ref var dst = ref ptr.Add(written);
+                var lower = rune.IsBmp
+                    ? Unsafe.BitCast<uint, Rune>(char.ToLowerInvariant((char)rune.Value))
+                    : Rune.ToLowerInvariant(rune);
+                switch (lower.Value, remaining)
+                {
+                    case (<= 0x7F, >= 1):
+                        dst = (byte)lower.Value;
+                        written += 1;
+                        remaining -= 1;
+                        continue;
+                    case (<= 0x7FF, >= 2):
+                        lower.AsTwoBytes().Store(ref dst);
+                        written += 2;
+                        remaining -= 2;
+                        continue;
+                    case (<= 0xFFFF, >= 3):
+                        lower.AsThreeBytes().Store(ref dst);
+                        written += 3;
+                        remaining -= 3;
+                        continue;
+                    case (_, >= 4):
+                        lower.AsFourBytes().Store(ref dst);
+                        written += 4;
+                        remaining -= 4;
+                        continue;
+                    default:
+                        ThrowHelpers.DestinationTooShort();
+                        break;
+                }
             }
+
+            destination.BytesWritten += written;
         }
     }
 
@@ -94,10 +132,51 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ToUpperCore(ReadOnlySpan<byte> source, ref InlineU8Builder destination)
         {
+            var maxLength = (int)Math.Min(
+                (uint)source.Length * 3, Array.MaxLength - destination.BytesWritten);
+            destination.EnsureCapacity(maxLength);
+            var buffer = destination.Free;
+
+            ref var ptr = ref buffer.AsRef();
+            var written = 0;
+            var remaining = buffer.Length;
+
+            // This has absolutely terrible performance but it's better than nothing.
             foreach (var rune in source.EnumerateRunes())
             {
-                destination.AppendFormatted(Rune.ToUpperInvariant(rune));
+                ref var dst = ref ptr.Add(written);
+                var upper = rune.IsBmp
+                    ? Unsafe.BitCast<uint, Rune>(char.ToUpperInvariant((char)rune.Value))
+                    : Rune.ToUpperInvariant(rune);
+                switch (upper.Value, remaining)
+                {
+                    case (<= 0x7F, >= 1):
+                        dst = (byte)upper.Value;
+                        written += 1;
+                        remaining -= 1;
+                        continue;
+                    case (<= 0x7FF, >= 2):
+                        upper.AsTwoBytes().Store(ref dst);
+                        written += 2;
+                        remaining -= 2;
+                        continue;
+                    case (<= 0xFFFF, >= 3):
+                        upper.AsThreeBytes().Store(ref dst);
+                        written += 3;
+                        remaining -= 3;
+                        continue;
+                    case (_, >= 4):
+                        upper.AsFourBytes().Store(ref dst);
+                        written += 4;
+                        remaining -= 4;
+                        continue;
+                    default:
+                        ThrowHelpers.DestinationTooShort();
+                        break;
+                }
             }
+
+            destination.BytesWritten += written;
         }
     }
 }
