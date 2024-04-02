@@ -9,7 +9,7 @@ namespace U8.Benchmarks;
 [DisassemblyDiagnoser(maxDepth: 3, exportCombinedDisassemblyReport: true)]
 public class CaseConversion
 {
-    [Params("Constitution.txt", "Numbers.txt", "Vectorization.txt")]
+    [Params("Constitution.txt", "Numbers.txt", "Vectorization.txt", null)]
     public string? Path;
 
     U8String Text8;
@@ -18,6 +18,13 @@ public class CaseConversion
     [GlobalSetup]
     public void Setup()
     {
+        if (Path is null)
+        {
+            Text8 = u8("Hello, World! Hello, World!");
+            Text16 = Text8.ToString();
+            return;
+        }
+
         Text8 = U8File.Read(Path!);
         Text16 = Text8.ToString();
     }

@@ -71,6 +71,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         return utf8 | (Vector64.LessThan(utf8.AsSByte() + overflow, bound) & mask).AsByte();
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
     internal static void ToLowerCore(ref byte src, ref byte dst, nuint length)
     {
         if (!BitConverter.IsLittleEndian)
@@ -182,6 +183,7 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         return ascii ^ (Vector64.LessThan(ascii.AsSByte() + overflow, bound) & mask).AsByte();
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
     internal static void ToUpperCore(ref byte src, ref byte dst, nuint length)
     {
         if (!BitConverter.IsLittleEndian)
