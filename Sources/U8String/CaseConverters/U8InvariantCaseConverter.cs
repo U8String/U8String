@@ -4,6 +4,7 @@ using System.Text;
 using U8.Abstractions;
 using U8.Extensions;
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8.CaseConversion;
 
@@ -34,12 +35,62 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
 
     public int FindToLowerStart(ReadOnlySpan<byte> source)
     {
-        return source.IndexOfAnyExcept(LowerFilter);
+        var replaceStart = source.IndexOfAnyExcept(LowerFilter);
+        if (replaceStart < 0) return replaceStart;
+        if (replaceStart > 0) replaceStart--; // Make sure we are not tearing the rune.
+
+        return replaceStart + FindToLowerCore(source.Slice(replaceStart));
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static int FindToLowerCore(ReadOnlySpan<byte> source)
+        {
+            ref var src = ref source.AsRef();
+            var offset = 0;
+            var length = source.Length;
+
+            while (offset < length)
+            {
+                var rune = U8Conversions.CodepointToRune(ref src.Add(offset), out var size);
+                var lower = rune.IsBmp
+                    ? Unsafe.BitCast<uint, Rune>(char.ToLowerInvariant((char)rune.Value))
+                    : Rune.ToLowerInvariant(rune);
+                if (rune != lower) break;
+
+                offset += size;
+            }
+
+            return offset;
+        }
     }
 
     public int FindToUpperStart(ReadOnlySpan<byte> source)
     {
-        return source.IndexOfAnyExcept(UpperFilter);
+        var replaceStart = source.IndexOfAnyExcept(UpperFilter);
+        if (replaceStart < 0) return replaceStart;
+        if (replaceStart > 0) replaceStart--; // Make sure we are not tearing the rune.
+
+        return replaceStart + FindToUpperCore(source.Slice(replaceStart));
+
+        [MethodImpl(MethodImplOptions.NoInlining)]
+        static int FindToUpperCore(ReadOnlySpan<byte> source)
+        {
+            ref var src = ref source.AsRef();
+            var offset = 0;
+            var length = source.Length;
+
+            while (offset < length)
+            {
+                var rune = U8Conversions.CodepointToRune(ref src.Add(offset), out var size);
+                var upper = rune.IsBmp
+                    ? Unsafe.BitCast<uint, Rune>(char.ToUpperInvariant((char)rune.Value))
+                    : Rune.ToUpperInvariant(rune);
+                if (rune != upper) break;
+
+                offset += size;
+            }
+
+            return offset;
+        }
     }
 
     public int ToLower(ReadOnlySpan<byte> source, Span<byte> destination)

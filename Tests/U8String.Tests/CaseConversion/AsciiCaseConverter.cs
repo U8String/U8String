@@ -15,6 +15,16 @@ public class AsciiCaseConverterTests
             Utf16: Constants.Mixed + Constants.Mixed,
             Utf8: [..Constants.MixedBytes, ..Constants.MixedBytes],
             Runes: [..Constants.Mixed.EnumerateRunes(), ..Constants.Mixed.EnumerateRunes()]))
+        .Append(new ReferenceText(
+            Name: "LowerThenUpper",
+            Utf16: "fffFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF",
+            Utf8: [.."fffFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"u8],
+            Runes: [.."fffFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF".EnumerateRunes()]))
+        .Append(new ReferenceText(
+            Name: "UpperThenLower",
+            Utf16: "FFFfffffffffffffffffffffffffffffffffffffff",
+            Utf8: [.."FFFfffffffffffffffffffffffffffffffffffffff"u8],
+            Runes: [.."FFFfffffffffffffffffffffffffffffffffffffff".EnumerateRunes()]))
         .Select(s => new[] { s });
 
     [Theory, MemberData(nameof(ValidStrings))]

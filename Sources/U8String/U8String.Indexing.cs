@@ -187,8 +187,11 @@ public readonly partial struct U8String
         if ((uint)index < (uint)deref.Length)
         {
             ref var ptr = ref deref.UnsafeRefAdd(index);
-            rune = U8Conversions.CodepointToRune(ref ptr, out runeLength);
-            return !U8Info.IsContinuationByte(ptr);
+            if (U8Info.IsBoundaryByte(in ptr))
+            {
+                rune = U8Conversions.CodepointToRune(ref ptr, out runeLength);
+                return true;
+            }
         }
 
         rune = default;

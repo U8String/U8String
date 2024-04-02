@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
@@ -25,6 +26,7 @@ internal static class U8Conversions
         var init = FirstByte(b0, 2);
         var b1 = src.Add(1);
         var rune = Accumulate(init, b1);
+        Debug.Assert(U8Info.IsContinuationByte(b1));
 
         if (b0 >= 0xE0)
         {
@@ -32,11 +34,14 @@ internal static class U8Conversions
             var b2 = src.Add(2);
             var b1b2 = Accumulate((uint)(b1 & continuationMask), b2);
             rune = (init << 12) | b1b2;
+            Debug.Assert(U8Info.IsContinuationByte(b2));
+
             if (b0 >= 0xF0)
             {
                 size = 4;
                 var b3 = src.Add(3);
                 rune = ((init & 7) << 18) | Accumulate(b1b2, b3);
+                Debug.Assert(U8Info.IsContinuationByte(b3));
             }
         }
 

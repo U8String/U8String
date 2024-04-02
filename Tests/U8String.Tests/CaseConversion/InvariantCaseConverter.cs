@@ -13,6 +13,16 @@ public class InvariantCaseConverterTests
             Utf16: Constants.Mixed + Constants.Mixed,
             Utf8: [.. Constants.MixedBytes, .. Constants.MixedBytes],
             Runes: [.. Constants.Mixed.EnumerateRunes(), .. Constants.Mixed.EnumerateRunes()]))
+        .Append(new ReferenceText(
+            Name: "LowerThenUpper",
+            Utf16: "їїЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇ",
+            Utf8: [.."їїЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇ"u8],
+            Runes: [.."їїЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇЇ".EnumerateRunes()]))
+        .Append(new ReferenceText(
+            Name: "UpperThenLower",
+            Utf16: "ЇЇїїїїїїїїїїїїїїїїїїїїїїїїїї",
+            Utf8: [.."ЇЇїїїїїїїїїїїїїїїїїїїїїїїїїї"u8],
+            Runes: [.."ЇЇїїїїїїїїїїїїїїїїїїїїїїїїїї".EnumerateRunes()]))
         .Select(s => new[] { s });
 
     [Theory, MemberData(nameof(ValidStrings))]

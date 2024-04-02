@@ -2004,7 +2004,7 @@ public readonly partial struct U8String
         {
             var source = deref.UnsafeSpan;
             var replaceStart = converter.FindToLowerStart(source);
-            if (replaceStart >= 0)
+            if (replaceStart >= 0 && replaceStart < source.Length)
             {
                 return converter.IsFixedLength
                     ? ToLowerFixed(source, replaceStart, converter)
@@ -2063,7 +2063,7 @@ public readonly partial struct U8String
         {
             var source = deref.UnsafeSpan;
             var replaceStart = converter.FindToUpperStart(source);
-            if (replaceStart >= 0)
+            if (replaceStart >= 0 && replaceStart < source.Length)
             {
                 return converter.IsFixedLength
                     ? ToUpperFixed(source, replaceStart, converter)
