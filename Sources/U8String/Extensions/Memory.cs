@@ -5,9 +5,9 @@ using U8.Shared;
 
 namespace U8.Extensions;
 
-public static class Memory
+internal static class Memory
 {
-    public ref struct SpanRuneEnumerator
+    internal ref struct SpanRuneEnumerator
     {
         readonly ref byte _end;
         ref byte _ptr;
@@ -40,7 +40,7 @@ public static class Memory
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static SpanRuneEnumerator EnumerateRunes(this ReadOnlySpan<byte> source)
+    internal static SpanRuneEnumerator EnumerateRunesUnchecked(this ReadOnlySpan<byte> source)
     {
         return new SpanRuneEnumerator(source);
     }

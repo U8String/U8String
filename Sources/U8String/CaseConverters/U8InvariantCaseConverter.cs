@@ -124,7 +124,7 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
             var remaining = buffer.Length;
 
             // This has absolutely terrible performance but it's better than nothing.
-            foreach (var rune in source.EnumerateRunes())
+            foreach (var rune in source.EnumerateRunesUnchecked())
             {
                 ref var dst = ref ptr.Add(written);
                 var lower = rune.IsBmp
@@ -193,7 +193,7 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
             var remaining = buffer.Length;
 
             // This has absolutely terrible performance but it's better than nothing.
-            foreach (var rune in source.EnumerateRunes())
+            foreach (var rune in source.EnumerateRunesUnchecked())
             {
                 ref var dst = ref ptr.Add(written);
                 var upper = rune.IsBmp
