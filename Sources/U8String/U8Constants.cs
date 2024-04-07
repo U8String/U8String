@@ -62,6 +62,7 @@ public static class U8Constants
     internal readonly static char[] EmptyChars = new char[0];
     internal readonly static Rune[] EmptyRunes = new Rune[0];
     internal readonly static U8RuneIndex[] EmptyRuneIndices = new U8RuneIndex[0];
+    internal readonly static U8Range[] EmptyRanges = new U8Range[0];
 
     // Zero-length arrays of non-primitive type are pre-initialized too.
     internal readonly static U8String[] EmptyStrings = new U8String[0];

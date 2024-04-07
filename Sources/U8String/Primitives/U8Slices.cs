@@ -86,7 +86,7 @@ public readonly struct U8Slices :
         return -1;
     }
 
-    public Enumerator GetEnumerator() => new(Source, Ranges ?? []);
+    public Enumerator GetEnumerator() => new(Source, Ranges ?? U8Constants.EmptyRanges);
 
     IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
 
@@ -104,7 +104,6 @@ public readonly struct U8Slices :
         {
             _source = source;
             _ranges = ranges;
-            _index = -1;
         }
 
         public readonly U8String Current => new(_source, _current);
@@ -114,11 +113,11 @@ public readonly struct U8Slices :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            var index = _index + 1;
+            var index = _index;
             if ((uint)index < (uint)_ranges.Length)
             {
                 _current = _ranges[index];
-                _index = index;
+                _index = index + 1;
                 return true;
             }
 
@@ -128,7 +127,7 @@ public readonly struct U8Slices :
         public void Reset()
         {
             _current = default;
-            _index = -1;
+            _index = 0;
         }
 
         public readonly void Dispose() { }

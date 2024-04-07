@@ -71,6 +71,7 @@ scanning multiple times, has un-elided bounds checks, does not do vectorization,
     - [x] ~~Investigate if interception of operator and constructor calls is possible~~
     - [ ] Lower `U8String.Create("string literal"u8)`, `new(...)` and `cns.ToU8String()` (incl. non-utf8 forms) to `U8Marshal.Create(cns_byteLiteral, 0, length)`
     - [ ] Instead of intercepting just the conversions, consider intercepting the methods containing the conversions instead
+- [ ] Consider throwing not supported on `.Reset()` in all enumerator implementations to not lock the implementations out of future optimizations
 - [x] ~~Null-terminate odd-sized arrays?~~ (relying on UB is bad idea, null-terminate normally)
 - [x] Optimize .Replace methods
 - [x] ~~Mirror caching of certain types which cache ToString() with ConditionalWeakTable?~~ Out of scope for 1.0.0

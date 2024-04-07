@@ -3,16 +3,16 @@ using System.IO.Pipelines;
 using System.Runtime.CompilerServices;
 
 using BenchmarkDotNet.Attributes;
-using BenchmarkDotNet.Jobs;
 
 using U8.InteropServices;
 using U8.IO;
 
 namespace U8.Benchmarks;
 
-[ShortRunJob, ShortRunJob(RuntimeMoniker.NativeAot80)]
+[GcServer(false)]
+[ShortRunJob]
 [MemoryDiagnoser]
-// [DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
+[DisassemblyDiagnoser(maxDepth: 2, exportCombinedDisassemblyReport: true)]
 public class FileReading
 {
     [Params("Constitution.txt", "Numbers.txt", "Vectorization.txt")]
@@ -21,9 +21,7 @@ public class FileReading
     [Benchmark(Baseline = true)]
     public U8String ReadU8String()
     {
-        using var handle = File.OpenHandle(
-            Name, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return U8String.Read(handle);
+        return U8File.Read(Name);
     }
 
     [Benchmark]
@@ -51,17 +49,9 @@ public class FileReading
     }
 
     [Benchmark]
-    public async Task EnumerateWordsAsyncU8()
+    public Task<U8String> ReadU8StringAsync()
     {
-        await foreach (var _ in U8File.OpenRead(Name).Split(' ')) ;
-    }
-
-    [Benchmark]
-    public async Task<U8String> ReadU8StringAsync()
-    {
-        using var handle = File.OpenHandle(
-            Name, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
-        return await U8String.ReadAsync(handle);
+        return U8File.ReadAsync(Name);
     }
 
     [Benchmark]
@@ -74,6 +64,12 @@ public class FileReading
     public async Task EnumerateLinesU8Async()
     {
         await foreach (var _ in U8File.ReadLines(Name)) ;
+    }
+
+    [Benchmark]
+    public async Task EnumerateWordsAsyncU8()
+    {
+        await foreach (var _ in U8File.OpenRead(Name).Split(' ')) ;
     }
 
     [Benchmark]

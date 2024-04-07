@@ -9,7 +9,11 @@ public static class U8File
     public static U8Reader<U8FileSource> OpenRead(string path)
     {
         var handle = File.OpenHandle(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            OperatingSystem.IsWindows() ? FileOptions.None : FileOptions.Asynchronous);
 
         return new(new(handle), disposeSource: true);
     }
@@ -74,7 +78,13 @@ public static class U8File
     {
         ThrowHelpers.CheckNull(path);
 
-        using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read);
+        using var handle = File.OpenHandle(
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            OperatingSystem.IsWindows() ? FileOptions.None : FileOptions.Asynchronous);
+
         return await ReadAsync(handle, offset, length, roundTrailingRune, ct);
     }
 
@@ -124,7 +134,11 @@ public static class U8File
     public static U8LineReader<U8FileSource> ReadLines(string path)
     {
         var handle = File.OpenHandle(
-            path, FileMode.Open, FileAccess.Read, FileShare.Read, FileOptions.Asynchronous);
+            path,
+            FileMode.Open,
+            FileAccess.Read,
+            FileShare.Read,
+            OperatingSystem.IsWindows() ? FileOptions.None : FileOptions.Asynchronous);
 
         return new(new(new(handle), disposeSource: true), disposeReader: true);
     }
