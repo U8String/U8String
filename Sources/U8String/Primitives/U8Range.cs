@@ -8,7 +8,7 @@ namespace U8.Primitives;
 /// </summary>
 /// <remarks>
 /// This type is intended to be used as a lightweight slice of <see cref="U8String.Source"/> and
-/// allows to re-construct the <see cref="U8String"/> by calling <see cref="U8Source.Slice(U8Range)"/>.
+/// allows to re-construct the <see cref="U8String"/> by calling <see cref="U8Source.SliceUnchecked(U8Range)"/>.
 /// <para/>
 /// It is particularly useful when a type needs to expose multiple slices that originate from the same
 /// <see cref="U8String.Source"/> without having to spend memory on storing the entire <see cref="U8String"/>.
@@ -36,23 +36,6 @@ public readonly struct U8Range : IEquatable<U8Range>
 
         Offset = offset;
         Length = length;
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8Range Slice(U8String value, int start)
-    {
-        Debug.Assert((uint)start <= int.MaxValue);
-
-        return new(value.Offset + start, value.Length - start);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8Range Slice(U8String value, int start, int length)
-    {
-        Debug.Assert((uint)start <= int.MaxValue);
-        Debug.Assert((uint)length <= int.MaxValue);
-
-        return new(value.Offset + start, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

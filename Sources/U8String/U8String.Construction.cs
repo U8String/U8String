@@ -50,8 +50,9 @@ public readonly partial struct U8String
             span.CopyToUnsafe(ref bytes.AsRef());
 
             _value = bytes;
-            _inner = new U8Range(0, span.Length);
         }
+
+        _inner = new U8Range(0, span.Length);
     }
 
     /// <summary>
@@ -77,8 +78,9 @@ public readonly partial struct U8String
             value.CopyToUnsafe(ref bytes.AsRef());
 
             _value = bytes;
-            _inner = new U8Range(0, value.Length);
         }
+
+        _inner = new U8Range(0, value.Length);
     }
 
     /// <summary>
@@ -265,8 +267,9 @@ public readonly partial struct U8String
             value.CopyToUnsafe(ref bytes.AsRef());
 
             _value = bytes;
-            _inner = new U8Range(0, value.Length);
         }
+
+        _inner = new U8Range(0, value.Length);
 
         Debug.Assert(Offset >= 0);
         Debug.Assert(_value is null ? Length is 0 : (uint)Length > 0);
@@ -376,7 +379,7 @@ public readonly partial struct U8String
             Debug.Assert(U8Literals.Runes.IsInRange(value.Value));
             return U8Literals.Runes.GetValueUnchecked(value.Value);
         }
-        
+
         var codepoint = (ReadOnlySpan<byte>)(value.Value switch
         {
             <= 0x7FF => value.AsTwoBytes(),

@@ -16,34 +16,19 @@ public readonly struct U8Source : IEquatable<U8Source>
         Value = value;
     }
 
-    // TODO: Port .Slice optimizations from U8String?
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public U8String Slice(U8Range range)
+    public U8String SliceUnchecked(U8Range range)
     {
         var source = Value;
-        if (source is null && range.Length != 0)
-        {
-            ThrowHelpers.ArgumentOutOfRange();
-        }
-
         if (range.Length > 0)
         {
-            var (offset, length) = (range.Offset, range.Length);
-            if ((ulong)(uint)offset + (ulong)(uint)length > (ulong)(uint)source!.Length)
+            if ((ulong)(uint)range.Offset + (ulong)(uint)range.Length > (ulong)(uint)source!.Length)
             {
                 ThrowHelpers.ArgumentOutOfRange();
             }
-
-            if (U8Info.IsContinuationByte(source.AsRef(offset)) || (
-                length < source.Length && U8Info.IsContinuationByte(source.AsRef(offset + length))))
-            {
-                ThrowHelpers.ArgumentOutOfRange();
-            }
-
-            return new(source, range);
         }
 
-        return default;
+        return new(source, range);
     }
 
     public bool Equals(U8Source other)
