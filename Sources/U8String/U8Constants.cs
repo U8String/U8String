@@ -10,9 +10,15 @@ namespace U8;
 public static class U8Constants
 {
     /// <summary>
+    /// The byte order mark for UTF-8.
+    /// </summary>
+    /// <returns>0xEF, 0xBB, 0xBF which is the Unicode code point U+FEFF.</returns>
+    public static U8String ByteOrderMark => u8('\uFEFF');
+
+    /// <summary>
     /// The directory separator character.
     /// </summary>
-    /// <returns>'\' on Windows, '/' on Unix.</returns>
+    /// <returns>"\" on Windows, "/" on Unix or otherwise.</returns>
     public static byte DirectorySeparator
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -22,7 +28,7 @@ public static class U8Constants
     /// <summary>
     /// The newline separator string.
     /// </summary>
-    /// <returns>"\r\n" on Windows, "\n" on Unix.</returns>
+    /// <returns>"\r\n" on Windows, "\n" on Unix or otherwise.</returns>
     public static U8String NewLine
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -42,7 +48,7 @@ public static class U8Constants
     /// <summary>
     /// Replacement character for invalid UTF-8 sequences.
     /// </summary>
-    /// <returns>'�'</returns>
+    /// <returns>"�"</returns>
     public static U8String ReplacementChar
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]

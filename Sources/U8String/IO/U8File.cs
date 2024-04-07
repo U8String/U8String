@@ -23,18 +23,20 @@ public static class U8File
         string path,
         long offset = 0,
         int length = -1,
+        bool stripBOM = false,
         bool roundTrailingRune = false)
     {
         ThrowHelpers.CheckNull(path);
 
         using var handle = File.OpenHandle(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        return Read(handle, offset, length, roundTrailingRune);
+        return Read(handle, offset, length, stripBOM, roundTrailingRune);
     }
 
     public static U8String Read(
         SafeFileHandle handle,
         long offset = 0,
         int length = -1,
+        bool stripBOM = false,
         bool roundTrailingRune = false)
     {
         if (length is -1)
@@ -53,19 +55,17 @@ public static class U8File
 
         length = RandomAccess.Read(handle, buffer.AsSpan(0, length), offset);
 
-        var start = 0;
-        if (offset is 0 && HasBOM(buffer.AsSpan(0, length)))
-        {
-            start = 3;
-            length -= 3;
-        }
-
         var range = roundTrailingRune
-            ? RoundTrailingRune(buffer, start, length)
-            : new(start, length);
+            ? RoundTrailingRune(buffer.AsSpan(0, length))
+            : new(0, length);
 
         var result = new U8String(buffer, range);
         U8String.Validate(result);
+        if (stripBOM)
+        {
+            result = result.StripPrefix(U8Constants.ByteOrderMark);
+        }
+
         return result;
     }
 
@@ -73,6 +73,7 @@ public static class U8File
         string path,
         long offset = 0,
         int length = -1,
+        bool stripBOM = false,
         bool roundTrailingRune = false,
         CancellationToken ct = default)
     {
@@ -85,13 +86,14 @@ public static class U8File
             FileShare.Read,
             OperatingSystem.IsWindows() ? FileOptions.None : FileOptions.Asynchronous);
 
-        return await ReadAsync(handle, offset, length, roundTrailingRune, ct);
+        return await ReadAsync(handle, offset, length, stripBOM, roundTrailingRune, ct);
     }
 
     public static async Task<U8String> ReadAsync(
         SafeFileHandle handle,
         long offset = 0,
         int length = -1,
+        bool stripBOM = false,
         bool roundTrailingRune = false,
         CancellationToken ct = default)
     {
@@ -115,19 +117,17 @@ public static class U8File
             .ReadAsync(handle, buffer.AsMemory(0, length), offset, ct)
             .ConfigureAwait(false);
 
-        var start = 0;
-        if (offset is 0 && HasBOM(buffer.AsSpan(0, length)))
-        {
-            start = 3;
-            length -= 3;
-        }
-
         var range = roundTrailingRune
-            ? RoundTrailingRune(buffer, start, length)
-            : new(start, length);
+            ? RoundTrailingRune(buffer.AsSpan(0, length))
+            : new(0, length);
 
         var result = new U8String(buffer, range);
         U8String.Validate(result);
+        if (stripBOM)
+        {
+            result = result.StripPrefix(U8Constants.ByteOrderMark);
+        }
+
         return result;
     }
 
@@ -143,27 +143,13 @@ public static class U8File
         return new(new(new(handle), disposeSource: true), disposeReader: true);
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static bool HasBOM(ReadOnlySpan<byte> buffer)
+    static U8Range RoundTrailingRune(ReadOnlySpan<byte> buffer)
     {
-        if (buffer.Length >= 3)
-        {
-            ref var ptr = ref buffer.AsRef();
+        ref var ptr = ref buffer.AsRef();
 
-            var b01 = ptr.Cast<byte, ushort>();
-            var b2 = ptr.Add(2);
-
-            return b01 is (0xEF | (0xBB << 8)) && b2 is 0xBF;
-        }
-
-        return false;
-    }
-
-    static U8Range RoundTrailingRune(byte[] buffer, int start, int length)
-    {
-        ref var ptr = ref buffer.AsRef(start);
-        var trimmed = 0;
         var b = (byte)0;
+        var trimmed = 0;
+        var length = buffer.Length;
         while (length > 0 && trimmed < 4)
         {
             b = ptr.Add(length - trimmed - 1);
@@ -187,6 +173,6 @@ public static class U8File
             ThrowHelpers.InvalidUtf8();
         }
         
-        return new(start, length);
+        return new(0, length);
     }
 }
