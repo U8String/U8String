@@ -1,6 +1,5 @@
 using System.Buffers;
 using System.Diagnostics;
-using System.Diagnostics.CodeAnalysis;
 using System.Runtime.InteropServices;
 
 namespace U8;
@@ -20,20 +19,6 @@ internal struct InlineBuffer64
 }
 
 [InlineArray(Length)]
-internal struct InlineBuffer128
-{
-    public const int Length = 128;
-
-    byte _element0;
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal Span<byte> AsSpan()
-    {
-        return MemoryMarshal.CreateSpan(ref _element0, Length);
-    }
-}
-
-[InlineArray(Length)]
 internal struct InlineBuffer376
 {
     // To account for alignment with byte[] in ArrayBuilder
@@ -41,12 +26,6 @@ internal struct InlineBuffer376
 
     byte _element0;
 
-    [UnscopedRef, MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal ref byte AsRef(int index)
-    {
-        return ref _element0.Add(index);
-    }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal Span<byte> AsSpan()
     {
@@ -54,10 +33,10 @@ internal struct InlineBuffer376
     }
 }
 
-// TODO: Remove or increase inline buffer size
+// TODO: Rewrite to neuecc-style multi-pooled array builder
 internal struct ArrayBuilder : IDisposable
 {
-    InlineBuffer128 _inline;
+    InlineBuffer376 _inline;
     byte[]? _array;
 
     public int BytesWritten { get; private set; }
@@ -66,16 +45,6 @@ internal struct ArrayBuilder : IDisposable
     public ArrayBuilder()
     {
         Unsafe.SkipInit(out _inline);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public ArrayBuilder(int initialCapacity)
-    {
-        Debug.Assert(initialCapacity > 0);
-
-        Unsafe.SkipInit(out _inline);
-        _array = initialCapacity <= InlineBuffer128.Length
-            ? null : ArrayPool<byte>.Shared.Rent(initialCapacity);
     }
 
     public Span<byte> Written

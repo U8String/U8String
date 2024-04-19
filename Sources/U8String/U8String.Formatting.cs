@@ -243,7 +243,7 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
 
     public IFormatProvider Provider { get; private set; }
 
-    public int BytesWritten { get; private set; }
+    public int BytesWritten { get; internal set; }
 
     public readonly ReadOnlySpan<byte> Written
     {
@@ -257,10 +257,16 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
         get => _array.AsMemory(0, BytesWritten);
     }
 
-    readonly Span<byte> Free
+    internal readonly Span<byte> Free
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _array.SliceUnsafe(BytesWritten);
+    }
+
+    internal readonly Memory<byte> FreeMemory
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => _array.AsMemory(BytesWritten);
     }
 
     int IInterpolatedHandler.BytesWritten
@@ -349,9 +355,8 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal void AppendBytesUnchecked(ReadOnlySpan<byte> bytes) => U8Interpolation.AppendBytesUnchecked(ref this, bytes);
 
-
     [MethodImpl(MethodImplOptions.NoInlining)]
-    void IInterpolatedHandler.Grow()
+    internal void Grow()
     {
         var arrayPool = ArrayPool<byte>.Shared;
         var rented = _array;
@@ -364,6 +369,9 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
         _array = newArr;
         arrayPool.Return(rented);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    void IInterpolatedHandler.Grow() => Grow();
 
     [MethodImpl(MethodImplOptions.NoInlining)]
     void IInterpolatedHandler.Grow(int hint)

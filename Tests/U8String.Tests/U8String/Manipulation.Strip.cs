@@ -26,7 +26,7 @@ public partial class Manipulation
         [u8($" {left}{left}Тест{right}{right} ")[1..^1], u8($"{left}Тест{right}"), left, right]
     ];
 
-    public static IEnumerable<object[]> StripByteData => new[]
+    public static readonly IEnumerable<object[]> StripByteData = new[]
     {
         '{', '}', '@', '\0'
     }.SelectMany(c => StripData(c, c)).WithArgsLimit(3);
@@ -214,7 +214,7 @@ public partial class Manipulation
         Assert.Throws<FormatException>(() => U8String.Empty.StripSuffix(Invalid));
     }
 
-    public static IEnumerable<object[]> StripPrefixSuffixByteData() => new[]
+    public static readonly IEnumerable<object[]> StripPrefixSuffixByteData = new[]
     {
         '{', '}', '@', '\0'
     }.Permute2().FlatMap(StripData);
