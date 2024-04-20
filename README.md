@@ -32,7 +32,7 @@ Add the packages from NuGet:
 Enable interceptors in your project file:
 ```xml
 <PropertyGroup>
-    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);U8.Generated<InterceptorsPreviewNamespaces>
+    <InterceptorsPreviewNamespaces>$(InterceptorsPreviewNamespaces);U8.Generated</InterceptorsPreviewNamespaces>
 </PropertyGroup>
 ```
 
