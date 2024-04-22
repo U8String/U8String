@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Runtime.Intrinsics;
 
 using U8.Abstractions;
@@ -79,51 +80,98 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             ThrowHelpers.NotSupportedBigEndian();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static byte ToLower1(byte b) => U8Info.IsAsciiLetter(b) ? (byte)(b | 0x20) : b;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ushort ToLower2(ushort swar2) => (ushort)((
+            swar2 | 0x2020u) & ~((ushort)(swar2 + 0x7f7fu) & 0x8080u));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint ToLower4(uint swar4) => (
+            swar4 | 0x20202020u) & ~(((swar4 + 0x7f7f7f7fu) | (
+            swar4 - 0x80808080u)) & 0x80808080u);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ulong ToLower8(ulong swar8) => (
+            swar8 | 0x2020202020202020ul) & ~(((swar8 + 0x7f7f7f7f7f7f7f7ful) | (
+            swar8 - 0x8080808080808080ul)) & 0x8080808080808080ul);
+
+        switch ((int)uint.CreateTruncating(length))
+        {
+            case 15:
+                dst.Add(13).Cast<byte, ushort>() = ToLower2(src.Add(13).Cast<byte, ushort>());
+                goto case 13;
+            case 14: dst.Add(13) = ToLower1(src.Add(13)); goto case 13;
+            case 13: dst.Add(12) = ToLower1(src.Add(12)); goto case 12;
+            case 12:
+                dst.Add(8).Cast<byte, uint>() = ToLower4(src.Add(8).Cast<byte, uint>());
+                goto case 8;
+            case 11:
+                dst.Add(9).Cast<byte, ushort>() = ToLower2(src.Add(9).Cast<byte, ushort>());
+                goto case 9;
+            case 10: dst.Add(9) = ToLower1(src.Add(9)); goto case 9;
+            case 9: dst.Add(8) = ToLower1(src.Add(8)); goto case 8;
+            case 8:
+                if (Vector64.IsHardwareAccelerated)
+                {
+                    ToLower(Vector64.LoadUnsafe(ref src)).StoreUnsafe(ref dst);
+                    goto case 0;
+                }
+
+                var swar8 = src.Cast<byte, ulong>();
+                dst.Cast<byte, ulong>() = ToLower8(swar8);
+                goto case 0;
+            case 7:
+                dst.Add(5).Cast<byte, ushort>() = ToLower2(src.Add(5).Cast<byte, ushort>());
+                goto case 5;
+            case 6: dst.Add(5) = ToLower1(src.Add(5)); goto case 5;
+            case 5: dst.Add(4) = ToLower1(src.Add(4)); goto case 4;
+            case 4:
+                dst.Cast<byte, uint>() = ToLower4(src.Cast<byte, uint>());
+                goto case 0;
+            case 3:
+                dst.Add(1).Cast<byte, ushort>() = ToLower2(src.Add(1).Cast<byte, ushort>());
+                goto case 1;
+            case 2: dst.Add(1) = ToLower1(src.Add(1)); goto case 1;
+            case 1: dst.Add(0) = ToLower1(src.Add(0)); goto case 0;
+            case 0: return;
+        }
+
+        if (length < 32)
+        {
+            Debug.Assert(length >= 16);
+            var first = Vector128.LoadUnsafe(ref src);
+            var last = Vector128.LoadUnsafe(ref src, length - 16);
+
+            first = ToLower(first);
+            last = ToLower(last);
+
+            first.StoreUnsafe(ref dst);
+            last.StoreUnsafe(ref dst, length - 16);
+
+            return;
+        }
+
         nuint offset = 0;
-        if (length >= (nuint)Vector256<byte>.Count)
+        var mask = Vector256.Create((sbyte)0x20);
+        var overflow = Vector256.Create<sbyte>(128 - 'A');
+        var bound = Vector256.Create<sbyte>(-127 + ('Z' - 'A'));
+        var lastvec = length - (nuint)Vector256<byte>.Count;
+        do
         {
-            var mask = Vector256.Create((sbyte)0x20);
-            var overflow = Vector256.Create<sbyte>(128 - 'A');
-            var bound = Vector256.Create<sbyte>(-127 + ('Z' - 'A'));
+            var utf8 = Vector256.LoadUnsafe(ref src, offset).AsSByte();
+            var changeCase = (utf8 + overflow).Lt(bound) & mask;
 
-            var lastvec = length - (nuint)Vector256<byte>.Count;
-            do
-            {
-                var utf8 = Vector256.LoadUnsafe(ref src, offset).AsSByte();
-                var changeCase = (utf8 + overflow).Lt(bound) & mask;
+            (utf8 | changeCase).AsByte().StoreUnsafe(ref dst, offset);
 
-                (utf8 | changeCase).AsByte().StoreUnsafe(ref dst, offset);
+            offset += (nuint)Vector256<byte>.Count;
+        } while (offset <= lastvec);
 
-                offset += (nuint)Vector256<byte>.Count;
-            } while (offset <= lastvec);
-        }
+        var tail = Vector256.LoadUnsafe(ref src, lastvec).AsSByte();
+        var tailChangeCase = (tail.AsSByte() + overflow).Lt(bound) & mask;
 
-        if (length >= offset + (nuint)Vector128<byte>.Count)
-        {
-            var utf8 = Vector128.LoadUnsafe(ref src, offset);
-            ToLower(utf8).StoreUnsafe(ref dst, offset);
-            offset += (nuint)Vector128<byte>.Count;
-        }
-
-        if (Vector64.IsHardwareAccelerated &&
-            length >= offset + (nuint)Vector64<byte>.Count)
-        {
-            var utf8 = Vector64.LoadUnsafe(ref src, offset);
-            ToLower(utf8).StoreUnsafe(ref dst, offset);
-            offset += (nuint)Vector64<byte>.Count;
-        }
-
-        while (offset < length)
-        {
-            var b = src.Add(offset);
-            if (U8Info.IsAsciiLetter(b))
-            {
-                b |= 0x20;
-            }
-
-            dst.Add(offset) = b;
-            offset++;
-        }
+        (tail | tailChangeCase).AsByte().StoreUnsafe(ref dst, lastvec);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -191,53 +239,97 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
             ThrowHelpers.NotSupportedBigEndian();
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static byte ToUpper1(byte b) => U8Info.IsAsciiLetter(b) ? (byte)(b & ~0x20) : b;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ushort ToUpper2(ushort swar2) => (ushort)((
+            swar2 & ~0x2020u) | ((ushort)(swar2 + 0x7f7fu) & 0x8080u));
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static uint ToUpper4(uint swar4) => (
+            swar4 & ~0x20202020u) | (((swar4 + 0x7f7f7f7fu) | (
+            swar4 - 0x80808080u)) & 0x80808080u);
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static ulong ToUpper8(ulong swar8) => (
+            swar8 & ~0x2020202020202020ul) | (((swar8 + 0x7f7f7f7f7f7f7f7ful) | (
+            swar8 - 0x8080808080808080ul)) & 0x8080808080808080ul);
+
+        switch ((int)uint.CreateTruncating(length))
+        {
+            case 15:
+                dst.Add(13).Cast<byte, ushort>() = ToUpper2(src.Add(13).Cast<byte, ushort>());
+                goto case 13;
+            case 14: dst.Add(13) = ToUpper1(src.Add(13)); goto case 13;
+            case 13: dst.Add(12) = ToUpper1(src.Add(12)); goto case 12;
+            case 12:
+                dst.Add(8).Cast<byte, uint>() = ToUpper4(src.Add(8).Cast<byte, uint>());
+                goto case 8;
+            case 11:
+                dst.Add(9).Cast<byte, ushort>() = ToUpper2(src.Add(9).Cast<byte, ushort>());
+                goto case 9;
+            case 10: dst.Add(9) = ToUpper1(src.Add(9)); goto case 9;
+            case 9: dst.Add(8) = ToUpper1(src.Add(8)); goto case 8;
+            case 8:
+                if (Vector64.IsHardwareAccelerated)
+                {
+                    ToUpper(Vector64.LoadUnsafe(ref src)).StoreUnsafe(ref dst);
+                    goto case 0;
+                }
+
+                var swar8 = src.Cast<byte, ulong>();
+                dst.Cast<byte, ulong>() = ToUpper8(swar8);
+                goto case 0;
+            case 7:
+                dst.Add(5).Cast<byte, ushort>() = ToUpper2(src.Add(5).Cast<byte, ushort>());
+                goto case 5;
+            case 6: dst.Add(5) = ToUpper1(src.Add(5)); goto case 5;
+            case 5: dst.Add(4) = ToUpper1(src.Add(4)); goto case 4;
+            case 4:
+                dst.Cast<byte, uint>() = ToUpper4(src.Cast<byte, uint>());
+                goto case 0;
+            case 3:
+                dst.Add(1).Cast<byte, ushort>() = ToUpper2(src.Add(1).Cast<byte, ushort>());
+                goto case 1;
+            case 2: dst.Add(1) = ToUpper1(src.Add(1)); goto case 1;
+            case 1: dst.Add(0) = ToUpper1(src.Add(0)); goto case 0;
+            case 0: return;
+        }
+
+        if (length < 32)
+        {
+            Debug.Assert(length >= 16);
+            var first = Vector128.LoadUnsafe(ref src);
+            var last = Vector128.LoadUnsafe(ref src, length - 16);
+
+            first = ToUpper(first);
+            last = ToUpper(last);
+
+            first.StoreUnsafe(ref dst);
+            last.StoreUnsafe(ref dst, length - 16);
+
+            return;
+        }
+
         nuint offset = 0;
-        if (length >= (nuint)Vector256<byte>.Count)
+        var mask = Vector256.Create((sbyte)0x20);
+        var overflow = Vector256.Create<sbyte>(128 - 'a');
+        var bound = Vector256.Create<sbyte>(-127 + ('z' - 'a'));
+        var lastvec = length - (nuint)Vector256<byte>.Count;
+        do
         {
-            // As usual, .NET unrolls this into 128x2 when 256 is not available
-            var mask = Vector256.Create((sbyte)0x20);
-            var overflow = Vector256.Create<sbyte>(128 - 'a');
-            var bound = Vector256.Create<sbyte>(-127 + ('z' - 'a'));
+            var utf8 = Vector256.LoadUnsafe(ref src, offset).AsSByte();
+            var changeCase = (utf8 + overflow).Lt(bound) & mask;
 
-            var lastvec = length - (nuint)Vector256<byte>.Count;
-            do
-            {
-                var utf8 = Vector256.LoadUnsafe(ref src, offset).AsSByte();
-                var changeCase = (utf8 + overflow).Lt(bound) & mask;
+            (utf8 ^ changeCase).AsByte().StoreUnsafe(ref dst, offset);
 
-                (utf8 ^ changeCase).AsByte().StoreUnsafe(ref dst, offset);
+            offset += (nuint)Vector256<byte>.Count;
+        } while (offset <= lastvec);
 
-                offset += (nuint)Vector256<byte>.Count;
-            } while (offset <= lastvec);
-        }
+        var tail = Vector256.LoadUnsafe(ref src, lastvec).AsSByte();
+        var tailChangeCase = (tail.AsSByte() + overflow).Lt(bound) & mask;
 
-        if (length >= offset + (nuint)Vector128<byte>.Count)
-        {
-            var utf8 = Vector128.LoadUnsafe(ref src, offset);
-            ToUpper(utf8).StoreUnsafe(ref dst, offset);
-            offset += (nuint)Vector128<byte>.Count;
-        }
-
-        if (Vector64.IsHardwareAccelerated &&
-            length >= offset + (nuint)Vector64<byte>.Count)
-        {
-            var utf8 = Vector64.LoadUnsafe(ref src, offset);
-            ToUpper(utf8).StoreUnsafe(ref dst, offset);
-            offset += (nuint)Vector64<byte>.Count;
-        }
-
-        // TODO: Pack the last few bytes and do bitwise case change
-        // Especially important if this is V256/512
-        while (offset < length)
-        {
-            var b = src.Add(offset);
-            if (U8Info.IsAsciiLetter(b))
-            {
-                b &= unchecked((byte)~0x20);
-            }
-
-            dst.Add(offset) = b;
-            offset++;
-        }
+        (tail ^ tailChangeCase).AsByte().StoreUnsafe(ref dst, lastvec);
     }
 }
