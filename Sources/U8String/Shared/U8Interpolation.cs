@@ -127,19 +127,16 @@ static class U8Interpolation
     internal static void AppendFormatted<T>(ref T handler, U8String value)
         where T : struct, IInterpolatedHandler
     {
-        if (!value.IsEmpty)
-        {
-            AppendBytes(ref handler, value.UnsafeSpan);
-        }
+        AppendBytes(ref handler, value);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void AppendFormatted<T>(ref T handler, U8String? value)
         where T : struct, IInterpolatedHandler
     {
-        if (value is { IsEmpty: false } text)
+        if (value is U8String text)
         {
-            AppendBytes(ref handler, text.UnsafeSpan);
+            AppendBytes(ref handler, text);
         }
     }
 
@@ -153,10 +150,7 @@ static class U8Interpolation
     internal static void AppendFormatted<T>(ref T handler, string? value)
         where T : struct, IInterpolatedHandler
     {
-        if (value is not null)
-        {
-            AppendLiteral(ref handler, value.AsSpan());
-        }
+        AppendLiteral(ref handler, value.AsSpan());
     }
 
     internal static void AppendFormatted<T>(ref T handler, ReadOnlySpan<char> value)

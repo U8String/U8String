@@ -716,12 +716,12 @@ internal static class U8Searching
                 switch ((ushort)c)
                 {
                     case <= 0x7FF:
-                        scalar = c.AsTwoBytes();
+                        scalar = c.AsTwoBytes().AsSpan();
                         scalarLength = 2;
                         break;
 
                     default:
-                        scalar = c.AsThreeBytes();
+                        scalar = c.AsThreeBytes().AsSpan();
                         scalarLength = 3;
                         break;
                 }
@@ -740,17 +740,17 @@ internal static class U8Searching
                 switch (r.Value)
                 {
                     case <= 0x7FF:
-                        rune = r.AsTwoBytes();
+                        rune = r.AsTwoBytes().AsSpan();
                         runeLength = 2;
                         break;
 
                     case <= 0xFFFF:
-                        rune = r.AsThreeBytes();
+                        rune = r.AsThreeBytes().AsSpan();
                         runeLength = 3;
                         break;
 
                     default:
-                        rune = r.AsFourBytes();
+                        rune = r.AsFourBytes().AsSpan();
                         runeLength = 4;
                         break;
                 }
@@ -849,12 +849,12 @@ internal static class U8Searching
                 switch ((ushort)c)
                 {
                     case <= 0x7FF:
-                        scalar = c.AsTwoBytes();
+                        scalar = c.AsTwoBytes().AsSpan();
                         scalarLength = 2;
                         break;
 
                     default:
-                        scalar = c.AsThreeBytes();
+                        scalar = c.AsThreeBytes().AsSpan();
                         scalarLength = 3;
                         break;
                 }
@@ -873,17 +873,17 @@ internal static class U8Searching
                 switch (r.Value)
                 {
                     case <= 0x7FF:
-                        rune = r.AsTwoBytes();
+                        rune = r.AsTwoBytes().AsSpan();
                         runeLength = 2;
                         break;
 
                     case <= 0xFFFF:
-                        rune = r.AsThreeBytes();
+                        rune = r.AsThreeBytes().AsSpan();
                         runeLength = 3;
                         break;
 
                     default:
-                        rune = r.AsFourBytes();
+                        rune = r.AsFourBytes().AsSpan();
                         runeLength = 4;
                         break;
                 }

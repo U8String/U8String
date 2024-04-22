@@ -52,52 +52,7 @@ public sealed class U8StringJsonConverter : JsonConverter<U8String>
     /// <inheritdoc/>
     public override void Write(Utf8JsonWriter writer, U8String value, JsonSerializerOptions options)
     {
-        // [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "WriteStringIndented")]
-        // static extern void WriteStringIndented(Utf8JsonWriter writer, ReadOnlySpan<byte> value);
-
-        // [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "WriteStringMinimized")]
-        // static extern void WriteStringMinimized(Utf8JsonWriter writer, ReadOnlySpan<byte> value);
-
-        // [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "WriteStringEscapeValue")]
-        // static extern void WriteStringEscapeValue(Utf8JsonWriter writer, ReadOnlySpan<byte> value, int firstEscapeIndex);
-
-        // [UnsafeAccessor(UnsafeAccessorKind.Method, Name = "SetFlagToAddListSeparatorBeforeNextItem")]
-        // static extern void SetFlagToAddListSeparatorBeforeNextItem(Utf8JsonWriter writer);
-
-        // [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_tokenType")]
-        // static extern ref JsonTokenType TokenTypeRef(Utf8JsonWriter writer);
-
-        // try
-        // {
-        //     var encoder = options.Encoder ?? JavaScriptEncoder.Default;
-        //     var span = value.AsSpan();
-
-        //     var escapeOffset = encoder.FindFirstCharacterToEncodeUtf8(value);
-        //     if (escapeOffset < 0)
-        //     {
-        //         if (options.WriteIndented)
-        //         {
-        //             WriteStringIndented(writer, span);
-        //         }
-        //         else
-        //         {
-        //             WriteStringMinimized(writer, span);
-        //         }
-        //     }
-        //     else
-        //     {
-        //         WriteStringEscapeValue(writer, span, escapeOffset);
-        //     }
-
-        //     SetFlagToAddListSeparatorBeforeNextItem(writer);
-        //     TokenTypeRef(writer) = JsonTokenType.String;
-        // }
-        // // If you think that I care that this is a bad practice - no I don't.
-        // // This will work and the blame on the way it's handled is on System.Text.Json.
-        // catch
-        // {
-            writer.WriteStringValue(value);
-        // }
+        writer.WriteStringValue(value);
     }
 
     [DoesNotReturn, StackTraceHidden]

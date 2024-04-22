@@ -1803,13 +1803,14 @@ public readonly partial struct U8String
             if (U8Info.IsAsciiByte(in ptr) && !U8Info.IsAsciiWhitespace(in ptr) &&
                 U8Info.IsAsciiByte(last) && !U8Info.IsAsciiWhitespace(last))
             {
-                return source;
+                goto Likely;
             }
 
             return TrimCore(source._value, source.Offset, source.Length);
         }
 
-        return default;
+        Likely:
+        return source;
 
         static U8String TrimCore(byte[] source, int offset, int length)
         {

@@ -222,6 +222,7 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
         }
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     internal void ArrayPoolSafeDispose()
     {
         BytesWritten = 0;

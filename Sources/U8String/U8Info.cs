@@ -101,10 +101,10 @@ public static class U8Info
             size = 3;
             return b0 switch
             {
-                0xE1 => b1 is 0x9A && b2 is 0x80,
+                0xE1 => ((b1 ^ 0x9A) | (b2 ^ 0x80)) is 0,
                 0xE2 =>
                     (b1 is 0x80 && b2 is 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0x87 or 0x88 or 0x89 or 0x8A or 0xA8 or 0xA9 or 0xAF) ||
-                    (b1 is 0x81 && b2 is 0x9F),
+                    ((b1 ^ 0x81) | (b2 ^ 0x9F)) is 0,
                 0xE3 => ((b1 ^ 0x80) | (b2 ^ 0x80)) is 0,
                 _ => false
             };

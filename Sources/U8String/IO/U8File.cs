@@ -64,22 +64,25 @@ public static class U8File
             ThrowHelpers.ArgumentException("The length must between -1 and U8String.MaxSafeLength inclusive.");
 
         var readLength = GetReadLength(handle, offset, length);
-        if (readLength is 0)
-            return ReadZeroLength(handle, offset);
+        if (readLength != 0)
+        {
 
-        var result = readLength > 0
-            ? ReadSized(handle, offset, readLength)
-            : ReadUnsized(handle);
+            var result = readLength > 0
+                ? ReadSized(handle, offset, readLength)
+                : ReadUnsized(handle);
 
-        if (stripBOM)
-            result = result.StripPrefix(U8Constants.ByteOrderMark);
+            if (stripBOM)
+                result = result.StripPrefix(U8Constants.ByteOrderMark);
 
-        if (roundTrailingRune)
-            result = RoundTrailingRune(result);
+            if (roundTrailingRune)
+                result = RoundTrailingRune(result);
 
 
-        U8String.Validate(result);
-        return result;
+            U8String.Validate(result);
+            return result;
+        }
+
+        return ReadZeroLength(handle, offset);
 
         static U8String ReadSized(SafeFileHandle handle, long offset, int length)
         {
@@ -168,25 +171,25 @@ public static class U8File
             ThrowHelpers.ArgumentException("The length must between -1 and U8String.MaxSafeLength inclusive.");
 
         var readLength = GetReadLength(handle, offset, length);
-        if (readLength is 0)
+        if (readLength != 0)
         {
-            await ReadZeroLength(handle, offset, ct).ConfigureAwait(false);
-            return default;
+            var result = await (readLength > 0
+                ? ReadSized(handle, offset, readLength, ct)
+                : ReadUnsized(handle, ct))
+                    .ConfigureAwait(false);
+
+            if (stripBOM)
+                result = result.StripPrefix(U8Constants.ByteOrderMark);
+
+            if (roundTrailingRune)
+                result = RoundTrailingRune(result);
+
+            U8String.Validate(result);
+            return result;
         }
 
-        var result = await (readLength > 0
-            ? ReadSized(handle, offset, readLength, ct)
-            : ReadUnsized(handle, ct))
-                .ConfigureAwait(false);
-
-        if (stripBOM)
-            result = result.StripPrefix(U8Constants.ByteOrderMark);
-
-        if (roundTrailingRune)
-            result = RoundTrailingRune(result);
-
-        U8String.Validate(result);
-        return result;
+        await ReadZeroLength(handle, offset, ct).ConfigureAwait(false);
+        return default;
 
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         static async ValueTask<U8String> ReadSized(

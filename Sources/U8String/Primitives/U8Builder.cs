@@ -116,7 +116,8 @@ public struct U8Builder : IU8Buffer
     /// <remarks>
     /// The builder can be reused after calling this method. Disposing the builder after calling this method
     /// is not necessary. 
-    /// </remarks> 
+    /// </remarks>
+    [MethodImpl(MethodImplOptions.NoInlining)]
     public U8String Consume()
     {
         var result = new U8String(Written, skipValidation: true);
