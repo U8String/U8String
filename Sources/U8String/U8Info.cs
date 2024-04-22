@@ -85,10 +85,10 @@ public static class U8Info
         var b1 = ptr.Add(1);
 
         // TODO: Consider switch expr. for nicer formatting and maybe better codegen?
-        if (b0 is 0xC2 && (b1 is 0x85 or 0xA0))
+        if (b0 < 0xE0)
         {
             size = 2;
-            return true;
+            return b0 is 0xC2 && (b1 is 0x85 or 0xA0);
         }
 
         // If you are wondering why the formating is so weird or why instead of range checks there is
@@ -96,17 +96,21 @@ public static class U8Info
         // and more efficient range checks, and it kind of looks like a table which is easier on the eyes.
         // (in absolute terms, the codegen quality is still questionable but it's better than converting to rune)
         var b2 = ptr.Add(2);
-        if ((b0 is 0xE1 && b1 is 0x9A && b2 is 0x80) ||
-            (b0 is 0xE2 && (
-                (b1 is 0x80 && b2 is 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0x87 or 0x88 or 0x89 or 0x8A or 0xA8 or 0xA9 or 0xAF) ||
-                (b1 is 0x81 && b2 is 0x9F))) ||
-            (b0 is 0xE3 && b1 is 0x80 && b2 is 0x80))
+        if (b0 < 0xF0)
         {
             size = 3;
-            return true;
+            return b0 switch
+            {
+                0xE1 => b1 is 0x9A && b2 is 0x80,
+                0xE2 =>
+                    (b1 is 0x80 && b2 is 0x80 or 0x81 or 0x82 or 0x83 or 0x84 or 0x85 or 0x86 or 0x87 or 0x88 or 0x89 or 0x8A or 0xA8 or 0xA9 or 0xAF) ||
+                    (b1 is 0x81 && b2 is 0x9F),
+                0xE3 => ((b1 ^ 0x80) | (b2 ^ 0x80)) is 0,
+                _ => false
+            };
         }
 
-        size = RuneLength(b0);
+        size = 4;
         return false;
     }
 
