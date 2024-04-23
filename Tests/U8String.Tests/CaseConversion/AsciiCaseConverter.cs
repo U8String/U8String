@@ -1,3 +1,5 @@
+using System.Text;
+
 using U8.CaseConversion;
 
 namespace U8.Tests.CaseConversion;
@@ -28,7 +30,7 @@ public class AsciiCaseConverterTests
         .Select(s => new[] { s });
 
     [Theory, MemberData(nameof(ValidStrings))]
-    public void AsciiCaseConverter_ToLowerReturnsCorrectValue(ReferenceText text)
+    public void ToLower_ReturnsCorrectValue(ReferenceText text)
     {
         var lowercase = text.Utf16
             .Select(c => char.IsAsciiLetter(c) ? char.ToLowerInvariant(c) : c)
@@ -52,7 +54,22 @@ public class AsciiCaseConverterTests
     }
 
     [Fact]
-    public void AsciiCaseConverter_ToLowerThrowsOnTooShortDestination()
+    public void ToLower_ConvertsMixedPatternShortLengthsCorrectly()
+    {
+        foreach (var pattern in Constants.MixedRunePatterns())
+        {
+            var lower = pattern.Select(r => r.IsAscii ? Rune.ToLowerInvariant(r) : r);
+            var expected = U8String.Concat(lower);
+
+            var actual = U8String.Concat(pattern).ToLowerAscii();
+
+            Assert.Equal(expected, actual);
+            Assert.Equal(!actual.IsEmpty, actual.IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ToLower_ThrowsOnTooShortDestination()
     {
         var source = (U8String)"Hello, World!"u8;
 
@@ -61,7 +78,7 @@ public class AsciiCaseConverterTests
     }
 
     [Theory, MemberData(nameof(ValidStrings))]
-    public void AsciiCaseConverter_ToUpperReturnsCorrectValue(ReferenceText text)
+    public void ToUpper_ReturnsCorrectValue(ReferenceText text)
     {
         var uppercase = text.Utf16
             .Select(c => char.IsAsciiLetter(c) ? char.ToUpperInvariant(c) : c)
@@ -85,7 +102,22 @@ public class AsciiCaseConverterTests
     }
 
     [Fact]
-    public void AsciiCaseConverter_ToUpperThrowsOnTooShortDestination()
+    public void ToUpper_ConvertsMixedPatternShortLengthsCorrectly()
+    {
+        foreach (var pattern in Constants.MixedRunePatterns())
+        {
+            var lower = pattern.Select(r => r.IsAscii ? Rune.ToUpperInvariant(r) : r);
+            var expected = U8String.Concat(lower);
+
+            var actual = U8String.Concat(pattern).ToUpperAscii();
+
+            Assert.Equal(expected, actual);
+            Assert.Equal(!actual.IsEmpty, actual.IsNullTerminated);
+        }
+    }
+
+    [Fact]
+    public void ToUpper_ThrowsOnTooShortDestination()
     {
         var source = (U8String)"Hello, World!"u8;
 

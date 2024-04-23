@@ -2,6 +2,8 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
 
+using U8.Primitives;
+
 namespace U8.Shared;
 
 internal static class U8Conversions
@@ -58,5 +60,55 @@ internal static class U8Conversions
         {
             return (rune << 6) | (uint)(value & continuationMask);
         }
+    }
+
+    // TODO: This is a temporary slow implementation until
+    // there is a port of Utf32to8 and Utf8to32 from simdutf.
+    internal static U8String RunesToU8(ReadOnlySpan<Rune> runes)
+    {
+        var maxLength = (int)(uint)Math.Min((ulong)runes.Length * 4, (ulong)Array.MaxLength);
+        var builder = new PooledU8Builder(maxLength);
+
+        ref var ptr = ref builder.Free.AsRef();
+
+        var written = 0;
+        var remaining = builder.Free.Length;
+
+        foreach (var rune in runes)
+        {
+            ref var dst = ref ptr.Add(written);
+            switch (rune.Value, remaining)
+            {
+                case (<= 0x7F, >= 1):
+                    dst = (byte)rune.Value;
+                    written += 1;
+                    remaining -= 1;
+                    continue;
+                case (<= 0x7FF, >= 2):
+                    rune.AsTwoBytes().Store(ref dst);
+                    written += 2;
+                    remaining -= 2;
+                    continue;
+                case (<= 0xFFFF, >= 3):
+                    rune.AsThreeBytes().Store(ref dst);
+                    written += 3;
+                    remaining -= 3;
+                    continue;
+                case (_, >= 4):
+                    rune.AsFourBytes().Store(ref dst);
+                    written += 4;
+                    remaining -= 4;
+                    continue;
+                default:
+                    ThrowHelpers.DestinationTooShort();
+                    break;
+            }
+        }
+
+        builder.BytesWritten = written;
+
+        var result = new U8String(builder.Written, skipValidation: true);
+        builder.Dispose();
+        return result;
     }
 }

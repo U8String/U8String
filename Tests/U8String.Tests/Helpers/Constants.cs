@@ -96,6 +96,27 @@ public static class Constants
         .Select(i => new Rune(i))
         .Except(WhitespaceRunes);
 
+    /// <summary>
+    /// Caution: This currently produces 4 118 640 permutations.
+    /// *Do not* make methods consuming it a theory.
+    /// </summary>
+    public static IEnumerable<Rune[]> MixedRunePatterns()
+    {
+        foreach (var (first, second) in Mixed.EnumerateRunes().Permute2())
+        {
+            foreach (var count in Enumerable.Range(0, 20))
+            {
+                var firstSeq = Enumerable.Repeat(first, count);
+                var secondSeq = Enumerable.Repeat(second, count);
+                var pattern = firstSeq.Interleave(secondSeq);
+
+                yield return [..pattern];
+                yield return [..pattern, first];
+                yield return [..pattern, second];
+            }
+        }
+    }
+
     public static readonly ReferenceText[] ValidStrings =
     [
         new ReferenceText(

@@ -114,8 +114,9 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ToLowerCore(ReadOnlySpan<byte> source, ref InlineU8Builder destination)
         {
-            var maxLength = (int)Math.Min(
-                (uint)source.Length * 3, Array.MaxLength - destination.BytesWritten);
+            var maxLength = (int)(uint)Math.Min(
+                ((ulong)(uint)source.Length * 3) + 1,
+                (ulong)Array.MaxLength - (uint)destination.BytesWritten);
             destination.EnsureCapacity(maxLength);
             var buffer = destination.Free;
 
@@ -183,8 +184,9 @@ public readonly struct U8InvariantCaseConverter : IU8CaseConverter
         [MethodImpl(MethodImplOptions.NoInlining)]
         static void ToUpperCore(ReadOnlySpan<byte> source, ref InlineU8Builder destination)
         {
-            var maxLength = (int)Math.Min(
-                (uint)source.Length * 3, Array.MaxLength - destination.BytesWritten);
+            var maxLength = (int)(uint)Math.Min(
+                ((ulong)(uint)source.Length * 3) + 1,
+                (ulong)Array.MaxLength - (uint)destination.BytesWritten);
             destination.EnsureCapacity(maxLength);
             var buffer = destination.Free;
 

@@ -341,24 +341,38 @@ public readonly partial struct U8String
         return Concat<T>(values.AsSpan(), format, provider);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String Concat<T>(
         ReadOnlySpan<T> values,
         ReadOnlySpan<char> format = default,
         IFormatProvider? provider = null) where T : IUtf8SpanFormattable
     {
-        provider ??= CultureInfo.InvariantCulture;
-
         // A few odd cases that may not be likely, but we can handle them for free so why not?
         if (typeof(T) == typeof(char))
         {
             return new(values.Cast<T, char>());
+        }
+        if (typeof(T) == typeof(Rune))
+        {
+            return U8Conversions.RunesToU8(values.Cast<T, Rune>());
         }
         else if (typeof(T) == typeof(U8String))
         {
             return Concat(values.Cast<T, U8String>());
         }
 
-        if (values.Length > 1)
+        provider ??= CultureInfo.InvariantCulture;
+        if (values.Length != 1)
+        {
+            return ConcatSpan(values, format, provider);
+        }
+
+        return Create(values[0], format, provider);
+
+        static U8String ConcatSpan(
+            ReadOnlySpan<T> values,
+            ReadOnlySpan<char> format,
+            IFormatProvider provider)
         {
             var builder = new ArrayBuilder();
             foreach (var value in values)
@@ -371,12 +385,6 @@ public readonly partial struct U8String
             builder.Dispose();
             return result;
         }
-        else if (values.Length is 1)
-        {
-            return Create(values[0], format, provider);
-        }
-
-        return default;
     }
 
     public static U8String Concat<T>(

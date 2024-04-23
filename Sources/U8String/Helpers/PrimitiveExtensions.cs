@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -38,7 +39,12 @@ static class PrimitiveExtensions
         {
             span = CollectionsMarshal.AsSpan(Unsafe.As<List<T>>(source));
         }
-        // TODO: Make sure immutable arrays have non-boxing struct-accepting paths
+        // Because we don't have much of further specialization on IEnumerable<T> types, we can afford
+        // to pay more upfront because span paths are just this much faster.
+        else if (source.GetType() == typeof(ImmutableArray<T>))
+        {
+            span = Unsafe.Unbox<ImmutableArray<T>>(source).AsSpan();
+        }
         else
         {
             span = default;

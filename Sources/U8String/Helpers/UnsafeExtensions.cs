@@ -14,6 +14,7 @@ internal static class UnsafeExtensions
         return ref MemoryMarshal.GetReference(value);
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this ReadOnlySpan<T> value)
         where T : struct
@@ -70,6 +71,7 @@ internal static class UnsafeExtensions
         return MemoryMarshal.CreateReadOnlySpan(ref value, length);
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T Add<T>(this ref T value, int offset)
         where T : struct
@@ -96,6 +98,7 @@ internal static class UnsafeExtensions
         return ref Unsafe.Subtract(ref value, (nint)(uint)offset);
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref U Cast<T, U>(this ref T value)
         where T : unmanaged

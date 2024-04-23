@@ -73,6 +73,44 @@ internal static class Extensions
         return source.SelectMany(x => selector(x.Item1, x.Item2));
     }
 
+    internal static IEnumerable<T> Interleave<T>(this IEnumerable<T> first, IEnumerable<T> second)
+    {
+        using var e1 = first.GetEnumerator();
+        using var e2 = second.GetEnumerator();
+
+        var cont1 = true;
+        var cont2 = true;
+        
+        while (cont1 || cont2)
+        {
+            if (cont1) cont1 = e1.MoveNext();
+            if (cont1) yield return e1.Current;
+            if (cont2) cont2 = e2.MoveNext();
+            if (cont2) yield return e2.Current;
+        }
+    }
+
+    internal static IEnumerable<T> Interleave<T>(this IEnumerable<T> first, IEnumerable<T> second, IEnumerable<T> third)
+    {
+        using var e1 = first.GetEnumerator();
+        using var e2 = second.GetEnumerator();
+        using var e3 = third.GetEnumerator();
+
+        var cont1 = true;
+        var cont2 = true;
+        var cont3 = true;
+        
+        while (cont1 || cont2 || cont3)
+        {
+            if (cont1) cont1 = e1.MoveNext();
+            if (cont1) yield return e1.Current;
+            if (cont2) cont2 = e2.MoveNext();
+            if (cont2) yield return e2.Current;
+            if (cont3) cont3 = e3.MoveNext();
+            if (cont3) yield return e3.Current;
+        }
+    }
+
     internal static IEnumerable<(T X, T Y)> Permute2<T>(this IEnumerable<T> source)
     {
         return source.SelectMany(x => source, (x, y) => (x, y));
