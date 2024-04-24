@@ -861,49 +861,6 @@ public class Construction
     }
 
     [Fact]
-    public void FromLiteral_ProducesCorrectResult()
-    {
-        var expected = "Hello, World!";
-        var first = U8String.FromLiteral("Hello, World!");
-        var second = U8String.FromLiteral("Hello, World!");
-
-        Assert.True(first.Equals("Hello, World!"u8));
-        Assert.True(first.IsNullTerminated);
-        Assert.Equal("Hello, World!"u8, first);
-        Assert.Equal(0, first.Offset);
-        Assert.Equal(expected.Length, first.Length);
-
-        // FromLiteral should always return the same instance
-        Assert.Equal(first, second);
-        Assert.Equal(first.Source, second.Source);
-        Assert.True(first.SourceEqual(second));
-    }
-
-    [Fact]
-    public void FromLiteral_ReturnsDefaultOnEmptyString()
-    {
-        var actual = U8String.FromLiteral("");
-
-        Assert.Equal(default, actual);
-        Assert.Equal(0, actual.Offset);
-    }
-
-    [Fact]
-    public void FromLiteral_ThrowsOnNullReference()
-    {
-        Assert.Throws<ArgumentNullException>(() => U8String.FromLiteral(null!));
-    }
-
-    [Fact]
-    public void FromLiteral_ThrowsOnNonLiteral()
-    {
-        var nonLiteral = string.Concat("Hello, ", "World!");
-#pragma warning disable CA1857 // Non-literal strings should not be passed to FromLiteral
-        Assert.Throws<ArgumentException>(() => U8String.FromLiteral(nonLiteral));
-#pragma warning restore CA1857
-    }
-
-    [Fact]
     public static void FromAsciiUtf16_ProducesCorrectResult()
     {
         var expected = Constants.AsciiBytes;

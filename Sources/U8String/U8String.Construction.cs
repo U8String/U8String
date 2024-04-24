@@ -611,25 +611,6 @@ public readonly partial struct U8String
         return default;
     }
 
-    /// <summary>
-    /// Retrieves a <see cref="U8String"/> from the literal pool for the specified constant <see cref="string"/>.
-    /// </summary>
-    /// <exception cref="ArgumentNullException">Thrown when <paramref name="value"/> is null.</exception>
-    /// <exception cref="ArgumentException">Thrown when <paramref name="value"/> is not a constant string.</exception>
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static U8String FromLiteral([ConstantExpected] string value)
-    {
-        ThrowHelpers.CheckNull(value);
-
-        if (value.Length > 0)
-        {
-            var bytes = U8Literals.Utf16.GetLiteral(value);
-            return new(bytes, bytes.Length - 1, neverEmpty: true);
-        }
-
-        return default;
-    }
-
     public static bool TryCreate(byte[]? value, out U8String result)
     {
         if (value != null)

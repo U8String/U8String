@@ -27,7 +27,6 @@ var bestDay = DayOfWeek.Friday.ToU8String();
 
 // Also supports
 var fromAscii = U8String.FromAscii("Hello, World!");
-var fromLiteral2 = U8String.FromLiteral("Привіт, Всесвіт!");
 ```
 
 Unsupported patterns:

@@ -17,7 +17,6 @@ public partial class FoldConversions
             U8String.CreateLossy("Привіт, Всесвіт!"),
             // TODO: Folding prevents this from throwing which is not correct. Just remove?
             U8String.FromAscii("Привіт, Всесвіт!"),
-            U8String.FromLiteral("Привіт, Всесвіт!")
         };
 
         var first = literals[0];
@@ -61,8 +60,7 @@ public partial class FoldConversions
             u8(OneThousandRunes),
             U8String.Create(OneThousandRunes),
             U8String.CreateLossy(OneThousandRunes),
-            U8String.FromAscii(OneThousandRunes),
-            U8String.FromLiteral(OneThousandRunes)
+            U8String.FromAscii(OneThousandRunes)
         };
 
         var first = literals[0];

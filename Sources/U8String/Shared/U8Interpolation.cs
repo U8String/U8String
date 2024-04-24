@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Text;
+using System.Text.Unicode;
 
 using U8.Primitives;
 
@@ -254,11 +255,24 @@ static class U8Interpolation
         goto Retry;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void AppendConstantString<T>(ref T handler, [ConstantExpected] string s)
         where T : struct, IInterpolatedHandler
     {
-        var literal = U8Literals.Utf16.GetLiteral(s);
-        AppendBytes(ref handler, literal.SliceUnsafe(0, literal.Length - 1));
+    Retry:
+        var inner = new Utf8.TryWriteInterpolatedStringHandler(
+            s.Length, 0, handler.Free, out _);
+        if (inner.AppendLiteral(s))
+        {
+            handler.BytesWritten += inner.GetPosition();
+            return;
+        }
+
+        handler.Grow();
+        goto Retry;
+
+        // var literal = U8Literals.Utf16.GetLiteral(s);
+        // AppendBytes(ref handler, literal.SliceUnsafe(0, literal.Length - 1));
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
@@ -347,6 +361,9 @@ static class U8Interpolation
         bytes.CopyToUnsafe(ref handler.Free.AsRef());
         handler.BytesWritten += bytes.Length;
     }
+
+    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_pos")]
+    static extern ref int GetPosition(this ref Utf8.TryWriteInterpolatedStringHandler instance);
 
     [DoesNotReturn, StackTraceHidden]
     static void UnsupportedAppend<T>()
