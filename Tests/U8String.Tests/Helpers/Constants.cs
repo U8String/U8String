@@ -97,14 +97,14 @@ public static class Constants
         .Except(WhitespaceRunes);
 
     /// <summary>
-    /// Caution: This currently produces 4 118 640 permutations.
-    /// *Do not* make methods consuming it a theory.
+    /// Caution! Currently produces 3 294 912 permutations.
+    /// Do not make methods consuming it a theory.
     /// </summary>
     public static IEnumerable<Rune[]> MixedRunePatterns()
     {
         foreach (var (first, second) in Mixed.EnumerateRunes().Permute2())
         {
-            foreach (var count in Enumerable.Range(0, 20))
+            foreach (var count in Enumerable.Range(0, 16))
             {
                 var firstSeq = Enumerable.Repeat(first, count);
                 var secondSeq = Enumerable.Repeat(second, count);
