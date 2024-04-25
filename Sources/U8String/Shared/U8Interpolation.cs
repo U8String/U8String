@@ -252,11 +252,13 @@ static class U8Interpolation
         where T : struct, IInterpolatedHandler
     {
     Retry:
-        var inner = new Utf8.TryWriteInterpolatedStringHandler(
-            s.Length, 0, handler.Free, out _);
-        if (inner.AppendLiteral(s))
+        var free = handler.Free;
+        var inner = new Utf8.TryWriteInterpolatedStringHandler(s.Length, 0, free, out _);
+
+        inner.AppendLiteral(s);
+        if (Utf8.TryWrite(free, ref inner, out var written))
         {
-            handler.BytesWritten += inner.GetPosition();
+            handler.BytesWritten += written;
             return;
         }
 
@@ -353,9 +355,6 @@ static class U8Interpolation
         bytes.CopyToUnsafe(ref handler.Free.AsRef());
         handler.BytesWritten += bytes.Length;
     }
-
-    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "_pos")]
-    static extern ref int GetPosition(this ref Utf8.TryWriteInterpolatedStringHandler instance);
 
     [DoesNotReturn, StackTraceHidden]
     static void UnsupportedAppend<T>()
