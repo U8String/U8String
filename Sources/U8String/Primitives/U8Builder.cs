@@ -155,9 +155,6 @@ public struct U8Builder : IU8Buffer
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AppendLiteral([ConstantExpected] string s) => U8Interpolation.AppendLiteral(ref _handler, s);
 
-        [MethodImpl(MethodImplOptions.NoInlining)]
-        public void AppendLiteral(ReadOnlySpan<char> s) => U8Interpolation.AppendLiteral(ref _handler, s);
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void AppendFormatted(bool value) => U8Interpolation.AppendFormatted(ref _handler, value);
 

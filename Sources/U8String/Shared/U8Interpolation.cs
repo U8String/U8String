@@ -25,7 +25,6 @@ interface IInterpolatedHandler
 interface IInterpolatedHandlerImplementation : IInterpolatedHandler, IDisposable
 {
     void AppendLiteral([ConstantExpected] string s);
-    void AppendLiteral(ReadOnlySpan<char> s);
     void AppendFormatted(bool value);
     void AppendFormatted(char value);
     void AppendFormatted(Rune value);
@@ -67,24 +66,6 @@ static class U8Interpolation
                 AppendConstantString(ref handler, s);
             }
         }
-    }
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    internal static void AppendLiteral<T>(ref T handler, ReadOnlySpan<char> s)
-        where T : struct, IInterpolatedHandler
-    {
-    Retry:
-        if (Encoding.UTF8.TryGetBytes(s, handler.Free, out var written))
-        {
-            handler.BytesWritten += written;
-            return;
-        }
-
-        // We can't use the length * 2 or * 3 hint here because
-        // it will fail interpolation for 1-1.5GiB strings which
-        // is otherwise a legal operation.
-        handler.Grow();
-        goto Retry;
     }
 
     internal static void AppendFormatted<T>(ref T handler, bool value)
@@ -151,13 +132,24 @@ static class U8Interpolation
     internal static void AppendFormatted<T>(ref T handler, string? value)
         where T : struct, IInterpolatedHandler
     {
-        AppendLiteral(ref handler, value.AsSpan());
+        AppendFormatted(ref handler, value.AsSpan());
     }
 
     internal static void AppendFormatted<T>(ref T handler, ReadOnlySpan<char> value)
         where T : struct, IInterpolatedHandler
     {
-        AppendLiteral(ref handler, value);
+    Retry:
+        if (Encoding.UTF8.TryGetBytes(value, handler.Free, out var written))
+        {
+            handler.BytesWritten += written;
+            return;
+        }
+
+        // We can't use the length * 2 or * 3 hint here because
+        // it will fail interpolation for 1-1.5GiB strings which
+        // is otherwise a legal operation.
+        handler.Grow();
+        goto Retry;
     }
 
     internal static void AppendFormatted<T, U>(ref T handler, U value)

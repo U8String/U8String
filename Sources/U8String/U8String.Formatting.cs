@@ -85,9 +85,6 @@ public /* ref */ struct InlineU8Builder : IInterpolatedHandlerImplementation
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendLiteral([ConstantExpected] string s) => U8Interpolation.AppendLiteral(ref this, s);
 
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public void AppendLiteral(ReadOnlySpan<char> s) => U8Interpolation.AppendLiteral(ref this, s);
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendFormatted(bool value) => U8Interpolation.AppendFormatted(ref this, value);
 
@@ -308,9 +305,6 @@ public struct PooledU8Builder : IInterpolatedHandlerImplementation
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendLiteral([ConstantExpected] string s) => U8Interpolation.AppendLiteral(ref this, s);
-
-    [MethodImpl(MethodImplOptions.NoInlining)]
-    public void AppendLiteral(ReadOnlySpan<char> s) => U8Interpolation.AppendLiteral(ref this, s);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public void AppendFormatted(bool value) => U8Interpolation.AppendFormatted(ref this, value);
