@@ -8,14 +8,21 @@ namespace U8.InteropServices;
 // TODO: Consider switching to stateful structs
 // TODO: Double-check that the flow of get pinnable ref -> ConvertToUnmanaged is correct
 [EditorBrowsable(EditorBrowsableState.Advanced)]
+[CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Raw))]
 [CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8StringMarshalling))]
-[CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Default))]
 public static unsafe class U8StringMarshalling
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ConvertToManaged(byte* unmanaged)
     {
         return new U8String(unmanaged);
+    }
+
+    public static byte* ConvertToUnmanaged(U8String managed)
+    {
+        throw new NotSupportedException(
+            "Use one of the member types for explicitly specified marshalling: " +
+            $"{nameof(Raw)}, {nameof(LikelyNullTerminated)} or {nameof(UnlikelyNullTerminated)}.");
     }
 
     [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(LikelyNullTerminated))]
@@ -57,8 +64,8 @@ public static unsafe class U8StringMarshalling
         }
     }
 
-    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Default))]
-    public ref struct Default
+    [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(UnlikelyNullTerminated))]
+    public ref struct UnlikelyNullTerminated
     {
         static byte Empty = (byte)'\0';
 
@@ -87,14 +94,14 @@ public static unsafe class U8StringMarshalling
             }
             else
             {
-                NullTerminate(
+                NullTerminateCore(
                     ref managed.UnsafeRef,
                     ref buffer.AsRef(),
                     managed.Length);
             }
         }
 
-        void NullTerminate(ref byte src, [UnscopedRef] ref byte dst, int length)
+        void NullTerminateCore(ref byte src, [UnscopedRef] ref byte dst, int length)
         {
             if (length > BufferSize)
             {
@@ -134,7 +141,7 @@ public static unsafe class U8StringMarshalling
         public static byte* ConvertToUnmanaged(U8String managed)
         {
             throw new NotSupportedException($"""
-                It is expected for the generated marshalling code to call {nameof(GetPinnableReference)} instead.");
+                It is expected for the generated marshalling code to call {nameof(GetPinnableReference)} instead.
                 If you are seeing this exception, please file an issue at https://github.com/U8String/U8String/issues/new
                 """);
         }
@@ -144,12 +151,5 @@ public static unsafe class U8StringMarshalling
         {
             return ref managed.GetPinnableReference();
         }
-    }
-
-    public static byte* ConvertToUnmanaged(U8String managed)
-    {
-        throw new NotSupportedException(
-            "Use one of the member types for explicitly specified marshalling: " +
-            $"{nameof(Default)}, {nameof(LikelyNullTerminated)} or {nameof(Raw)}.");
     }
 }
