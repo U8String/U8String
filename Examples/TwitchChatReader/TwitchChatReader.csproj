@@ -10,6 +10,7 @@
 
   <PropertyGroup>
     <PublishAot>true</PublishAot>
+    <MetricsSupport>false</MetricsSupport>
     <IlcInstructionSet>native</IlcInstructionSet>
     <InvariantGlobalization>true</InvariantGlobalization>
     <OptimizationPreference>Speed</OptimizationPreference>

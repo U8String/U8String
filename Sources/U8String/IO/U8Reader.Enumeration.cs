@@ -71,6 +71,7 @@ public readonly struct U8LineReader<T> :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
+            Current = default;
             var line = reader.ReadTo((byte)'\n');
             if (line.HasValue)
             {
@@ -110,6 +111,7 @@ public readonly struct U8LineReader<T> :
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
+            Current = default;
             var line = await reader.ReadToAsync((byte)'\n', ct);
             if (line.HasValue)
             {
@@ -187,6 +189,7 @@ public readonly struct U8SplitReader<T, TSeparator> :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
+            Current = default;
             var segment = _reader.ReadTo(_separator);
             if (segment.HasValue)
             {
@@ -233,6 +236,7 @@ public readonly struct U8SplitReader<T, TSeparator> :
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
+            Current = default;
             var segment = await _reader.ReadToAsync(_separator, _ct);
             if (segment.HasValue)
             {
@@ -292,6 +296,7 @@ public readonly struct U8SegmentReader<T, TSegment> : IAsyncEnumerable<U8String>
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
+            Current = default;
             var segment = await _reader.ReadSegmentAsync<T, TSegment>(_ct);
             if (segment.HasValue)
             {
@@ -348,6 +353,7 @@ public readonly struct U8WebSocketMessageReader : IAsyncEnumerable<U8String>
         [AsyncMethodBuilder(typeof(PoolingAsyncValueTaskMethodBuilder<>))]
         public async ValueTask<bool> MoveNextAsync()
         {
+            Current = default;
             var segment = await _reader.ReadSegmentAsync<U8WebSocketSource, ValueWebSocketReceiveResult>(_ct);
             if (segment.HasValue)
             {

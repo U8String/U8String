@@ -481,3 +481,6 @@ $RECYCLE.BIN/
 
 # JetBrains files
 .idea/
+
+# Rust artifacts
+**/target/

@@ -72,14 +72,9 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         return utf8 | (Vector64.LessThan(utf8.AsSByte() + overflow, bound) & mask).AsByte();
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static void ToLowerCore(ref byte src, ref byte dst, nuint length)
     {
-        if (!BitConverter.IsLittleEndian)
-        {
-            ThrowHelpers.NotSupportedBigEndian();
-        }
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         static byte ToLower1(byte b) => U8Info.IsAsciiLetter(b) ? (byte)(b | 0x20) : b;
 
@@ -233,14 +228,9 @@ public readonly struct U8AsciiCaseConverter : IU8CaseConverter
         return ascii ^ (Vector64.LessThan(ascii.AsSByte() + overflow, bound) & mask).AsByte();
     }
 
-    [MethodImpl(MethodImplOptions.NoInlining | MethodImplOptions.AggressiveOptimization)]
+    [MethodImpl(MethodImplOptions.AggressiveOptimization)]
     internal static void ToUpperCore(ref byte src, ref byte dst, nuint length)
     {
-        if (!BitConverter.IsLittleEndian)
-        {
-            ThrowHelpers.NotSupportedBigEndian();
-        }
-
         // [MethodImpl(MethodImplOptions.AggressiveInlining)]
         // static byte ToUpper1(byte b) => (byte)(b | 0x20 | ~((byte)(b + 0x7f) & 0x80));
 

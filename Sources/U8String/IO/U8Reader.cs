@@ -16,6 +16,8 @@ public enum U8ReadResult
 // TODO: remove all unchecked slicing to make it more resilient to concurrent misuse
 // (as in, it is still UB but it should not be AVEing by reading random memory)
 // TODO: decide whether to seal the class and if not - which methods to make virtual
+// TODO: consider introducing separate pinned array pool - the 8KiB rented here may be
+// unlucky enough to stay pinned in Gen 0 or Gen 2 for a really long time
 public partial class U8Reader<TSource>(
     TSource source, bool disposeSource) : IDisposable
         where TSource : IU8ReaderSource

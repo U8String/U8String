@@ -9,8 +9,8 @@ namespace U8.InteropServices;
 // TODO: Double-check that the flow of get pinnable ref -> ConvertToUnmanaged is correct
 [EditorBrowsable(EditorBrowsableState.Advanced)]
 [CustomMarshaller(typeof(U8String), MarshalMode.ManagedToUnmanagedIn, typeof(Raw))]
-[CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8StringMarshalling))]
-public static unsafe class U8StringMarshalling
+[CustomMarshaller(typeof(U8String), MarshalMode.Default, typeof(U8Marshalling))]
+public static unsafe class U8Marshalling
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static U8String ConvertToManaged(byte* unmanaged)
@@ -52,14 +52,17 @@ public static unsafe class U8StringMarshalling
                 return ref Empty;
             }
 
-            return ref NullTerminate(managed);
+            return ref NullTerminate(ref managed.UnsafeRef, managed.Length);
 
-            static ref byte NullTerminate(U8String managed)
+            static ref byte NullTerminate(ref byte src, int length)
             {
-                ref var ptr = ref new byte[(nint)(uint)(managed.Length + 1)].AsRef();
+                ref var dst = ref new byte[(nint)(uint)(length + 1)].AsRef();
 
-                managed.UnsafeSpan.CopyToUnsafe(ref ptr);
-                return ref ptr;
+                MemoryMarshal
+                    .CreateReadOnlySpan(ref src, length)
+                    .CopyToUnsafe(ref dst);
+
+                return ref dst;
             }
         }
     }
@@ -149,7 +152,7 @@ public static unsafe class U8StringMarshalling
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public static ref readonly byte GetPinnableReference(U8String managed)
         {
-            return ref managed.GetPinnableReference();
+            return ref managed.DangerousRef;
         }
     }
 }

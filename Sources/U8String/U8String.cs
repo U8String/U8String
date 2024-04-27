@@ -34,7 +34,7 @@ namespace U8;
 [DebuggerDisplay("{DebuggerDisplay()}")]
 [JsonConverter(typeof(U8StringJsonConverter))]
 [CollectionBuilder(typeof(U8String), nameof(Create))]
-[NativeMarshalling(typeof(U8StringMarshalling))]
+[NativeMarshalling(typeof(U8Marshalling))]
 public readonly partial struct U8String :
     IEqualityOperators<U8String, U8String, bool>,
     IAdditionOperators<U8String, U8String, U8String>,
@@ -161,9 +161,10 @@ public readonly partial struct U8String :
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get
         {
-            if (!IsEmpty)
+            var (source, offset, length) = this;
+            if (source != null)
             {
-                return (int)(uint)U8Searching.CountRunes(ref UnsafeRef, (uint)Length);
+                return (int)(uint)U8Searching.CountRunes(ref source.AsRef(offset), (uint)length);
             }
 
             return 0;
