@@ -4,14 +4,11 @@ using System.Runtime.InteropServices.Marshalling;
 
 using U8.InteropServices;
 
-var text = u8($"Today is {DateTime.Now:yyyy-MM-dd}.");
-
+var text = u8("Hello from C#!");
 Interop.Print(text, text.Length);
 Interop.PrintNullTerminated(text);
 
-var rcountCsharp = text.RuneCount;
-var rcountRust = (int)Interop.CountRunes(text, text.Length);
-if (rcountCsharp != rcountRust)
+if (Interop.CountRunes(text, text.Length) != text.RuneCount)
     throw new InvalidOperationException("Rune count mismatch.");
 
 var fromRust = Interop.GetString();
@@ -30,7 +27,7 @@ static unsafe partial class Interop
 
     [SuppressGCTransition]
     [LibraryImport("rust", EntryPoint = "count_runes")]
-    public static partial nuint CountRunes(U8String text, nint length);
+    public static partial nint CountRunes(U8String text, nint length);
 
     [SuppressGCTransition]
     [LibraryImport("rust", EntryPoint = "get_str")]
