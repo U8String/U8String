@@ -31,7 +31,7 @@
 
     <NativeLibrary Include="userenv.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
     <NativeLibrary Include="$(MSBuildThisFileDirectory)..\Rust\target\release\rust.lib" Condition="$(RuntimeIdentifier.StartsWith('win'))" />
-    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\Rust\target\release\rust.a" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
+    <NativeLibrary Include="$(MSBuildThisFileDirectory)..\Rust\target\release\librust.a" Condition="!$(RuntimeIdentifier.StartsWith('win'))" />
   </ItemGroup>
 
 </Project>
