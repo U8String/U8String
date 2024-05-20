@@ -18,26 +18,45 @@ public static class U8Enum
     {
         internal static readonly T[] Values = Enum.GetValues<T>();
 
-        internal static readonly U8String[] Names = Values
-            .Zip(Enum.GetNames<T>())
-            .Select(GetAndCacheNameBytes)
-            .Select(bytes => new U8String(bytes, 0, bytes.Length - 1))
-            .ToArray();
+        internal static readonly U8String[] Names = GetNames();
 
         internal static readonly bool IsContiguousFromZero = CheckContiguousFromZero();
 
         internal static readonly FrozenDictionary<T, ByteArray> NameLookup =
-            Values.Zip(Names, (v, n) => KeyValuePair.Create(v, new ByteArray(n._value!))).ToFrozenDictionary();
+            Zip(Values, Names, (v, n) => KeyValuePair.Create(v, new ByteArray(n._value!))).ToFrozenDictionary();
 
         internal static readonly FrozenDictionary<U8String, T> ValueLookup =
-            Values.Zip(Names, (v, n) => KeyValuePair.Create(n, v)).ToFrozenDictionary();
+            Zip(Values, Names, (v, n) => KeyValuePair.Create(n, v)).ToFrozenDictionary();
 
         internal static readonly FrozenDictionary<U8String, T> CaseInsensitiveValueLookup =
             ValueLookup.ToFrozenDictionary(U8Comparison.AsciiIgnoreCase);
 
-        static byte[] GetAndCacheNameBytes((T, string) pair)
+        static IEnumerable<U> Zip<T1, T2, U>(T1[] first, T2[] second, Func<T1, T2, U> selector)
         {
-            var (value, name) = pair;
+            var length = Math.Min(first.Length, second.Length);
+            for (var i = 0; i < length; i++)
+            {
+                yield return selector(first[i], second[i]);
+            }
+        }
+
+        static U8String[] GetNames()
+        {
+            var values = Values;
+            var namesUtf16 = Enum.GetNames<T>();
+            var names = new U8String[values.Length];
+
+            for (var i = 0; i < values.Length; i++)
+            {
+                var nameBytes = GetAndCacheNameBytes(values[i], namesUtf16[i]);
+                names[i] = new U8String(nameBytes, 0, nameBytes.Length - 1);
+            }
+
+            return names;
+        }
+
+        static byte[] GetAndCacheNameBytes(T value, string name)
+        {
             var length = Encoding.UTF8.GetByteCount(name);
             var bytes = GC.AllocateArray<byte>(length + 1, pinned: true);
             if (bytes.Length is 1)
