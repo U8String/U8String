@@ -1,15 +1,29 @@
 using System.Collections;
-using System.Diagnostics;
+using System.Text;
 
 using U8.Primitives;
 
 namespace U8.Prototypes;
 
-readonly record struct Match(int offset, int length)
+readonly struct Match(int offset, int length)
 {
     public bool IsFound => Offset >= 0;
     public readonly int Offset = offset;
     public readonly int Length = length;
+
+    public static implicit operator Range(Match match) =>
+        match.IsFound ? new(match.Offset, match.Length) : default;
+}
+
+readonly struct SegmentMatch(
+    int segmentOffset,
+    int segmentLength,
+    int remainderOffset)
+{
+    public bool IsFound => SegmentLength >= 0;
+    public readonly int SegmentOffset = segmentOffset;
+    public readonly int SegmentLength = segmentLength;
+    public readonly int RemainderOffset = remainderOffset;
 }
 
 readonly struct Split<T> : IEnumerable<U8String>
@@ -47,18 +61,38 @@ readonly struct Split<T> : IEnumerable<U8String>
             _remainder = source._inner;
         }
 
-        public readonly U8String Current => new(_bytes, _current);
+        public readonly U8String Current
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get => new(_bytes, _current);
+        }
 
-
+        [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
         {
-            var remainder = _remainder;
-            if (remainder.Length > 0)
+            var source = _remainder;
+            if (source.Length > 0)
             {
-                (_current, _remainder) = _pattern
-                    .FindSegment(_bytes!.SliceUnsafe(remainder.Offset, remainder.Length))
-                    .AsRangePair(remainder.Offset);
+                var match = _pattern.FindSegment(
+                    _bytes!.SliceUnsafe(source.Offset, source.Length));
+
+                var current = new U8Range(
+                    source.Offset + match.SegmentOffset,
+                    match.SegmentLength);
+
+                var remainder = new U8Range(
+                    source.Offset + match.RemainderOffset,
+                    source.Length - match.RemainderOffset);
+
+                if (!match.IsFound)
+                {
+                    current = source;
+                    remainder = default;
+                }
+
+                (_current, _remainder) = (current, remainder);
+
                 return true;
             }
 
@@ -71,18 +105,19 @@ readonly struct Split<T> : IEnumerable<U8String>
     }
 }
 
-interface ISearcher
+interface IPattern
 {
     Match Find(ReadOnlySpan<byte> source);
     Match FindLast(ReadOnlySpan<byte> source);
 
-    (Match Segment, int RemainderOffset) FindSegment(ReadOnlySpan<byte> source);
-    (Match Segment, int RemainderOffset) FindLastSegment(ReadOnlySpan<byte> source);
+    SegmentMatch FindSegment(ReadOnlySpan<byte> source);
+    SegmentMatch FindLastSegment(ReadOnlySpan<byte> source);
 
     // (U8Range Segment, U8Range Remainder) FindSegment(U8Source source, U8Range slice);
 }
 
-readonly record struct ByteSearcher(byte value) : ISearcher
+[SkipLocalsInit]
+readonly struct BytePattern(byte value) : IPattern
 {
     public Match Find(ReadOnlySpan<byte> source)
     {
@@ -95,12 +130,13 @@ readonly record struct ByteSearcher(byte value) : ISearcher
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (Match Segment, Match Remainder) FindSegment(ReadOnlySpan<byte> source)
+    public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
     {
         var index = source.IndexOf(value);
-        return index >= 0
-            ? (new(0, index), new(index + 1, source.Length - index - 1))
-            : (new(0, source.Length), default);
+        return new(
+            segmentOffset: 0,
+            segmentLength: index,
+            remainderOffset: index + 1);
     }
 
     // public (U8Range Segment, U8Range Remainder) FindSegment(U8Source source, U8Range slice)
@@ -122,13 +158,14 @@ readonly record struct ByteSearcher(byte value) : ISearcher
     //     return (slice, remainder);
     // }
 
-    public (Match Segment, Match Remainder) FindLastSegment(ReadOnlySpan<byte> source)
+    public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
     {
         throw new NotImplementedException();
     }
 }
 
-readonly ref struct SpanSearcher(ReadOnlySpan<byte> value) // : ISearcher
+[SkipLocalsInit]
+readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
 {
     readonly ReadOnlySpan<byte> value = value;
 
@@ -143,12 +180,13 @@ readonly ref struct SpanSearcher(ReadOnlySpan<byte> value) // : ISearcher
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (Match Segment, int RemainderOffset) FindSegment(ReadOnlySpan<byte> source)
+    public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
     {
         var index = source.IndexOf(value);
-        return index >= 0
-            ? (new(0, index), index + 1)
-            : (new(0, source.Length), default);
+        return new(
+            segmentOffset: 0,
+            segmentLength: index,
+            remainderOffset: index + value.Length);
     }
 
     // public (U8Range Segment, U8Range Remainder) FindSegment(U8Source source, U8Range slice)
@@ -176,10 +214,11 @@ readonly ref struct SpanSearcher(ReadOnlySpan<byte> value) // : ISearcher
     }
 }
 
+[SkipLocalsInit]
 static class SearcherExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (Match Segment, Match Remainder) FindSegment<T>(
+    public static SegmentMatch FindSegment<T>(
         this T pattern, ReadOnlySpan<byte> source)
         where T : notnull
     {
@@ -187,30 +226,44 @@ static class SearcherExtensions
         {
             byte b => FindByte(source, b),
             char c => FindChar(source, c),
-            _ => ((ISearcher)pattern).FindSegment(source)
+            Rune r => FindRune(source, r),
+            U8String s => FindString(source, s),
+            IPattern => ((IPattern)pattern).FindSegment(source),
+            _ => throw new NotSupportedException(),
         };
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static (Match Segment, Match Remainder) FindByte(ReadOnlySpan<byte> source, byte b)
+        static SegmentMatch FindByte(ReadOnlySpan<byte> source, byte b)
         {
-            return new ByteSearcher(b).FindSegment(source);
+            return new BytePattern(b).FindSegment(source);
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static (Match Segment, Match Remainder) FindChar(ReadOnlySpan<byte> source, char c)
+        static SegmentMatch FindChar(ReadOnlySpan<byte> source, char c)
         {
             return c <= 0x7F
-                ? new ByteSearcher((byte)c).FindSegment(source)
-                : new SpanSearcher(c <= 0x7FF ? c.AsTwoBytes() : c.AsThreeBytes()).FindSegment(source);
+                ? new BytePattern((byte)c).FindSegment(source)
+                : new SpanPattern(c <= 0x7FF ? c.AsTwoBytes() : c.AsThreeBytes()).FindSegment(source);
         }
-    }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static (U8Range Segment, U8Range Remainder) AsRangePair(
-        this (Match Segment, Match Remainder) pair, int offset)
-    {
-        return (
-            new(offset, pair.Segment.Length),
-            new(offset + pair.Remainder.Offset, pair.Remainder.Length));
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static SegmentMatch FindRune(ReadOnlySpan<byte> source, Rune r)
+        {
+            var value = r.Value;
+            return value <= 0x7F
+                ? new BytePattern((byte)value).FindSegment(source)
+                : new SpanPattern(value switch
+                {
+                    <= 0x7FF => r.AsTwoBytes(),
+                    <= 0xFFFF => r.AsThreeBytes(),
+                    _ => r.AsFourBytes()
+                }).FindSegment(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static SegmentMatch FindString(ReadOnlySpan<byte> source, U8String s)
+        {
+            return new SpanPattern(s).FindSegment(source);
+        }
     }
 }
