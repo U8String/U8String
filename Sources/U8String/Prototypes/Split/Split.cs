@@ -76,8 +76,8 @@ interface ISearcher
     Match Find(ReadOnlySpan<byte> source);
     Match FindLast(ReadOnlySpan<byte> source);
 
-    (Match Segment, Match Remainder) FindSegment(ReadOnlySpan<byte> source);
-    (Match Segment, Match Remainder) FindLastSegment(ReadOnlySpan<byte> source);
+    (Match Segment, int RemainderOffset) FindSegment(ReadOnlySpan<byte> source);
+    (Match Segment, int RemainderOffset) FindLastSegment(ReadOnlySpan<byte> source);
 
     // (U8Range Segment, U8Range Remainder) FindSegment(U8Source source, U8Range slice);
 }
@@ -143,11 +143,11 @@ readonly ref struct SpanSearcher(ReadOnlySpan<byte> value) // : ISearcher
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public (Match Segment, Match Remainder) FindSegment(ReadOnlySpan<byte> source)
+    public (Match Segment, int RemainderOffset) FindSegment(ReadOnlySpan<byte> source)
     {
         var index = source.IndexOf(value);
         return index >= 0
-            ? (new(0, index), new(index + 1, source.Length - index - 1))
+            ? (new(0, index), index + 1)
             : (new(0, source.Length), default);
     }
 
