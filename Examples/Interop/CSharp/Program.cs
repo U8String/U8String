@@ -9,7 +9,7 @@ Interop.Print(text, text.Length);
 Interop.PrintNullTerminated(text);
 
 if (Interop.CountRunes(text, text.Length) != text.RuneCount)
-    throw new InvalidOperationException("Rune count mismatch.");
+    U8Console.WriteLine(u8("Rune count mismatch!"));
 
 var fromRust = Interop.GetString();
 U8Console.WriteLine(fromRust);

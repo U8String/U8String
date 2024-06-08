@@ -245,4 +245,12 @@ internal static class UnsafeExtensions
         return MemoryMarshal.CreateReadOnlySpan(
             ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset), length);
     }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void WriteUnchecked(
+        this Span<byte> destination, ReadOnlySpan<byte> source, int offset = 0)
+    {
+        Debug.Assert(destination.Length >= source.Length);
+        source.CopyToUnsafe(ref destination.AsRef(offset));
+    }
 }
