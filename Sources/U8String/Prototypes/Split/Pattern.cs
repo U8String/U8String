@@ -28,7 +28,7 @@ readonly struct SegmentMatch(
 
 static class Pattern
 {
-    public static AnyBytePattern AsciiWhitespace { get; } = new(SearchValues.Create("\t\n\v\f\r "u8));
+    public static ByteLookupPattern AsciiWhitespace { get; } = new(SearchValues.Create("\t\n\v\f\r "u8));
 }
 
 interface IPattern
@@ -101,7 +101,7 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
 }
 
 [SkipLocalsInit]
-readonly struct AnyBytePattern(SearchValues<byte> values) : IPattern
+readonly struct ByteLookupPattern(SearchValues<byte> values) : IPattern
 {
     public Match Find(ReadOnlySpan<byte> source)
     {
