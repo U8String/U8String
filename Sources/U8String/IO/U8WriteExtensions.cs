@@ -58,14 +58,14 @@ public static partial class U8WriteExtensions
     {
         var builder = new PooledU8Builder();
         builder.AppendFormatted(value);
-        builder.AppendBytesInlined(NewLine);
         return destination.WriteDisposeAsync(builder, ct);
     }
 
     static void WriteLineSpan<T>(T destination, ReadOnlySpan<byte> value)
         where T : IWriteable
     {
-        var builder = new InlineU8Builder(value.Length + NewLine.Length);
+        var builder = new InlineU8Builder(
+            value.Length + NewLine.Length, bytesOnly: true);
         builder.AppendBytesUnchecked(value);
         builder.AppendBytesUnchecked(NewLine);
         destination.WriteDispose(ref builder);
@@ -91,7 +91,7 @@ public static partial class U8WriteExtensions
     static ValueTask WriteLineMemoryAsync<T>(T destination, ReadOnlyMemory<byte> value, CancellationToken ct)
         where T : IWriteable
     {
-        var builder = new PooledU8Builder(value.Length + NewLine.Length);
+        var builder = new PooledU8Builder(value.Length + NewLine.Length, bytesOnly: true);
         builder.AppendBytesUnchecked(value.Span);
         builder.AppendBytesUnchecked(NewLine);
         return destination.WriteDisposeAsync(builder, ct);
@@ -140,7 +140,7 @@ public static partial class U8WriteEnumExtensions
         var formatted = value.ToU8String();
         var newline = U8WriteExtensions.NewLine;
 
-        var builder = new InlineU8Builder(formatted.Length + newline.Length);
+        var builder = new InlineU8Builder(formatted.Length + newline.Length, bytesOnly: true);
         builder.AppendBytesUnchecked(formatted);
         builder.AppendBytesUnchecked(newline);
         destination.WriteDispose(ref builder);
@@ -153,7 +153,7 @@ public static partial class U8WriteEnumExtensions
         var formatted = value.ToU8String();
         var newline = U8WriteExtensions.NewLine;
 
-        var builder = new PooledU8Builder(formatted.Length + newline.Length);
+        var builder = new PooledU8Builder(formatted.Length + newline.Length, bytesOnly: true);
         builder.AppendBytesUnchecked(formatted);
         builder.AppendBytesUnchecked(newline);
         return destination.WriteDisposeAsync(builder, ct);

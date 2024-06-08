@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Collections;
 
 using U8.Primitives;
@@ -25,7 +26,12 @@ readonly struct Split<T> : IEnumerable<U8String>
     public struct Enumerator : IEnumerator<U8String>
     {
         readonly byte[]? _bytes;
-        readonly T _pattern;
+
+        [SuppressMessage(
+            "Style",
+            "IDE0044:Add readonly modifier",
+            Justification = "Mutable struct. Roslyn is hard at work to make sure we shoot ourselves in the foot.")]
+        T _pattern;
 
         U8Range _current;
         U8Range _remainder;
@@ -77,8 +83,20 @@ readonly struct Split<T> : IEnumerable<U8String>
             return false;
         }
 
+        [SuppressMessage(
+            "Style",
+            "IDE0251:Make member 'readonly'",
+            Justification = "No. This *cannot* be made readonly." +
+            "_pattern is likely to be a mutable struct if it's disposable!")]
+        public void Dispose()
+        {
+            if (_pattern is IDisposable)
+            {
+                ((IDisposable)_pattern).Dispose();
+            }
+        }
+
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
-        readonly void IDisposable.Dispose() { }
     }
 }
