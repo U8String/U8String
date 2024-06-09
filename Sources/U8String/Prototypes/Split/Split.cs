@@ -5,7 +5,8 @@ using U8.Primitives;
 
 namespace U8.Prototypes;
 
-readonly struct Split<T> : IEnumerable<U8String>
+[SkipLocalsInit]
+readonly struct Split<T> : ICollection<U8String>
     where T : notnull
 {
     readonly U8String _source;
@@ -17,11 +18,44 @@ readonly struct Split<T> : IEnumerable<U8String>
         _pattern = pattern;
     }
 
+    public int Count => _pattern.CountSegments(_source);
+
+    public bool Contains(U8String item)
+    {
+        // TODO: ContainsSegment
+        throw new NotImplementedException();
+    }
+
+    // TODO: Optimize calling convention by moving to a static helper
+    public void CopyTo(Span<U8String> destination)
+    {
+        var index = 0;
+        foreach (var item in this)
+        {
+            destination[index++] = item;
+        }
+    }
+
+    public void CopyTo(Span<U8Range> destination)
+    {
+        var index = 0;
+        foreach (var item in this)
+        {
+            destination[index++] = item.Range;
+        }
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(_source, _pattern);
 
     IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    bool ICollection<U8String>.IsReadOnly => true;
+    void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
+    void ICollection<U8String>.CopyTo(U8String[] array, int arrayIndex) => CopyTo(array.AsSpan(arrayIndex));
+    void ICollection<U8String>.Clear() => throw new NotSupportedException();
+    bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 
     public struct Enumerator : IEnumerator<U8String>
     {
@@ -88,12 +122,13 @@ readonly struct Split<T> : IEnumerable<U8String>
             "IDE0251:Make member 'readonly'",
             Justification = "No. This *cannot* be made readonly." +
             "_pattern is likely to be a mutable struct if it's disposable!")]
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public void Dispose()
         {
-            if (_pattern is IDisposable)
-            {
-                ((IDisposable)_pattern).Dispose();
-            }
+            //if (_pattern is IDisposable)
+            //{
+            //    ((IDisposable)_pattern).Dispose();
+            //}
         }
 
         readonly object IEnumerator.Current => Current;

@@ -2,6 +2,7 @@ using System.Buffers;
 using System.Text;
 
 using U8.Primitives;
+using U8.Shared;
 
 namespace U8.Prototypes;
 
@@ -33,6 +34,12 @@ static class Pattern
 
 interface IPattern
 {
+    // TODO
+    // bool UnsafeSkipBoundsCheck { get; }
+
+    int Count(ReadOnlySpan<byte> source);
+    int CountSegments(ReadOnlySpan<byte> source);
+
     Match Find(ReadOnlySpan<byte> source);
     Match FindLast(ReadOnlySpan<byte> source);
 
@@ -43,6 +50,16 @@ interface IPattern
 [SkipLocalsInit]
 readonly struct BytePattern(byte value) : IPattern
 {
+    public int Count(ReadOnlySpan<byte> source)
+    {
+        return (int)(uint)U8Searching.CountByte(value, ref source.AsRef(), (uint)source.Length);
+    }
+
+    public int CountSegments(ReadOnlySpan<byte> source)
+    {
+        return (int)(uint)U8Searching.CountByte(value, ref source.AsRef(), (uint)source.Length) + 1;
+    }
+
     public Match Find(ReadOnlySpan<byte> source)
     {
         return new(source.IndexOf(value), 1);
@@ -74,6 +91,16 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
 {
     readonly ReadOnlySpan<byte> value = value;
 
+    public int Count(ReadOnlySpan<byte> source)
+    {
+        return source.Count(value);
+    }
+
+    public int CountSegments(ReadOnlySpan<byte> source)
+    {
+        return source.Count(value) + 1;
+    }
+
     public Match Find(ReadOnlySpan<byte> source)
     {
         return new(source.IndexOf(value), 1);
@@ -103,6 +130,23 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
 [SkipLocalsInit]
 readonly struct ByteLookupPattern(SearchValues<byte> values) : IPattern
 {
+    public int Count(ReadOnlySpan<byte> source)
+    {
+        int index;
+        var count = 0;
+        while ((index = source.IndexOfAny(values)) >= 0)
+        {
+            source = source[(index + 1)..];
+            count++;
+        }
+        return count;
+    }
+
+    public int CountSegments(ReadOnlySpan<byte> source)
+    {
+        return Count(source) + 1;
+    }
+
     public Match Find(ReadOnlySpan<byte> source)
     {
         return new(source.IndexOfAny(values), 1);
@@ -129,8 +173,196 @@ readonly struct ByteLookupPattern(SearchValues<byte> values) : IPattern
 }
 
 [SkipLocalsInit]
+struct InterleavedPattern<T>(T first, T second) : IPattern
+    where T : notnull
+{
+    public int Count(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    public int CountSegments(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Match Find(ReadOnlySpan<byte> source)
+    {
+        var match = first.Find(source);
+        (first, second) = (second, first);
+        return match;
+    }
+
+    public Match FindLast(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
+    {
+        var match = first.FindSegment(source);
+        (first, second) = (second, first);
+        return match;
+    }
+
+    public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+[SkipLocalsInit]
 static class PatternExtensions
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int Count<T>(
+        this T pattern, ReadOnlySpan<byte> source)
+        where T : notnull
+    {
+        return pattern switch
+        {
+            byte b => CountByte(b, source),
+            char c => CountChar(c, source),
+            Rune r => CountRune(r, source),
+            U8String s => CountString(s, source),
+            IPattern p => p.Count(source),
+            _ => throw new NotSupportedException(),
+        };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountByte(byte value, ReadOnlySpan<byte> source)
+        {
+            return new BytePattern(value).Count(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountChar(char value, ReadOnlySpan<byte> source)
+        {
+            return value <= 0x7F
+                ? new BytePattern((byte)value).Count(source)
+                : new SpanPattern(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes()).Count(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountRune(Rune value, ReadOnlySpan<byte> source)
+        {
+            return value.Value <= 0x7F
+                ? new BytePattern((byte)value.Value).Count(source)
+                : new SpanPattern(value.Value switch
+                {
+                    <= 0x7FF => value.AsTwoBytes(),
+                    <= 0xFFFF => value.AsThreeBytes(),
+                    _ => value.AsFourBytes()
+                }).Count(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountString(U8String value, ReadOnlySpan<byte> source)
+        {
+            return new SpanPattern(value).Count(source);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static int CountSegments<T>(
+        this T pattern, ReadOnlySpan<byte> source)
+        where T : notnull
+    {
+        return pattern switch
+        {
+            byte b => CountByte(b, source),
+            char c => CountChar(c, source),
+            Rune r => CountRune(r, source),
+            U8String s => CountString(s, source),
+            IPattern p => p.CountSegments(source),
+            _ => throw new NotSupportedException(),
+        };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountByte(byte value, ReadOnlySpan<byte> source)
+        {
+            return new BytePattern(value).CountSegments(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountChar(char value, ReadOnlySpan<byte> source)
+        {
+            return value <= 0x7F
+                ? new BytePattern((byte)value).CountSegments(source)
+                : new SpanPattern(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes()).CountSegments(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountRune(Rune value, ReadOnlySpan<byte> source)
+        {
+            return value.Value <= 0x7F
+                ? new BytePattern((byte)value.Value).CountSegments(source)
+                : new SpanPattern(value.Value switch
+                {
+                    <= 0x7FF => value.AsTwoBytes(),
+                    <= 0xFFFF => value.AsThreeBytes(),
+                    _ => value.AsFourBytes()
+                }).CountSegments(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static int CountString(U8String value, ReadOnlySpan<byte> source)
+        {
+            return new SpanPattern(value).CountSegments(source);
+        }
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Match Find<T>(
+        this T pattern, ReadOnlySpan<byte> source)
+        where T : notnull
+    {
+        return pattern switch
+        {
+            byte b => FindByte(b, source),
+            char c => FindChar(c, source),
+            Rune r => FindRune(r, source),
+            U8String s => FindString(s, source),
+            IPattern p => p.Find(source),
+            _ => throw new NotSupportedException(),
+        };
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Match FindByte(byte value, ReadOnlySpan<byte> source)
+        {
+            return new(source.IndexOf(value), 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Match FindChar(char value, ReadOnlySpan<byte> source)
+        {
+            return value <= 0x7F
+                ? new BytePattern((byte)value).Find(source)
+                : new SpanPattern(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes()).Find(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Match FindRune(Rune value, ReadOnlySpan<byte> source)
+        {
+            return value.Value <= 0x7F
+                ? new BytePattern((byte)value.Value).Find(source)
+                : new SpanPattern(value.Value switch
+                {
+                    <= 0x7FF => value.AsTwoBytes(),
+                    <= 0xFFFF => value.AsThreeBytes(),
+                    _ => value.AsFourBytes()
+                }).Find(source);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        static Match FindString(U8String value, ReadOnlySpan<byte> source)
+        {
+            return new SpanPattern(value).Find(source);
+        }
+    }
+
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static SegmentMatch FindSegment<T>(
         this T pattern, ReadOnlySpan<byte> source)
