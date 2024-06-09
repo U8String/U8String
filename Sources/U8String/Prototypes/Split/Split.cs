@@ -118,6 +118,11 @@ readonly struct Split<T> : ICollection<U8String>
                     remainder = default;
                 }
 
+                if (_pattern is IStatefulPattern<T>)
+                {
+                    _pattern = ((IStatefulPattern<T>)_pattern).Advance();
+                }
+
                 (_current, _remainder) = (current, remainder);
 
                 return true;

@@ -47,6 +47,11 @@ interface IPattern
     SegmentMatch FindLastSegment(ReadOnlySpan<byte> source);
 }
 
+interface IStatefulPattern<TSelf> : IPattern
+{
+    TSelf Advance();
+}
+
 [SkipLocalsInit]
 readonly struct BytePattern(byte value) : IPattern
 {
@@ -120,7 +125,7 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
             segmentLength: index,
             remainderOffset: index + value.Length);
     }
-    
+
     public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
     {
         throw new NotImplementedException();
@@ -173,9 +178,23 @@ readonly struct ByteLookupPattern(SearchValues<byte> values) : IPattern
 }
 
 [SkipLocalsInit]
-struct InterleavedPattern<T>(T first, T second) : IPattern
+readonly struct InterleavedPattern<T> : IStatefulPattern<InterleavedPattern<T>>
     where T : notnull
 {
+    readonly T _first;
+    readonly T _second;
+
+    internal InterleavedPattern(T first, T second)
+    {
+        _first = first;
+        _second = second;
+    }
+
+    public InterleavedPattern<T> Advance()
+    {
+        return new(_second, _first);
+    }
+
     public int Count(ReadOnlySpan<byte> source)
     {
         throw new NotImplementedException();
@@ -189,9 +208,7 @@ struct InterleavedPattern<T>(T first, T second) : IPattern
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Match Find(ReadOnlySpan<byte> source)
     {
-        var match = first.Find(source);
-        (first, second) = (second, first);
-        return match;
+        return _first.Find(source);
     }
 
     public Match FindLast(ReadOnlySpan<byte> source)
@@ -202,9 +219,7 @@ struct InterleavedPattern<T>(T first, T second) : IPattern
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
     {
-        var match = first.FindSegment(source);
-        (first, second) = (second, first);
-        return match;
+        return _first.FindSegment(source);
     }
 
     public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)

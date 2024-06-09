@@ -15,7 +15,7 @@ using var sigint = PosixSignalRegistration.Create(
 var channels = args.Select(U8String.Create).ToArray();
 if (channels is [])
 {
-    U8Console.WriteLine("Usage: <channel1> <channel2>..."u8);
+    U8Console.WriteLine(u8("Usage: <channel1> <channel2>..."));
     return;
 }
 
@@ -34,7 +34,7 @@ foreach (var channel in channels)
 {
     await socket.SendAsync($"JOIN #{channel}\r\n", ct: cts.Token);
 }
-U8Console.WriteLine("Connected! To exit, press Ctrl+C."u8);
+U8Console.WriteLine(u8("Connected! To exit, press Ctrl+C."));
 
 try
 {
@@ -58,4 +58,4 @@ foreach (var channel in channels)
     await socket.SendAsync($"PART #{channel}\r\n");
 }
 await socket.DisconnectAsync(false);
-U8Console.WriteLine("Goodbye!"u8);
+U8Console.WriteLine(u8("Goodbye!"));
