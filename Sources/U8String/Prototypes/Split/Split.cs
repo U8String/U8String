@@ -5,6 +5,7 @@ using U8.Primitives;
 
 namespace U8.Prototypes;
 
+// TODO: Flatten certain impl. bits to reduce inlining and locals pressure
 [SkipLocalsInit]
 readonly struct Split<T> : ICollection<U8String>
     where T : notnull
@@ -18,7 +19,15 @@ readonly struct Split<T> : ICollection<U8String>
         _pattern = pattern;
     }
 
-    public int Count => _pattern.CountSegments(_source);
+    public int Count
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get
+        {
+            var source = _source;
+            return !source.IsEmpty ? _pattern.CountSegments(source.UnsafeSpan) : 1;
+        }
+    }
 
     public bool Contains(U8String item)
     {
