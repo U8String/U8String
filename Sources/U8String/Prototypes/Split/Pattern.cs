@@ -49,27 +49,31 @@ interface IPattern
 
 interface IStatefulPattern<TSelf> : IPattern
 {
-    TSelf Advance();
+    TSelf AdvanceSegment();
 }
 
 [SkipLocalsInit]
 readonly struct BytePattern(byte value) : IPattern
 {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Count(ReadOnlySpan<byte> source)
     {
         return (int)(uint)U8Searching.CountByte(value, ref source.AsRef(), (uint)source.Length);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int CountSegments(ReadOnlySpan<byte> source)
     {
         return (int)(uint)U8Searching.CountByte(value, ref source.AsRef(), (uint)source.Length) + 1;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Match Find(ReadOnlySpan<byte> source)
     {
         return new(source.IndexOf(value), 1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Match FindLast(ReadOnlySpan<byte> source)
     {
         return new(source.LastIndexOf(value), 1);
@@ -96,21 +100,27 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
 {
     readonly ReadOnlySpan<byte> value = value;
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Count(ReadOnlySpan<byte> source)
     {
-        return source.Count(value);
+        return value.Length is 1
+            ? (int)(uint)U8Searching.CountByte(value[0], ref source.AsRef(), (uint)source.Length)
+            : source.Count(value);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int CountSegments(ReadOnlySpan<byte> source)
     {
-        return source.Count(value) + 1;
+        return Count(source) + 1;
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Match Find(ReadOnlySpan<byte> source)
     {
         return new(source.IndexOf(value), 1);
     }
 
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Match FindLast(ReadOnlySpan<byte> source)
     {
         return new(source.LastIndexOf(value), 1);
@@ -124,6 +134,45 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
             segmentOffset: 0,
             segmentLength: index,
             remainderOffset: index + value.Length);
+    }
+
+    public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+[SkipLocalsInit]
+readonly struct EitherBytePattern(byte first, byte second) : IPattern
+{
+    public int Count(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    public int CountSegments(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public Match Find(ReadOnlySpan<byte> source)
+    {
+        return new(source.IndexOfAny(first, second), 1);
+    }
+
+    public Match FindLast(ReadOnlySpan<byte> source)
+    {
+        return new(source.LastIndexOfAny(first, second), 1);
+    }
+
+    public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
+    {
+        var index = source.IndexOfAny(first, second);
+        return new(
+            segmentOffset: 0,
+            segmentLength: index,
+            remainderOffset: index + 1);
     }
 
     public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
@@ -190,7 +239,7 @@ readonly struct InterleavedPattern<T> : IStatefulPattern<InterleavedPattern<T>>
         _second = second;
     }
 
-    public InterleavedPattern<T> Advance()
+    public InterleavedPattern<T> AdvanceSegment()
     {
         return new(_second, _first);
     }

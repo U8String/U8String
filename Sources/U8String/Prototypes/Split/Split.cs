@@ -2,6 +2,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Collections;
 
 using U8.Primitives;
+using System.Text;
 
 namespace U8.Prototypes;
 
@@ -69,11 +70,6 @@ readonly struct Split<T> : ICollection<U8String>
     public struct Enumerator : IEnumerator<U8String>
     {
         readonly byte[]? _bytes;
-
-        [SuppressMessage(
-            "Style",
-            "IDE0044:Add readonly modifier",
-            Justification = "Mutable struct. Roslyn is hard at work to make sure we shoot ourselves in the foot.")]
         T _pattern;
 
         U8Range _current;
@@ -120,7 +116,7 @@ readonly struct Split<T> : ICollection<U8String>
 
                 if (_pattern is IStatefulPattern<T>)
                 {
-                    _pattern = ((IStatefulPattern<T>)_pattern).Advance();
+                    _pattern = ((IStatefulPattern<T>)_pattern).AdvanceSegment();
                 }
 
                 (_current, _remainder) = (current, remainder);
@@ -147,5 +143,30 @@ readonly struct Split<T> : ICollection<U8String>
 
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
+    }
+}
+
+static class SplitExtensions
+{
+    public static Split<byte> NewSplit(this U8String source, byte pattern)
+    {
+        ThrowHelpers.CheckAscii(pattern);
+        return new(source, pattern);
+    }
+
+    public static Split<char> NewSplit(this U8String source, char pattern)
+    {
+        ThrowHelpers.CheckSurrogate(pattern);
+        return new(source, pattern);
+    }
+
+    public static Split<Rune> NewSplit(this U8String source, Rune pattern)
+    {
+        return new(source, pattern);
+    }
+
+    public static Split<U8String> NewSplit(this U8String source, U8String pattern)
+    {
+        return new(source, pattern);
     }
 }
