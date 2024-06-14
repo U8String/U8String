@@ -57,7 +57,11 @@ readonly struct Split<T> : ICollection<U8String>
         return index + 1;
     }
 
-    // static int CopyToCore
+    // static int CopyToCore(ReadOnlySpan<byte> source, T pattern, Span<U8String> destination)
+    // {
+    //     var index = 0;
+    //     var enumerator = new Split<T>.Enumerator(new U8String(source), pattern);
+    // }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(_source, _pattern);
@@ -149,6 +153,13 @@ readonly struct Split<T> : ICollection<U8String>
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
     }
 }
+
+// [SkipLocalsInit]
+// readonly struct RefSplit<T> // : ICollection<U8String>
+//     where T : notnull
+// {
+//     readonly ReadOnlySpan<byte> _source;
+// }
 
 static class SplitExtensions
 {
