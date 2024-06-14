@@ -37,23 +37,27 @@ readonly struct Split<T> : ICollection<U8String>
     }
 
     // TODO: Optimize calling convention by moving to a static helper
-    public void CopyTo(Span<U8String> destination)
+    public int CopyTo(Span<U8String> destination)
     {
         var index = 0;
         foreach (var item in this)
         {
             destination[index++] = item;
         }
+        return index + 1;
     }
 
-    public void CopyTo(Span<U8Range> destination)
+    public int CopyTo(Span<U8Range> destination)
     {
         var index = 0;
         foreach (var item in this)
         {
             destination[index++] = item.Range;
         }
+        return index + 1;
     }
+
+    // static int CopyToCore
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(_source, _pattern);
@@ -168,5 +172,17 @@ static class SplitExtensions
     public static Split<U8String> NewSplit(this U8String source, U8String pattern)
     {
         return new(source, pattern);
+    }
+
+    public static Split<InterleavedPattern<byte>> NewSplitAny(this U8String source, byte a, byte b)
+    {
+        ThrowHelpers.CheckAscii(a);
+        ThrowHelpers.CheckAscii(b);
+        return new(source, new(a, b));
+    }
+
+    public static Split<InterleavedPattern<U8String>> NewSplitAny(this U8String source, U8String a, U8String b)
+    {
+        return new(source, new(a, b));
     }
 }
