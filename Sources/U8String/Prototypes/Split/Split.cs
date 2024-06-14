@@ -57,12 +57,6 @@ readonly struct Split<T> : ICollection<U8String>
         return index + 1;
     }
 
-    // static int CopyToCore(ReadOnlySpan<byte> source, T pattern, Span<U8String> destination)
-    // {
-    //     var index = 0;
-    //     var enumerator = new Split<T>.Enumerator(new U8String(source), pattern);
-    // }
-
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(_source, _pattern);
 
@@ -78,7 +72,7 @@ readonly struct Split<T> : ICollection<U8String>
     public struct Enumerator : IEnumerator<U8String>
     {
         readonly byte[]? _bytes;
-        T _pattern;
+        readonly T _pattern;
 
         U8Range _current;
         U8Range _remainder;
@@ -98,6 +92,8 @@ readonly struct Split<T> : ICollection<U8String>
             get => new(_bytes, _current);
         }
 
+        // FIXME: This currently does not return true once for
+        // empty sources, which is inconsistent with other logic.
         [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext()
@@ -120,11 +116,6 @@ readonly struct Split<T> : ICollection<U8String>
                 {
                     current = source;
                     remainder = default;
-                }
-
-                if (_pattern is IStatefulPattern<T>)
-                {
-                    _pattern = ((IStatefulPattern<T>)_pattern).AdvanceSegment();
                 }
 
                 (_current, _remainder) = (current, remainder);
@@ -154,13 +145,6 @@ readonly struct Split<T> : ICollection<U8String>
     }
 }
 
-// [SkipLocalsInit]
-// readonly struct RefSplit<T> // : ICollection<U8String>
-//     where T : notnull
-// {
-//     readonly ReadOnlySpan<byte> _source;
-// }
-
 static class SplitExtensions
 {
     public static Split<byte> NewSplit(this U8String source, byte pattern)
@@ -185,15 +169,10 @@ static class SplitExtensions
         return new(source, pattern);
     }
 
-    public static Split<InterleavedPattern<byte>> NewSplitAny(this U8String source, byte a, byte b)
+    public static Split<EitherBytePattern> NewSplitAny(this U8String source, byte a, byte b)
     {
         ThrowHelpers.CheckAscii(a);
         ThrowHelpers.CheckAscii(b);
-        return new(source, new(a, b));
-    }
-
-    public static Split<InterleavedPattern<U8String>> NewSplitAny(this U8String source, U8String a, U8String b)
-    {
         return new(source, new(a, b));
     }
 }

@@ -52,6 +52,11 @@ interface IStatefulPattern<TSelf> : IPattern
     TSelf AdvanceSegment();
 }
 
+interface INestedPattern<TInner> : IPattern
+{
+    TInner Inner { get; set; }
+}
+
 [SkipLocalsInit]
 readonly struct BytePattern(byte value) : IPattern
 {
@@ -227,21 +232,14 @@ readonly struct ByteLookupPattern(SearchValues<byte> values) : IPattern
 }
 
 [SkipLocalsInit]
-readonly struct InterleavedPattern<T> : IStatefulPattern<InterleavedPattern<T>>
+readonly struct TrimSelector<T> : IPattern
     where T : notnull
 {
-    readonly T _first;
-    readonly T _second;
+    readonly T _inner;
 
-    internal InterleavedPattern(T first, T second)
+    internal TrimSelector(T inner)
     {
-        _first = first;
-        _second = second;
-    }
-
-    public InterleavedPattern<T> AdvanceSegment()
-    {
-        return new(_second, _first);
+        _inner = inner;
     }
 
     public int Count(ReadOnlySpan<byte> source)
@@ -254,10 +252,9 @@ readonly struct InterleavedPattern<T> : IStatefulPattern<InterleavedPattern<T>>
         throw new NotImplementedException();
     }
 
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Match Find(ReadOnlySpan<byte> source)
     {
-        return _first.Find(source);
+        throw new NotImplementedException();
     }
 
     public Match FindLast(ReadOnlySpan<byte> source)
@@ -268,7 +265,66 @@ readonly struct InterleavedPattern<T> : IStatefulPattern<InterleavedPattern<T>>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
     {
-        return _first.FindSegment(source);
+        var match = _inner.FindSegment(source);
+        // if (match.IsFound)
+        // {
+        //     var segment = source.SliceUnsafe(match.SegmentOffset, match.SegmentLength);
+        //     var trimmed = segment.TrimStart();
+        //     var offset = match.SegmentOffset + (segment.Length - trimmed.Length);
+        //     return new SegmentMatch(offset, trimmed.Length, match.RemainderOffset);
+        // }
+
+        return match;
+    }
+
+    public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+}
+
+[SkipLocalsInit]
+readonly struct FilterEmptyPattern<T> : IPattern
+    where T : notnull
+{
+    readonly T _inner;
+
+    internal FilterEmptyPattern(T inner)
+    {
+        _inner = inner;
+    }
+
+    public int Count(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    public int CountSegments(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Match Find(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    public Match FindLast(ReadOnlySpan<byte> source)
+    {
+        throw new NotImplementedException();
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public SegmentMatch FindSegment(ReadOnlySpan<byte> source)
+    {
+        SegmentMatch match;
+        do
+        {
+            match = _inner.FindSegment(source);
+            source = source.SliceUnsafe(match.RemainderOffset);
+        } while (match.IsFound && match.SegmentLength == 0);
+
+        return match;
     }
 
     public SegmentMatch FindLastSegment(ReadOnlySpan<byte> source)
