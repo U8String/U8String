@@ -608,6 +608,76 @@ internal static class U8Searching
         return count;
     }
 
+    internal static nuint CountEitherByte(byte a, byte b, ref byte src, nuint length)
+    {
+        var count = (nuint)0;
+        if (length is 0) goto Empty;
+
+        ref var end = ref src.Add(length);
+        if (Vector256.IsHardwareAccelerated &&
+            length >= (nuint)Vector512<byte>.Count)
+        {
+            var needle1 = Vector512.Create(a);
+            var needle2 = Vector512.Create(b);
+            ref var lastvec = ref end.Substract(Vector512<byte>.Count);
+            do
+            {
+                var chunk = Vector512.LoadUnsafe(ref src);
+                var matches1 = chunk.Eq(needle1);
+                var matches2 = chunk.Eq(needle2);
+                count += (matches1 | matches2).GetMatchCount();
+
+                src = ref src.Add(Vector512<byte>.Count);
+            } while (src.LessThanOrEqual(ref lastvec));
+        }
+
+        // All platforms targeted by .NET 8+ are supposed to support 128b SIMD.
+        // If this is not the case, please file an issue (it will work but slowly).
+        if (src.Add(Vector256<byte>.Count).LessThanOrEqual(ref end))
+        {
+            var needle1 = Vector256.Create(a);
+            var needle2 = Vector256.Create(b);
+            ref var lastvec = ref end.Substract(Vector256<byte>.Count);
+            do
+            {
+                var chunk = Vector256.LoadUnsafe(ref src);
+                var matches1 = chunk.Eq(needle1);
+                var matches2 = chunk.Eq(needle2);
+                count += (matches1 | matches2).GetMatchCount();
+
+                src = ref src.Add(Vector256<byte>.Count);
+
+                // Skip this loop if we took the V512 path above
+                // since we can only do a single iteration at most.
+            } while (!Vector256.IsHardwareAccelerated && src.LessThanOrEqual(ref lastvec));
+        }
+
+        if (src.Add(Vector128<byte>.Count).LessThanOrEqual(ref end))
+        {
+            var needle1 = Vector128.Create(a);
+            var needle2 = Vector128.Create(b);
+            var chunk = Vector128.LoadUnsafe(ref src);
+            var matches1 = chunk.Eq(needle1);
+            var matches2 = chunk.Eq(needle2);
+            count += (matches1 | matches2).GetMatchCount();
+
+            src = ref src.Add(Vector128<byte>.Count);
+        }
+
+        while (src.LessThan(ref end))
+        {
+            // Branchless: x86_64: cmp + setge; arm64: cmn + cset
+            if (src == a | src == b)
+            {
+                count++;
+            }
+            src = ref src.Add(1);
+        }
+
+    Empty:
+        return count;
+    }
+
     // Bypass DynamicPGO because it sometimes moves VectorXXX.Create
     // into the loops which is very much not what we want. In this case
     // PGO wins are minor compared to regressions for some of its decisions.

@@ -7,6 +7,7 @@ namespace U8;
 
 internal static class UnsafeExtensions
 {
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this Span<T> value)
         where T : struct
@@ -30,6 +31,7 @@ internal static class UnsafeExtensions
         return ref Unsafe.Add(ref MemoryMarshal.GetReference(value), (nint)(uint)offset);
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static ref T AsRef<T>(this T[] value)
         where T : struct
@@ -129,6 +131,7 @@ internal static class UnsafeExtensions
         return Unsafe.As<IEnumerable<U>>(value);
     }
 
+    [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void CopyToUnsafe(this ReadOnlySpan<byte> source, ref byte destination)
     {

@@ -38,27 +38,21 @@ interface IPattern
     // bool UnsafeSkipBoundsCheck { get; }
 
     int Count(ReadOnlySpan<byte> source);
-    int CountSegments(ReadOnlySpan<byte> source);
-
     Match Find(ReadOnlySpan<byte> source);
     Match FindLast(ReadOnlySpan<byte> source);
+}
 
+interface ISplitter
+{
+    // TODO
+    // bool UnsafeSkipBoundsCheck { get; }
+    int CountSegments(ReadOnlySpan<byte> source);
     SegmentMatch FindSegment(ReadOnlySpan<byte> source);
     SegmentMatch FindLastSegment(ReadOnlySpan<byte> source);
 }
 
-interface IStatefulPattern<TSelf> : IPattern
-{
-    TSelf AdvanceSegment();
-}
-
-interface INestedPattern<TInner> : IPattern
-{
-    TInner Inner { get; set; }
-}
-
 [SkipLocalsInit]
-readonly struct BytePattern(byte value) : IPattern
+readonly struct BytePattern(byte value) : IPattern, ISplitter
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public int Count(ReadOnlySpan<byte> source)
@@ -148,7 +142,7 @@ readonly ref struct SpanPattern(ReadOnlySpan<byte> value) // : IPattern
 }
 
 [SkipLocalsInit]
-readonly struct EitherBytePattern(byte first, byte second) : IPattern
+readonly struct EitherBytePattern(byte first, byte second) : IPattern, ISplitter
 {
     public int Count(ReadOnlySpan<byte> source)
     {
@@ -233,7 +227,7 @@ readonly struct ByteLookupPattern(SearchValues<byte> values) : IPattern
 
 [SkipLocalsInit]
 readonly struct TrimSelector<T> : IPattern
-    where T : notnull
+    where T : struct
 {
     readonly T _inner;
 
@@ -285,7 +279,7 @@ readonly struct TrimSelector<T> : IPattern
 
 [SkipLocalsInit]
 readonly struct FilterEmptyPattern<T> : IPattern
-    where T : notnull
+    where T : struct
 {
     readonly T _inner;
 
@@ -337,58 +331,9 @@ readonly struct FilterEmptyPattern<T> : IPattern
 static class PatternExtensions
 {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static int Count<T>(
-        this T pattern, ReadOnlySpan<byte> source)
-        where T : notnull
-    {
-        return pattern switch
-        {
-            byte b => CountByte(b, source),
-            char c => CountChar(c, source),
-            Rune r => CountRune(r, source),
-            U8String s => CountString(s, source),
-            IPattern p => p.Count(source),
-            _ => throw new NotSupportedException(),
-        };
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int CountByte(byte value, ReadOnlySpan<byte> source)
-        {
-            return new BytePattern(value).Count(source);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int CountChar(char value, ReadOnlySpan<byte> source)
-        {
-            return value <= 0x7F
-                ? new BytePattern((byte)value).Count(source)
-                : new SpanPattern(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes()).Count(source);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int CountRune(Rune value, ReadOnlySpan<byte> source)
-        {
-            return value.Value <= 0x7F
-                ? new BytePattern((byte)value.Value).Count(source)
-                : new SpanPattern(value.Value switch
-                {
-                    <= 0x7FF => value.AsTwoBytes(),
-                    <= 0xFFFF => value.AsThreeBytes(),
-                    _ => value.AsFourBytes()
-                }).Count(source);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static int CountString(U8String value, ReadOnlySpan<byte> source)
-        {
-            return new SpanPattern(value).Count(source);
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static int CountSegments<T>(
         this T pattern, ReadOnlySpan<byte> source)
-        where T : notnull
+        where T : struct
     {
         return pattern switch
         {
@@ -396,7 +341,8 @@ static class PatternExtensions
             char c => CountChar(c, source),
             Rune r => CountRune(r, source),
             U8String s => CountString(s, source),
-            IPattern p => p.CountSegments(source),
+            ISplitter => ((ISplitter)pattern).CountSegments(source),
+            // TODO: IPattern => CountPattern(source, pattern),
             _ => throw new NotSupportedException(),
         };
 
@@ -435,58 +381,9 @@ static class PatternExtensions
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Match Find<T>(
-        this T pattern, ReadOnlySpan<byte> source)
-        where T : notnull
-    {
-        return pattern switch
-        {
-            byte b => FindByte(b, source),
-            char c => FindChar(c, source),
-            Rune r => FindRune(r, source),
-            U8String s => FindString(s, source),
-            IPattern p => p.Find(source),
-            _ => throw new NotSupportedException(),
-        };
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Match FindByte(byte value, ReadOnlySpan<byte> source)
-        {
-            return new(source.IndexOf(value), 1);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Match FindChar(char value, ReadOnlySpan<byte> source)
-        {
-            return value <= 0x7F
-                ? new BytePattern((byte)value).Find(source)
-                : new SpanPattern(value <= 0x7FF ? value.AsTwoBytes() : value.AsThreeBytes()).Find(source);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Match FindRune(Rune value, ReadOnlySpan<byte> source)
-        {
-            return value.Value <= 0x7F
-                ? new BytePattern((byte)value.Value).Find(source)
-                : new SpanPattern(value.Value switch
-                {
-                    <= 0x7FF => value.AsTwoBytes(),
-                    <= 0xFFFF => value.AsThreeBytes(),
-                    _ => value.AsFourBytes()
-                }).Find(source);
-        }
-
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        static Match FindString(U8String value, ReadOnlySpan<byte> source)
-        {
-            return new SpanPattern(value).Find(source);
-        }
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static SegmentMatch FindSegment<T>(
         this T pattern, ReadOnlySpan<byte> source)
-        where T : notnull
+        where T : struct
     {
         return pattern switch
         {
@@ -494,7 +391,8 @@ static class PatternExtensions
             char c => FindChar(source, c),
             Rune r => FindRune(source, r),
             U8String s => FindString(source, s),
-            IPattern => ((IPattern)pattern).FindSegment(source),
+            ISplitter => ((ISplitter)pattern).FindSegment(source),
+            // TODO: IPattern => FindPattern(source, pattern),
             _ => throw new NotSupportedException(),
         };
 

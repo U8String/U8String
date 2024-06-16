@@ -9,7 +9,7 @@ namespace U8.Prototypes;
 // TODO: Flatten certain impl. bits to reduce inlining and locals pressure
 [SkipLocalsInit]
 readonly struct Split<T> : ICollection<U8String>
-    where T : notnull
+    where T : struct
 {
     readonly U8String _source;
     readonly T _pattern;
@@ -23,11 +23,7 @@ readonly struct Split<T> : ICollection<U8String>
     public int Count
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get
-        {
-            var source = _source;
-            return !source.IsEmpty ? _pattern.CountSegments(source.UnsafeSpan) : 1;
-        }
+        get => _pattern.CountSegments(_source);
     }
 
     public bool Contains(U8String item)
