@@ -8,46 +8,38 @@ namespace U8.Prototypes;
 
 // TODO: Flatten certain impl. bits to reduce inlining and locals pressure
 [SkipLocalsInit]
-readonly struct Split<T> : ICollection<U8String>
-    where T : struct
-{
+readonly struct Split<T>: ICollection<U8String>
+    where T : struct {
     readonly U8String _source;
     readonly T _pattern;
 
-    internal Split(U8String source, T pattern)
-    {
+    internal Split(U8String source, T pattern) {
         _source = source;
         _pattern = pattern;
     }
 
-    public int Count
-    {
+    public int Count {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         get => _pattern.CountSegments(_source);
     }
 
-    public bool Contains(U8String item)
-    {
+    public bool Contains(U8String item) {
         // TODO: ContainsSegment
         throw new NotImplementedException();
     }
 
     // TODO: Optimize calling convention by moving to a static helper
-    public int CopyTo(Span<U8String> destination)
-    {
+    public int CopyTo(Span<U8String> destination) {
         var index = 0;
-        foreach (var item in this)
-        {
+        foreach (var item in this) {
             destination[index++] = item;
         }
         return index + 1;
     }
 
-    public int CopyTo(Span<U8Range> destination)
-    {
+    public int CopyTo(Span<U8Range> destination) {
         var index = 0;
-        foreach (var item in this)
-        {
+        foreach (var item in this) {
             destination[index++] = item.Range;
         }
         return index + 1;
@@ -65,8 +57,7 @@ readonly struct Split<T> : ICollection<U8String>
     void ICollection<U8String>.Clear() => throw new NotSupportedException();
     bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 
-    public struct Enumerator : IEnumerator<U8String>
-    {
+    public struct Enumerator: IEnumerator<U8String> {
         readonly byte[]? _bytes;
         readonly T _pattern;
 
@@ -74,16 +65,14 @@ readonly struct Split<T> : ICollection<U8String>
         U8Range _remainder;
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        internal Enumerator(U8String source, T pattern)
-        {
+        internal Enumerator(U8String source, T pattern) {
             _bytes = source._value;
             _pattern = pattern;
             _current = default;
             _remainder = source._inner;
         }
 
-        public readonly U8String Current
-        {
+        public readonly U8String Current {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
             get => new(_bytes, _current);
         }
@@ -92,11 +81,9 @@ readonly struct Split<T> : ICollection<U8String>
         // empty sources, which is inconsistent with other logic.
         [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext()
-        {
+        public bool MoveNext() {
             var source = _remainder;
-            if (source.Length > 0)
-            {
+            if (source.Length > 0) {
                 var match = _pattern.FindSegment(
                     _bytes!.SliceUnsafe(source.Offset, source.Length));
 
@@ -108,8 +95,7 @@ readonly struct Split<T> : ICollection<U8String>
                     source.Offset + match.RemainderOffset,
                     source.Length - match.RemainderOffset);
 
-                if (!match.IsFound)
-                {
+                if (!match.IsFound) {
                     current = source;
                     remainder = default;
                 }
@@ -128,8 +114,7 @@ readonly struct Split<T> : ICollection<U8String>
             Justification = "No. This *cannot* be made readonly." +
             "_pattern is likely to be a mutable struct if it's disposable!")]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose()
-        {
+        public void Dispose() {
             //if (_pattern is IDisposable)
             //{
             //    ((IDisposable)_pattern).Dispose();
@@ -141,32 +126,26 @@ readonly struct Split<T> : ICollection<U8String>
     }
 }
 
-static class SplitExtensions
-{
-    public static Split<byte> NewSplit(this U8String source, byte pattern)
-    {
+static class SplitExtensions {
+    public static Split<byte> NewSplit(this U8String source, byte pattern) {
         ThrowHelpers.CheckAscii(pattern);
         return new(source, pattern);
     }
 
-    public static Split<char> NewSplit(this U8String source, char pattern)
-    {
+    public static Split<char> NewSplit(this U8String source, char pattern) {
         ThrowHelpers.CheckSurrogate(pattern);
         return new(source, pattern);
     }
 
-    public static Split<Rune> NewSplit(this U8String source, Rune pattern)
-    {
+    public static Split<Rune> NewSplit(this U8String source, Rune pattern) {
         return new(source, pattern);
     }
 
-    public static Split<U8String> NewSplit(this U8String source, U8String pattern)
-    {
+    public static Split<U8String> NewSplit(this U8String source, U8String pattern) {
         return new(source, pattern);
     }
 
-    public static Split<EitherBytePattern> NewSplitAny(this U8String source, byte a, byte b)
-    {
+    public static Split<EitherBytePattern> NewSplitAny(this U8String source, byte a, byte b) {
         ThrowHelpers.CheckAscii(a);
         ThrowHelpers.CheckAscii(b);
         return new(source, new(a, b));
