@@ -40,19 +40,19 @@ public readonly partial struct U8String
         // null, length and validity checks?
         ThrowHelpers.CheckNull(value);
 
-        var span = (ReadOnlySpan<byte>)value;
-        if (span.Length > 0)
+        ref var src = ref MemoryMarshal.GetArrayDataReference(value);
+        var length = value.Length;
+        if (length > 0)
         {
-            Validate(span);
-            var nullTerminate = span[^1] != 0;
-            var bytes = new byte[(nint)(uint)span.Length + (nullTerminate ? 1 : 0)];
+            var nullTerminate = src.Add(length - 1) != 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
 
-            span.CopyToUnsafe(ref bytes.AsRef());
+            U8Validation.CopyValidate(ref src, ref bytes.AsRef(), (uint)length);
 
             _value = bytes;
         }
 
-        _inner = new U8Range(0, span.Length);
+        _inner = new U8Range(0, length);
     }
 
     /// <summary>
@@ -68,19 +68,19 @@ public readonly partial struct U8String
     {
         // AggressiveInlining is here to allow the compiler to unroll
         // memmove and optimize away length and null-termination checks.
-        if (value.Length > 0)
+        ref var src = ref MemoryMarshal.GetReference(value);
+        var length = value.Length;
+        if (length > 0)
         {
-            Validate(value);
+            var nullTerminate = src.Add(length - 1) != 0;
+            var bytes = new byte[(nint)(uint)length + (nullTerminate ? 1 : 0)];
 
-            var nullTerminate = value[^1] != 0;
-            var bytes = new byte[(nint)(uint)value.Length + (nullTerminate ? 1 : 0)];
-
-            value.CopyToUnsafe(ref bytes.AsRef());
+            U8Validation.CopyValidate(ref src, ref bytes.AsRef(), (uint)length);
 
             _value = bytes;
         }
 
-        _inner = new U8Range(0, value.Length);
+        _inner = new U8Range(0, length);
     }
 
     /// <summary>
@@ -239,14 +239,25 @@ public readonly partial struct U8String
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public unsafe U8String(byte* str)
     {
-        // TODO: This pretty much traverses the source three times:
-        // 1. Finds NUL
-        // 2. Validates UTF-8
-        // 3. Copies to newly allocated byte[]
-        // Ideally, at least the first two steps need to be combined,
-        // to get more work done per CPU cycle as this otherwise will be
-        // quite a bit slower than creating from sources of known length.
-        this = new(MemoryMarshal.CreateReadOnlySpanFromNullTerminated(str));
+        // TODO: EH UX
+        var (valid, offset) = U8Validation.FindInvalidOrNul(str);
+
+        if (!valid)
+            ThrowHelpers.InvalidUtf8();
+        if (offset > (uint)Array.MaxLength)
+            ThrowHelpers.DestinationTooShort();
+        var length = (int)(uint)offset;
+        if (length > 0)
+        {
+            var nullTerminate = length < MaxSafeLength;
+            var bytes = new byte[length + (nullTerminate ? 1 : 0)];
+            MemoryMarshal
+                .CreateSpan(ref Unsafe.AsRef<byte>(str), length)
+                .CopyToUnsafe(ref bytes.AsRef());
+            _value = bytes;
+        }
+
+        _inner = new U8Range(0, length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

@@ -292,17 +292,14 @@ public readonly partial struct U8String :
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static bool IsValid(ReadOnlySpan<byte> value)
     {
-        return value.Length <= 0 || Utf8.IsValid(value);
+        return value.Length <= 0 || U8Validation.IsValid(ref value.AsRef(), (uint)value.Length);
     }
 
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     internal static void Validate(ReadOnlySpan<byte> value)
     {
-        if (!IsValid(value))
-        {
-            ThrowHelpers.InvalidUtf8();
-        }
+        U8Validation.Validate(ref value.AsRef(), (uint)value.Length);
     }
 
     [EditorBrowsable(EditorBrowsableState.Advanced)]
