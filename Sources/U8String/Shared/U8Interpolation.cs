@@ -273,17 +273,21 @@ static class U8Interpolation
     internal static void AppendByte<T>(ref T handler, byte value)
         where T : struct, IInterpolatedHandler
     {
-    Retry:
         var free = handler.Free;
-        if (free.Length > 0)
+        if (free.Length < 1)
         {
-            free[0] = value;
-            handler.BytesWritten++;
-            return;
+            goto Grow;
         }
 
+    Append:
+        free.AsRef() = value;
+        handler.BytesWritten++;
+        return;
+
+    Grow:
         handler.Grow();
-        goto Retry;
+        free = handler.Free;
+        goto Append;
     }
 
     // TODO: Add GetBuffer(size)
@@ -291,33 +295,41 @@ static class U8Interpolation
     internal static void AppendTwoBytes<T>(ref T handler, ushort b01)
         where T : struct, IInterpolatedHandler
     {
-    Retry:
         var free = handler.Free;
-        if (free.Length > 1)
+        if (free.Length < 2)
         {
-            free.AsRef().Cast<byte, ushort>() = b01;
-            handler.BytesWritten += 2;
-            return;
+            goto Grow;
         }
 
+    Append:
+        free.AsRef().Cast<byte, ushort>() = b01;
+        handler.BytesWritten += 2;
+        return;
+
+    Grow:
         handler.Grow();
-        goto Retry;
+        free = handler.Free;
+        goto Append;
     }
 
     internal static void AppendBytes<T>(ref T handler, ReadOnlySpan<byte> bytes)
         where T : struct, IInterpolatedHandler
     {
-    Retry:
         var free = handler.Free;
-        if (free.Length >= bytes.Length)
+        if (free.Length < bytes.Length)
         {
-            bytes.CopyToUnsafe(ref free.AsRef());
-            handler.BytesWritten += bytes.Length;
-            return;
+            goto Grow;
         }
 
+    Append:
+        bytes.CopyToUnsafe(ref free.AsRef());
+        handler.BytesWritten += bytes.Length;
+        return;
+
+    Grow:
         handler.Grow(bytes.Length);
-        goto Retry;
+        free = handler.Free;
+        goto Append;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -325,25 +337,29 @@ static class U8Interpolation
         where T : struct, IInterpolatedHandler
     {
         if (bytes.Length is 0) return;
-        Retry:
         var free = handler.Free;
-        if (free.Length >= bytes.Length)
+        if (free.Length < bytes.Length)
         {
-            if (bytes.Length is 1)
-            {
-                free[0] = bytes[0];
-            }
-            else
-            {
-                bytes.CopyToUnsafe(ref free.AsRef());
-            }
-
-            handler.BytesWritten += bytes.Length;
-            return;
+            goto Grow;
         }
 
+    Append:
+        if (bytes.Length is 1)
+        {
+            free.AsRef() = bytes.AsRef();
+        }
+        else
+        {
+            bytes.CopyToUnsafe(ref free.AsRef());
+        }
+
+        handler.BytesWritten += bytes.Length;
+        return;
+
+    Grow:
         handler.Grow(bytes.Length);
-        goto Retry;
+        free = handler.Free;
+        goto Append;
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
