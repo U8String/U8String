@@ -20,7 +20,8 @@ readonly struct Split<T>: ICollection<U8String>
 
     public int Count {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        get => _pattern.CountSegments(_source);
+        // get => _pattern.CountSegments(_source);
+        get => throw new NotImplementedException();
     }
 
     public bool Contains(U8String item) {
@@ -58,23 +59,25 @@ readonly struct Split<T>: ICollection<U8String>
     bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 
     public struct Enumerator: IEnumerator<U8String> {
-        readonly byte[]? _bytes;
+        readonly byte[] _bytes;
         readonly T _pattern;
+        bool _done;
 
-        U8Range _current;
-        U8Range _remainder;
+        (int Offset, int Length) _current;
+        (int Offset, int Length) _remainder;
+
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Enumerator(U8String source, T pattern) {
-            _bytes = source._value;
+            _bytes = source._value!;
             _pattern = pattern;
             _current = default;
-            _remainder = source._inner;
+            _remainder = (source._inner.Offset, source._inner.Length);
         }
 
         public readonly U8String Current {
             [MethodImpl(MethodImplOptions.AggressiveInlining)]
-            get => new(_bytes, _current);
+            get => new(_bytes, new(_current.Offset, _current.Length));
         }
 
         // FIXME: This currently does not return true once for
@@ -82,30 +85,29 @@ readonly struct Split<T>: ICollection<U8String>
         [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() {
-            var source = _remainder;
-            if (source.Length > 0) {
-                var match = _pattern.FindSegment(
-                    _bytes!.SliceUnsafe(source.Offset, source.Length));
-
-                var current = new U8Range(
-                    source.Offset + match.SegmentOffset,
-                    match.SegmentLength);
-
-                var remainder = new U8Range(
-                    source.Offset + match.RemainderOffset,
-                    source.Length - match.RemainderOffset);
-
-                if (!match.IsFound) {
-                    current = source;
-                    remainder = default;
-                }
-
-                (_current, _remainder) = (current, remainder);
-
-                return true;
+            if (_done) {
+                return false;
             }
 
-            return false;
+            var (offset, length) = _remainder;
+            var bytes = _bytes.SliceUnsafe(offset, length);
+            var match = _pattern.NextSegment(bytes);
+
+            var current = (
+                offset + match.SegmentOffset,
+                match.SegmentLength);
+
+            var remainder = (
+                offset + match.RemainderOffset,
+                length - match.RemainderOffset);
+
+            if (!match.IsFound) {
+                _done = true;
+            }
+
+            (_current, _remainder) = (current, remainder);
+
+            return true;
         }
 
         [SuppressMessage(
@@ -127,14 +129,16 @@ readonly struct Split<T>: ICollection<U8String>
 }
 
 static class SplitExtensions {
-    public static Split<byte> NewSplit(this U8String source, byte pattern) {
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Split<BytePattern> NewSplit(this U8String source, byte pattern) {
         ThrowHelpers.CheckAscii(pattern);
-        return new(source, pattern);
+        return new(source, new(pattern));
     }
 
-    public static Split<char> NewSplit(this U8String source, char pattern) {
+    [SkipLocalsInit, MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public static Split<CharPattern> NewSplit(this U8String source, char pattern) {
         ThrowHelpers.CheckSurrogate(pattern);
-        return new(source, pattern);
+        return new(source, new(pattern));
     }
 
     public static Split<Rune> NewSplit(this U8String source, Rune pattern) {
@@ -145,9 +149,9 @@ static class SplitExtensions {
         return new(source, pattern);
     }
 
-    public static Split<EitherBytePattern> NewSplitAny(this U8String source, byte a, byte b) {
-        ThrowHelpers.CheckAscii(a);
-        ThrowHelpers.CheckAscii(b);
-        return new(source, new(a, b));
-    }
+    // public static Split<EitherBytePattern> NewSplitAny(this U8String source, byte a, byte b) {
+    //     ThrowHelpers.CheckAscii(a);
+    //     ThrowHelpers.CheckAscii(b);
+    //     return new(source, new(a, b));
+    // }
 }

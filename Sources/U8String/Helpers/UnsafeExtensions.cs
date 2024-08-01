@@ -5,7 +5,7 @@ using U8.Primitives;
 
 namespace U8;
 
-internal static class UnsafeExtensions
+static class UnsafeExtensions
 {
     [DebuggerStepThrough]
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

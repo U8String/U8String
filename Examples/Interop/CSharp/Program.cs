@@ -1,7 +1,5 @@
-﻿// See https://aka.ms/new-console-template for more information
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.Marshalling;
-
 using U8.InteropServices;
 
 var text = u8("Hello from C#!");
@@ -14,8 +12,7 @@ if (Interop.CountRunes(text, text.Length) != text.RuneCount)
 var fromRust = Interop.GetString();
 U8Console.WriteLine(fromRust);
 
-static unsafe partial class Interop
-{
+static unsafe partial class Interop {
     [SuppressGCTransition]
     [LibraryImport("rust", EntryPoint = "print")]
     public static partial void Print(U8String text, nint length);

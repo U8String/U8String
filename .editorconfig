@@ -317,5 +317,4 @@ dotnet_diagnostic.CA1869.severity = warning
 dotnet_diagnostic.CA1871.severity = warning
 dotnet_diagnostic.CA1872.severity = error
 dotnet_diagnostic.CA2009.severity = error
-dotnet_diagnostic.CA2012.severity = warning
 dotnet_diagnostic.CA2019.severity = warning
