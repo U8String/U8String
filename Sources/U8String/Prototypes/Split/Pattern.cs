@@ -9,9 +9,10 @@ namespace U8.Prototypes;
 
 // On RegexPattern: there will be a pattern iterator abstraction.
 interface Pattern {
-    public static ByteLookupPattern AsciiWhitespace { get; } = new("\t\n\v\f\r "u8);
-    public static ByteLookupPattern AsciiUpper { get; } = new("ABCDEFGHIJKLMNOPQRSTUVWXYZ"u8);
-    public static ByteLookupPattern AsciiLower { get; } = new("abcdefghijklmnopqrstuvwxyz"u8);
+    // TODO: Why does this throw a TypeLoadException?
+    // public static ByteLookupPattern AsciiWhitespace { get; } = new("\t\n\v\f\r "u8);
+    // public static ByteLookupPattern AsciiUpper { get; } = new("ABCDEFGHIJKLMNOPQRSTUVWXYZ"u8);
+    // public static ByteLookupPattern AsciiLower { get; } = new("abcdefghijklmnopqrstuvwxyz"u8);
 
     Match Find(bytes source);
     Match FindLast(bytes source);
@@ -61,75 +62,48 @@ static class PatternExtensions {
         throw new NotImplementedException();
     }
 
-    // TODO: Split Segment-returning primitives and Pattern path
-    // from the Splitter path which returns SegmentMatch that has stack spills.
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static SegmentMatch FindSegment<T>(this T pattern, bytes source) {
-        return pattern switch {
-            byte b => new Match(source.IndexOf(b), 1),
-            char c => FindChar(source, c),
-            Rune r => FindRune(source, r),
-            Splitter => ((Splitter)pattern).FindSegment(source),
-            Pattern => ((Pattern)pattern).Find(source),
-            _ => Unsupported<T, SegmentMatch>(),
-        };
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static Match FindChar(bytes source, char c) {
-        if (c <= 0x7F) {
-            return new(source.IndexOf((byte)c), 1);
-        }
-
-        var needle = (bytes)(c <= 0x7FF
-            ? c.AsTwoBytes()
-            : c.AsThreeBytes());
-        return new(source.IndexOf(needle), needle.Length);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    static Match FindRune(bytes source, Rune r) {
-        if (r.Value <= 0x7F) {
-            return new(source.IndexOf((byte)r.Value), 1);
-        }
-
-        var needle = (bytes)(r.Value switch {
-            <= 0x7FF => r.AsTwoBytes(),
-            <= 0xFFFF => r.AsThreeBytes(),
-            _ => r.AsFourBytes()
-        });
-        return new(source.IndexOf(needle), needle.Length);
-    }
-
-    [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    internal static SegmentMatch NextSegmentNonAscii<T>(this T pattern, bytes source) {
-        Debug.Assert(pattern is not byte);
+    internal static Match FindNonAscii<T>(this bytes source, T pattern) {
+        Debug.Assert(pattern is not (byte or U8String or Pattern or Splitter));
         return pattern switch {
             char c => FindNonAsciiChar(source, c),
             Rune r => FindNonAsciiRune(source, r),
-            Splitter => ((Splitter)pattern).FindSegment(source),
-            Pattern => ((Pattern)pattern).Find(source),
-            _ => Unsupported<T, SegmentMatch>(),
+            _ => Unsupported<T, Match>(),
         };
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static Match FindNonAsciiChar(bytes source, char c) {
-        Debug.Assert(c > 0x7F);
-        var needle = (bytes)(c <= 0x7FF
-            ? c.AsTwoBytes()
-            : c.AsThreeBytes());
-        return new(source.IndexOf(needle), needle.Length);
+        int length;
+        bytes needle;
+        if (c <= 0x7FF) {
+            needle = c.AsTwoBytes().AsSpan();
+            length = 2;
+        }
+        else {
+            needle = c.AsThreeBytes().AsSpan();
+            length = 3;
+        }
+        return new(source.IndexOf(needle), length);
     }
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     static Match FindNonAsciiRune(bytes source, Rune r) {
-        var needle = (bytes)(r.Value switch {
-            <= 0x7FF => r.AsTwoBytes(),
-            <= 0xFFFF => r.AsThreeBytes(),
-            _ => r.AsFourBytes()
-        });
-        return new(source.IndexOf(needle), needle.Length);
+        int length;
+        bytes needle;
+        if (r.Value <= 0x7FF) {
+            needle = r.AsTwoBytes().AsSpan();
+            length = 2;
+        }
+        else if (r.Value <= 0xFFFF) {
+            needle = r.AsThreeBytes().AsSpan();
+            length = 3;
+        }
+        else {
+            needle = r.AsFourBytes().AsSpan();
+            length = 4;
+        }
+        return new(source.IndexOf(needle), length);
     }
 
     [DoesNotReturn, StackTraceHidden]
@@ -150,38 +124,51 @@ interface ExtendedSplitter: Splitter {
     int FillSegments(Span<U8String> segments, bytes source);
 }
 
-readonly struct SkipEmptySplitter<T>: Splitter
-where T: struct {
-    readonly T _pattern;
+// readonly struct SkipEmptySplitter<T>: Splitter
+// where T: struct {
+//     readonly T _pattern;
 
-    public SkipEmptySplitter(T pattern) {
-        ThrowHelpers.CheckPattern(pattern);
-        _pattern = pattern;
-    }
+//     public SkipEmptySplitter(T pattern) {
+//         ThrowHelpers.CheckPattern(pattern);
+//         _pattern = pattern;
+//     }
 
-    public SegmentMatch FindSegment(bytes source) {
-        var offset = 0;
-        do {
-            var match = _pattern.FindSegment(source.SliceUnsafe(offset));
-            if (match.SegmentLength > 0) {
-                return new(
-                    match.SegmentOffset + offset,
-                    match.SegmentLength,
-                    match.RemainderOffset + offset);
-            }
-            if (!match.IsFound) break;
-            offset += match.RemainderOffset;
-        } while (offset < source.Length);
-        return SegmentMatch.NotFound;
-    }
+//     public SegmentMatch FindSegment(bytes source) {
+//         var offset = 0;
+//         do {
+//             var haystack = source.SliceUnsafe(offset);
+//             int segmentOffset, segmentLength, remainderOffset;
+//             if (_pattern is not Splitter) {
+//                 var matchOffset = _pattern.Find(haystack, out var matchLength);
+//                 segmentOffset = 0;
+//                 segmentLength = matchOffset;
+//                 remainderOffset = matchOffset + matchLength;
+//             }
+//             else {
+//                 (segmentOffset, segmentLength, remainderOffset) = 
+//                     ((Splitter)_pattern).FindSegment(haystack);
+//             }
 
-    public SegmentMatch FindLastSegment(bytes source) {
-        throw new NotImplementedException();
-    }
-}
+//             if (segmentLength > 0) {
+//                 return new(
+//                     segmentOffset + offset,
+//                     segmentLength,
+//                     remainderOffset + offset);
+//             }
+
+//             if (segmentLength < 0) break;
+//             offset += remainderOffset;
+//         } while (offset < source.Length);
+//         return SegmentMatch.NotFound;
+//     }
+
+//     public SegmentMatch FindLastSegment(bytes source) {
+//         throw new NotImplementedException();
+//     }
+// }
 
 readonly struct Match(int offset, int length) {
-    public bool IsFound => Offset >= 0;
+    public bool IsFound => Offset > -1;
     public readonly int Offset = offset;
     public readonly int Length = length;
 
@@ -190,8 +177,14 @@ readonly struct Match(int offset, int length) {
         new(0, match.Offset, match.Offset + match.Length);
 
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static implicit operator Range(Match match) =>
-        match.IsFound ? new(match.Offset, match.Length) : default;
+    public static implicit operator (int Offset, int Length)(Match match) =>
+        Unsafe.BitCast<Match, (int, int)>(match);
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    public void Deconstruct(out int offset, out int length) {
+        offset = Offset;
+        length = Length;
+    }
 }
 
 // SplitMatch?
@@ -200,6 +193,7 @@ readonly struct SegmentMatch(
     int segmentLength,
     int remainderOffset) {
     public bool IsFound => SegmentLength > -1;
+    public bool IsLast => RemainderOffset < 0;
     public readonly int SegmentOffset = segmentOffset;
     public readonly int SegmentLength = segmentLength;
     public readonly int RemainderOffset = remainderOffset;

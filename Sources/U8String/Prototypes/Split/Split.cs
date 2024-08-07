@@ -1,6 +1,7 @@
 using System.Collections;
 using U8.Primitives;
 using System.Text;
+using System.Diagnostics;
 
 namespace U8.Prototypes;
 
@@ -10,7 +11,7 @@ namespace U8.Prototypes;
 // - empty source yields single empty segment
 [SkipLocalsInit]
 readonly struct Split<T>: ICollection<U8String>
-where T : struct {
+where T: struct {
     readonly U8String _source;
     readonly T _pattern;
 
@@ -80,35 +81,41 @@ where T : struct {
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public bool MoveNext() {
+        public bool MoveNext() => _pattern switch {
+            Splitter => MoveNextSplitter(),
+            Pattern => MoveNextPattern(),
+            _ => MoveNextPrimitive()
+        };
+
+        // TODO: Split between non-Splitter and Splitter paths
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNextPrimitive() {
+            Debug.Assert(_pattern is not (Pattern or Splitter));
             var source = _remainder;
             if (source.Length > -1) {
-                var span = _bytes.SliceUnsafe(source.Offset, source.Length);
-                // Behold, the power of working around inlining issues by doing it manually!
-                int offset, length, remainderOffset;
+                var span = (bytes)_bytes.SliceUnsafe(source.Offset, source.Length);
+                int offset, length;
                 if (_pattern is byte b) {
-                    offset = 0;
-                    length = span.IndexOf(b);
-                    remainderOffset = length + 1;
+                    (offset, length) = (span.IndexOf(b), 1);
                 }
-                else if (_pattern is char c and <= (char)0x7F) {
-                    offset = 0;
-                    length = span.IndexOf((byte)c);
-                    remainderOffset = length + 1;
+                else if (_pattern is char c && c <= 0x7F) {
+                    (offset, length) = (span.IndexOf((byte)c), 1);
                 }
-                else if (_pattern is Rune { Value: <= 0x7F } r) {
-                    offset = 0;
-                    length = span.IndexOf((byte)r.Value);
-                    remainderOffset = length + 1;
+                else if (_pattern is Rune r && r.Value <= 0x7F) {
+                    (offset, length) = (span.IndexOf((byte)r.Value), 1);
                 }
-                else (offset, length, remainderOffset) = _pattern.NextSegmentNonAscii(span);
+                else if (_pattern is U8String s) {
+                    (offset, length) = (span.IndexOf(s), s.Length);
+                }
+                else (offset, length) = span.FindNonAscii(_pattern);
+                var remainderOffset = offset + length;
 
-                _current = (source.Offset + offset, length);
+                _current = (source.Offset, offset);
                 _remainder = (
                     source.Offset + remainderOffset,
                     source.Length - remainderOffset);
-                    
-                if (length < 0) {
+
+                if (offset < 0) {
                     _current = source;
                     _remainder = (0, -1);
                 }
@@ -116,6 +123,59 @@ where T : struct {
                 return true;
             }
 
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNextPattern() {
+            Debug.Assert(_pattern is Pattern);
+            var source = _remainder;
+            if (source.Length > -1) {
+                var span = (bytes)_bytes.SliceUnsafe(source.Offset, source.Length);
+                var match = ((Pattern)_pattern).Find(span);
+                var remainderOffset = match.Offset + match.Length;
+
+                _current = (source.Offset, match.Offset);
+                _remainder = (
+                    source.Offset + remainderOffset,
+                    source.Length - remainderOffset);
+
+                if (!match.IsFound) {
+                    _current = source;
+                    _remainder = (0, -1);
+                }
+
+                return true;
+            }
+
+            return false;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public bool MoveNextSplitter() {
+            Debug.Assert(_pattern is Splitter);
+            var (offset, length) = _remainder;
+            if (length > -1) {
+                var span = (bytes)_bytes.SliceUnsafe(offset, length);
+                var match = ((Splitter)_pattern).FindSegment(span);
+
+                _current = (
+                    match.SegmentOffset + offset,
+                    match.SegmentLength);
+                _remainder = (
+                    offset + match.RemainderOffset,
+                    length - match.RemainderOffset);
+
+                if (match.IsLast) {
+                    _remainder = (0, -1);
+                }
+
+                if (match.IsFound) {
+                    return true;
+                }
+            }
+
+            _current = default;
             return false;
         }
 

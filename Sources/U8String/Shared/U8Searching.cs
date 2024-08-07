@@ -775,12 +775,12 @@ static class U8Searching
                 return (source.IndexOf(b), 1);
 
             case char c:
-                if (char.IsAscii(c))
+                if (c <= 0x7F)
                 {
                     return (source.IndexOf((byte)c), 1);
                 }
 
-                ReadOnlySpan<byte> scalar;
+                bytes scalar;
                 int scalarLength;
 
                 switch ((ushort)c)
