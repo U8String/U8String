@@ -1,15 +1,16 @@
-using System.Diagnostics.CodeAnalysis;
 using System.Collections;
-
 using U8.Primitives;
 using System.Text;
 
 namespace U8.Prototypes;
 
 // TODO: Flatten certain impl. bits to reduce inlining and locals pressure
+// Design:
+// - disallow empty separators
+// - empty source yields single empty segment
 [SkipLocalsInit]
 readonly struct Split<T>: ICollection<U8String>
-    where T : struct {
+where T : struct {
     readonly U8String _source;
     readonly T _pattern;
 
@@ -20,8 +21,7 @@ readonly struct Split<T>: ICollection<U8String>
 
     public int Count {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        // get => _pattern.CountSegments(_source);
-        get => throw new NotImplementedException();
+        get => _pattern.CountSegments(_source);
     }
 
     public bool Contains(U8String item) {
@@ -49,8 +49,8 @@ readonly struct Split<T>: ICollection<U8String>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Enumerator GetEnumerator() => new(_source, _pattern);
 
-    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => GetEnumerator();
-    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+    IEnumerator<U8String> IEnumerable<U8String>.GetEnumerator() => new Enumerator(_source, _pattern);
+    IEnumerator IEnumerable.GetEnumerator() => new Enumerator(_source, _pattern);
 
     bool ICollection<U8String>.IsReadOnly => true;
     void ICollection<U8String>.Add(U8String item) => throw new NotSupportedException();
@@ -58,18 +58,17 @@ readonly struct Split<T>: ICollection<U8String>
     void ICollection<U8String>.Clear() => throw new NotSupportedException();
     bool ICollection<U8String>.Remove(U8String item) => throw new NotSupportedException();
 
+    [SkipLocalsInit]
     public struct Enumerator: IEnumerator<U8String> {
         readonly byte[] _bytes;
         readonly T _pattern;
-        bool _done;
 
         (int Offset, int Length) _current;
         (int Offset, int Length) _remainder;
 
-
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         internal Enumerator(U8String source, T pattern) {
-            _bytes = source._value!;
+            _bytes = source._value ?? [];
             _pattern = pattern;
             _current = default;
             _remainder = (source._inner.Offset, source._inner.Length);
@@ -80,65 +79,63 @@ readonly struct Split<T>: ICollection<U8String>
             get => new(_bytes, new(_current.Offset, _current.Length));
         }
 
-        // FIXME: This currently does not return true once for
-        // empty sources, which is inconsistent with other logic.
-        [SkipLocalsInit]
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         public bool MoveNext() {
-            if (_done) {
-                return false;
+            var source = _remainder;
+            if (source.Length > -1) {
+                var span = _bytes.SliceUnsafe(source.Offset, source.Length);
+                // Behold, the power of working around inlining issues by doing it manually!
+                int offset, length, remainderOffset;
+                if (_pattern is byte b) {
+                    offset = 0;
+                    length = span.IndexOf(b);
+                    remainderOffset = length + 1;
+                }
+                else if (_pattern is char c and <= (char)0x7F) {
+                    offset = 0;
+                    length = span.IndexOf((byte)c);
+                    remainderOffset = length + 1;
+                }
+                else if (_pattern is Rune { Value: <= 0x7F } r) {
+                    offset = 0;
+                    length = span.IndexOf((byte)r.Value);
+                    remainderOffset = length + 1;
+                }
+                else (offset, length, remainderOffset) = _pattern.NextSegmentNonAscii(span);
+
+                _current = (source.Offset + offset, length);
+                _remainder = (
+                    source.Offset + remainderOffset,
+                    source.Length - remainderOffset);
+                    
+                if (length < 0) {
+                    _current = source;
+                    _remainder = (0, -1);
+                }
+
+                return true;
             }
 
-            var (offset, length) = _remainder;
-            var bytes = _bytes.SliceUnsafe(offset, length);
-            var match = _pattern.NextSegment(bytes);
-
-            var current = (
-                offset + match.SegmentOffset,
-                match.SegmentLength);
-
-            var remainder = (
-                offset + match.RemainderOffset,
-                length - match.RemainderOffset);
-
-            if (!match.IsFound) {
-                _done = true;
-            }
-
-            (_current, _remainder) = (current, remainder);
-
-            return true;
-        }
-
-        [SuppressMessage(
-            "Style",
-            "IDE0251:Make member 'readonly'",
-            Justification = "No. This *cannot* be made readonly." +
-            "_pattern is likely to be a mutable struct if it's disposable!")]
-        [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public void Dispose() {
-            //if (_pattern is IDisposable)
-            //{
-            //    ((IDisposable)_pattern).Dispose();
-            //}
+            return false;
         }
 
         readonly object IEnumerator.Current => Current;
         readonly void IEnumerator.Reset() => throw new NotSupportedException();
+        readonly void IDisposable.Dispose() { }
     }
 }
 
 static class SplitExtensions {
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Split<BytePattern> NewSplit(this U8String source, byte pattern) {
+    public static Split<byte> NewSplit(this U8String source, byte pattern) {
         ThrowHelpers.CheckAscii(pattern);
-        return new(source, new(pattern));
+        return new(source, pattern);
     }
 
     [SkipLocalsInit, MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static Split<CharPattern> NewSplit(this U8String source, char pattern) {
+    public static Split<char> NewSplit(this U8String source, char pattern) {
         ThrowHelpers.CheckSurrogate(pattern);
-        return new(source, new(pattern));
+        return new(source, pattern);
     }
 
     public static Split<Rune> NewSplit(this U8String source, Rune pattern) {

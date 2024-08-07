@@ -10,7 +10,7 @@ using U8.Primitives;
 namespace U8.Shared;
 
 // TODO: Better name?
-internal static class U8Searching
+static class U8Searching
 {
     /// <summary>
     /// Returns the index of the first occurrence of a specified value in a span.
