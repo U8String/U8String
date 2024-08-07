@@ -73,7 +73,7 @@ public readonly partial struct U8String :
     /// <para/>
     /// Attempting to create a <see cref="U8String"/> with a source length greater than this
     /// may result in <see cref="OutOfMemoryException"/>, <see cref="ArgumentException"/>, or other exceptions.
-    /// </remarks> 
+    /// </remarks>
     public static int MaxSafeLength
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
