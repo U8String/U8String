@@ -1,9 +1,10 @@
 using System.Collections.Immutable;
+using System.Numerics;
 using System.Text;
 
 namespace U8;
 
-public readonly partial struct U8String
+public readonly partial struct U8String : IComparisonOperators<U8String, U8String, bool>
 {
     /// <inheritdoc cref="Concat(U8String, byte)"/>
     public static U8String operator +(U8String left, byte right) => Concat(left, right);
@@ -64,6 +65,11 @@ public readonly partial struct U8String
     public static bool operator !=(byte[]? left, U8String right) => !(left == right);
     public static bool operator !=(ImmutableArray<byte> left, U8String right) => !(left == right);
     public static bool operator !=(ReadOnlySpan<byte> left, U8String right) => !(left == right);
+
+    public static bool operator >(U8String left, U8String right) => left.CompareTo(right) > 0;
+    public static bool operator >=(U8String left, U8String right) => left.CompareTo(right) >= 0;
+    public static bool operator <(U8String left, U8String right) => left.CompareTo(right) < 0;
+    public static bool operator <=(U8String left, U8String right) => left.CompareTo(right) <= 0;
 
     /// <inheritdoc cref="Create(ReadOnlySpan{byte})"/>
     public static explicit operator U8String(ReadOnlySpan<byte> value) => new(value);
